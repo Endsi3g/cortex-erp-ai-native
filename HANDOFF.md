@@ -130,6 +130,27 @@ confirmer sur la tour :
    (parse juste le CSS), mais vaut la peine de le relancer si les
    tokens changent.
 
+### Chat backend (septième vague, mocké)
+
+Nouvelle branche `feat/chat-gateway-backend`, empilée sur
+`feat/cortex-availability-workspace` (PR séparée, base = cette branche,
+pas `main` — le diff reste propre tant que la PR précédente n'est pas
+fusionnée). Détail complet : `CHANGELOG.md`, septième vague.
+
+Ce qui existe maintenant, entièrement testé dans ce sandbox sans bench
+(voir `test_chat_gateway.py`, 17/18 tests tournent réellement ici) :
+`Cortex Chat Session`/`Cortex Chat Message`/`Cortex Chat Context
+Snapshot`, `api/v1/chat.py` (6 endpoints, tous `require_human_staff_role`),
+et tout le pipeline `ChatContextResolver` → `AgentRouter` →
+`ToolPolicyResolver` → `MockOnyxChatClient` → `ChatResponseTransformer`.
+
+**Aucun Onyx réel connecté** — `MockOnyxChatClient` répond de façon
+déterministe (mots-clés), jamais aléatoire, et labellise toujours ses
+réponses comme simulées. Rien à valider sur la tour pour cette passe
+au-delà de `bench migrate` (sync les 3 nouveaux DocTypes) — pas de
+frontend, donc pas de test navigateur nécessaire ici. Le prochain test
+réel viendra avec le panneau `CortexCopilotPanel` (PR suivante).
+
 ## 4. Onyx — décision actée et implémentée : self-hosted + widget intégré
 
 **Décision (2026-08-30)** : Onyx est déployé **self-hosted** (pas Onyx
@@ -154,7 +175,11 @@ Une vraie clé `GEMINI_API_KEY` a été collée en clair dans le chat par l'util
 
 | Item | Pourquoi ce n'est pas fait | Effort estimé |
 |---|---|---|
-| **Chat backend (Cortex Chat Session/Message/Context Snapshot, gateway, agent router, mocks) + panneau Copilot Vue** | Deux specs détaillées reçues, portée volontairement clarifiée avec l'utilisateur avant de commencer (packaging TS/npm vs. CSS+JS, un seul PR vs. plusieurs) — voir la conversation pour les réponses une fois données | Backend mocké : 2-3 jours. Panneau Vue mocké : 2-3 jours |
+| **Panneau `CortexCopilotPanel` Vue** (consomme le contrat de `api/v1/chat.py`) | Portée volontairement séquencée avec l'utilisateur : backend d'abord (fait, voir §3bis), panneau ensuite, sur une PR séparée empilée sur celle-ci | 2-3 jours |
+| Client Onyx réel (remplacer `MockOnyxChatClient`) | Aucun Onyx déployé dans cet environnement (§4) — `OnyxChatClient` est une interface prête à recevoir une vraie implémentation HTTP | 0.5-1 jour une fois Onyx accessible |
+| Outil MCP en lecture seule pour transaction/check-in/approbation | `ToolPolicyResolver` donne une liste d'outils vide à `cortex-returns`/`cortex-approval-assistant` faute d'un tool `search`/`read` réel dans `cortex-mcp` — ces agents ne peuvent rien faire tant que ça n'existe pas | 0.5-1 jour par outil |
+| Streaming/SSE pour le chat | `send_message` est synchrone (réponse complète), pas de polling ni de WebSocket — le spec le prévoit comme étape 12, après stabilisation | 1-2 jours |
+| Job de rétention `Cortex Chat Session.retention_until` | Le champ existe, rien ne le remplit ni ne purge les sessions expirées | 0.5 jour |
 | **Confirmer que la page Disponibilité s'ouvre réellement sur la tour** | Écrit et testé en unitaire ici, jamais ouvert dans un navigateur — voir §3 pour les commandes et ce qu'il faut me rapporter | Quelques minutes une fois `bench build` fait |
 | Jeu de données de démo (fixtures) pour que la grille Disponibilité soit dense dès le premier chargement | Pas demandé explicitement pour cette passe ; à faire si la tour n'a pas encore de `Cortex Rental Item Profile`/transactions réels | 0.5 jour |
 | Écrans Composer de transaction / Check-in / Approbations / Assistant | Portée de cette passe volontairement limitée à Workspace + Disponibilité (choix confirmé avec l'utilisateur) | Composer : 1-2 jours, Check-in : 1 jour, Approbations : 1 jour, Assistant : dépend d'Onyx (§4) |

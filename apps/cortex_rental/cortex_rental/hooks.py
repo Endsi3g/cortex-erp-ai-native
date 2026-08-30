@@ -61,6 +61,9 @@ permission_query_conditions = {
     "Cortex Evidence Reference": "cortex_rental.permissions.cortex_evidence_reference_query_conditions",
     "Cortex Extraction Run": "cortex_rental.permissions.cortex_extraction_run_query_conditions",
     "Cortex Check-In": "cortex_rental.permissions.cortex_check_in_query_conditions",
+    "Cortex Chat Session": "cortex_rental.permissions.cortex_chat_session_query_conditions",
+    "Cortex Chat Message": "cortex_rental.permissions.cortex_chat_message_query_conditions",
+    "Cortex Chat Context Snapshot": "cortex_rental.permissions.cortex_chat_context_snapshot_query_conditions",
 }
 
 # Fixtures exported/synced on `bench migrate` — provisions the granular

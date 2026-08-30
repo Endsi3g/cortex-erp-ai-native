@@ -1,0 +1,153 @@
+{
+  "actions": [],
+  "autoname": "format:CCTX-{YYYY}-{#####}",
+  "creation": "2026-08-30 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "chat_session",
+    "company",
+    "page",
+    "reference_doctype",
+    "reference_name",
+    "selected_item_codes_json",
+    "selected_serial_nos_json",
+    "visible_dates_json",
+    "filters_json",
+    "permissions_snapshot_json",
+    "context_hash",
+    "created_at"
+  ],
+  "fields": [
+    {
+      "fieldname": "chat_session",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Chat Session",
+      "options": "Cortex Chat Session",
+      "reqd": 1
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "page",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Page",
+      "reqd": 1,
+      "description": "One of AgentRouter.PAGE_TO_AGENT's keys (availability, transaction, checkin, consignment, approvals, dashboard)."
+    },
+    {
+      "fieldname": "reference_doctype",
+      "fieldtype": "Link",
+      "label": "Reference DocType",
+      "options": "DocType",
+      "description": "e.g. Cortex Rental Transaction. Real Link to core Frappe's DocType meta, not a free-text guess."
+    },
+    {
+      "fieldname": "reference_name",
+      "fieldtype": "Data",
+      "label": "Reference Document Name",
+      "description": "The target record's name — Data, not a dynamic Link, since reference_doctype is itself variable (same pattern as Approval Request's entity_type/entity_id)."
+    },
+    {
+      "fieldname": "selected_item_codes_json",
+      "fieldtype": "Code",
+      "label": "Selected Item Codes (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "selected_serial_nos_json",
+      "fieldtype": "Code",
+      "label": "Selected Serial Nos (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "visible_dates_json",
+      "fieldtype": "Code",
+      "label": "Visible Date Range (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "filters_json",
+      "fieldtype": "Code",
+      "label": "Active Filters (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "permissions_snapshot_json",
+      "fieldtype": "Code",
+      "label": "Permissions Snapshot (JSON)",
+      "options": "JSON",
+      "description": "The permission scope strings resolved for this request at the time of the snapshot — informational/audit only, never re-read as a live authorization source (every real check re-runs against Frappe permissions at call time)."
+    },
+    {
+      "fieldname": "context_hash",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Context Hash",
+      "description": "sha256 of the resolved (server-validated) context, not the raw client-submitted one."
+    },
+    {
+      "fieldname": "created_at",
+      "fieldtype": "Datetime",
+      "label": "Created At",
+      "reqd": 1
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex Chat Context Snapshot",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "read": 1,
+      "role": "System Manager",
+      "write": 1
+    },
+    {
+      "read": 1,
+      "role": "Cortex Operations Manager"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Counter Staff"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Inventory Manager"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Finance Manager"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Consignment Manager"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Account Reviewer"
+    },
+    {
+      "read": 1,
+      "role": "Rental Manager"
+    },
+    {
+      "read": 1,
+      "role": "Rental Operator"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 0
+}

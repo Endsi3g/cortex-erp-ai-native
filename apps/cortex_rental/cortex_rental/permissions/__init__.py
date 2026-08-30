@@ -110,3 +110,71 @@ def cortex_extraction_run_query_conditions(user: str) -> str:
 
 def cortex_check_in_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Cortex Check-In")
+
+
+def _own_chat_session_condition(user: str) -> str:
+    """
+    Chat is personal, not just Company-scoped: two staff at the same
+    Company must not read each other's conversations (PRD chat
+    architecture, "Un utilisateur non autorisé ne peut pas ouvrir une
+    session..."). Combines the standard Company filter with a
+    user == frappe.session.user check, bypassed only for System
+    Manager/Cortex System Manager (support/audit access, same
+    convention as require_agent_scope's escape hatch elsewhere).
+    """
+    if not frappe:
+        return ""
+
+    if (
+        user == "Administrator"
+        or "System Manager" in frappe.get_roles(user)
+        or "Cortex System Manager" in frappe.get_roles(user)
+    ):
+        return ""
+
+    allowed = get_allowed_companies(user)
+    if not allowed:
+        return "1=0"
+
+    companies = ", ".join(frappe.db.escape(c) for c in allowed)
+    escaped_user = frappe.db.escape(user)
+    return f"`tabCortex Chat Session`.`company` in ({companies}) and `tabCortex Chat Session`.`user` = {escaped_user}"
+
+
+def cortex_chat_session_query_conditions(user: str) -> str:
+    return _own_chat_session_condition(user)
+
+
+def _own_chat_child_condition(user: str, doctype: str) -> str:
+    """Same ownership rule as _own_chat_session_condition, applied via a
+    subquery for doctypes that link to Cortex Chat Session rather than
+    carrying `user` directly (Cortex Chat Message, Cortex Chat Context
+    Snapshot)."""
+    if not frappe:
+        return ""
+
+    if (
+        user == "Administrator"
+        or "System Manager" in frappe.get_roles(user)
+        or "Cortex System Manager" in frappe.get_roles(user)
+    ):
+        return ""
+
+    allowed = get_allowed_companies(user)
+    if not allowed:
+        return "1=0"
+
+    companies = ", ".join(frappe.db.escape(c) for c in allowed)
+    escaped_user = frappe.db.escape(user)
+    return (
+        f"`tab{doctype}`.`company` in ({companies}) and `tab{doctype}`.`chat_session` in "
+        f"(select name from `tabCortex Chat Session` where user = {escaped_user})"
+    )
+
+
+def cortex_chat_message_query_conditions(user: str) -> str:
+    return _own_chat_child_condition(user, "Cortex Chat Message")
+
+
+def cortex_chat_context_snapshot_query_conditions(user: str) -> str:
+    return _own_chat_child_condition(user, "Cortex Chat Context Snapshot")

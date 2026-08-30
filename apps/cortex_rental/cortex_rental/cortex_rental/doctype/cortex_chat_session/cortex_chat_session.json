@@ -1,0 +1,166 @@
+{
+  "actions": [],
+  "autoname": "format:CCHAT-{YYYY}-{#####}",
+  "creation": "2026-08-30 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "user",
+    "agent_profile",
+    "onyx_chat_session_id",
+    "locale",
+    "state",
+    "pinned_context",
+    "last_context_hash",
+    "started_at",
+    "last_message_at",
+    "retention_until"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "description": "Resolved server-side via get_company_context() — never accepted from the client, same invariant as every other Company field in this app."
+    },
+    {
+      "fieldname": "user",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "User",
+      "options": "User",
+      "reqd": 1,
+      "description": "Always frappe.session.user at creation time — a session belongs to exactly one human identity, never chosen or impersonated via the API."
+    },
+    {
+      "fieldname": "agent_profile",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Agent Profile",
+      "reqd": 1,
+      "description": "Resolved server-side by AgentRouter from the page context (e.g. cortex-availability, cortex-intake) — never a client-supplied choice. See services/agent_router.py."
+    },
+    {
+      "fieldname": "onyx_chat_session_id",
+      "fieldtype": "Data",
+      "label": "Onyx Chat Session ID",
+      "description": "The upstream Onyx session id, once a real Onyx backend is connected. Empty/mocked while OnyxChatClient is MockOnyxChatClient (see HANDOFF.md)."
+    },
+    {
+      "default": "fr-CA",
+      "fieldname": "locale",
+      "fieldtype": "Select",
+      "label": "Locale",
+      "options": "fr-CA\nen-CA",
+      "reqd": 1
+    },
+    {
+      "default": "Active",
+      "fieldname": "state",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "State",
+      "options": "Active\nClosed"
+    },
+    {
+      "fieldname": "pinned_context",
+      "fieldtype": "Link",
+      "label": "Pinned Context Snapshot",
+      "options": "Cortex Chat Context Snapshot",
+      "description": "Set by chat.pin_context, cleared by chat.clear_context. When set, this snapshot's context is used instead of whatever the client's next message sends."
+    },
+    {
+      "fieldname": "last_context_hash",
+      "fieldtype": "Data",
+      "label": "Last Context Hash",
+      "description": "sha256 of the last resolved context — lets the frontend detect a stale/changed context without re-sending the full payload."
+    },
+    {
+      "fieldname": "started_at",
+      "fieldtype": "Datetime",
+      "label": "Started At",
+      "reqd": 1
+    },
+    {
+      "fieldname": "last_message_at",
+      "fieldtype": "Datetime",
+      "label": "Last Message At"
+    },
+    {
+      "fieldname": "retention_until",
+      "fieldtype": "Datetime",
+      "label": "Retention Until",
+      "description": "Not populated by any job in this pass — no retention/deletion policy is implemented yet. A real value here today would be a fabricated guarantee; left null until that job exists (tracked in HANDOFF.md)."
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex Chat Session",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "read": 1,
+      "role": "System Manager",
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Cortex Operations Manager",
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Cortex Counter Staff",
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Cortex Inventory Manager",
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Cortex Finance Manager",
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Cortex Consignment Manager",
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Cortex Account Reviewer",
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Rental Manager",
+      "write": 1
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Rental Operator",
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1
+}
