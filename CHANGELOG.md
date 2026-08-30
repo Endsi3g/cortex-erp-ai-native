@@ -346,5 +346,5 @@ tags, or config keys were guessed:
   PR description to reference a canonical PRD tag
   (`PRD-ARCH`/`PRD-NFR`/`PRD-TRX`/etc.), which the original description
   didn't include despite covering all of them.
-- First tagged release created: see the repo's Releases page for notes
-  (mirrors this changelog's summary).
+- First tagged release: [v0.1.0](https://github.com/Endsi3g/cortex-erp-ai-native/releases/tag/v0.1.0)
+  (notes mirror this changelog's summary).
