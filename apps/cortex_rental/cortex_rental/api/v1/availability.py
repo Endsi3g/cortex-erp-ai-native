@@ -84,9 +84,7 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     )
     if search:
         profiles = [
-            p
-            for p in profiles
-            if search in (p.item_name or "").lower() or search in (p.item_code or "").lower()
+            p for p in profiles if search in (p.item_name or "").lower() or search in (p.item_code or "").lower()
         ]
 
     item_codes = [p.item_code for p in profiles]
@@ -94,9 +92,7 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     fleet_by_item: Dict[str, float] = {}
     for p in profiles:
         if p.is_serialized:
-            fleet_by_item[p.item_code] = frappe.db.count(
-                "Serial No", {"company": company, "item_code": p.item_code}
-            )
+            fleet_by_item[p.item_code] = frappe.db.count("Serial No", {"company": company, "item_code": p.item_code})
         else:
             fleet_by_item[p.item_code] = float(p.total_quantity or 0)
 
