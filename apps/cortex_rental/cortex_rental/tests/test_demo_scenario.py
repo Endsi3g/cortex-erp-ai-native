@@ -1,7 +1,7 @@
 import unittest
 from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.transaction_state import TransactionStateService
-from cortex_rental.api.v1.quotes import create_draft_handler
+from cortex_rental.api.v1.quotes import create_draft_handler, preview_pricing_handler
 from cortex_rental.api.v1.availability import check_availability_handler, get_matrix_handler
 from cortex_rental.api.v1.approvals import submit_approval_handler
 from cortex_rental.api.v1.consignment import prepare_owner_statement_handler
@@ -35,6 +35,40 @@ class TestCortexDemoScenario(unittest.TestCase):
         self.assertFalse(result["customer_account_ready"])
         self.assertFalse(result["insurance_ready"])
         self.assertFalse(result["payment_ready"])
+
+    def test_preview_pricing_matches_create_draft_math_without_persisting(self):
+        # Same inputs, same PricingService calls as
+        # test_step_1_and_2_agent_creates_quote_draft above — preview_pricing
+        # must compute the identical total, since the Transaction
+        # Composer's live preview has to agree with what create_quote_draft
+        # actually charges once submitted.
+        payload = {
+            "starts_at": self.starts_at,
+            "ends_at": self.ends_at,
+            "lines": [{"item_id": "itm-alexa-35-pkg", "quantity": 3, "unit_rate": 1500.00}],
+        }
+        result = preview_pricing_handler(payload, self.company)
+        self.assertEqual(result["calendar_days"], 7)
+        self.assertEqual(result["billable_days"], 3.0)
+        self.assertEqual(result["total"], "13500.00")
+
+    def test_preview_pricing_requires_date_window(self):
+        with self.assertRaises(ValueError):
+            preview_pricing_handler({"starts_at": self.starts_at}, self.company)
+
+    def test_preview_pricing_missing_unit_rate_defaults_to_zero_not_fabricated_rate(self):
+        # create_draft_handler defaults a missing unit_rate to 100.0 (a
+        # pre-existing behavior, not changed here) — preview_pricing
+        # deliberately does not inherit that: a live preview silently
+        # showing a fake $100/day rate would be worse than an honest $0.
+        payload = {
+            "starts_at": self.starts_at,
+            "ends_at": self.ends_at,
+            "lines": [{"item_id": "itm-no-rate-set", "quantity": 1}],
+        }
+        result = preview_pricing_handler(payload, self.company)
+        self.assertEqual(result["total"], "0.00")
+        self.assertEqual(result["lines"][0]["unit_rate"], 0.0)
 
     def test_step_4_availability_check(self):
         payload = {

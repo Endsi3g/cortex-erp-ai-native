@@ -768,3 +768,73 @@ missing, the listener leaks rather than crashing the panel.
 **Not done** (still tracked in `HANDOFF.md`): everything from the
 eighth wave's remaining list — streaming, wiring proposals to a real
 Transaction Composer, and a real Onyx client.
+
+---
+
+## Tenth wave — Cortex Transaction Composer
+
+**Problem.** Continuation of the screen-by-screen build, per the
+design spec's own explicit priority order (Disponibilité, then
+Composer, then Check-in — Disponibilité and the Copilot Assistant were
+already done). `/app/cortex-transaction-composer`: customer search/
+create, item search, live pricing, live per-line availability, real
+quote creation.
+
+**Almost entirely built on existing backend** — `search_customers`,
+`create_customer_draft`, `search_items`, `check_availability`, and
+`create_quote_draft` all already existed (from earlier waves/the
+original Gemini scaffold) and are gated by `require_agent_scope`,
+which already grants access to any `HUMAN_STAFF_ROLES` member — no new
+permission plumbing needed, just a real caller.
+
+**One new endpoint**: `api/v1/quotes.py::preview_pricing` — a
+read-only twin of the existing `create_draft_handler`, same
+`PricingService` calls, nothing persisted. Added because the design
+system explicitly forbids computing price in JavaScript ("Le prix est
+présenté comme résultat du PricingService, pas comme calcul
+frontend") — there was no honest way to show a live price preview
+while composing without it. Unlike `create_draft_handler`, a missing
+`unit_rate` defaults to `0.0`, not a fabricated `100.0` — a live
+preview silently showing a fake $100/day would be worse than an
+obviously-wrong $0.
+
+**One real bug fix bundled in**: `create_quote_draft`'s `lines`
+argument now gets `frappe.parse_json()`'d when it arrives as a string
+— how a browser's `frappe.call()` form-encodes a nested array. This
+endpoint had previously only ever been called with a real Python list
+(MCP, tests), so this path was untested until a browser caller
+actually needed it; it would have silently corrupted every quote a
+human created through this page otherwise (iterating a JSON string's
+characters instead of its line objects).
+
+**Explicitly not built, and explained why in
+`docs/frontend/transaction-composer.md`** rather than left ambiguous:
+serial number auto-assignment (a Quote never blocks inventory —
+serials are only claimed at Reservation confirmation, so building this
+on the Composer would imply a guarantee this state doesn't make),
+customer-tier automatic discounts (no such logic exists in
+`PricingService`), and a readiness indicator during composition
+(`create_draft_handler` always returns all three readiness flags
+`false` — nothing computes real readiness before the transaction
+exists; shown honestly on the real Form after creation instead).
+
+**Added.**
+- `cortex_rental/page/cortex_transaction_composer/` +
+  `public/js/cortex_transaction_composer/`: the page, same verified
+  Vue-in-a-Desk-Page pattern as every other Cortex screen.
+- `public/js/cortex_shared/dateUtils.js`: `fmtDateTime`/`addDays`
+  extracted from `CortexAvailability.vue` once a second page needed the
+  exact same helper — not introduced speculatively.
+- Availability's "+ Créer une soumission" now routes to the Composer
+  via `frappe.route_options` (the real Frappe cross-page handoff
+  pattern) instead of the raw native `frappe.new_doc()` form it used
+  before this page existed.
+- Workspace: added a "Nouvelle transaction" shortcut, positioned right
+  after Disponibilité to match the priority order.
+- 3 new tests (`test_demo_scenario.py`): `preview_pricing` matches
+  `create_draft_handler`'s math exactly, requires a date window, and
+  defaults a missing rate to `0.0` rather than a fabricated value.
+
+**Not done in this pass** (tracked in `HANDOFF.md`): accessory/kit
+suggestions, free-text lines, and permission-gated line-level discount
+overrides (this pass's discount field has no permission check at all).
