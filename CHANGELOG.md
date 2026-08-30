@@ -732,3 +732,39 @@ screen.
 context editor drawer, no live reactivity to Desk navigation while the
 panel stays open, and still no real Onyx client underneath any of this
 — every response rendered here comes from `MockOnyxChatClient`.
+
+---
+
+## Ninth wave — Copilot panel: context editor + live route reactivity
+
+**Problem.** Two items disclosed as "not built" at the end of the
+eighth wave, picked up as a direct continuation: a real context editor
+(not a fake one) and live context reactivity as the user navigates
+Desk while the panel stays open.
+
+**Verified before writing**: `frappe.router.on('change', ...)` is the
+current, real Frappe client event for route changes — cross-checked
+against a current forum answer, deliberately not the older
+`frappe.route.on(...)` form that also turns up in search results (a
+pre-2018, since-refactored API). `frappe.router.off(...)` is called
+symmetrically on unmount but only behind a truthiness guard, since its
+existence wasn't independently confirmed the way `.on()` was — if
+missing, the listener leaks rather than crashing the panel.
+
+**Added.**
+- `CortexCopilotPanel.vue`: `frappe.router.on('change', ...)` keeps the
+  context bar (and the next message's payload) in sync with Desk
+  navigation, without touching any already-sent message.
+- `CopilotContextBar.vue`: a real "Modifier le contexte" toggle —
+  scoped honestly to the one field this app actually resolves (whether
+  the currently open document is included in the next message). No
+  checkboxes for "item sélectionné"/"documents ajoutés" from the
+  original mockup — nothing produces that selection state in this app
+  yet, so no control that would silently do nothing.
+- The share/don't-share choice resets to "shared" whenever the
+  referenced document itself changes (a per-message decision, not a
+  sticky preference that should carry over onto an unrelated document).
+
+**Not done** (still tracked in `HANDOFF.md`): everything from the
+eighth wave's remaining list — streaming, wiring proposals to a real
+Transaction Composer, and a real Onyx client.

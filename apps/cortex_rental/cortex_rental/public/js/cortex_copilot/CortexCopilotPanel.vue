@@ -24,9 +24,29 @@ const messages = ref([]);
 const sending = ref(false);
 const chatSessionId = ref(null);
 const context = ref(resolveDeskContext());
+// Whether the currently-open document (context.active_doctype/name) is
+// included in the next message — the one real toggle in
+// CopilotContextBar's "Modifier le contexte" editor. Resets to true
+// whenever the referenced document itself changes: this is a
+// per-message decision, not a sticky preference that should silently
+// carry over onto an unrelated document.
+const shareReference = ref(true);
 const composerRef = ref(null);
 const launcherRef = ref(null);
 let resizing = false;
+
+function setContext(next) {
+	if (next.active_document_name !== context.value.active_document_name) {
+		shareReference.value = true;
+	}
+	context.value = next;
+}
+
+function outgoingContext() {
+	if (shareReference.value || !context.value.active_doctype) return context.value;
+	const { active_doctype, active_document_name, ...rest } = context.value;
+	return rest;
+}
 
 function readStoredWidth() {
 	try {
@@ -40,7 +60,7 @@ function readStoredWidth() {
 
 function open(focusComposer) {
 	isOpen.value = true;
-	context.value = resolveDeskContext();
+	setContext(resolveDeskContext());
 	if (focusComposer) {
 		nextTick(() => {
 			const el = document.querySelector(".cp-composer-input");
@@ -72,10 +92,10 @@ function pushMessage(msg) {
 async function handleSend(text) {
 	pushMessage({ role: "user", text });
 	sending.value = true;
-	context.value = resolveDeskContext();
+	setContext(resolveDeskContext());
 
 	try {
-		const response = await sendMessage(text, context.value, chatSessionId.value);
+		const response = await sendMessage(text, outgoingContext(), chatSessionId.value);
 		chatSessionId.value = response.chat_session_id || chatSessionId.value;
 		pushMessage({ role: "assistant", blocks: response.blocks || [] });
 	} catch (err) {
@@ -128,15 +148,33 @@ function onKeydown(e) {
 	}
 }
 
+// ---- Live context reactivity while the panel stays open ----
+// frappe.router.on('change', ...) is a real, documented Frappe client
+// event (verified before use — see CHANGELOG.md, ninth wave) — not the
+// same thing as frappe.route.on, an older/deprecated form found in
+// some pre-2018 references that was not used here. Only updates the
+// *displayed* context bar / next-send payload; it never touches an
+// in-flight or already-sent message.
+function onRouteChange() {
+	if (props.mode === "floating" && !isOpen.value) return;
+	setContext(resolveDeskContext());
+}
+
 onMounted(() => {
 	window.addEventListener("keydown", onKeydown);
 	window.addEventListener("mousemove", onResizeMove);
 	window.addEventListener("mouseup", stopResize);
+	if (typeof frappe !== "undefined" && frappe.router && frappe.router.on) {
+		frappe.router.on("change", onRouteChange);
+	}
 });
 onBeforeUnmount(() => {
 	window.removeEventListener("keydown", onKeydown);
 	window.removeEventListener("mousemove", onResizeMove);
 	window.removeEventListener("mouseup", stopResize);
+	if (typeof frappe !== "undefined" && frappe.router && frappe.router.off) {
+		frappe.router.off("change", onRouteChange);
+	}
 });
 
 const panelStyle = computed(() =>
@@ -166,7 +204,11 @@ const panelStyle = computed(() =>
 				@close="close"
 				@detach="detach"
 			/>
-			<CopilotContextBar :context="context" />
+			<CopilotContextBar
+				:context="context"
+				:share-reference="shareReference"
+				@update:share-reference="shareReference = $event"
+			/>
 			<CopilotQuickActions :page="context.page" :disabled="sending" @run="handleSend" />
 			<CopilotConversation :messages="messages" :sending="sending" @continue="handleContinue" @retry="handleRetry" />
 			<CopilotComposer ref="composerRef" :disabled="sending" @send="handleSend" />

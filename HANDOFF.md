@@ -188,6 +188,16 @@ j'ai besoin que tu me rapportes en plus de ce qui est déjà demandé en
    `docs/frontend/copilot-panel.md`, mais chaque bench a sa propre
    configuration esbuild).
 
+**Neuvième vague (même branche `feat/copilot-panel`)** : les deux
+éléments explicitement laissés de côté ci-dessus sont maintenant faits
+— éditeur de contexte réel (un seul vrai bouton : inclure/exclure le
+document actuellement ouvert) et réactivité live via
+`frappe.router.on('change', ...)` (vérifié comme l'API courante, pas
+l'ancienne `frappe.route.on` trouvée dans certains résultats de
+recherche pré-2018). Détail : `CHANGELOG.md`, neuvième vague. Rien de
+nouveau à valider sur la tour au-delà de ce qui est déjà demandé
+ci-dessus — mêmes fichiers, mêmes commandes.
+
 ## 4. Onyx — décision actée et implémentée : self-hosted + widget intégré
 
 **Décision (2026-08-30)** : Onyx est déployé **self-hosted** (pas Onyx
@@ -213,8 +223,6 @@ Une vraie clé `GEMINI_API_KEY` a été collée en clair dans le chat par l'util
 | Item | Pourquoi ce n'est pas fait | Effort estimé |
 |---|---|---|
 | **Confirmer que le panneau Copilot s'ouvre/fonctionne réellement sur la tour** | Écrit et syntaxiquement vérifié ici, jamais ouvert dans un navigateur — voir §3 (sous-section "Panneau Cortex Copilot") pour ce qu'il faut rapporter | Quelques minutes une fois `bench build` fait |
-| Éditeur de contexte ("Modifier le contexte") dans la barre de contexte | Pas construit dans cette passe — la barre est en lecture seule | 0.5-1 jour |
-| Réactivité du contexte à la navigation Desk pendant que le panneau reste ouvert | Le contexte est recalculé à l'ouverture et avant chaque envoi, pas en continu — aucun événement Frappe de changement de route vérifié à faible risque trouvé pour cette passe | 0.5 jour une fois l'API confirmée |
 | Brancher `CopilotProposalCard`/`CopilotApprovalCard` sur un vrai Composer/file d'approbation | Ces écrans n'existent pas encore — les boutons relancent la conversation réelle ou naviguent vers le Form `Approval Request` existant à la place | Dépend de la construction du Composer/de la file d'approbation |
 | Client Onyx réel (remplacer `MockOnyxChatClient`) | Aucun Onyx déployé dans cet environnement (§4) — `OnyxChatClient` est une interface prête à recevoir une vraie implémentation HTTP | 0.5-1 jour une fois Onyx accessible |
 | Outil MCP en lecture seule pour transaction/check-in/approbation | `ToolPolicyResolver` donne une liste d'outils vide à `cortex-returns`/`cortex-approval-assistant` faute d'un tool `search`/`read` réel dans `cortex-mcp` — ces agents ne peuvent rien faire tant que ça n'existe pas | 0.5-1 jour par outil |

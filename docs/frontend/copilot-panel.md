@@ -57,6 +57,19 @@ of the `HUMAN_STAFF_ROLES` (a client-side courtesy only — the server
 gate is `require_human_staff_role()` on every endpoint in
 `api/v1/chat.py`, unaffected by whether this check runs or is accurate).
 
+## Live context reactivity — `frappe.router.on`, not `frappe.route.on`
+
+`CortexCopilotPanel.vue` listens for `frappe.router.on('change', ...)`
+to keep the context bar (and the next message's payload) in sync as the
+user navigates while the panel stays open. Verified against a current
+(not archived) Frappe forum answer before use — an older, pre-2018
+form, `frappe.route.on(...)`, shows up in some search results and was
+deliberately not used. `frappe.router.off(...)` is called symmetrically
+on unmount but only behind a truthiness check
+(`frappe.router && frappe.router.off`) rather than assumed present,
+since its existence wasn't independently confirmed the way `.on()` was
+— if it's missing, the listener leaks on unmount instead of crashing.
+
 ## What's real vs. disclosed simplification
 
 | Behavior | Status |
@@ -66,8 +79,8 @@ gate is `require_human_staff_role()` on every endpoint in
 | Context resolution (`resolveDeskContext()`) | Real for `Form` routes and `/app/cortex-availability`; falls back to `dashboard` for every other route (Check-in/Consignment/Approvals pages don't exist yet) |
 | Quick actions | Only defined for pages `resolveDeskContext()` can actually produce — no button pretends a not-yet-built screen exists |
 | Proposal (`CopilotProposalCard`) / Approval (`CopilotApprovalCard`) primary actions | Proposal's button re-sends its own title as the next chat message (a real round-trip through the real pipeline) — there is no Transaction Composer yet to open prefilled. Approval's button navigates to the real `Approval Request` Frappe Form (`frappe.set_route`), which does exist today. Neither fabricates a mutation that isn't actually wired. |
-| Context bar "Modifier le contexte" editor | **Not built.** The bar is read-only in this pass — no drawer for toggling which context is shared. |
-| Live context reactivity while the panel stays open across navigation | **Not built.** Context is recomputed when the panel opens and before each send, not on every route change — no verified low-risk Frappe router-change event was used for this pass (disclosed rather than guessed at). |
+| Context bar "Modifier le contexte" editor | Real, but scoped to the one field this app actually resolves: a checkbox to include/exclude the currently open document (`active_doctype`/`active_document_name`) from the next message. No checkboxes for "item sélectionné"/"documents ajoutés" — nothing produces that selection state yet, so no fake toggle for it. |
+| Live context reactivity while the panel stays open across navigation | Real — `frappe.router.on('change', ...)` (verified real/current API, see ninth wave) recomputes the context bar as the user navigates, without touching any already-sent message. |
 | Panel width persistence | Plain `localStorage` per browser (not per Frappe user profile) — a real per-viewer convenience, not a synced preference. |
 | Streaming responses | **Not built.** `send_message` is a single request/response call, matching the backend's current synchronous implementation (seventh wave). |
 | Dark mode | Inherits the design system's light-mode-only state (fifth/sixth wave) — untested in dark. |
@@ -91,7 +104,6 @@ gate is `require_human_staff_role()` on every endpoint in
 
 ## Not done in this pass
 
-Tracked in `HANDOFF.md`: streaming, a real context editor, live route-
-change reactivity, wiring proposals to an actual Transaction Composer
-once one exists, and a real Onyx client to replace the mock this panel
-is currently, honestly, talking to.
+Tracked in `HANDOFF.md`: streaming, wiring proposals to an actual
+Transaction Composer once one exists, and a real Onyx client to replace
+the mock this panel is currently, honestly, talking to.
