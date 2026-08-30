@@ -105,6 +105,18 @@ class TestCortexDemoScenario(unittest.TestCase):
         self.assertNotIn("customer_email", snapshot)
         self.assertNotIn("Dune 3 Productions", str(snapshot))
 
+    def test_step_7b_approval_resolves_target_state_from_proposed_payload(self):
+        req = ApprovalRequest()
+        req.action = "rental.quote.transition_to_reservation"
+        req.proposed_payload = {"rental_state": "Reservation"}
+        self.assertEqual(req._resolve_target_rental_state(), "Reservation")
+
+    def test_step_7c_approval_resolves_target_state_from_action_name_fallback(self):
+        req = ApprovalRequest()
+        req.action = "rental.quote.transition_to_checked_out"
+        req.proposed_payload = None
+        self.assertEqual(req._resolve_target_rental_state(), "Checked Out")
+
     def test_audit_event_immutability(self):
         event = AuditEvent()
         event.name = "AUDIT-001"

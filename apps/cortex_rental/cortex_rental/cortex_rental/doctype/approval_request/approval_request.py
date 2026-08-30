@@ -34,11 +34,9 @@ class ApprovalRequest(Document):
             self.decided_at = frappe.utils.now_datetime()
             self.save()
 
-            # Execute transaction mutation if entity is Sales Order
-            if self.entity_type == "Sales Order" and self.action == "rental.quote.transition_to_reservation":
-                so = frappe.get_doc("Sales Order", self.entity_id)
-                so.custom_rental_state = "Reservation"
-                so.save()
+            # Execute the approved mutation now, as the authenticated human
+            # approver — never deferred to a later, unaudited step.
+            self._execute_approved_action()
 
             log_audit_event(
                 company=self.company,
@@ -51,6 +49,46 @@ class ApprovalRequest(Document):
             )
         else:
             self.status = "Approved"
+
+    def _execute_approved_action(self):
+        """
+        Perform the actual business mutation this request was approved
+        for. Re-derives the target state from the structured
+        `proposed_payload` (preferred) or the `action` identifier, then
+        calls `transition_to()` so the same state-machine preconditions
+        (customer account, insurance, payment) and audit trail apply as
+        any other transition — approval never bypasses them.
+        """
+        if not frappe:
+            return
+
+        if self.entity_type == "Cortex Rental Transaction":
+            target_state = self._resolve_target_rental_state()
+            if not target_state:
+                return
+            txn = frappe.get_doc("Cortex Rental Transaction", self.entity_id)
+            txn.transition_to(target_state, reason=f"Approved via {self.name}")
+
+        elif self.entity_type == "Sales Order" and self.action == "rental.quote.transition_to_reservation":
+            so = frappe.get_doc("Sales Order", self.entity_id)
+            so.custom_rental_state = "Reservation"
+            so.save()
+
+    def _resolve_target_rental_state(self) -> Optional[str]:
+        proposed = self.proposed_payload
+        if proposed:
+            try:
+                proposed = json.loads(proposed) if isinstance(proposed, str) else proposed
+            except (ValueError, TypeError):
+                proposed = None
+            if isinstance(proposed, dict) and proposed.get("rental_state"):
+                return proposed["rental_state"]
+
+        if self.action and "transition_to_" in self.action:
+            suffix = self.action.rsplit("transition_to_", 1)[-1]
+            return suffix.replace("_", " ").title()
+
+        return None
 
     def reject(self, reason: str):
         if not reason or not reason.strip():
