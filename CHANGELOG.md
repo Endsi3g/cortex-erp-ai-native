@@ -348,3 +348,47 @@ tags, or config keys were guessed:
   didn't include despite covering all of them.
 - First tagged release: [v0.1.0](https://github.com/Endsi3g/cortex-erp-ai-native/releases/tag/v0.1.0)
   (notes mirror this changelog's summary).
+
+---
+
+## Fourth wave — README overclaim corrections (external review)
+
+An external review of `README.md` (after v0.1.0) correctly flagged
+several statements that were too strong for a codebase that has never
+run against a live Frappe bench, plus a few real ambiguities. All
+addressed directly in `README.md`, not just noted:
+
+- Removed the "garantit zéro surréservation" claim — replaced with
+  "conçu pour prévenir", matching what's actually been validated (unit
+  tests in mock mode, no live concurrency test).
+- The architecture diagram's "Authentification / Token + X-Company"
+  block was genuinely ambiguous — could read as if the header
+  authenticates. Split into separate Auth / Authz / Tenant-resolution
+  lines matching what Phase 1 actually built.
+- `Cortex Rental Transaction`'s `Closed` state clarified as operational,
+  not financial — there is in fact no `erpnext_sales_invoice` link
+  field yet, so this is a real, now-documented gap (added to
+  `HANDOFF.md`'s open items), not just a wording fix.
+- The Redis/Valkey lock description upgraded from "verrou atomique" to
+  an accurate description of what it actually does: per-`item_code`
+  (not per-`serial_no`) coordination + a re-check before write, with no
+  MariaDB `SELECT ... FOR UPDATE` layered under it yet (ADR-002 already
+  said this; the README didn't reflect it).
+- `Audit Event`"append-only immuable" softened to "append-only
+  applicatif" with the concrete gap named (`frappe.db.set_value()`,
+  direct SQL, bench console, System Manager break-glass access aren't
+  covered by the DocType hooks) — tracked as a new open item
+  **PRD-ARCH-AUD-001** in `HANDOFF.md`.
+- The Onyx widget integration marked "expérimental / à valider en
+  staging" in both places it's mentioned, rather than implying it's a
+  stable, verified integration.
+- Added a "Statut de maturité" table (implemented vs. validated vs.
+  proven-under-load, per domain) and a "before any pilot" checklist,
+  both linking to `HANDOFF.md` rather than duplicating it.
+- New `docs/compatibility-matrix.md`: the actual pinned vs. unpinned
+  versions across the repo (Frappe/ERPNext are genuinely unpinned —
+  `bench init --frappe-branch version-15` selects a branch, not a
+  patch — and cortex-mcp's three Python version references
+  (`pyproject.toml` `>=3.10`, Dockerfile `3.12-slim`, ruff `py311`)
+  aren't aligned). Written from what the config files actually say, not
+  guessed.

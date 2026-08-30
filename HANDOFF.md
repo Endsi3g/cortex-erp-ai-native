@@ -80,6 +80,9 @@ Une vraie clé `GEMINI_API_KEY` a été collée en clair dans le chat par l'util
 | Vérifier `onyx_widget_script_url` contre un vrai déploiement self-hosted | Page/décision implémentées (§3), mais le chemin exact du bundle JS n'est pas confirmé — supposition raisonnable non testée | 15 min une fois Onyx déployé |
 | `docs/07-frappe-erpnext-implementation-guide.md` | Documente une conception antérieure obsolète ; juste flaggé, pas réécrit | 0.5-1 jour |
 | Décision 1 site/client vs multi-Company partagé | Phase 1 a rendu le modèle partagé sûr, mais la recommandation initiale (1 site = 1 client pour le pilote) reste le choix le plus prudent | Décision, pas du code |
+| **PRD-ARCH-AUD-001** — durcir l'immutabilité de `Cortex Audit Event` au-delà de `before_save`/`on_trash` | Ces hooks protègent le chemin DocType normal, pas `frappe.db.set_value()`/`frappe.db.sql()` direct, la console bench, ni un accès `System Manager`. Retirer write/delete de tous les rôles applicatifs, bloquer les routes génériques pour ce DocType, journaliser les exports, tester les chemins de contournement, définir un accès break-glass documenté, définir archivage/rétention | 1-2 jours + tests sur bench réel |
+| Lien `Cortex Rental Transaction` → `Sales Invoice`/`Payment Entry` ERPNext | `Closed` est un état opérationnel sans lien vers la facture réelle aujourd'hui — pas de champ `erpnext_sales_invoice` | 0.5-1 jour |
+| `docs/tenant-isolation.md`, `docs/agent-permission-matrix.md` | Suggérés par la revue README — pas créés dans cette passe pour ne pas gonfler le scope au-delà de ce qui était demandé (corriger le README) ; le contenu existe déjà dispersé dans `agent_scopes.py`, `permissions/__init__.py` et ce handoff | 0.5 jour pour les consolider |
 
 ## 6. Comment reprendre ce travail
 
