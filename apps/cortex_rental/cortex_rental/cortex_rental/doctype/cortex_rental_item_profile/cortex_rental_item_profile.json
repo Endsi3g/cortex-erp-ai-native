@@ -1,0 +1,100 @@
+{
+  "name": "Cortex Rental Item Profile",
+  "doctype": "DocType",
+  "module": "Cortex Rental",
+  "custom": 0,
+  "autoname": "format:{item_code}-RENTAL",
+  "naming_rule": "Expression",
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "item_code",
+      "fieldtype": "Link",
+      "label": "ERPNext Item Code",
+      "options": "Item",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "item_name",
+      "fieldtype": "Data",
+      "label": "Item Name",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Select",
+      "label": "Rental Category",
+      "options": "Camera Bodies\nCinema Lenses\nLighting\nGrip & Rigging\nAudio\nMonitors & Wireless Video\nPower & Batteries",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "daily_rate",
+      "fieldtype": "Currency",
+      "label": "Base Daily Rate ($)",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "replacement_value",
+      "fieldtype": "Currency",
+      "label": "Replacement Value ($)",
+      "reqd": 1
+    },
+    {
+      "fieldname": "deposit_required",
+      "fieldtype": "Currency",
+      "label": "Required Security Deposit ($)",
+      "default": "0.0"
+    },
+    {
+      "fieldname": "prep_hours",
+      "fieldtype": "Float",
+      "label": "Prep / Turnaround Hours",
+      "default": "2.0"
+    },
+    {
+      "fieldname": "is_consignment_allowed",
+      "fieldtype": "Check",
+      "label": "Allow Third-Party Consignment",
+      "default": "1"
+    },
+    {
+      "fieldname": "required_accessories",
+      "fieldtype": "Small Text",
+      "label": "Mandatory Kit Accessories (JSON / Comma-separated)"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    },
+    {
+      "role": "Rental Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    },
+    {
+      "role": "Rental Operator",
+      "read": 1,
+      "write": 1,
+      "create": 0,
+      "delete": 0
+    },
+    {
+      "role": "Agent Service Account",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "delete": 0
+    }
+  ]
+}

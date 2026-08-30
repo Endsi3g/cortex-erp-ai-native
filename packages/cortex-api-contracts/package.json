@@ -1,0 +1,7 @@
+{
+  "name": "@cortex/api-contracts",
+  "version": "1.0.0",
+  "description": "OpenAPI Specifications and Contracts for Cortex ERP",
+  "main": "openapi/openapi-onyx-agent.yaml",
+  "license": "proprietary"
+}

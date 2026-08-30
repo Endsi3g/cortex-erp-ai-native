@@ -1,0 +1,24 @@
+# ==============================================================================
+# CORTEX ERP AI-NATIVE — FRAPPE BENCH DEVELOPMENT DOCKERFILE
+# ==============================================================================
+FROM frappe/bench:v15.0.0
+
+USER root
+
+# Install system prerequisites for PostgreSQL and build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client \
+    libpq-dev \
+    gcc \
+    python3-dev \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+USER frappe
+
+WORKDIR /home/frappe/frappe-bench
+
+EXPOSE 8000 9000 8008
+
+CMD ["bench", "start"]

@@ -1,0 +1,58 @@
+name: Tache de Developpement PRD
+description: Creer un ticket de travail aligne sur une exigence PRD officielle du projet Cortex.
+title: "[PRD-XXX]: "
+labels: ["enhancement", "prd-task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Nouveau Ticket de Developpement Cortex ERP
+        Tout ticket de developpement doit etre relie a un PRD ID et suivre le cycle de workflow Gemini -> Claude.
+
+  - type: dropdown
+    id: prd_id
+    attributes:
+      label: PRD Referent Obligatoire
+      description: Choisissez l'identifiant PRD auquel se rattache cette tache.
+      options:
+        - "PRD-ARCH : Architecture API-first, policies communes, journal d'audit"
+        - "PRD-CON : Consignation et commissions proprietaires"
+        - "PRD-INV : Inventaire, verrous et calcul de disponibilite"
+        - "PRD-TRX : Transactions de location et facturation"
+        - "PRD-CLI : Gestion des clients et onboarding"
+        - "PRD-RET : Retours d'equipements et check-in"
+        - "PRD-AI : Agents Onyx et outils MCP"
+        - "PRD-MIG : Migration et import de donnees legacy"
+        - "PRD-NFR : Exigences non fonctionnelles, securite multi-tenant"
+    validations:
+      required: true
+
+  - type: input
+    id: branch_name
+    attributes:
+      label: Nom de branche cible
+      description: Format recommande : feat/PRD-XXX-001-description
+      placeholder: feat/PRD-CON-003-payout-generation
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objectif & Perimetre
+      description: Decrivez precisement ce qui doit etre genere ou modifie.
+      placeholder: Implementer le service de calcul de reversement consignataire...
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_negotiables
+    attributes:
+      label: Contraintes & Regles Inviolables
+      description: Rappelez les contraintes multi-tenant, policies ou verrous applicables.
+      value: |
+        - [ ] Multi-tenant strict (scope par company_id)
+        - [ ] Journal d'audit systematique sur mutation
+        - [ ] Tests Pest associes fournis
+    validations:
+      required: true

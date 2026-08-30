@@ -1,0 +1,115 @@
+{
+  "actions": [],
+  "autoname": "hash",
+  "creation": "2026-08-29 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "PostgreSQL",
+  "field_order": [
+    "company",
+    "actor_type",
+    "actor_id",
+    "action",
+    "entity_type",
+    "entity_id",
+    "request_id",
+    "before_state",
+    "after_state",
+    "evidence",
+    "policy_decision"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "actor_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Actor Type",
+      "options": "Human\nAgent\nSystem",
+      "reqd": 1
+    },
+    {
+      "fieldname": "actor_id",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Actor ID",
+      "reqd": 1
+    },
+    {
+      "fieldname": "action",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Action",
+      "reqd": 1
+    },
+    {
+      "fieldname": "entity_type",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Entity Type",
+      "reqd": 1
+    },
+    {
+      "fieldname": "entity_id",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Entity ID",
+      "reqd": 1
+    },
+    {
+      "fieldname": "request_id",
+      "fieldtype": "Data",
+      "label": "Request ID"
+    },
+    {
+      "fieldname": "before_state",
+      "fieldtype": "Code",
+      "label": "Before State (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "after_state",
+      "fieldtype": "Code",
+      "label": "After State (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "evidence",
+      "fieldtype": "Code",
+      "label": "Evidence (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "policy_decision",
+      "fieldtype": "Code",
+      "label": "Policy Decision (JSON)",
+      "options": "JSON"
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Audit Event",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "read": 1,
+      "role": "System Manager"
+    },
+    {
+      "read": 1,
+      "role": "Auditor"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 0
+}

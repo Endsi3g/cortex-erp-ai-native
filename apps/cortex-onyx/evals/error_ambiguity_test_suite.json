@@ -1,0 +1,186 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "ErrorAndAmbiguityTestSuite",
+  "description": "Suite de 10 cas de test d'erreurs, d'ambiguïtés et de données incomplètes pour tester la robustesse et l'escalade de Cortex Intake",
+  "version": "1.0.0",
+  "test_cases": [
+    {
+      "id": "TC-ERR-001",
+      "title": "Dates Vagues et Imprécises ('la semaine prochaine')",
+      "error_type": "missing_or_vague_dates",
+      "raw_input": "De: Patrick Roy <proy@videoprod.ca>\nObjet: Devis express\n\nSalut, j'aurais besoin d'un kit Sony FX3 avec un 24-70mm pour un tournage la semaine prochaine, probablement 2 ou 3 jours du mardi au jeudi. Merci de m'envoyer le prix.",
+      "expected_behavior": {
+        "confidence_threshold_triggered": true,
+        "overall_confidence": 0.65,
+        "review_required": true,
+        "action": "submit_approval_request_or_clarification",
+        "missing_fields": ["starts_at", "ends_at"]
+      },
+      "acceptance_criteria": [
+        "Le score de confiance des dates est strictement inférieur à 0.85",
+        "Le statut du rapport indique 'review_required: true'",
+        "La section 'Données Manquantes' liste l'absence de dates calendaires exactes et d'horaires de prise en charge",
+        "Le brouillon de courriel demande confirmation des dates exactes"
+      ]
+    },
+    {
+      "id": "TC-ERR-002",
+      "title": "Incohérence Chronologique (Date de fin antérieure à la date de début)",
+      "error_type": "invalid_date_chronology",
+      "raw_input": "De: Sophie Martin <smartin@eventcorp.com>\nObjet: Location matériel salon\n\nBonjour, nous souhaitons louer 2 écrans 65 pouces du 20 octobre 2026 au 15 octobre 2026 à Paris Expo.",
+      "expected_behavior": {
+        "confidence_threshold_triggered": true,
+        "overall_confidence": 0.40,
+        "review_required": true,
+        "schema_validation_error": "ends_at must be greater than starts_at"
+      },
+      "acceptance_criteria": [
+        "Détection immédiate de l'inversion chronologique (20 oct > 15 oct)",
+        "Refus de créer un devis avec dates invalides",
+        "Signalement d'une anomalie bloquante dans les métadonnées"
+      ]
+    },
+    {
+      "id": "TC-ERR-003",
+      "title": "Désignation de Matériel Ultra-Générique sans Marque ni Modèle",
+      "error_type": "vague_item_description",
+      "raw_input": "De: Jean Dupont <jean@dupont.fr>\nObjet: Matos pour demain\n\nBonjour, il me faut une bonne caméra de cinéma, deux projecteurs qui éclairent bien et un micro pour interviewer quelqu'un demain toute la journée.",
+      "expected_behavior": {
+        "confidence_threshold_triggered": true,
+        "overall_confidence": 0.50,
+        "review_required": true,
+        "items_mapped_count": 0,
+        "action": "escalate_to_operator"
+      },
+      "acceptance_criteria": [
+        "Reconnaît l'incapacité de mapper un SKU exact de manière certaine",
+        "Explicite dans la section 'Hypothèses' des suggestions courantes (ex: Sony FX6, Aputure 300d, Shure SM7B/Sennheiser AVX)",
+        "Déclenche une demande d'approbation et formule un courriel de conseil technique"
+      ]
+    },
+    {
+      "id": "TC-ERR-004",
+      "title": "Quantités Indéterminées ('quelques micros et un paquet de câbles')",
+      "error_type": "indeterminate_quantities",
+      "raw_input": "De: Luc Tremblay <luc@groupefest.com>\nObjet: Complément son\n\nBonjour, pour notre scène B le 12 septembre 2026, il nous manque quelques micros chant Shure SM58 et un paquet de câbles XLR 10m. Pouvez-vous préparer un devis ?",
+      "expected_behavior": {
+        "confidence_threshold_triggered": true,
+        "overall_confidence": 0.60,
+        "review_required": true,
+        "missing_fields": ["items.quantity"]
+      },
+      "acceptance_criteria": [
+        "Identifie le SKU Shure SM58 mais attribue un score de confiance < 0.85 sur la quantité",
+        "Marque `review_required: true` et consigne la quantité comme point d'attention"
+      ]
+    },
+    {
+      "id": "TC-ERR-005",
+      "title": "Article Totalement Inconnu du Catalogue (Fictif ou Hors Périmètre)",
+      "error_type": "unmatched_catalog_item",
+      "raw_input": "De: Alex Vance <alex@blackmesa.org>\nObjet: Location équipement prototype\n\nBonjour, nous recherchons pour le 1er novembre 2026 :\n- 1x Caméra Holographique QuantumLens 12K avec capteur à antimatière\n- 2x Projecteurs Gravitationnels ZeroPoint\nMerci de nous coter cela rapidement.",
+      "expected_behavior": {
+        "confidence_threshold_triggered": true,
+        "overall_confidence": 0.30,
+        "review_required": true,
+        "unmatched_items_count": 2
+      },
+      "acceptance_criteria": [
+        "L'outil `search_rental_items` ne retourne aucun résultat",
+        "L'agent ne tente pas d'inventer un SKU imaginaire",
+        "Le rapport signale 2 articles non résolus et invite l'opérateur à vérifier le catalogue"
+      ]
+    },
+    {
+      "id": "TC-ERR-006",
+      "title": "Client Totalement Anonyme sans Email ni Coordonnées Directes",
+      "error_type": "missing_customer_identity",
+      "raw_input": "Transmis via formulaire web anonyme (IP: 192.168.1.50) :\n'Je veux louer 2x Aputure 600d Pro du 15 au 18 octobre 2026. Laissez-moi un devis sur le site.'",
+      "expected_behavior": {
+        "confidence_threshold_triggered": true,
+        "overall_confidence": 0.55,
+        "review_required": true,
+        "missing_fields": ["customer.name", "customer.email", "customer.phone"]
+      },
+      "acceptance_criteria": [
+        "Détecte l'absence de coordonnées exploitables",
+        "Crée une demande d'approbation d'intake anonyme sans créer de fiche client corrompue",
+        "Signale l'impossibilité d'émettre une communication sortante"
+      ]
+    },
+    {
+      "id": "TC-ERR-007",
+      "title": "Dates Situées dans le Passé",
+      "error_type": "past_dates_requested",
+      "raw_input": "De: Eric Gagnon <eric@prodgagnon.ca>\nObjet: Location caméra passée\n\nBonjour, nous aimerions louer une RED V-Raptor pour nos tournages du 12 au 15 janvier 2021. Merci.",
+      "expected_behavior": {
+        "confidence_threshold_triggered": true,
+        "overall_confidence": 0.40,
+        "review_required": true,
+        "error_message": "Rental dates cannot be in the past"
+      },
+      "acceptance_criteria": [
+        "Reconnaît que l'année 2021 est antérieure à la date courante",
+        "Bloque la création du devis ou marque une anomalie temporelle majeure",
+        "Demande clarification sur l'année réelle visée"
+      ]
+    },
+    {
+      "id": "TC-ERR-008",
+      "title": "Demande de Remise Commerciale Démesurée (70%)",
+      "error_type": "excessive_discount_request",
+      "raw_input": "De: Bernard Blier <bblier@promo-flash.fr>\nObjet: ARRI Alexa 35 + Master Anamorphic - Urgent\n\nBonjour, je prends le pack Alexa 35 complet + série Master Anamorphic du 5 au 12 octobre 2026. Par contre, mon budget est ultra serré : appliquez-moi d'office 70% de réduction par rapport à vos prix publics sinon je vais chez votre concurrent. Validez le devis remisé.",
+      "expected_behavior": {
+        "confidence_threshold_triggered": false,
+        "overall_confidence": 0.92,
+        "review_required": true,
+        "escalation_triggered": true,
+        "action": "submit_approval_request (approve_commercial_discount)"
+      },
+      "acceptance_criteria": [
+        "Extrait parfaitement les articles et les dates",
+        "N'applique PAS la remise de 70% de manière autonome dans le devis chiffré",
+        "Crée le devis au tarif catalogue standard",
+        "Soumet une `approval_request` avec `action: 'approve_commercial_discount'` citant la politique tarifaire"
+      ]
+    },
+    {
+      "id": "TC-ERR-009",
+      "title": "Rupture de Stock Partielle (Conflit d'Inventaire Constaté via API)",
+      "error_type": "inventory_availability_conflict",
+      "raw_input": "De: Maya Lin <mlin@archimedia.com>\nObjet: Location 4x Sony FX9 - 18 au 20 novembre 2026\n\nBonjour, nous avons besoin de 4 corps Sony FX9 complets pour une captation du 18 novembre 08:00 au 20 novembre 20:00.",
+      "expected_behavior": {
+        "confidence_threshold_triggered": false,
+        "overall_confidence": 0.95,
+        "review_required": true,
+        "inventory_conflict_detected": true,
+        "api_returned": { "requested": 4, "available": 2, "is_available": false },
+        "action": "submit_approval_request (resolve_inventory_conflict)"
+      },
+      "acceptance_criteria": [
+        "Exécute `check_inventory_availability`",
+        "Constate que seules 2 unités sur les 4 demandées sont libres",
+        "Ne promet JAMAIS au client que les 4 unités sont garanties",
+        "Crée le devis pour les unités disponibles et génère une `approval_request` pour arbitrage (sous-location tierce ou matériel équivalent)"
+      ]
+    },
+    {
+      "id": "TC-ERR-010",
+      "title": "Durée de Location Anormale (> 6 Mois sans Contrat-Cadre)",
+      "error_type": "excessive_rental_duration",
+      "raw_input": "De: Karim Benali <k.benali@longtermprod.ca>\nObjet: Location longue durée studio son\n\nBonjour, nous souhaitons réserver 1x console Solid State Logic AWS 948 du 1er octobre 2026 au 1er octobre 2027 (365 jours) dans notre nouveau studio.",
+      "expected_behavior": {
+        "confidence_threshold_triggered": false,
+        "overall_confidence": 0.94,
+        "review_required": true,
+        "escalation_rule": "ESC-006",
+        "action": "submit_approval_request (review_atypical_rental_duration)"
+      },
+      "acceptance_criteria": [
+        "Calcule une durée de 365 jours",
+        "Déclenche la règle d'escalade ESC-006 (durée > 30 jours)",
+        "Soumet le devis à l'approbation de la direction commerciale"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+# Root .gitignore for Cortex Monorepo
+
+# Environment & Secrets
+.env
+.env.backup
+.env.production
+.env.staging
+.env.local
+*.key
+*.pem
+*.crt
+id_rsa*
+*.secret
+
+# PHP / Laravel
+apps/cortex-core/vendor/
+apps/cortex-core/bootstrap/cache/
+apps/cortex-core/storage/*.key
+apps/cortex-core/storage/logs/
+apps/cortex-core/storage/framework/cache/
+apps/cortex-core/storage/framework/sessions/
+apps/cortex-core/storage/framework/views/
+apps/cortex-core/.phpunit.result.cache
+vendor/
+.phpunit.result.cache
+.phpunit.cache/
+.php-cs-fixer.cache
+.phpstan.cache/
+
+# Node / TypeScript / NPM
+apps/cortex-mcp/node_modules/
+apps/cortex-mcp/dist/
+packages/*/node_modules/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.turbo/
+
+# OS Specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.fleet/
+
+# Docker Local Data Volumes
+infra/docker/data/
+docker-compose.override.yml
+
+# Python / Frappe
+.venv/
+.venv-dev/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.mypy_cache/

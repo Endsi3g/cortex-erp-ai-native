@@ -1,0 +1,26 @@
+# Matrice des politiques d'approbation humaine obligatoire (The Gate That Never Moves)
+version: "1.0.0"
+
+rules:
+  - action: "confirm_contract"
+    requires_human_signoff: true
+    min_role: "rental_agent"
+    evidence_required: ["signed_contract_pdf", "valid_insurance_certificate", "security_deposit_authorized"]
+
+  - action: "apply_custom_discount"
+    threshold_percent: 15.0
+    requires_human_signoff: true
+    min_role: "rental_manager"
+
+  - action: "finalize_invoice"
+    requires_human_signoff: true
+    min_role: "finance_operator"
+
+  - action: "issue_credit_note"
+    requires_human_signoff: true
+    min_role: "finance_manager"
+
+  - action: "dispatch_equipment"
+    requires_human_signoff: true
+    min_role: "warehouse_operator"
+    evidence_required: ["scanned_serial_numbers", "departure_condition_photos"]

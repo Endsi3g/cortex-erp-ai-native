@@ -1,0 +1,6 @@
+{
+  "name": "@cortex/acceptance-tests",
+  "version": "1.0.0",
+  "description": "End-to-end Gherkin Acceptance Scenarios for Cortex ERP",
+  "license": "proprietary"
+}

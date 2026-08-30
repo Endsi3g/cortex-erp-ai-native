@@ -1,0 +1,43 @@
+# Configuration de l'agent Cortex Availability pour Onyx
+# Définition déclarative de l'agent d'interrogation de disponibilité d'inventaire en lecture seule
+name: "Cortex Availability Agent"
+slug: "cortex-availability"
+version: "1.0.0"
+description: "Agent spécialisé dans l'interrogation ultra-rapide et l'analyse de disponibilité des équipements audiovisuels en temps réel. Fonctionne exclusivement en lecture seule sur le catalogue et le moteur de réservation sans bloquer l'inventaire ni modifier les transactions."
+
+routing:
+  primary_model: "gemini-3.7-flash"
+  fallback_model: "claude-3-7-sonnet-20250219"
+  parameters:
+    temperature: 0.1
+    top_p: 0.95
+    max_output_tokens: 2048
+    response_mime_type: "application/json"
+
+prompts:
+  system_prompt_path: "prompts/cortex_availability_system.md"
+  query_schema_path: "schemas/availability_query_schema.json"
+
+capabilities:
+  - "item_catalog_lookup"
+  - "inventory_realtime_availability_check"
+  - "calendar_range_conflict_detection"
+  - "serial_number_consignment_inspection"
+
+allowed_tools:
+  - "search_rental_items"
+  - "check_inventory_availability"
+
+invariants:
+  direct_sql_access: false
+  autonomous_contract_confirmation: false
+  autonomous_reservation_confirmation: false
+  autonomous_quote_creation: false
+  autonomous_inventory_lock: false
+  strict_api_grounding_required: true
+  multi_tenant_enforced: true
+
+guardrails:
+  deny_unanchored_availability_declarations: true
+  deny_cross_tenant_data_exposure: true
+  differentiate_consignment_units: true

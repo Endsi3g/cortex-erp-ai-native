@@ -1,0 +1,138 @@
+{
+  "actions": [],
+  "autoname": "format:APPR-{YYYY}-{#####}",
+  "creation": "2026-08-29 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "PostgreSQL",
+  "field_order": [
+    "company",
+    "action",
+    "status",
+    "entity_type",
+    "entity_id",
+    "requested_by_type",
+    "requested_by_id",
+    "decided_by",
+    "decided_at",
+    "decision_reason",
+    "proposed_payload",
+    "evidence_ids",
+    "policy_decision"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "action",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Action",
+      "reqd": 1
+    },
+    {
+      "default": "Pending",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Status",
+      "options": "Pending\nApproved\nRejected\nExpired",
+      "reqd": 1
+    },
+    {
+      "fieldname": "entity_type",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Entity Type",
+      "reqd": 1
+    },
+    {
+      "fieldname": "entity_id",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Entity ID",
+      "reqd": 1
+    },
+    {
+      "fieldname": "requested_by_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Requested By Type",
+      "options": "Agent\nHuman",
+      "reqd": 1
+    },
+    {
+      "fieldname": "requested_by_id",
+      "fieldtype": "Data",
+      "label": "Requested By ID",
+      "reqd": 1
+    },
+    {
+      "fieldname": "decided_by",
+      "fieldtype": "Link",
+      "label": "Decided By",
+      "options": "User"
+    },
+    {
+      "fieldname": "decided_at",
+      "fieldtype": "Datetime",
+      "label": "Decided At"
+    },
+    {
+      "fieldname": "decision_reason",
+      "fieldtype": "Small Text",
+      "label": "Decision Reason"
+    },
+    {
+      "fieldname": "proposed_payload",
+      "fieldtype": "Code",
+      "label": "Proposed Payload (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "evidence_ids",
+      "fieldtype": "Code",
+      "label": "Evidence IDs (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "policy_decision",
+      "fieldtype": "Code",
+      "label": "Policy Decision (JSON)",
+      "options": "JSON"
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Approval Request",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Agent Service Account"
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "write": 1,
+      "role": "Rental Operator"
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "write": 1,
+      "role": "System Manager"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

@@ -1,0 +1,87 @@
+{
+  "actions": [],
+  "autoname": "format:RULE-{rule_name}",
+  "creation": "2026-08-29 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "PostgreSQL",
+  "field_order": [
+    "company",
+    "rule_name",
+    "is_active",
+    "calendar_days",
+    "billable_days",
+    "multiplier",
+    "description"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "rule_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Rule Name",
+      "reqd": 1
+    },
+    {
+      "default": "1",
+      "fieldname": "is_active",
+      "fieldtype": "Check",
+      "in_list_view": 1,
+      "label": "Is Active"
+    },
+    {
+      "default": "7",
+      "fieldname": "calendar_days",
+      "fieldtype": "Int",
+      "in_list_view": 1,
+      "label": "Calendar Days",
+      "reqd": 1
+    },
+    {
+      "default": "3.0",
+      "fieldname": "billable_days",
+      "fieldtype": "Float",
+      "in_list_view": 1,
+      "label": "Billable Days",
+      "reqd": 1
+    },
+    {
+      "default": "3.0",
+      "fieldname": "multiplier",
+      "fieldtype": "Float",
+      "label": "Rate Multiplier"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Description"
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Rental Pricing Rule",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "read": 1,
+      "write": 1,
+      "role": "Pricing Manager"
+    },
+    {
+      "read": 1,
+      "role": "Rental Operator"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

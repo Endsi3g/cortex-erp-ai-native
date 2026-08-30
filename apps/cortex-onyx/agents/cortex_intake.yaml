@@ -1,0 +1,58 @@
+# Configuration de l'agent Cortex Intake pour Onyx
+# Définition déclarative de l'agent d'ingestion omnicanale et de préparation de soumission (quote)
+name: "Cortex Intake Agent"
+slug: "cortex-intake"
+version: "1.0.0"
+description: "Agent intelligent d'ingestion omnicanale des demandes de location (emails, PDF, formulaires, transcriptions). Extrait les données structurées, effectue la recherche d'équipements et de clients, contrôle la disponibilité et génère un brouillon de soumission (quote draft) avec traçabilité complète des preuves."
+
+routing:
+  primary_model: "gemini-3.7-flash"
+  fallback_model: "claude-3-7-sonnet-20250219"
+  parameters:
+    temperature: 0.1
+    top_p: 0.95
+    max_output_tokens: 4096
+    response_mime_type: "application/json"
+
+prompts:
+  system_prompt_path: "prompts/cortex_intake_system.md"
+  extraction_schema_path: "schemas/intake_extraction_schema.json"
+
+capabilities:
+  - "multimodal_document_ingestion"
+  - "structured_data_extraction"
+  - "customer_resolution_and_drafting"
+  - "item_catalog_matching"
+  - "inventory_availability_verification"
+  - "quote_draft_generation"
+  - "human_escalation_dispatching"
+
+allowed_tools:
+  - "search_rental_items"
+  - "search_customers"
+  - "check_inventory_availability"
+  - "create_quote_draft"
+  - "create_customer_draft"
+  - "submit_approval_request"
+
+thresholds:
+  confidence_threshold_review: 0.85
+  max_unresolved_items_before_block: 3
+  max_availability_conflicts_before_approval: 1
+
+invariants:
+  direct_sql_access: false
+  autonomous_contract_confirmation: false
+  autonomous_reservation_confirmation: false
+  autonomous_invoice_finalization: false
+  autonomous_inventory_lock: false
+  autonomous_client_communication_dispatch: false
+  multi_tenant_enforced: true
+  evidence_tracking_required: true
+
+escalation:
+  policy_reference: "policies/escalation_rules.md"
+  trigger_on_confidence_below: 0.85
+  trigger_on_inventory_conflict: true
+  trigger_on_new_unverified_customer: true
+  trigger_on_custom_discount_request: true

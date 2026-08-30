@@ -1,0 +1,23 @@
+# Définition de l'agent Copilote Onyx pour Cortex Rental
+name: "Cortex Rental Copilot"
+slug: "cortex-rental-copilot"
+description: "Agent d'assistance aux opérations de location de matériel audiovisuel et événementiel."
+model: "gemini-3.7-flash"
+fallback_model: "claude-3-7-sonnet-20250219"
+
+capabilities:
+  - "availability_check"
+  - "quote_drafting"
+  - "document_extraction"
+
+allowed_actions:
+  - "check_availability"
+  - "create_quote_draft"
+  - "request_approval"
+
+constraints:
+  direct_sql_access: false
+  can_confirm_contracts: false
+  can_finalize_invoices: false
+  can_issue_refunds: false
+  must_quote_policy_on_exceptions: true

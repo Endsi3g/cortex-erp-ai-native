@@ -1,0 +1,32 @@
+name: Proposition d'Evolution Metier
+description: Proposer une amelioration fonctionnelle ou une nouvelle capacite pour Cortex ERP.
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Proposition d'evolution
+        Decrivez l'opportunite operationnelle et le benefice pour les maisons de location.
+
+  - type: textarea
+    id: problem_statement
+    attributes:
+      label: Probleme operationnel ou opportunite
+      description: Quelle friction metier cherchons-nous a resoudre ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Solution proposee
+      description: Comment Cortex devrait-il y repondre au niveau UI, Service ou Agent ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: business_impact
+    attributes:
+      label: Impact Metier / ROI attendu
+      description: Gain de temps, reduction d'erreurs, monetisation...

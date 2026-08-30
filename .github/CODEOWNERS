@@ -1,0 +1,15 @@
+# Global owners
+* @cortex-erp/core-team
+
+# Architecture, Security & Governance
+/docs/ @cortex-erp/arch-team
+/SECURITY.md @cortex-erp/security-team
+/GEMINI.md @cortex-erp/arch-team
+
+# Rental Domain Plugin
+/plugins/Webkul/CortexRental/ @cortex-erp/rental-team
+
+# Infrastructure & CI/CD
+/.github/ @cortex-erp/devops-team
+/infra/ @cortex-erp/devops-team
+/bin/ @cortex-erp/devops-team

@@ -1,0 +1,460 @@
+openapi: 3.1.0
+info:
+  title: Cortex ERP Read API
+  version: 1.0.0
+  description: |
+    Surface d'API de consultation pour Cortex ERP.
+    Utilisable par l'interface opérateur Filament et les agents Onyx/MCP.
+    Aucune route de mutation financière ou de confirmation n'est exposée sur ce préfixe.
+servers:
+  - url: http://localhost:8080/api/v1/cortex
+    description: Environnement local de développement
+
+paths:
+  /items:
+    get:
+      operationId: listRentalItems
+      summary: Lister les équipements du catalogue avec filtres et pagination
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 15
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: is_serialized
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Liste paginée d'équipements de location
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RentalItem'
+                  meta:
+                    type: object
+                  links:
+                    type: object
+        '401':
+          description: Non authentifié
+        '403':
+          description: Non autorisé
+
+  /items/{item}:
+    get:
+      operationId: getRentalItem
+      summary: Consulter le détail d'un équipement
+      parameters:
+        - name: item
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Détail de l'équipement
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RentalItem'
+        '404':
+          description: Équipement introuvable pour ce tenant
+
+  /availability/check:
+    post:
+      operationId: checkAvailability
+      summary: Vérifier la disponibilité en lot d'équipements sur une période calendaire
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityCheckRequest'
+      responses:
+        '200':
+          description: Résultat de disponibilité calculé pour chaque équipement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityCheckResponse'
+        '422':
+          description: Données de validation invalides
+
+  /transactions/{transaction}:
+    get:
+      operationId: getRentalTransaction
+      summary: Consulter une transaction de location en lecture seule
+      parameters:
+        - name: transaction
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Détail de la transaction
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RentalTransaction'
+        '404':
+          description: Transaction introuvable pour ce tenant
+
+components:
+  schemas:
+    RentalItem:
+      type: object
+      required:
+        - id
+        - code
+        - name
+        - is_serialized
+        - total_quantity
+        - daily_rate
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          nullable: true
+        is_serialized:
+          type: boolean
+        total_quantity:
+          type: integer
+        daily_rate:
+          type: string
+        weekly_rate:
+          type: string
+          nullable: true
+        monthly_rate:
+          type: string
+          nullable: true
+        replacement_value:
+          type: string
+          nullable: true
+        dynamic_accessories:
+          type: array
+          items:
+            type: object
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AvailabilityItemRequest:
+      type: object
+      required:
+        - item_id
+        - quantity
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+          minimum: 0.01
+
+    AvailabilityCheckRequest:
+      type: object
+      required:
+        - starts_at
+        - ends_at
+        - items
+      properties:
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/AvailabilityItemRequest'
+
+    AvailabilityConflict:
+      type: object
+      required:
+        - transaction_id
+        - transaction_number
+        - state
+        - starts_at
+        - ends_at
+        - quantity
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        transaction_number:
+          type: string
+        state:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        quantity:
+          type: number
+
+    SerialNumberSuggestion:
+      type: object
+      required:
+        - id
+        - serial
+        - is_consignment
+      properties:
+        id:
+          type: string
+          format: uuid
+        serial:
+          type: string
+        is_consignment:
+          type: boolean
+        owner_id:
+          type: string
+          format: uuid
+          nullable: true
+        owner_name:
+          type: string
+          nullable: true
+        status:
+          type: string
+
+    ItemAvailabilityResult:
+      type: object
+      required:
+        - item_id
+        - item_code
+        - item_name
+        - is_serialized
+        - requested_quantity
+        - total_base_quantity
+        - booked_quantity
+        - available_quantity
+        - is_available
+        - conflicts
+        - suggested_serial_numbers
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        item_code:
+          type: string
+        item_name:
+          type: string
+        is_serialized:
+          type: boolean
+        requested_quantity:
+          type: number
+        total_base_quantity:
+          type: number
+        booked_quantity:
+          type: number
+        available_quantity:
+          type: number
+        is_available:
+          type: boolean
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityConflict'
+        suggested_serial_numbers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SerialNumberSuggestion'
+
+    AvailabilityCheckResponse:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemAvailabilityResult'
+        meta:
+          type: object
+          required:
+            - starts_at
+            - ends_at
+            - items_count
+          properties:
+            starts_at:
+              type: string
+              format: date-time
+            ends_at:
+              type: string
+              format: date-time
+            items_count:
+              type: integer
+
+    RentalTransactionLine:
+      type: object
+      required:
+        - id
+        - rental_item_id
+        - quantity
+        - unit_rate
+        - total
+      properties:
+        id:
+          type: string
+          format: uuid
+        rental_item_id:
+          type: string
+          format: uuid
+        item_code:
+          type: string
+          nullable: true
+        item_name:
+          type: string
+          nullable: true
+        client_description:
+          type: string
+          nullable: true
+        quantity:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        calendar_days:
+          type: integer
+        billable_days:
+          type: string
+        unit_rate:
+          type: string
+        discount_percentage:
+          type: string
+        discount_amount:
+          type: string
+        subtotal:
+          type: string
+        total:
+          type: string
+
+    RentalTransaction:
+      type: object
+      required:
+        - id
+        - number
+        - customer_id
+        - state
+        - starts_at
+        - ends_at
+        - readiness
+        - pricing
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        customer_id:
+          type: string
+          format: uuid
+        state:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        readiness:
+          type: object
+          properties:
+            customer_account_ready:
+              type: boolean
+            insurance_ready:
+              type: boolean
+            payment_ready:
+              type: boolean
+            is_ready_for_contract:
+              type: boolean
+        pricing:
+          type: object
+          properties:
+            subtotal:
+              type: string
+            discount_total:
+              type: string
+            tax_total:
+              type: string
+            total:
+              type: string
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/RentalTransactionLine'
+        notes:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time

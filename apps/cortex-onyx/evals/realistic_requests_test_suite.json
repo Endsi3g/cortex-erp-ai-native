@@ -1,0 +1,352 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "RealisticRequestsTestSuite",
+  "description": "Suite de 10 cas de test réalistes (FR/EN) pour l'évaluation de Cortex Intake et Availability",
+  "version": "1.0.0",
+  "test_cases": [
+    {
+      "id": "TC-REAL-001",
+      "title": "Tournage Cinéma Fiction — Kit Caméra ARRI & Optiques",
+      "language": "fr",
+      "channel": "email",
+      "raw_input": "De: Marc Tremblay <marc@cinenordic.ca>\nObjet: Demande de location Caméra ARRI + Cooke - Projet 'L'Hiver Blanc'\n\nBonjour l'équipe,\nPour notre prochain tournage à Montréal du 15 au 18 octobre 2026, nous aurions besoin du pack suivant :\n- 1 corps ARRI Alexa Mini LF avec monture LPL et adaptateur PL\n- 1 série d'optiques Cooke S7/i (25mm, 40mm, 75mm)\n- 1 stabilisateur DJI Ronin 2 complet avec 4 batteries TB50\n- 4 cartes Codex Compact Drive 1TB et lecteur USB-C\nPrise en charge le 14 octobre à 16h pour les essais caméra, retour le 19 octobre à 10h.\nMerci de nous faire parvenir votre devis.\n\nMarc Tremblay\nDirecteur de production | CinéNordic Inc.\n+1 514 555 0192",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "Marc Tremblay",
+          "company_name": "CinéNordic Inc.",
+          "email": "marc@cinenordic.ca",
+          "phone": "+1 514 555 0192",
+          "confidence": 0.98
+        },
+        "rental_period": {
+          "starts_at": "2026-10-14T16:00:00-04:00",
+          "ends_at": "2026-10-19T10:00:00-04:00",
+          "confidence": 0.96
+        },
+        "items_count": 4,
+        "overall_confidence": 0.95,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Identifie correctement les dates de check-out (14 oct 16h) et check-in (19 oct 10h)",
+        "Mappe les 4 lignes d'équipement sans hallucination",
+        "Crée le brouillon de soumission (quote_draft) avec evidence_ids valides",
+        "Ne déclare aucune disponibilité sans exécution de check_inventory_availability"
+      ]
+    },
+    {
+      "id": "TC-REAL-002",
+      "title": "Corporate Multi-Camera Live Broadcast",
+      "language": "en",
+      "channel": "email",
+      "raw_input": "From: Sarah Jenkins <s.jenkins@apexevents.com>\nSubject: Quote Request: 3-Cam Live Stream Setup (Nov 4-6, 2026)\n\nHi Cortex Rentals,\nWe are organizing a corporate summit in Toronto from November 4th 08:00 to November 6th 19:00. We need to rent:\n- 3x Sony FX6 Cinema cameras with 24-105mm f/4 G OSS lenses\n- 1x Blackmagic ATEM Mini Extreme ISO switcher\n- 2x Shure Axient Digital dual wireless handheld systems (frequency band G57)\n- 3x Heavy-duty Manfrotto tripods (504HD/546B)\nCan you confirm availability and prepare a quote draft? Delivery directly to the venue at Metro Toronto Convention Centre.\n\nBest,\nSarah Jenkins | Tech Lead, Apex Events Ltd.",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "Sarah Jenkins",
+          "company_name": "Apex Events Ltd.",
+          "email": "s.jenkins@apexevents.com",
+          "confidence": 0.97
+        },
+        "rental_period": {
+          "starts_at": "2026-11-04T08:00:00-05:00",
+          "ends_at": "2026-11-06T19:00:00-05:00",
+          "delivery_location": "Metro Toronto Convention Centre",
+          "delivery_required": true,
+          "confidence": 0.95
+        },
+        "items_count": 4,
+        "overall_confidence": 0.96,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Extraction correcte des quantités multiples (3x FX6, 1x ATEM, 2x Shure, 3x Tripods)",
+        "Localisation de livraison capturée dans les métadonnées",
+        "Brouillon de devis généré sans confirmation de réservation autonome"
+      ]
+    },
+    {
+      "id": "TC-REAL-003",
+      "title": "Festival de Musique Extérieur — Système Son & Éclairage IP65",
+      "language": "fr",
+      "channel": "pdf",
+      "raw_input": "BORDEREAU TECHNIQUE DE LOCATION\nFestival Solstice Sonore 2026\nDates d'exploitation : du 21 août 2026 à 07:00 au 24 août 2026 à 04:00\nClient : Association Solstice Sonore (contact@solsticesonore.org, Tél: +33 6 12 34 56 78)\nMatériel requis :\n- 8x Enceintes L-Acoustics Kara II\n- 4x Caissons de basse L-Acoustics SB18\n- 2x Amplificateurs contrôleurs LA12X en rack\n- 12x Projecteurs wash IP65 Robe Robin iSpage\n- Kit de distribution électrique 63A tétrapolaire et passage de câbles 5 gorges (80m)",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "Association Solstice Sonore",
+          "email": "contact@solsticesonore.org",
+          "phone": "+33 6 12 34 56 78",
+          "confidence": 0.94
+        },
+        "rental_period": {
+          "starts_at": "2026-08-21T07:00:00+02:00",
+          "ends_at": "2026-08-24T04:00:00+02:00",
+          "confidence": 0.95
+        },
+        "items_count": 5,
+        "overall_confidence": 0.94,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Ingestion du format PDF/bordereau structuré",
+        "Respect des contraintes horaires nocturnes (fin à 04:00 du matin)",
+        "Distinction claire des modules son et des projecteurs d'éclairage"
+      ]
+    },
+    {
+      "id": "TC-REAL-004",
+      "title": "Commercial Fashion Photo Shoot Studio",
+      "language": "en",
+      "channel": "webform",
+      "raw_input": "Name: Elena Rostova\nEmail: elena@rostovaphoto.com\nStudio: Studio 42 Montreal\nDates: 2026-09-15 08:00 to 2026-09-15 20:00 (1 day)\nRequested Gear:\n- 2x Profoto B10X Plus 500Ws battery location kit (2 heads each = 4 heads total)\n- 1x Profoto OCF Octabox 3' (90cm) with grid\n- 1x Profoto Air Remote TTL for Sony\n- 4x Kupo C-Stands with 40\" grip arm and turtle base\n- 1x Canon EOS R5 C camera body + RF 24-70mm f/2.8L",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "Elena Rostova",
+          "email": "elena@rostovaphoto.com",
+          "confidence": 0.99
+        },
+        "rental_period": {
+          "starts_at": "2026-09-15T08:00:00-04:00",
+          "ends_at": "2026-09-15T20:00:00-04:00",
+          "confidence": 0.98
+        },
+        "items_count": 5,
+        "overall_confidence": 0.97,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Durée d'une journée correctement calculée",
+        "Mapping précis de l'équipement studio et des modificateurs de lumière",
+        "Consignation des evidence_ids rattachés au formulaire web"
+      ]
+    },
+    {
+      "id": "TC-REAL-005",
+      "title": "Captation Spectacle Théâtre & Micros DPA",
+      "language": "fr",
+      "channel": "email",
+      "raw_input": "De: Julien Vaneck <j.vaneck@theatredurond.fr>\nObjet: Devis régie son spectacle 'Phèdre' — 1er au 7 décembre 2026\n\nBonjour,\nNous préparons la résidence de reprise pour 'Phèdre'. Période : du mardi 1er décembre 09:00 au dimanche 7 décembre 23:30.\nBesoins :\n- 6x Micro-casques DPA 4066-F (couleur chair, connecteur MicroDot/Sennheiser)\n- 6x Émetteurs de poche Sennheiser SK 6000 + Récepteurs EM 6000\n- 1x Console numérique Yamaha CL5 avec 1x RIO 3224-D2\n- 1x Enregistreur multipiste Sound Devices 888\nMerci d'inclure les câbles Cat6 blindés EtherCON de 50m.\n\nJulien Vaneck\nDirecteur technique | Théâtre du Rond\n+33 1 42 68 55 00",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "Julien Vaneck",
+          "company_name": "Théâtre du Rond",
+          "email": "j.vaneck@theatredurond.fr",
+          "phone": "+33 1 42 68 55 00",
+          "confidence": 0.98
+        },
+        "rental_period": {
+          "starts_at": "2026-12-01T09:00:00+01:00",
+          "ends_at": "2026-12-07T23:30:00+01:00",
+          "confidence": 0.97
+        },
+        "items_count": 5,
+        "overall_confidence": 0.96,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Prise en compte des spécificités techniques des connecteurs audio",
+        "Calcul exact de la durée de 7 jours de location",
+        "Aucune confirmation de réservation émise sans intervention humaine"
+      ]
+    },
+    {
+      "id": "TC-REAL-006",
+      "title": "Indie Short Film RED Komodo Cinema Package",
+      "language": "en",
+      "channel": "email",
+      "raw_input": "From: Liam O'Connor <liam@foggybottomfilms.co.uk>\nSubject: Kit request for 4-day short film shoot (Sep 24-27, 2026)\n\nHey team,\nShooting an indie short near Bristol from Thursday Sep 24 (08:00) to Sunday Sep 27 (20:00). We need:\n- 1x RED Komodo 6K Cinema Camera (RF Mount, Outrigger handle, Canon RF-PL adapter)\n- 1x DZOFilm Vespid Prime 5-lens set (25, 35, 50, 75, 100mm PL)\n- 1x SmallHD Cine 7 Touchscreen On-Camera Monitor with RED Camera Control\n- 4x Core SWX Nano Micro 98Wh V-Mount batteries + Dual charger\n- 1x Sachtler Flowtech 75 Tripod system\nPlease send over the quote draft ASAP.\n\nCheers,\nLiam O'Connor\nProducer, Foggy Bottom Films",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "Liam O'Connor",
+          "company_name": "Foggy Bottom Films",
+          "email": "liam@foggybottomfilms.co.uk",
+          "confidence": 0.98
+        },
+        "rental_period": {
+          "starts_at": "2026-09-24T08:00:00+01:00",
+          "ends_at": "2026-09-27T20:00:00+01:00",
+          "confidence": 0.96
+        },
+        "items_count": 5,
+        "overall_confidence": 0.96,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Identification du pack optique 5-lens comme ensemble ou sous-items",
+        "Extraction du moniteur avec licence de contrôle RED",
+        "Statut brouillon de soumission généré"
+      ]
+    },
+    {
+      "id": "TC-REAL-007",
+      "title": "Émission Podcast Vidéo / Live Streaming 4 Invités",
+      "language": "fr",
+      "channel": "email",
+      "raw_input": "De: Camille Roy <c.roy@mediaspark.qc.ca>\nObjet: Soumission régie podcast vidéo 3 caméras — 10 novembre 2026\n\nBonjour,\nPour l'enregistrement de notre podcast spécial le 10 novembre 2026 de 13:00 à 21:00 dans nos studios du Mile-End :\n- 4x Micros Shure SM7B avec bras articulés Yellowtec m!ka\n- 1x Console Rode Rodecaster Pro II + carte microSD 128GB\n- 4x Casques audio Beyerdynamic DT 770 Pro 80 Ohms\n- 3x Caméras Panasonic Lumix S5IIX avec objectifs 24-70mm f/2.8\n- 3x Cartes de capture HDMI Cam Link 4K ou boîtier Blackmagic Quad HDMI\n\nCamille Roy | Productrice MédiaSpark",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "Camille Roy",
+          "company_name": "MédiaSpark",
+          "email": "c.roy@mediaspark.qc.ca",
+          "confidence": 0.98
+        },
+        "rental_period": {
+          "starts_at": "2026-11-10T13:00:00-05:00",
+          "ends_at": "2026-11-10T21:00:00-05:00",
+          "confidence": 0.97
+        },
+        "items_count": 5,
+        "overall_confidence": 0.96,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Extraction exacte des accessoires (bras articulés, casques, cartes capture)",
+        "Période intra-journalière (8 heures) reconnue sans erreur de date"
+      ]
+    },
+    {
+      "id": "TC-REAL-008",
+      "title": "Bilingual International Summit & Translation System",
+      "language": "en",
+      "channel": "email",
+      "raw_input": "From: David Zhao <dzhao@globalforum.org>\nSubject: Quote for AV & Simultaneous Interpretation System — Dec 14-16, 2026\n\nHello Cortex,\nGlobal Forum is hosting a bilateral conference in Vancouver from December 14 at 07:30 to December 16 at 18:00.\nEquipment specifications:\n- 1x Bosch DCN NG wireless conference central control unit\n- 20x Bosch wireless delegate discussion microphones with gooseneck\n- 2x ISO-compliant soundproof interpreter booths with dual interpreter desks\n- 150x Infrared stereo receivers with lightweight headphones for attendees\n- 2x Panasonic AW-UE150 4K PTZ cameras + 1x AW-RP150 controller\nVenue: Westin Bayshore Vancouver.\n\nBest regards,\nDavid Zhao | Head of Operations",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "David Zhao",
+          "company_name": "Global Forum",
+          "email": "dzhao@globalforum.org",
+          "confidence": 0.98
+        },
+        "rental_period": {
+          "starts_at": "2026-12-14T07:30:00-08:00",
+          "ends_at": "2026-12-16T18:00:00-08:00",
+          "delivery_location": "Westin Bayshore Vancouver",
+          "delivery_required": true,
+          "confidence": 0.96
+        },
+        "items_count": 5,
+        "overall_confidence": 0.95,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Gestion des grands volumes (150 récepteurs IR, 20 micros délégués)",
+        "Reconnaissance du système de conférence Bosch et des caméras PTZ"
+      ]
+    },
+    {
+      "id": "TC-REAL-009",
+      "title": "Défilé de Mode Événementiel — Tubes LED Astera & Mur Vidéo",
+      "language": "fr",
+      "channel": "email",
+      "raw_input": "De: Antoine Mercier <a.mercier@luxe-events.fr>\nObjet: Devis matériel Fashion Week — 28 au 30 septembre 2026\n\nBonjour,\nPour un défilé de mode au Palais Brongniart à Paris du 28 septembre 06:00 au 30 septembre 23:00 :\n- 2x Valises de 8 tubes LED Astera Titan Tube FP1 (16 tubes au total) avec émetteur ART7 AsteraBox\n- 24x Barres LED Chauvet COLORado Batten Q15\n- 1x Console d'éclairage MA Lighting grandMA3 onPC command wing XT\n- 1x Mur LED Unilumin 2.6mm de 5m x 3m (15m2) avec processeur Novastar UHD Jr\n\nLivraison sur site impérative le 28 à 06:00.\nAntoine Mercier | Luxe Events",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "Antoine Mercier",
+          "company_name": "Luxe Events",
+          "email": "a.mercier@luxe-events.fr",
+          "confidence": 0.97
+        },
+        "rental_period": {
+          "starts_at": "2026-09-28T06:00:00+02:00",
+          "ends_at": "2026-09-30T23:00:00+02:00",
+          "delivery_location": "Palais Brongniart, Paris",
+          "delivery_required": true,
+          "confidence": 0.95
+        },
+        "items_count": 4,
+        "overall_confidence": 0.95,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Décomposition des valises de tubes (2 valises de 8 = 16 tubes)",
+        "Enregistrement de la configuration du mur LED vidéo et processeur"
+      ]
+    },
+    {
+      "id": "TC-REAL-010",
+      "title": "Documentaire Animalier Expédition Polaire",
+      "language": "fr",
+      "channel": "email",
+      "raw_input": "De: Claire Delisle <claire.delisle@arctika-films.com>\nObjet: Location tournage expédition Nunavut — 5 au 25 novembre 2026\n\nBonjour,\nNous partons en expédition de 20 jours dans le grand nord. Dates de location fermes : du 5 novembre 2026 au 25 novembre 2026.\nMatériel robuste résistant au froid extrême :\n- 2x Boîtiers Sony FX9 avec housses thermiques anti-froid Portabrace\n- 1x Téléobjectif Sony FE 200-600mm f/5.6-6.3 G OSS\n- 1x Zoom grand angle Sony FE 16-35mm f/2.8 GM II\n- 8x Batteries Sony BP-U70 haute capacité\n- 2x Valises étanches Pelican Air 1535 avec mousses personnalisées\n- 1x Station d'énergie portable Goal Zero Yeti 1000X + 2 panneaux solaires Boulder 100\n\nMerci d'établir notre soumission détaillée.\nClaire Delisle | Arctika Films",
+      "expected_extracted_data": {
+        "customer": {
+          "name": "Claire Delisle",
+          "company_name": "Arctika Films",
+          "email": "claire.delisle@arctika-films.com",
+          "confidence": 0.98
+        },
+        "rental_period": {
+          "starts_at": "2026-11-05T09:00:00-05:00",
+          "ends_at": "2026-11-25T18:00:00-05:00",
+          "confidence": 0.96
+        },
+        "items_count": 6,
+        "overall_confidence": 0.96,
+        "review_required": false
+      },
+      "expected_mcp_calls": [
+        "search_customers",
+        "search_rental_items",
+        "check_inventory_availability",
+        "create_quote_draft"
+      ],
+      "acceptance_criteria": [
+        "Gestion de la longue durée (20 jours)",
+        "Prise en compte des accessoires spécialisés (housses thermiques, panneaux solaires)"
+      ]
+    }
+  ]
+}

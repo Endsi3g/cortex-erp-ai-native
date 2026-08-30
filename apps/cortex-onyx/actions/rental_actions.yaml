@@ -1,0 +1,22 @@
+# Définition des actions Onyx reliées au serveur MCP ou OpenAPI
+actions:
+  - id: "check_availability"
+    type: "mcp_tool"
+    server: "cortex-rental-mcp"
+    tool_name: "check_availability"
+    description: "Vérifie les stocks disponibles sur le calendrier."
+    requires_approval: false
+
+  - id: "create_quote_draft"
+    type: "mcp_tool"
+    server: "cortex-rental-mcp"
+    tool_name: "create_quote_draft"
+    description: "Génère un brouillon de soumission (quote)."
+    requires_approval: false
+
+  - id: "confirm_reservation"
+    type: "api_call"
+    endpoint: "/api/v1/agent/approval-requests"
+    method: "POST"
+    description: "Demande la confirmation d'une réservation bloquant l'inventaire."
+    requires_approval: true

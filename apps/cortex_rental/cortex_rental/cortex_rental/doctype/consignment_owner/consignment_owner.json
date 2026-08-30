@@ -1,0 +1,94 @@
+{
+  "actions": [],
+  "autoname": "format:OWN-{short_code}",
+  "creation": "2026-08-29 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "PostgreSQL",
+  "field_order": [
+    "company",
+    "owner_name",
+    "short_code",
+    "owner_type",
+    "default_percentage",
+    "email",
+    "phone",
+    "billing_address"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "owner_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Owner Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "short_code",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Short Code",
+      "reqd": 1,
+      "unique": 0
+    },
+    {
+      "default": "Third-Party",
+      "fieldname": "owner_type",
+      "fieldtype": "Select",
+      "label": "Owner Type",
+      "options": "House\nThird-Party\nCo-Investment",
+      "reqd": 1
+    },
+    {
+      "default": "70.00",
+      "fieldname": "default_percentage",
+      "fieldtype": "Percent",
+      "in_list_view": 1,
+      "label": "Default Payout %",
+      "reqd": 1
+    },
+    {
+      "fieldname": "email",
+      "fieldtype": "Data",
+      "label": "Email",
+      "options": "Email"
+    },
+    {
+      "fieldname": "phone",
+      "fieldtype": "Data",
+      "label": "Phone"
+    },
+    {
+      "fieldname": "billing_address",
+      "fieldtype": "Small Text",
+      "label": "Billing Address"
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Consignment Owner",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "read": 1,
+      "write": 1,
+      "role": "Rental Manager"
+    },
+    {
+      "read": 1,
+      "role": "Rental Operator"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

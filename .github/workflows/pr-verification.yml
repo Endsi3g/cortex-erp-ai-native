@@ -1,0 +1,52 @@
+name: PR Conventions & PRD Compliance
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-branch-and-prd:
+    name: Verify Branch Format & PRD Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Branch Naming Standard
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Checking branch name: $BRANCH_NAME"
+          
+          # Allowed formats: feat/PRD-XXX-..., fix/PRD-XXX-..., chore/PRD-XXX-..., refactor/PRD-XXX-...
+          PATTERN="^(feat|fix|chore|refactor|docs)\/PRD-[A-Z]+-[0-9]{3}-.+$"
+          
+          if [[ "$BRANCH_NAME" =~ $PATTERN ]]; then
+            echo "✓ Branch name complies with Cortex PRD convention: $BRANCH_NAME"
+          else
+            echo "::warning title=Branch Convention::Branch '$BRANCH_NAME' does not match the recommended format: feat/PRD-XXX-001-description"
+          fi
+
+      - name: Validate PR Description for Required PRD Tags
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const validPrdTags = [
+              'PRD-ARCH',
+              'PRD-CON',
+              'PRD-INV',
+              'PRD-TRX',
+              'PRD-CLI',
+              'PRD-RET',
+              'PRD-AI',
+              'PRD-MIG',
+              'PRD-NFR'
+            ];
+            
+            const hasPrdTag = validPrdTags.some(tag => body.includes(tag));
+            
+            if (!hasPrdTag) {
+              core.setFailed(`PR description must reference at least one canonical PRD ID (${validPrdTags.join(', ')}).`);
+            } else {
+              core.info('✓ PR description contains valid PRD ID reference.');
+            }

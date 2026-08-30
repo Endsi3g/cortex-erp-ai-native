@@ -1,0 +1,165 @@
+{
+  "name": "Cortex Rental Transaction",
+  "doctype": "DocType",
+  "module": "Cortex Rental",
+  "custom": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "CR-TRX-.YYYY.-.#####",
+  "naming_rule": "Expression (old style)",
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Customer",
+      "options": "Customer",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "rental_state",
+      "fieldtype": "Select",
+      "label": "Rental State",
+      "options": "Quote\nReservation\nContract\nChecked Out\nReturned\nClosed\nCancelled\nDisputed\nQuarantine",
+      "default": "Quote",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "starts_at",
+      "fieldtype": "Datetime",
+      "label": "Starts At",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "ends_at",
+      "fieldtype": "Datetime",
+      "label": "Ends At",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "calendar_days",
+      "fieldtype": "Int",
+      "label": "Calendar Days",
+      "read_only": 1
+    },
+    {
+      "fieldname": "billable_days",
+      "fieldtype": "Float",
+      "label": "Billable Days",
+      "read_only": 1
+    },
+    {
+      "fieldname": "customer_account_ready",
+      "fieldtype": "Check",
+      "label": "Customer Account Ready",
+      "default": "0"
+    },
+    {
+      "fieldname": "insurance_ready",
+      "fieldtype": "Check",
+      "label": "Insurance Validated",
+      "default": "0"
+    },
+    {
+      "fieldname": "payment_ready",
+      "fieldtype": "Check",
+      "label": "Payment / Deposit Ready",
+      "default": "0"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Rental Items",
+      "options": "Cortex Rental Transaction Item"
+    },
+    {
+      "fieldname": "subtotal",
+      "fieldtype": "Currency",
+      "label": "Subtotal",
+      "read_only": 1
+    },
+    {
+      "fieldname": "tax_rate",
+      "fieldtype": "Percent",
+      "label": "Tax Rate (%)",
+      "default": "0.0"
+    },
+    {
+      "fieldname": "tax_amount",
+      "fieldtype": "Currency",
+      "label": "Tax Amount",
+      "read_only": 1
+    },
+    {
+      "fieldname": "grand_total",
+      "fieldtype": "Currency",
+      "label": "Grand Total",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "erpnext_quotation",
+      "fieldtype": "Link",
+      "label": "ERPNext Quotation",
+      "options": "Quotation",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erpnext_sales_order",
+      "fieldtype": "Link",
+      "label": "ERPNext Sales Order",
+      "options": "Sales Order",
+      "read_only": 1
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Internal Notes"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    },
+    {
+      "role": "Rental Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0
+    },
+    {
+      "role": "Rental Operator",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0
+    },
+    {
+      "role": "Agent Service Account",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0
+    }
+  ]
+}

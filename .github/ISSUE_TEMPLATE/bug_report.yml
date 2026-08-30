@@ -1,0 +1,50 @@
+name: Rapport de Bogue
+description: Signaler une anomalie, un comportement inattendu ou une regression dans Cortex ERP.
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Signalement d'anomalie
+        Merci de detailler les etapes permettant de reproduire le bogue.
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module affecte
+      options:
+        - "Inventaire & Catalogue (Rental Items, Serial Numbers)"
+        - "Consignation & Proprietaires (Owners, Payouts)"
+        - "Transactions de location (Quotes, Contracts, Lines)"
+        - "Comptoir & Check-in / Check-out"
+        - "Securite & Multi-Tenant"
+        - "Agents IA & Façade MCP"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Etapes de reproduction
+      description: Comment reproduire le probleme ?
+      placeholder: |
+        1. Aller sur '/admin/serial-numbers'
+        2. Tenter de supprimer une unite liee a une transaction
+        3. Constater l'erreur...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+      description: Que devrait-il se passer selon les regles metier ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs ou extraits d'erreur
+      description: Collez les extraits de logs ou d'exceptions Laravel/Pest.

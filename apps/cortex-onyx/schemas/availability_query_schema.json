@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CortexAvailabilityQuerySchema",
+  "description": "Schéma pour les requêtes et synthèses de disponibilité d'inventaire par Cortex Availability",
+  "type": "object",
+  "required": ["query", "results", "summary"],
+  "properties": {
+    "query": {
+      "type": "object",
+      "required": ["starts_at", "ends_at", "searched_items"],
+      "properties": {
+        "starts_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date et heure de début de la fenêtre d'analyse"
+        },
+        "ends_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date et heure de fin de la fenêtre d'analyse"
+        },
+        "duration_days": {
+          "type": "number",
+          "description": "Durée calculée en jours"
+        },
+        "searched_items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["query_term", "quantity"],
+            "properties": {
+              "query_term": { "type": "string" },
+              "quantity": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "item_id",
+          "item_name",
+          "item_code",
+          "requested_quantity",
+          "available_quantity",
+          "is_available"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_code": {
+            "type": "string"
+          },
+          "item_name": {
+            "type": "string"
+          },
+          "is_serialized": {
+            "type": "boolean"
+          },
+          "requested_quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "available_quantity": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "is_available": {
+            "type": "boolean"
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "transaction_id": { "type": "string", "format": "uuid" },
+                "transaction_number": { "type": "string" },
+                "state": { "type": "string" },
+                "starts_at": { "type": "string" },
+                "ends_at": { "type": "string" },
+                "quantity": { "type": "number" }
+              }
+            }
+          },
+          "suggested_serial_numbers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "serial": { "type": "string" },
+                "is_consignment": { "type": "boolean" },
+                "owner_name": { "type": ["string", "null"] }
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["all_available", "has_conflicts", "has_consignment_units"],
+      "properties": {
+        "all_available": {
+          "type": "boolean",
+          "description": "Vrai si 100% des articles demandés sont intégralement disponibles"
+        },
+        "has_conflicts": {
+          "type": "boolean",
+          "description": "Vrai si au moins un équipement subit une collision de réservation"
+        },
+        "has_consignment_units": {
+          "type": "boolean",
+          "description": "Vrai si des unités de consignation tierces sont mobilisées"
+        },
+        "recommendation": {
+          "type": "string",
+          "description": "Synthèse textuelle claire de la situation d'inventaire"
+        }
+      }
+    }
+  }
+}
