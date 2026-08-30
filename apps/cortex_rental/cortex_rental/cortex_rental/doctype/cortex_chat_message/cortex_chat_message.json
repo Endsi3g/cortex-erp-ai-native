@@ -1,0 +1,180 @@
+{
+  "actions": [],
+  "autoname": "format:CMSG-{YYYY}-{#####}",
+  "creation": "2026-08-30 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "chat_session",
+    "company",
+    "sender_type",
+    "sender_id",
+    "content_sanitized",
+    "content_hash",
+    "ui_blocks_json",
+    "onyx_message_id",
+    "model_provider",
+    "model_name",
+    "routing_reason",
+    "input_tokens",
+    "output_tokens",
+    "estimated_cost_usd",
+    "request_id",
+    "created_at"
+  ],
+  "fields": [
+    {
+      "fieldname": "chat_session",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Chat Session",
+      "options": "Cortex Chat Session",
+      "reqd": 1
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "description": "Denormalized from chat_session.company so permission_query_conditions can filter rows without a join, matching every other Company-scoped doctype in this app."
+    },
+    {
+      "fieldname": "sender_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Sender Type",
+      "options": "Human\nAgent\nSystem",
+      "reqd": 1
+    },
+    {
+      "fieldname": "sender_id",
+      "fieldtype": "Data",
+      "label": "Sender ID",
+      "reqd": 1,
+      "description": "frappe.session.user for Human, the resolved agent_profile for Agent, or a fixed system label."
+    },
+    {
+      "fieldname": "content_sanitized",
+      "fieldtype": "Small Text",
+      "label": "Content (sanitized)",
+      "description": "The human-readable message text only \u2014 never a raw model prompt, system instruction, or tool payload. See services/chat_response_transformer.py."
+    },
+    {
+      "fieldname": "content_hash",
+      "fieldtype": "Data",
+      "label": "Content Hash",
+      "description": "sha256 of content_sanitized, same hashing convention as services/idempotency.py."
+    },
+    {
+      "fieldname": "ui_blocks_json",
+      "fieldtype": "Code",
+      "label": "UI Blocks (JSON)",
+      "options": "JSON",
+      "description": "The typed CortexChatBlock list this message rendered as \u2014 see cortex_rental/schemas/chat_schemas.py."
+    },
+    {
+      "fieldname": "onyx_message_id",
+      "fieldtype": "Data",
+      "label": "Onyx Message ID",
+      "description": "Empty while OnyxChatClient is MockOnyxChatClient."
+    },
+    {
+      "fieldname": "model_provider",
+      "fieldtype": "Data",
+      "label": "Model Provider"
+    },
+    {
+      "fieldname": "model_name",
+      "fieldtype": "Data",
+      "label": "Model Name",
+      "description": "Informational only, never trusted for authorization \u2014 same convention as Cortex Agent Run.model_used."
+    },
+    {
+      "fieldname": "routing_reason",
+      "fieldtype": "Small Text",
+      "label": "Routing Reason",
+      "description": "Why AgentRouter/the model router picked this provider/agent \u2014 see docs/design-system.md's chat spec \"Routage Gemini et Sonnet\". Not populated by MockOnyxChatClient beyond a fixed placeholder string in this pass."
+    },
+    {
+      "fieldname": "input_tokens",
+      "fieldtype": "Int",
+      "label": "Input Tokens"
+    },
+    {
+      "fieldname": "output_tokens",
+      "fieldtype": "Int",
+      "label": "Output Tokens"
+    },
+    {
+      "fieldname": "estimated_cost_usd",
+      "fieldtype": "Float",
+      "label": "Estimated Cost (USD)",
+      "description": "A rough estimate for observability, not a billing record \u2014 deliberately not a Currency field, which would overstate its accounting significance."
+    },
+    {
+      "fieldname": "request_id",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Request ID",
+      "description": "Correlates to the same request_id used by Cortex Agent Run/Cortex Agent Tool Call for this turn."
+    },
+    {
+      "fieldname": "created_at",
+      "fieldtype": "Datetime",
+      "label": "Created At",
+      "reqd": 1
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex Chat Message",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "read": 1,
+      "role": "System Manager",
+      "write": 1
+    },
+    {
+      "read": 1,
+      "role": "Cortex Operations Manager"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Counter Staff"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Inventory Manager"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Finance Manager"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Consignment Manager"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Account Reviewer"
+    },
+    {
+      "read": 1,
+      "role": "Rental Manager"
+    },
+    {
+      "read": 1,
+      "role": "Rental Operator"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "ASC",
+  "track_changes": 0
+}

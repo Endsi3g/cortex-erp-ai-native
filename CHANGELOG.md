@@ -571,3 +571,93 @@ fifth wave), and the remaining page-specific components
 (`CortexAvailabilityCell`, `CortexSerialAssignment`,
 `CortexApprovalCard`, etc.) — those arrive with the screen that
 actually uses them, not as unused scaffolding.
+
+---
+
+## Seventh wave — Cortex Chat Gateway backend (mocked, no live Onyx)
+
+**Problem.** The user supplied two large specs: a Cortex↔Onyx chat
+backend architecture and a Copilot UI panel. Explicitly scoped down
+with the user before writing code (both specs are individually a
+multi-day build) to backend first, mocked, no UI, as its own reviewable
+PR — the panel is a separate follow-up PR once this contract exists.
+
+**Security shape, enforced structurally, not just by convention.**
+`SendMessageRequest`/`ChatContext` (`schemas/chat_schemas.py`, Pydantic
+v2, `extra="forbid"`) have no field for `company`, `agent`, `model`, or
+`allowed_tool_ids` at all — a client that tries to send one gets a hard
+validation error, not a value that's silently ignored. Verified with a
+throwaway script before writing any service code (sending each of those
+four keys and confirming `ValidationError`), then locked in as tests
+(`test_chat_gateway.py::TestClientCannotEscalate`).
+
+**Added.**
+- Three DocTypes: `Cortex Chat Session` (one per user/company/agent,
+  `agent_profile` always server-resolved), `Cortex Chat Message`
+  (human/agent/system turns, `content_sanitized` never a raw prompt),
+  `Cortex Chat Context Snapshot` (the *resolved*, permission-checked
+  context, not whatever the client originally sent). Chat privacy is a
+  new permission dimension beyond Company scoping — two staff at the
+  same Company must not read each other's conversations — added as
+  `_own_chat_session_condition`/`_own_chat_child_condition` in
+  `permissions/__init__.py` (Company filter AND `user =
+  frappe.session.user`, bypassed only for System Manager).
+- `services/agent_router.py`: `AgentRouter.resolve_agent(page)` — takes
+  only a page, no client-requested-agent parameter exists to override
+  it with (enforced by a test that inspects the function signature).
+- `services/tool_policy.py`: `ToolPolicyResolver` — per-agent allowlist
+  built only from tool names that actually exist in
+  `apps/cortex-mcp/cortex_mcp/server.py` today (`search_rental_items`,
+  `search_customers`, `check_inventory_availability`,
+  `create_quote_draft`, `create_customer_draft`,
+  `submit_approval_request`, `prepare_owner_statement`). The spec calls
+  for three read-only agents (`cortex-returns`, `cortex-approval-
+  assistant`, plus part of `cortex-operations`) that need a read-only
+  MCP tool that doesn't exist yet — given an empty tool list and
+  disclosed as a real gap in `HANDOFF.md`, rather than inventing a
+  `read_transaction`-style tool name that isn't real.
+- `services/chat_context.py`: `ChatContextResolver` — the actual
+  enforcement of "le serveur doit vérifier que l'utilisateur peut voir
+  la ressource": `frappe.has_permission()` plus an explicit Company
+  match check on the referenced document, raising
+  `ChatContextPermissionError` (→ `frappe.PermissionError` in the API
+  layer) rather than trusting the client's claim about what it's
+  looking at.
+- `services/onyx_chat_client.py`: `OnyxChatClient` interface +
+  `MockOnyxChatClient` — deterministic, keyword-driven (not random), so
+  every response is explicitly labeled as simulated and never fabricates
+  a real system fact (e.g. never claims a specific quantity is
+  available). This is the one seam a real Onyx-calling client would
+  implement later.
+- `services/chat_response_transformer.py`: validates every raw block
+  through the same `ChatBlock` discriminated union the frontend
+  contract is written against (`TypeAdapter`) — a malformed block
+  becomes a visible `ErrorBlock`, never a crash or a silently dropped
+  answer.
+- `services/chat_telemetry.py`: reuses the existing Cortex Agent
+  Run/Tool Call trail (`services/agent_telemetry.py`) rather than a
+  parallel logging system — required a small, backward-compatible
+  change to `record_tool_call()` (added optional `agent_id`/
+  `request_id` overrides) since chat calls come from a human Desk
+  session, not an MCP call with `X-Cortex-Agent-Id` headers.
+- `services/chat_session.py`: `ChatSessionService`, the gateway
+  orchestrator — rate limiting via `frappe.cache()` (real Frappe API,
+  not guessed), a real no-DB fallback path (same convention as
+  `AvailabilityService.check()`'s mock branch) so the full
+  validate→route→policy→mock-client→transform pipeline is genuinely
+  exercised by tests in this sandbox, not just written and hoped-for.
+- `api/v1/chat.py`: `create_session`, `send_message`, `get_session`,
+  `list_sessions`, `pin_context`, `clear_context` — all
+  `require_human_staff_role` (same gate as `checkin.py`), no MCP tool,
+  not part of the agent-facing surface.
+- 18 new tests (`test_chat_gateway.py`), 17 running for real in this
+  sandbox (client-escalation rejection, agent-router/tool-policy drift
+  detection, mock-client labeling, transformer error handling, full
+  send-message round trip) plus 1 correctly `skipUnless(frappe, ...)`
+  for real cross-user isolation on a live bench.
+
+**Not done in this pass** (tracked in `HANDOFF.md`): no real Onyx HTTP
+client, no streaming/SSE, no `CortexCopilotPanel` frontend (separate
+PR, stacked on this one), the read-only MCP tool gap above, and no
+retention/deletion job for `Cortex Chat Session.retention_until` (field
+exists, nothing populates or enforces it yet).

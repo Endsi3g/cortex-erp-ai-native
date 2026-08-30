@@ -82,11 +82,23 @@ def record_tool_call(
     started_at,
     duration_ms: int,
     error_message: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    request_id: Optional[str] = None,
 ) -> None:
+    """
+    `agent_id`/`request_id` default to get_agent_context() (the
+    X-Cortex-Agent-Id/X-Request-ID headers an MCP-originated call
+    sends) but can be passed explicitly — used by
+    services/chat_telemetry.py, where the caller is a human Desk
+    session with no such headers, and "agent_id" instead means which
+    Copilot persona (cortex-availability, etc.) is answering.
+    """
     if not frappe:
         return
 
-    agent_id, request_id = get_agent_context()
+    default_agent_id, default_request_id = get_agent_context()
+    agent_id = agent_id or default_agent_id
+    request_id = request_id or default_request_id
     actor_id = frappe.session.user
 
     try:
