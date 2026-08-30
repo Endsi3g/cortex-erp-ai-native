@@ -8,6 +8,7 @@ except ImportError:
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
+from cortex_rental.services.agent_telemetry import log_tool_call
 
 
 def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
@@ -61,6 +62,7 @@ def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @log_tool_call("submit_approval_request", scope="agent:approval:submit")
     def submit_approval():
         require_agent_scope("agent:approval:submit")
         company = get_company_context()

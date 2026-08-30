@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional
+import uuid
 
 try:
     import httpx
@@ -30,10 +31,12 @@ class FrappeClient:
         self.api_key = api_key or settings.frappe_api_key
         self.api_secret = api_secret or settings.frappe_api_secret
 
-    def _headers(self) -> Dict[str, str]:
+    def _headers(self, request_id: str) -> Dict[str, str]:
         return {
             "Authorization": f"token {self.api_key}:{self.api_secret}",
             "X-Company-ID": settings.default_company,
+            "X-Cortex-Agent-Id": settings.agent_id,
+            "X-Request-ID": request_id,
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
@@ -45,7 +48,9 @@ class FrappeClient:
         json_data: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         url = f"{self.base_url}/api/method/{method_path}"
-        headers = self._headers()
+        # One request_id per MCP tool call — this is what
+        # Cortex Agent Run/Tool Call (PRD §7) correlates on server-side.
+        headers = self._headers(request_id=str(uuid.uuid4()))
 
         if not httpx:
             return {"status": "offline_mode", "simulated": True}

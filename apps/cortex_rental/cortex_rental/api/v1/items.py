@@ -7,6 +7,7 @@ except ImportError:
 
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.audit import AuditService
+from cortex_rental.services.agent_telemetry import log_tool_call
 
 
 def search_items_handler(query: str, company: str, category: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -77,6 +78,7 @@ def search_items_handler(query: str, company: str, category: Optional[str] = Non
 if frappe:
 
     @frappe.whitelist(methods=["GET", "POST"])
+    @log_tool_call("search_rental_items", scope="agent:items:read")
     def search_items(query: str = "", category: Optional[str] = None):
         require_agent_scope("agent:items:read")
         company = get_company_context()

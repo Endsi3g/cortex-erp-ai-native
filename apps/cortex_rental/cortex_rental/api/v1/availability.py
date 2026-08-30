@@ -8,6 +8,7 @@ except ImportError:
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.availability import AvailabilityService
 from cortex_rental.services.audit import AuditService
+from cortex_rental.services.agent_telemetry import log_tool_call
 
 
 def check_availability_handler(payload: Dict[str, Any], company: str) -> List[Dict[str, Any]]:
@@ -23,6 +24,7 @@ def check_availability_handler(payload: Dict[str, Any], company: str) -> List[Di
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @log_tool_call("check_inventory_availability", scope="agent:availability:read")
     def check_availability():
         require_agent_scope("agent:availability:read")
         company = get_company_context()

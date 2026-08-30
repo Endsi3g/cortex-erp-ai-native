@@ -1,0 +1,99 @@
+{
+  "actions": [],
+  "autoname": "hash",
+  "creation": "2026-08-30 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "agent_run",
+    "tool_name",
+    "scope",
+    "status",
+    "started_at",
+    "duration_ms",
+    "error_message"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "agent_run",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Agent Run",
+      "options": "Cortex Agent Run",
+      "reqd": 1
+    },
+    {
+      "fieldname": "tool_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Tool Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "scope",
+      "fieldtype": "Data",
+      "label": "Required Scope",
+      "description": "The agent:*:* scope string checked for this call, e.g. agent:quote:draft."
+    },
+    {
+      "default": "Success",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Status",
+      "options": "Success\nDenied\nError",
+      "reqd": 1
+    },
+    {
+      "fieldname": "started_at",
+      "fieldtype": "Datetime",
+      "label": "Started At",
+      "reqd": 1
+    },
+    {
+      "fieldname": "duration_ms",
+      "fieldtype": "Int",
+      "label": "Duration (ms)"
+    },
+    {
+      "fieldname": "error_message",
+      "fieldtype": "Small Text",
+      "label": "Error/Denial Message",
+      "description": "Only the exception message — never raw request/response payloads, documents or PII (PRD §7)."
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex Agent Tool Call",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "read": 1,
+      "role": "System Manager"
+    },
+    {
+      "read": 1,
+      "role": "Auditor"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Operations Manager"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 0
+}

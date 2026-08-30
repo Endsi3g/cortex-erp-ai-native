@@ -9,6 +9,7 @@ from cortex_rental.permissions.agent_scopes import require_agent_scope, get_comp
 from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
+from cortex_rental.services.agent_telemetry import log_tool_call
 
 
 def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
@@ -90,6 +91,7 @@ def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @log_tool_call("create_quote_draft", scope="agent:quote:draft")
     def create_quote_draft():
         require_agent_scope("agent:quote:draft")
         company = get_company_context()

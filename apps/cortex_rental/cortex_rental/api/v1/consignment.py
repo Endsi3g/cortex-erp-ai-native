@@ -9,6 +9,7 @@ from cortex_rental.permissions.agent_scopes import require_agent_scope, get_comp
 from cortex_rental.services.consignment import ConsignmentService
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
+from cortex_rental.services.agent_telemetry import log_tool_call
 
 
 def prepare_owner_statement_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
@@ -66,6 +67,7 @@ def prepare_owner_statement_handler(payload: Dict[str, Any], company: str) -> Di
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @log_tool_call("prepare_owner_statement", scope="agent:consignment:read")
     def prepare_owner_statement():
         require_agent_scope("agent:consignment:read")
         company = get_company_context()

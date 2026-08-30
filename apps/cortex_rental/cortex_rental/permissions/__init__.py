@@ -90,3 +90,11 @@ def customer_query_conditions(user: str) -> str:
 
 def cortex_idempotency_record_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Cortex Idempotency Record")
+
+
+def cortex_agent_run_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Agent Run")
+
+
+def cortex_agent_tool_call_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Agent Tool Call")

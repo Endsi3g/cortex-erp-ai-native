@@ -41,6 +41,8 @@ permission_query_conditions = {
     "Cortex Rental Item Profile": "cortex_rental.permissions.cortex_rental_item_profile_query_conditions",
     "Customer": "cortex_rental.permissions.customer_query_conditions",
     "Cortex Idempotency Record": "cortex_rental.permissions.cortex_idempotency_record_query_conditions",
+    "Cortex Agent Run": "cortex_rental.permissions.cortex_agent_run_query_conditions",
+    "Cortex Agent Tool Call": "cortex_rental.permissions.cortex_agent_tool_call_query_conditions",
 }
 
 # Fixtures exported/synced on `bench migrate` — provisions the granular

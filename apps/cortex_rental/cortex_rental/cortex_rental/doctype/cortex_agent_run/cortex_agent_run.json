@@ -1,0 +1,107 @@
+{
+  "actions": [],
+  "autoname": "format:RUN-{YYYY}-{#####}",
+  "creation": "2026-08-30 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "agent_id",
+    "request_id",
+    "actor_id",
+    "model_used",
+    "status",
+    "tool_call_count",
+    "started_at",
+    "last_seen_at"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "agent_id",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Agent ID",
+      "description": "Logical agent persona (e.g. cortex_intake, cortex_availability), from the X-Cortex-Agent-Id request header.",
+      "reqd": 1
+    },
+    {
+      "fieldname": "request_id",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Request/Run ID",
+      "description": "Correlation ID grouping every tool call made within one logical agent run.",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "actor_id",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Actor ID",
+      "reqd": 1
+    },
+    {
+      "fieldname": "model_used",
+      "fieldtype": "Data",
+      "label": "Model Used",
+      "description": "e.g. gemini-3.7-flash, claude-sonnet-5. Informational only, never trusted for authorization."
+    },
+    {
+      "default": "Running",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Status",
+      "options": "Running\nCompleted\nFailed"
+    },
+    {
+      "default": "0",
+      "fieldname": "tool_call_count",
+      "fieldtype": "Int",
+      "label": "Tool Call Count"
+    },
+    {
+      "fieldname": "started_at",
+      "fieldtype": "Datetime",
+      "label": "Started At",
+      "reqd": 1
+    },
+    {
+      "fieldname": "last_seen_at",
+      "fieldtype": "Datetime",
+      "label": "Last Seen At"
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex Agent Run",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "read": 1,
+      "role": "System Manager"
+    },
+    {
+      "read": 1,
+      "role": "Auditor"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Operations Manager"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 0
+}

@@ -8,6 +8,7 @@ except ImportError:
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
+from cortex_rental.services.agent_telemetry import log_tool_call
 
 
 def search_customers_handler(query: str, company: str) -> List[Dict[str, Any]]:
@@ -89,6 +90,7 @@ def create_customer_draft_handler(payload: Dict[str, Any], company: str, actor_i
 if frappe:
 
     @frappe.whitelist(methods=["GET", "POST"])
+    @log_tool_call("search_customers", scope="agent:customers:read")
     def search_customers(query: str = ""):
         require_agent_scope("agent:customers:read")
         company = get_company_context()
@@ -96,6 +98,7 @@ if frappe:
         return {"data": data, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
+    @log_tool_call("create_customer_draft", scope="agent:customers:draft")
     def create_customer_draft():
         require_agent_scope("agent:customers:draft")
         company = get_company_context()
