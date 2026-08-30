@@ -30,9 +30,26 @@ doc_events = {
 
 # Permission Query Hooks for Multi-Tenancy
 # ----------------------------------------
+# Each entry MUST point to a doctype-specific wrapper (not the generic
+# no-op) so the row-level Company filter is actually applied. See
+# cortex_rental/permissions/__init__.py.
 permission_query_conditions = {
-    "Audit Event": "cortex_rental.permissions.get_permission_query_conditions",
-    "Approval Request": "cortex_rental.permissions.get_permission_query_conditions",
-    "Consignment Payout": "cortex_rental.permissions.get_permission_query_conditions",
-    "Rental Item": "cortex_rental.permissions.get_permission_query_conditions",
+    "Audit Event": "cortex_rental.permissions.audit_event_query_conditions",
+    "Approval Request": "cortex_rental.permissions.approval_request_query_conditions",
+    "Consignment Owner": "cortex_rental.permissions.consignment_owner_query_conditions",
+    "Consignment Payout": "cortex_rental.permissions.consignment_payout_query_conditions",
+    "Cortex Inbound Request": "cortex_rental.permissions.cortex_inbound_request_query_conditions",
+    "Cortex Rental Transaction": "cortex_rental.permissions.cortex_rental_transaction_query_conditions",
+    "Rental Item": "cortex_rental.permissions.rental_item_query_conditions",
+    "Rental Pricing Rule": "cortex_rental.permissions.rental_pricing_rule_query_conditions",
+    "Cortex Rental Item Profile": "cortex_rental.permissions.cortex_rental_item_profile_query_conditions",
+    "Customer": "cortex_rental.permissions.customer_query_conditions",
 }
+
+# Fixtures exported/synced on `bench migrate` — provisions the granular
+# Cortex roles referenced by permissions/agent_scopes.py and the Cortex
+# Company scoping custom field on the core ERPNext Customer doctype.
+fixtures = [
+    {"dt": "Role", "filters": [["role_name", "like", "Cortex %"]]},
+    {"dt": "Custom Field", "filters": [["name", "=", "Customer-cortex_company"]]},
+]

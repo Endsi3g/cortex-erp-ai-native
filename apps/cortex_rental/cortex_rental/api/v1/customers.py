@@ -13,7 +13,7 @@ def search_customers_handler(query: str, company: str) -> List[Dict[str, Any]]:
     if frappe:
         customers = frappe.get_all(
             "Customer",
-            filters={"disabled": 0},
+            filters={"disabled": 0, "cortex_company": company},
             fields=["name", "customer_name", "customer_group", "territory", "custom_insurance_valid_until"]
         )
         results = []
@@ -52,6 +52,7 @@ def create_customer_draft_handler(payload: Dict[str, Any], company: str, actor_i
             "customer_type": "Company",
             "customer_group": "Commercial",
             "territory": "All Territories",
+            "cortex_company": company,
             "disabled": 0
         })
         doc.insert(ignore_permissions=True)

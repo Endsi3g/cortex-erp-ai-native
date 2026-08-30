@@ -1,0 +1,80 @@
+[
+  {
+    "doctype": "Role",
+    "role_name": "Cortex System Manager",
+    "desk_access": 1,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Operations Manager",
+    "desk_access": 1,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Counter Staff",
+    "desk_access": 1,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Inventory Manager",
+    "desk_access": 1,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Finance Manager",
+    "desk_access": 1,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Consignment Manager",
+    "desk_access": 1,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Account Reviewer",
+    "desk_access": 1,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Read Only",
+    "desk_access": 1,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Migration Worker",
+    "desk_access": 0,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Agent Service Account",
+    "desk_access": 0,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Agent Intake",
+    "desk_access": 0,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Agent Availability",
+    "desk_access": 0,
+    "disabled": 0
+  },
+  {
+    "doctype": "Role",
+    "role_name": "Cortex Agent Reporting",
+    "desk_access": 0,
+    "disabled": 0
+  }
+]

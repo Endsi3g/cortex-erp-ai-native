@@ -17,12 +17,10 @@ except ImportError:
 class SearchItemsInput(BaseModel):
     query: str = Field(default="", description="Search term for rental equipment (e.g. 'Alexa', 'Cooke', 'SkyPanel')")
     category: Optional[str] = Field(default=None, description="Optional category filter (e.g. 'Camera Bodies', 'Cinema Lenses', 'Lighting')")
-    company: Optional[str] = Field(default=None, description="Tenant company name / ID")
 
 
 class SearchCustomersInput(BaseModel):
     query: str = Field(default="", description="Customer name, ID, or company to search for")
-    company: Optional[str] = Field(default=None, description="Tenant company name / ID")
 
 
 class CreateCustomerDraftInput(BaseModel):
@@ -30,7 +28,6 @@ class CreateCustomerDraftInput(BaseModel):
     email: Optional[str] = Field(default=None, description="Primary billing or contact email")
     phone: Optional[str] = Field(default=None, description="Direct phone number")
     notes: Optional[str] = Field(default=None, description="Context from incoming inquiry")
-    company: Optional[str] = Field(default=None, description="Tenant company name / ID")
 
 
 class ItemAvailabilityRequest(BaseModel):
@@ -42,7 +39,6 @@ class CheckAvailabilityInput(BaseModel):
     starts_at: str = Field(default="", description="Start timestamp in ISO 8601 format (e.g. '2026-09-01T09:00:00Z')")
     ends_at: str = Field(default="", description="End timestamp in ISO 8601 format (e.g. '2026-09-08T09:00:00Z')")
     items: List[ItemAvailabilityRequest] = Field(default_factory=list, description="List of items with quantities to verify")
-    company: Optional[str] = Field(default=None, description="Tenant company name / ID")
 
 
 class QuoteLineInput(BaseModel):
@@ -59,7 +55,6 @@ class CreateQuoteDraftInput(BaseModel):
     lines: List[QuoteLineInput] = Field(default_factory=list, description="Equipment lines included in the quote")
     evidence_ids: Optional[List[str]] = Field(default_factory=list, description="IDs of source evidence (email, pdf upload)")
     notes: Optional[str] = Field(default=None, description="Internal agent notes and rationale")
-    company: Optional[str] = Field(default=None, description="Tenant company name / ID")
 
 
 class SubmitApprovalRequestInput(BaseModel):
@@ -69,7 +64,6 @@ class SubmitApprovalRequestInput(BaseModel):
     proposed_payload: Optional[Dict[str, Any]] = Field(default=None, description="Proposed document mutations")
     evidence_ids: Optional[List[str]] = Field(default_factory=list, description="Audit evidence references")
     rationale: str = Field(default="", description="Reasoning and summary for human operator review")
-    company: Optional[str] = Field(default=None, description="Tenant company name / ID")
 
 
 class PrepareOwnerStatementInput(BaseModel):
@@ -79,9 +73,7 @@ class PrepareOwnerStatementInput(BaseModel):
     serial_no: str = Field(default="", description="Consigned equipment serial number")
     days: float = Field(default=3.0, description="Billable days")
     rate: float = Field(default=1500.0, description="Daily rate")
-    company: Optional[str] = Field(default=None, description="Tenant company name / ID")
 
 
 class GetTransactionInput(BaseModel):
     transaction_id: str = Field(default="", description="Cortex rental transaction ID (e.g. 'CR-TRX-2026-00001')")
-    company: Optional[str] = Field(default=None, description="Tenant company name / ID")

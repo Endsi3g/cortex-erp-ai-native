@@ -13,11 +13,11 @@ from cortex_rental.services.audit import AuditService
 def search_items_handler(query: str, company: str, category: Optional[str] = None) -> List[Dict[str, Any]]:
     """Handler logic for item search."""
     if frappe:
-        filters = {}
+        filters = {"company": company}
         if category:
             filters["category"] = category
 
-        # Search profiles
+        # Search profiles (Company-scoped: never return another tenant's catalog/rates)
         profiles = frappe.get_all(
             "Cortex Rental Item Profile",
             filters=filters,

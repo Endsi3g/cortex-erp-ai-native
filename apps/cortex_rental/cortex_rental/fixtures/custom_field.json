@@ -1,0 +1,14 @@
+[
+  {
+    "doctype": "Custom Field",
+    "dt": "Customer",
+    "fieldname": "cortex_company",
+    "label": "Cortex Tenant Company",
+    "fieldtype": "Link",
+    "options": "Company",
+    "insert_after": "customer_name",
+    "reqd": 1,
+    "in_standard_filter": 1,
+    "description": "Owning Company/tenant for this Customer record within Cortex. Required because core ERPNext Customer is not natively Company-scoped; Cortex enforces tenant isolation on top of it via this field."
+  }
+]

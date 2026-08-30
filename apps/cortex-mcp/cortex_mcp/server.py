@@ -54,88 +54,88 @@ except ImportError:
 
 mcp = FastMCP("Cortex Rental ERP Private Facade")
 
+# SECURITY INVARIANT: the tenant Company is NEVER a tool parameter. This
+# MCP deployment is provisioned for exactly one Cortex Company
+# (settings.default_company), matching the "1 service account = 1
+# tenant" pilot isolation model. No tool below accepts a `company`
+# argument from the caller/LLM — accepting one would let a prompt
+# (including an instruction hidden in an ingested document) redirect a
+# request to another tenant's data.
+_COMPANY = settings.default_company
+
 
 @mcp.tool()
-async def search_rental_items(query: str = "", category: Optional[str] = None, company: Optional[str] = None) -> List[Dict[str, Any]]:
+async def search_rental_items(query: str = "", category: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Search the rental catalog for cameras, lenses, lighting, audio and grip equipment.
     Returns daily rates, categories, and replacement values.
     """
-    comp = company or settings.default_company
     if search_items_handler:
-        return search_items_handler(query=query, company=comp, category=category)
+        return search_items_handler(query=query, company=_COMPANY, category=category)
 
     res = await client.call_method(
         "cortex_rental.api.v1.items.search_items",
         params={"query": query, "category": category},
-        company=comp
     )
     return res.get("data") if isinstance(res, dict) and "data" in res else res
 
 
 @mcp.tool()
-async def search_customers(query: str = "", company: Optional[str] = None) -> List[Dict[str, Any]]:
+async def search_customers(query: str = "") -> List[Dict[str, Any]]:
     """
     Search registered production companies, producers, and client accounts in Cortex ERP.
     """
-    comp = company or settings.default_company
     if search_customers_handler:
-        return search_customers_handler(query=query, company=comp)
+        return search_customers_handler(query=query, company=_COMPANY)
 
     res = await client.call_method(
         "cortex_rental.api.v1.customers.search_customers",
         params={"query": query},
-        company=comp
     )
     return res.get("data") if isinstance(res, dict) and "data" in res else res
 
 
 @mcp.tool()
-async def create_customer_draft(name: str, email: Optional[str] = None, phone: Optional[str] = None, notes: Optional[str] = None, company: Optional[str] = None) -> Dict[str, Any]:
+async def create_customer_draft(name: str, email: Optional[str] = None, phone: Optional[str] = None, notes: Optional[str] = None) -> Dict[str, Any]:
     """
     Create a new prospective customer draft account. Does not activate credit lines autonomously.
     """
-    comp = company or settings.default_company
     payload = {"customer_name": name, "email": email, "phone": phone, "notes": notes}
 
     if create_customer_draft_handler:
-        return create_customer_draft_handler(payload=payload, company=comp, actor_id="agent:mcp-fastmcp")
+        return create_customer_draft_handler(payload=payload, company=_COMPANY, actor_id="agent:mcp-fastmcp")
 
     res = await client.call_method(
         "cortex_rental.api.v1.customers.create_customer_draft",
         json_data=payload,
-        company=comp
     )
     return res.get("data") if isinstance(res, dict) and "data" in res else res
 
 
 @mcp.tool()
-async def check_inventory_availability(starts_at: str, ends_at: str, items: List[Dict[str, Any]], company: Optional[str] = None) -> List[Dict[str, Any]]:
+async def check_inventory_availability(starts_at: str, ends_at: str, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Check real-time equipment availability for specified dates.
     Calculates safety buffers, active reservations, and maintenance locks.
     """
-    comp = company or settings.default_company
     payload = {"starts_at": starts_at, "ends_at": ends_at, "items": items}
 
     if check_availability_handler:
-        return check_availability_handler(payload=payload, company=comp)
+        return check_availability_handler(payload=payload, company=_COMPANY)
 
     res = await client.call_method(
         "cortex_rental.api.v1.availability.check_availability",
         json_data=payload,
-        company=comp
     )
     return res.get("data") if isinstance(res, dict) and "data" in res else res
 
 
 @mcp.tool()
-async def create_quote_draft(customer_id: str, starts_at: str, ends_at: str, lines: List[Dict[str, Any]], notes: Optional[str] = None, evidence_ids: Optional[List[str]] = None, company: Optional[str] = None) -> Dict[str, Any]:
+async def create_quote_draft(customer_id: str, starts_at: str, ends_at: str, lines: List[Dict[str, Any]], notes: Optional[str] = None, evidence_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Create an AI-generated quote draft in Cortex Rental.
     Applies canonical 7 days = 3 billable days rule. Does NOT lock physical inventory until approved.
     """
-    comp = company or settings.default_company
     payload = {
         "customer_id": customer_id,
         "starts_at": starts_at,
@@ -146,23 +146,21 @@ async def create_quote_draft(customer_id: str, starts_at: str, ends_at: str, lin
     }
 
     if create_draft_handler:
-        return create_draft_handler(payload=payload, company=comp, actor_id="agent:mcp-fastmcp")
+        return create_draft_handler(payload=payload, company=_COMPANY, actor_id="agent:mcp-fastmcp")
 
     res = await client.call_method(
         "cortex_rental.api.v1.quotes.create_quote_draft",
         json_data=payload,
-        company=comp
     )
     return res.get("data") if isinstance(res, dict) and "data" in res else res
 
 
 @mcp.tool()
-async def submit_approval_request(action: str, entity_type: str, entity_id: str, rationale: str, proposed_payload: Optional[Dict[str, Any]] = None, evidence_ids: Optional[List[str]] = None, company: Optional[str] = None) -> Dict[str, Any]:
+async def submit_approval_request(action: str, entity_type: str, entity_id: str, rationale: str, proposed_payload: Optional[Dict[str, Any]] = None, evidence_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Submit a high-stakes action proposal to the human operator approval queue.
     Strict Gate: Agents cannot auto-approve. Human operator validation is required.
     """
-    comp = company or settings.default_company
     payload = {
         "action": action,
         "entity_type": entity_type,
@@ -173,23 +171,21 @@ async def submit_approval_request(action: str, entity_type: str, entity_id: str,
     }
 
     if submit_approval_handler:
-        return submit_approval_handler(payload=payload, company=comp, actor_id="agent:mcp-fastmcp")
+        return submit_approval_handler(payload=payload, company=_COMPANY, actor_id="agent:mcp-fastmcp")
 
     res = await client.call_method(
         "cortex_rental.api.v1.approvals.submit_approval",
         json_data=payload,
-        company=comp
     )
     return res.get("data") if isinstance(res, dict) and "data" in res else res
 
 
 @mcp.tool()
-async def prepare_owner_statement(owner_id: str, gross_amount: float, consignment_percentage: float, serial_no: str, days: float = 3.0, rate: float = 1500.0, company: Optional[str] = None) -> Dict[str, Any]:
+async def prepare_owner_statement(owner_id: str, gross_amount: float, consignment_percentage: float, serial_no: str, days: float = 3.0, rate: float = 1500.0) -> Dict[str, Any]:
     """
     Prepare a third-party equipment consignment payout statement.
     Strict Invariant: Redacts all customer and renter identities from the owner calculation snapshot.
     """
-    comp = company or settings.default_company
     payload = {
         "owner_id": owner_id,
         "gross_amount": gross_amount,
@@ -200,12 +196,11 @@ async def prepare_owner_statement(owner_id: str, gross_amount: float, consignmen
     }
 
     if prepare_owner_statement_handler:
-        return prepare_owner_statement_handler(payload=payload, company=comp)
+        return prepare_owner_statement_handler(payload=payload, company=_COMPANY)
 
     res = await client.call_method(
         "cortex_rental.api.v1.consignment.prepare_owner_statement",
         json_data=payload,
-        company=comp
     )
     return res.get("data") if isinstance(res, dict) and "data" in res else res
 
