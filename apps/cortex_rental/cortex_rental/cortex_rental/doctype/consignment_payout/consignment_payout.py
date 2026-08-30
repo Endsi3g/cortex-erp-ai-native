@@ -10,6 +10,8 @@ except ImportError:
 
     frappe = None
 
+from cortex_rental.services.consignment import ConsignmentService
+
 
 class ConsignmentPayout(Document):
     """
@@ -30,18 +32,7 @@ class ConsignmentPayout(Document):
                 if isinstance(self.calculation_snapshot, str)
                 else self.calculation_snapshot
             )
-            forbidden_keys = [
-                "customer_name",
-                "client_name",
-                "renter_name",
-                "customer_email",
-                "client_email",
-                "renter_email",
-                "customer_phone",
-                "renter_company",
-                "client_company",
-            ]
-            for key in forbidden_keys:
+            for key in ConsignmentService.FORBIDDEN_RENTER_KEYS:
                 if key in snapshot:
                     if frappe:
                         frappe.throw(

@@ -3,7 +3,7 @@
   "autoname": "hash",
   "creation": "2026-08-29 00:00:00.000000",
   "doctype": "DocType",
-  "engine": "PostgreSQL",
+  "engine": "InnoDB",
   "field_order": [
     "company",
     "actor_type",
