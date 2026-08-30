@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"cxHdrMain\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Cortex Rental</b></span>\",\"col\":12}},{\"id\":\"cxHdrQuick\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Acc\\u00e8s rapide</span>\",\"col\":12}},{\"id\":\"cxShAvail\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Disponibilit\\u00e9\",\"col\":3}},{\"id\":\"cxShTrx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transactions\",\"col\":3}},{\"id\":\"cxShAppr\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approbations\",\"col\":3}},{\"id\":\"cxShOnyx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assistant Onyx\",\"col\":3}},{\"id\":\"cxSpacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"cxHdrCards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modules</b></span>\",\"col\":12}},{\"id\":\"cxCardOps\",\"type\":\"card\",\"data\":{\"card_name\":\"Op\\u00e9rations\",\"col\":4}},{\"id\":\"cxCardCat\",\"type\":\"card\",\"data\":{\"card_name\":\"Catalogue\",\"col\":4}},{\"id\":\"cxCardCli\",\"type\":\"card\",\"data\":{\"card_name\":\"Clients\",\"col\":4}},{\"id\":\"cxCardFin\",\"type\":\"card\",\"data\":{\"card_name\":\"Finance\",\"col\":4}},{\"id\":\"cxCardIntel\",\"type\":\"card\",\"data\":{\"card_name\":\"Intelligence\",\"col\":4}},{\"id\":\"cxCardAdmin\",\"type\":\"card\",\"data\":{\"card_name\":\"Administration\",\"col\":4}}]",
+ "content": "[{\"id\":\"cxHdrMain\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Cortex Rental</b></span>\",\"col\":12}},{\"id\":\"cxHdrQuick\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Acc\\u00e8s rapide</span>\",\"col\":12}},{\"id\":\"cxShAvail\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Disponibilit\\u00e9\",\"col\":3}},{\"id\":\"cxShTrx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transactions\",\"col\":3}},{\"id\":\"cxShAppr\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approbations\",\"col\":3}},{\"id\":\"cxShOnyx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assistant Onyx (widget, exp\\u00e9rimental)\",\"col\":3}},{\"id\":\"cxSpacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"cxHdrCards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modules</b></span>\",\"col\":12}},{\"id\":\"cxCardOps\",\"type\":\"card\",\"data\":{\"card_name\":\"Op\\u00e9rations\",\"col\":4}},{\"id\":\"cxCardCat\",\"type\":\"card\",\"data\":{\"card_name\":\"Catalogue\",\"col\":4}},{\"id\":\"cxCardCli\",\"type\":\"card\",\"data\":{\"card_name\":\"Clients\",\"col\":4}},{\"id\":\"cxCardFin\",\"type\":\"card\",\"data\":{\"card_name\":\"Finance\",\"col\":4}},{\"id\":\"cxCardIntel\",\"type\":\"card\",\"data\":{\"card_name\":\"Intelligence\",\"col\":4}},{\"id\":\"cxCardAdmin\",\"type\":\"card\",\"data\":{\"card_name\":\"Administration\",\"col\":4}},{\"id\":\"cxShAssistant\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assistant Cortex\",\"col\":3}}]",
  "creation": "2026-08-30 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -315,10 +315,17 @@
    "stats_filter": "{\n    \"status\": \"Pending\"\n}"
   },
   {
-   "label": "Assistant Onyx",
+   "label": "Assistant Onyx (widget, expérimental)",
    "type": "URL",
    "url": "/onyx-assistant",
    "color": "Green",
+   "doc_view": ""
+  },
+  {
+   "label": "Assistant Cortex",
+   "link_to": "cortex-assistant",
+   "type": "Page",
+   "color": "Blue",
    "doc_view": ""
   }
  ],

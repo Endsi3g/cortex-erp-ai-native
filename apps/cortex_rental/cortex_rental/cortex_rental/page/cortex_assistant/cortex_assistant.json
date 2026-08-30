@@ -1,0 +1,28 @@
+{
+ "content": null,
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "module": "Cortex Rental",
+ "name": "cortex-assistant",
+ "owner": "Administrator",
+ "page_name": "Cortex Assistant",
+ "restrict_to_domain": "",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Cortex System Manager"},
+  {"role": "Cortex Operations Manager"},
+  {"role": "Cortex Counter Staff"},
+  {"role": "Cortex Inventory Manager"},
+  {"role": "Cortex Finance Manager"},
+  {"role": "Cortex Consignment Manager"},
+  {"role": "Cortex Account Reviewer"},
+  {"role": "Rental Manager"},
+  {"role": "Rental Operator"}
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Cortex Assistant"
+}

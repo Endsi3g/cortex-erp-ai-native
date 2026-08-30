@@ -149,7 +149,54 @@ déterministe (mots-clés), jamais aléatoire, et labellise toujours ses
 réponses comme simulées. Rien à valider sur la tour pour cette passe
 au-delà de `bench migrate` (sync les 3 nouveaux DocTypes) — pas de
 frontend, donc pas de test navigateur nécessaire ici. Le prochain test
-réel viendra avec le panneau `CortexCopilotPanel` (PR suivante).
+réel vient avec le panneau `CortexCopilotPanel` (ci-dessous).
+
+### Panneau Cortex Copilot (huitième vague)
+
+Nouvelle branche `feat/copilot-panel`, empilée sur
+`feat/chat-gateway-backend`. Détail complet : `CHANGELOG.md`, huitième
+vague ; carte des fichiers et tableau "réel vs. simplifié" :
+`docs/frontend/copilot-panel.md`.
+
+Contrairement au prompt Gemini original (qui prévoyait des données
+mockées côté client), ce panneau appelle les **vrais** endpoints
+`cortex_rental.api.v1.chat.*` de la septième vague — c'est donc un
+vrai test d'intégration du contrat backend, même si ce backend parle
+encore à `MockOnyxChatClient`, pas à un Onyx réel.
+
+Ajouté : bouton flottant global (`✦`, toutes les pages Desk, via
+`app_include_js` + `frappe.ready()`), panneau non modal coulissant
+(⌘J/Ctrl+J, Échap, redimensionnable 360-560px), page détachée
+`/app/cortex-assistant`, 8 composants de rendu (un par type de bloc
+réel du backend).
+
+**Sur la tour, une fois `git pull` fait** : mêmes commandes que pour
+Disponibilité (§3) — `bench migrate` (sync la nouvelle Page
+`cortex-assistant`), `bench build --app cortex_rental`, reload. Ce que
+j'ai besoin que tu me rapportes en plus de ce qui est déjà demandé en
+§3 :
+1. Le bouton `✦` apparaît-il en bas à droite sur n'importe quelle page
+   Desk (pas seulement Disponibilité) ?
+2. `⌘J`/`Ctrl+J` ouvre/ferme le panneau depuis n'importe où ?
+3. Envoyer un message crée-t-il bien une vraie `Cortex Chat Session`/
+   `Cortex Chat Message` en base (vérifiable via le Desk, liste
+   `Cortex Chat Session`) ?
+4. Le point le plus incertain de cette passe : `app_include_js`
+   pointant vers un `.bundle.js` avec des imports ESM — si `bench
+   build` échoue précisément sur `cortex_copilot.bundle.js`, c'est ce
+   qu'il faut me rapporter en premier (voir le pattern vérifié dans
+   `docs/frontend/copilot-panel.md`, mais chaque bench a sa propre
+   configuration esbuild).
+
+**Neuvième vague (même branche `feat/copilot-panel`)** : les deux
+éléments explicitement laissés de côté ci-dessus sont maintenant faits
+— éditeur de contexte réel (un seul vrai bouton : inclure/exclure le
+document actuellement ouvert) et réactivité live via
+`frappe.router.on('change', ...)` (vérifié comme l'API courante, pas
+l'ancienne `frappe.route.on` trouvée dans certains résultats de
+recherche pré-2018). Détail : `CHANGELOG.md`, neuvième vague. Rien de
+nouveau à valider sur la tour au-delà de ce qui est déjà demandé
+ci-dessus — mêmes fichiers, mêmes commandes.
 
 ## 4. Onyx — décision actée et implémentée : self-hosted + widget intégré
 
@@ -175,7 +222,8 @@ Une vraie clé `GEMINI_API_KEY` a été collée en clair dans le chat par l'util
 
 | Item | Pourquoi ce n'est pas fait | Effort estimé |
 |---|---|---|
-| **Panneau `CortexCopilotPanel` Vue** (consomme le contrat de `api/v1/chat.py`) | Portée volontairement séquencée avec l'utilisateur : backend d'abord (fait, voir §3bis), panneau ensuite, sur une PR séparée empilée sur celle-ci | 2-3 jours |
+| **Confirmer que le panneau Copilot s'ouvre/fonctionne réellement sur la tour** | Écrit et syntaxiquement vérifié ici, jamais ouvert dans un navigateur — voir §3 (sous-section "Panneau Cortex Copilot") pour ce qu'il faut rapporter | Quelques minutes une fois `bench build` fait |
+| Brancher `CopilotProposalCard`/`CopilotApprovalCard` sur un vrai Composer/file d'approbation | Ces écrans n'existent pas encore — les boutons relancent la conversation réelle ou naviguent vers le Form `Approval Request` existant à la place | Dépend de la construction du Composer/de la file d'approbation |
 | Client Onyx réel (remplacer `MockOnyxChatClient`) | Aucun Onyx déployé dans cet environnement (§4) — `OnyxChatClient` est une interface prête à recevoir une vraie implémentation HTTP | 0.5-1 jour une fois Onyx accessible |
 | Outil MCP en lecture seule pour transaction/check-in/approbation | `ToolPolicyResolver` donne une liste d'outils vide à `cortex-returns`/`cortex-approval-assistant` faute d'un tool `search`/`read` réel dans `cortex-mcp` — ces agents ne peuvent rien faire tant que ça n'existe pas | 0.5-1 jour par outil |
 | Streaming/SSE pour le chat | `send_message` est synchrone (réponse complète), pas de polling ni de WebSocket — le spec le prévoit comme étape 12, après stabilisation | 1-2 jours |
