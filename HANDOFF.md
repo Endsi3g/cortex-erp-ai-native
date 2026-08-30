@@ -13,11 +13,13 @@ Le code est corrigé et testé en mode mock (23-35 tests passent selon la branch
 
 ## 2. Ce qui bloque un vrai bench — et comment le débloquer
 
-Tenté deux fois dans cette session, bloqué par l'environnement du sandbox, pas par le code :
+Tenté trois fois dans cette session, bloqué par l'environnement du sandbox à chaque fois, pas par le code :
 
 1. **Tag Docker halluciné (corrigé)** : `infra/docker/Dockerfile.bench` référençait `frappe/bench:v15.0.0`, un tag qui n'a jamais existé sur Docker Hub. Corrigé vers `frappe/bench:latest` (commit `0aee7dc`) — vérifié contre la vraie liste de tags Docker Hub.
-2. **Disque plein** : le pull MariaDB+Valkey seul a rempli le disque du sandbox à 99%, faisant planter Docker Desktop. Nettoyé, mais le disque est resté trop juste (6-9 Go libres) pour un bench complet (frappe + erpnext + node_modules + venv demandent facilement plusieurs Go).
-3. **Docker Desktop instable après le crash** : au moment d'écrire ceci, `docker info` ne répond même plus après 20s.
+2. **Disque plein** : le pull MariaDB+Valkey seul a rempli le disque du sandbox à 99%, faisant planter Docker Desktop. Nettoyé une première fois (remonté à 9,6 Go libres), mais **le disque a continué à se vider tout seul ensuite (9,6 → 5,6 Go en quelques minutes, sans qu'aucun pull ne soit en cours)** — signe d'une pression disque générale sur cette machine sandbox, pas seulement liée à mes actions.
+3. **Docker Desktop ne s'est pas relancé correctement** : après le premier crash, `docker info` ne répondait plus. J'ai tenté un `quit`+`relaunch` (`osascript`/`open -a "Docker Desktop"`) : l'app GUI principale ne s'est pas relancée (aucun process `Docker Desktop.app/.../Docker Desktop` visible ensuite), seuls des process backend orphelins (`com.docker.backend`, `docker-agent`, `vmnetd`) sont restés actifs, sans coordinateur — `docker info` restait indéfiniment bloqué. Je n'ai pas insisté avec des mesures plus agressives (kill forcé des process backend, relance répétée) sur une machine dont je ne contrôle pas l'état complet.
+
+**Action requise côté humain avant de retenter** : relancer Docker Desktop manuellement (double-clic sur l'app, ou `killall Docker Desktop` puis relancer depuis le Launchpad) et vérifier `docker info` répond, **et** libérer plus d'espace disque que ce que voit ce sandbox (idéalement 20+ Go, sur une machine qui n'a pas cette fuite/pression disque inexpliquée). Une fois ces deux points confirmés sains, la séquence ci-dessous reste valide.
 
 **Pour la suite, sur une machine avec plus de ressources (recommandé : 20+ Go libres, Docker Desktop sain) :**
 
