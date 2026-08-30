@@ -57,6 +57,32 @@ HUMAN_STAFF_ROLES = [
 ]
 
 
+def require_human_staff_role() -> None:
+    """
+    Gate for endpoints that must never be reachable by an agent identity
+    at all — no scope grants access, only membership in
+    HUMAN_STAFF_ROLES (or System Manager). Used for physical operations
+    like check-in/receiving, which PRD requires a person to perform
+    (serial number scanning), not an autonomous agent call.
+    """
+    if not frappe:
+        return
+
+    user = frappe.session.user
+    roles = set(frappe.get_roles(user))
+
+    if user == "Administrator" or "System Manager" in roles or "Cortex System Manager" in roles:
+        return
+
+    if roles & set(HUMAN_STAFF_ROLES):
+        return
+
+    frappe.throw(
+        "Unauthorized: this action requires a human staff role and is never available to an agent identity.",
+        frappe.PermissionError,
+    )
+
+
 def require_agent_scope(required_scope: str) -> None:
     """
     Validate that the current session holds a role authorized for the

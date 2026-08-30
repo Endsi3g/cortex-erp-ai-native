@@ -66,6 +66,14 @@
       "fieldtype": "Link",
       "label": "Assigned Serial No",
       "options": "Serial No"
+    },
+    {
+      "fieldname": "returned_qty",
+      "fieldtype": "Float",
+      "label": "Returned Quantity",
+      "default": "0.0",
+      "read_only": 1,
+      "description": "Running total returned across all Cortex Check-In records referencing this line. Set only by services/checkin.py."
     }
   ]
 }

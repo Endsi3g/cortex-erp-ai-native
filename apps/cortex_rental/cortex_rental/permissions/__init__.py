@@ -106,3 +106,7 @@ def cortex_evidence_reference_query_conditions(user: str) -> str:
 
 def cortex_extraction_run_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Cortex Extraction Run")
+
+
+def cortex_check_in_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Check-In")
