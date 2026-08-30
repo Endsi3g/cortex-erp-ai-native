@@ -38,6 +38,8 @@ SCOPE_ROLE_MAP = {
         "Cortex Agent Reporting",
     ],
     "agent:consignment:read": ["Cortex Agent Reporting"],
+    "agent:intake:evidence": ["Cortex Agent Intake"],
+    "agent:intake:extract": ["Cortex Agent Intake"],
 }
 
 # Human operational roles reuse the same whitelisted business endpoints as

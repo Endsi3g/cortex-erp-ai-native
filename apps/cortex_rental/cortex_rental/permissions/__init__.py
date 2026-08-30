@@ -98,3 +98,11 @@ def cortex_agent_run_query_conditions(user: str) -> str:
 
 def cortex_agent_tool_call_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Cortex Agent Tool Call")
+
+
+def cortex_evidence_reference_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Evidence Reference")
+
+
+def cortex_extraction_run_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Extraction Run")

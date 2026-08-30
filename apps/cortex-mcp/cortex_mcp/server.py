@@ -33,6 +33,10 @@ try:
     )
     from cortex_rental.api.v1.items import search_items_handler
     from cortex_rental.api.v1.consignment import prepare_owner_statement_handler
+    from cortex_rental.api.v1.intake import (
+        register_evidence_handler,
+        record_extraction_handler,
+    )
 except ImportError:
     PricingService = None
     ConsignmentService = None
@@ -43,6 +47,8 @@ except ImportError:
     create_customer_draft_handler = None
     search_items_handler = None
     prepare_owner_statement_handler = None
+    register_evidence_handler = None
+    record_extraction_handler = None
 
 mcp = FastMCP("Cortex Rental ERP Private Facade")
 
@@ -217,6 +223,71 @@ async def prepare_owner_statement(
 
     res = await client.call_method(
         "cortex_rental.api.v1.consignment.prepare_owner_statement",
+        json_data=payload,
+    )
+    return res.get("data") if isinstance(res, dict) and "data" in res else res
+
+
+@mcp.tool()
+async def register_evidence(
+    source_channel: str,
+    text_excerpt: Optional[str] = None,
+    file_name: Optional[str] = None,
+    inbound_request: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Register a piece of evidence (an already-uploaded file, or a text
+    excerpt such as an email body quote) backing a structured
+    extraction. Returns an evidence_id to cite in
+    record_structured_extraction/create_quote_draft's evidence_ids.
+    Does NOT make the evidence usable on its own — it must still pass
+    the scanned_clean gate before an extraction can reference it.
+    """
+    payload = {
+        "source_channel": source_channel,
+        "text_excerpt": text_excerpt,
+        "file_name": file_name,
+        "inbound_request": inbound_request,
+    }
+
+    if register_evidence_handler:
+        return register_evidence_handler(payload=payload, company=_COMPANY, actor_id="agent:mcp-fastmcp")
+
+    res = await client.call_method(
+        "cortex_rental.api.v1.intake.register_evidence_api",
+        json_data=payload,
+    )
+    return res.get("data") if isinstance(res, dict) and "data" in res else res
+
+
+@mcp.tool()
+async def record_structured_extraction(
+    extracted_payload: Dict[str, Any],
+    model_used: Optional[str] = None,
+    inbound_request: Optional[str] = None,
+    evidence_ids: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """
+    Record a structured extraction (matching the Cortex Intake JSON
+    schema) as a Cortex Extraction Run, validated server-side and
+    flagged for human review if invalid or below the confidence
+    threshold. Call this BEFORE search_customers/create_quote_draft so
+    the extraction that led to any business object has a durable,
+    auditable record — an extracted payload is a claim, not yet a fact,
+    until it passes through here.
+    """
+    payload = {
+        "extracted_payload": extracted_payload,
+        "model_used": model_used,
+        "inbound_request": inbound_request,
+        "evidence_ids": evidence_ids or [],
+    }
+
+    if record_extraction_handler:
+        return record_extraction_handler(payload=payload, company=_COMPANY, actor_id="agent:mcp-fastmcp")
+
+    res = await client.call_method(
+        "cortex_rental.api.v1.intake.record_extraction",
         json_data=payload,
     )
     return res.get("data") if isinstance(res, dict) and "data" in res else res
