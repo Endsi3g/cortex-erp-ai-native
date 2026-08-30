@@ -50,21 +50,21 @@ Une fois ça tourne, exécuter en priorité les tests gated-Frappe déjà écrit
 - `test_agent_telemetry_live.py` — Cortex Agent Run/Tool Call
 - `test_checkin_live.py` — retour partiel vs complet, mise à jour Serial No
 
-## 3. Onyx — déploiement séparé obligatoire, mais les écrans peuvent s'intégrer
+## 3. Onyx — décision actée et implémentée : self-hosted + widget intégré
 
-Vérifié contre la doc Onyx réelle (docs.onyx.app, repo GitHub onyx-dot-app/onyx) :
+**Décision (2026-08-30)** : Onyx est déployé **self-hosted** (pas Onyx
+Cloud), Gemini configuré comme fournisseur LLM par défaut, et le chat
+est intégré visuellement dans Cortex via le widget officiel. Détail
+complet, config requise et limites connues : `infra/onyx/README.md`.
 
-- **Le backend Onyx doit tourner comme service séparé**, self-hosted (Docker/Kubernetes/Terraform, son propre docker-compose) ou Onyx Cloud. Il n'y a aucun moyen de le faire tourner "dans" le process Frappe/Cortex — confirme ce que dit déjà le PRD ("Onyx Standard : service indépendant").
-- **Mais l'écran de chat peut s'intégrer visuellement dans Cortex** via le widget officiel : un web component léger (~100-150 Ko gzippé, Lit + Shadow DOM, donc pas de conflit CSS avec Frappe Desk) :
-  ```html
-  <script type="module" src=".../onyx-widget.js"></script>
-  <onyx-chat-widget backend-url="https://onyx.<votredomaine>" api-key="..."></onyx-chat-widget>
-  ```
-  Le `api-key` doit être une clé à portée limitée (chat uniquement) — la doc Onyx prévient explicitement qu'elle est visible côté client.
-- **Comment l'intégrer dans Cortex concrètement** : ajouter le script/tag dans une page Frappe UI/Vue dédiée (pas dans `app_include_js` global de `hooks.py`, pour ne pas charger le widget sur tous les écrans Desk) — ou dans une Workspace/Page personnalisée. Reste à faire, pas commencé dans cette session.
-- **Important — ça ne change rien à la sécurité déjà en place** : que le widget soit embarqué ou qu'on ouvre Onyx dans un onglet séparé, le vrai appel d'outil agent passe toujours par Onyx backend → Cortex MCP → API Frappe whitelisted, avec les mêmes vérifications de scope/tenant/state-machine déjà corrigées dans ce repo. Le widget est une question d'UX, pas de sécurité.
+- **Le backend Onyx tourne comme service séparé**, self-hosted (leur propre `docker-compose.yml`/installeur officiel, pas vendorisé dans ce repo — trop de pièces mobiles, `relational_db`/`index`/`opensearch`/`cache`/`inference_model_server`/`minio` qui leur sont propres). Aucun moyen de le faire tourner "dans" le process Frappe/Cortex — confirme le PRD ("Onyx Standard : service indépendant").
+- **Widget intégré** : `apps/cortex_rental/cortex_rental/www/onyx-assistant.html` (+ `.py`) rend `<onyx-chat-widget>` (web component léger, Shadow DOM — pas de conflit CSS avec Frappe Desk), accessible à `/onyx-assistant` pour tout utilisateur authentifié. Config via `site_config.json` (`onyx_backend_url`, `onyx_widget_api_key`, `onyx_widget_script_url`) — jamais committée.
+- **Non vérifié** : le chemin exact du bundle JS du widget sur un déploiement self-hosted (la doc publique ne montre que l'exemple cloud). La page a un défaut raisonnable mais surchargeable — à confirmer contre un vrai déploiement.
+- **Gemini par défaut** : configuré dans le panneau admin Onyx (Settings → LLM Providers), pas via une variable d'environnement — je n'ai trouvé aucun nom de variable fiable pour l'automatiser sans risquer d'inventer une config inexistante. Étapes manuelles documentées dans `infra/onyx/README.md` §3.
+- **Sécurité inchangée** : que le widget soit embarqué ou qu'on ouvre Onyx séparément, tout appel d'outil agent réel passe toujours par Onyx backend → Cortex MCP → API Frappe whitelisted, avec les mêmes vérifications de scope/tenant/state-machine déjà corrigées dans ce repo. Le widget est une question d'UX, pas de sécurité.
+- **Toujours pas fait** : la clé `onyx_widget_api_key` doit être une clé Onyx à portée **limitée (chat uniquement)** — sa création dépend du panneau admin Onyx une fois déployé, donc pas testable dans ce sandbox.
 
-Sources : [Website Widget — Onyx Documentation](https://docs.onyx.app/deployment/configuration/website_widget), [onyx/widget/README.md](https://github.com/onyx-dot-app/onyx/blob/main/widget/README.md)
+Sources : [Website Widget — Onyx Documentation](https://docs.onyx.app/deployment/configuration/website_widget), [onyx/widget/README.md](https://github.com/onyx-dot-app/onyx/blob/main/widget/README.md), [onyx-dot-app/onyx docker-compose](https://github.com/onyx-dot-app/onyx/blob/main/deployment/docker_compose/docker-compose.yml)
 
 ## 4. Clé Gemini utilisée dans cette session
 
@@ -77,7 +77,7 @@ Une vraie clé `GEMINI_API_KEY` a été collée en clair dans le chat par l'util
 | Validation sur bench réel | Bloqué par l'environnement sandbox, pas le code — voir §2 | Quelques heures sur une machine correcte |
 | Upload Intent (S3/MinIO pré-signé) | Aucun endpoint d'upload n'existe dans ce repo pour partir de quelque chose ; feature d'infra à part entière | 1-2 jours |
 | Scan antivirus (ClamAV) | Le champ `scanned_clean` existe et bloque déjà l'usage, mais rien ne le positionne automatiquement | 0.5-1 jour (intégration ClamAV) |
-| Widget Onyx dans Cortex Desk | Voir §3 — pas commencé | 0.5 jour |
+| Vérifier `onyx_widget_script_url` contre un vrai déploiement self-hosted | Page/décision implémentées (§3), mais le chemin exact du bundle JS n'est pas confirmé — supposition raisonnable non testée | 15 min une fois Onyx déployé |
 | `docs/07-frappe-erpnext-implementation-guide.md` | Documente une conception antérieure obsolète ; juste flaggé, pas réécrit | 0.5-1 jour |
 | Décision 1 site/client vs multi-Company partagé | Phase 1 a rendu le modèle partagé sûr, mais la recommandation initiale (1 site = 1 client pour le pilote) reste le choix le plus prudent | Décision, pas du code |
 

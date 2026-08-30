@@ -89,31 +89,35 @@ Les gestionnaires de parcs audiovisuels, d'équipements de tournage, d'éclairag
   - `Cortex Rental Transaction` : Hub transactionnel de location gérant la machine à états (`Quote` $\rightarrow$ `Reservation` $\rightarrow$ `Contract` $\rightarrow$ `Checked Out` $\rightarrow$ `Returned` $\rightarrow$ `Closed`) et synchronisant les documents ERPNext natifs (`Quotation`, `Sales Order`, `Sales Invoice`).
   - `Cortex Rental Transaction Item` : Table enfant pour les lignes d'équipements de la transaction.
   - `Cortex Rental Item Profile` : Profil de location rattaché à l'Item ERPNext (taux journalier, valeur de remplacement, caution).
-  - `Cortex Consignment Owner` & `Cortex Consignment Payout` : Moteur de calcul de reversement propriétaire avec **anonymisation stricte du locataire**.
-  - `Cortex Approval Request` : File d'approbation humaine avec **barrière stricte interdisant l'auto-approbation par un agent**.
-  - `Cortex Audit Event` : Journal d'audit append-only immuable (`before_save` et `on_trash` protégés).
-  - `Cortex Inbound Request` : Ingestion structurée omnicanale.
-- **Services Métier Python** :
-  - `PricingService` : Application de la règle canonique **7 jours calendaires = 3 jours facturables**.
-  - `AvailabilityService` : Calcul de disponibilité temporelle et détection de conflits.
-  - `ConsignmentService` : Split propriétaire et purge des données de contact client.
-  - `TransactionStateService` : Validation des transitions d'états et synchronisation ERPNext.
-  - `AuditService` : Enregistrement immuable des événements d'audit.
+  - `Consignment Owner` & `Consignment Payout` : Moteur de calcul de reversement propriétaire avec **anonymisation stricte du locataire** (allowlist + denylist unifiées, voir services).
+  - `Approval Request` : File d'approbation humaine avec **barrière stricte interdisant l'auto-approbation par un agent**, branchée sur la vraie transition de transaction.
+  - `Audit Event` : Journal d'audit append-only immuable (`before_save` et `on_trash` protégés).
+  - `Cortex Inbound Request`, `Cortex Evidence Reference`, `Cortex Extraction Run` : pipeline d'ingestion structurée, hash SHA-256 et validation JSON Schema réelle de l'extraction (PRD §2.1/§8).
+  - `Cortex Agent Run`, `Cortex Agent Tool Call` : journalisation structurée de chaque appel d'outil agent (succès/refus/erreur), distincte de l'Audit Event (PRD §7).
+  - `Cortex Idempotency Record` : déduplication des écritures via `Idempotency-Key`.
+  - `Cortex Check-In`, `Cortex Check-In Item` : retours partiels, quarantaine, réparation — humain uniquement, aucun outil agent (PRD §4).
+- **Services Métier Python** (`services/`) :
+  - `pricing.py` : Application de la règle canonique **7 jours calendaires = 3 jours facturables**.
+  - `availability.py` : Disponibilité temps réel, distinction sérialisé/non-sérialisé, exclusion quarantaine/réparation.
+  - `locking.py` : Verrou Redis/Valkey par (company, item_code) à la confirmation d'une réservation — anti double-réservation.
+  - `consignment.py` : Split propriétaire, allowlist de snapshot + purge des données locataire.
+  - `transaction_state.py` : Machine à états, appliquée de façon inconditionnelle (`validate()`), pas seulement via l'API.
+  - `audit.py`, `agent_telemetry.py`, `idempotency.py`, `evidence.py`, `extraction.py`, `checkin.py`.
 - **Endpoints REST Métier Versionnés** (`/api/method/cortex_rental.api.v1.*`) :
-  - `items.py`, `customers.py`, `availability.py`, `quotes.py`, `approvals.py`, `consignment.py`, `health.py`.
+  - `items.py`, `customers.py`, `availability.py`, `quotes.py`, `approvals.py`, `consignment.py`, `intake.py`, `checkin.py`, `health.py`.
+- **Assistant intégré** (`www/onyx-assistant.html`) : page Frappe embarquant le widget officiel Onyx (`<onyx-chat-widget>`) — voir §Onyx ci-dessous.
 
 ### 2. Façade Python FastMCP (`apps/cortex-mcp`)
-- Serveur FastMCP exposant des outils typés Pydantic pour Onyx :
-  - `search_rental_items`
-  - `search_customers`
-  - `create_customer_draft`
-  - `check_inventory_availability`
-  - `create_quote_draft`
-  - `submit_approval_request`
+- Serveur FastMCP exposant des outils typés Pydantic pour Onyx (aucun n'accepte de paramètre `company` — le tenant est fixé côté déploiement MCP, jamais choisi par l'agent) :
+  - `search_rental_items`, `search_customers`, `create_customer_draft`
+  - `check_inventory_availability`, `create_quote_draft`, `submit_approval_request`
   - `prepare_owner_statement`
+  - `register_evidence`, `record_structured_extraction`
 
-### 3. Configuration Onyx & Prompts (`apps/cortex-onyx`)
-- Définition déclarative des agents (`cortex-intake`, `cortex-availability`, `rental-copilot`), prompts système, schémas JSON et politiques d'escalade.
+### 3. Onyx (self-hosted, service séparé)
+- Onyx tourne en dehors de ce dépôt, self-hosted (backend + Postgres/OpenSearch/Redis/MinIO propres à Onyx) — voir `infra/onyx/README.md` pour le déploiement, la connexion réseau à Cortex MCP, et la configuration de **Gemini comme fournisseur LLM par défaut** (panneau admin Onyx).
+- Configuration déclarative des agents Cortex (`apps/cortex-onyx`) : `cortex-intake`, `cortex-availability`, `rental-copilot`, prompts système, schémas JSON, politiques d'escalade.
+- Intégration visuelle dans Cortex via le widget officiel `<onyx-chat-widget>` embarqué dans `www/onyx-assistant.html` — purement côté client, aucun affaiblissement des vérifications de scope/tenant côté API.
 
 <br/>
 
@@ -130,7 +134,7 @@ Les gestionnaires de parcs audiovisuels, d'équipements de tournage, d'éclairag
 | **3** | **Sécurité dans le Code** | Les règles de prix (7j = 3j), de caution et de validation vivent dans le code système Python, jamais dans un prompt. |
 | **4** | **Audit Append-Only** | Toute mutation produit un enregistrement inaltérable avec acteur, heure, avant/après et preuve. |
 | **5** | **Supervision des Actes Sensibles** | Toute action engageante passe par la file d'approbation. Un agent ne s'auto-approuve jamais. |
-| **6** | **Multi-Tenant Absolu** | Cloisonnement strict des données par entreprise (`company` / `X-Company-ID`). Zéro fuite de données inter-compagnies. |
+| **6** | **Multi-Tenant Absolu** | Company résolue **côté serveur** depuis l'identité authentifiée (`User Permission` Frappe) ; `X-Company-ID` n'est qu'un indice, jamais une source de vérité. Zéro fuite de données inter-compagnies. |
 | **7** | **Autonomie Supervisée** | L'IA propose, optimise et rédige des brouillons ; le responsable humain engage et confirme. |
 
 </div>
@@ -166,10 +170,20 @@ Les gestionnaires de parcs audiovisuels, d'équipements de tournage, d'éclairag
 └──────────────────────▲───────────────┘       └──────────────────────────────┘
                        │
 ┌──────────────────────┴───────────────┐
-│          Plateforme Onyx             │
-│  - Agents IA (Gemini / Claude)       │
+│    Plateforme Onyx (self-hosted,     │
+│    service séparé — infra/onyx/)     │
+│  - Agents IA (Gemini par défaut,     │
+│    Claude en escalade)               │
 │  - Ingestion emails & brouillons     │
 └──────────────────────────────────────┘
+                       ▲
+                       │ widget <onyx-chat-widget>
+                       │ (client-side, Shadow DOM)
+┌──────────────────────┴───────────────┐
+│  www/onyx-assistant.html (Cortex)    │
+│  Intégration visuelle uniquement —   │
+│  aucun contournement des scopes API  │
+└───────────────────────────────────────┘
 ```
 
 <br/>
@@ -179,12 +193,11 @@ Les gestionnaires de parcs audiovisuels, d'équipements de tournage, d'éclairag
 ## 🚀 Démarrage Rapide & Commandes
 
 ```bash
-# 1. Validation complète avant revue (Ruff, compilation syntaxique, pytest)
+# 1. Validation complète avant revue (Ruff --config ruff.toml, format, pytest, schémas DocType)
 ./bin/pre-claude-check.sh
 
-# 2. Exécution des tests unitaires backend & FastMCP
-PYTHONPATH=apps/cortex_rental:apps/cortex-mcp python3 -m unittest discover -s apps/cortex_rental/cortex_rental/tests/
-PYTHONPATH=apps/cortex_rental:apps/cortex-mcp python3 -m unittest discover -s apps/cortex-mcp/tests/
+# 2. Exécution des tests directement (pytest, préféré ; PYTHONPATH requis)
+PYTHONPATH=apps/cortex_rental:apps/cortex-mcp pytest apps/ -v
 
 # 3. Démarrage de l'environnement Docker local
 make up
@@ -194,6 +207,12 @@ make logs-bench
 make logs-mcp
 ```
 
+> ⚠️ Aucune de ces commandes Docker n'a été exécutée avec succès jusqu'au
+> bout dans le sandbox de développement de cette session (espace disque
+> insuffisant pour un bench Frappe complet). Voir `HANDOFF.md` §2 pour
+> l'état exact et la marche à suivre. Les tests `pytest` ci-dessus, eux,
+> tournent réellement sans bench (mode dégradé sans Frappe) et passent.
+
 <br/>
 
 ---
@@ -202,11 +221,16 @@ make logs-mcp
 
 <div align="center">
 
+[Changelog (correctifs sécurité/correction)](CHANGELOG.md) &nbsp;|&nbsp;
+[Handoff opérationnel](HANDOFF.md) &nbsp;|&nbsp;
+[Déploiement Onyx self-hosted](infra/onyx/README.md) &nbsp;|&nbsp;
 [Guide d'Implémentation Frappe / ERPNext](docs/07-frappe-erpnext-implementation-guide.md) &nbsp;|&nbsp;
 [Intégration FastMCP et APIs Frappe](docs/02-onyx-mcp-frappe-integration.md) &nbsp;|&nbsp;
+[ADR-001 : Source de vérité](docs/adr/ADR-001-system-of-record.md) &nbsp;|&nbsp;
+[ADR-002 : Disponibilité & concurrence](docs/adr/ADR-002-availability-and-concurrency.md) &nbsp;|&nbsp;
 [ADR-003 : Replatforming Frappe / ERPNext](docs/adr/ADR-003-frappe-erpnext-migration.md) &nbsp;|&nbsp;
+[ADR-004 : Consolidation catalogue](docs/adr/ADR-004-rental-item-catalog-consolidation.md) &nbsp;|&nbsp;
 [Principes d'Architecture AI-Native](docs/01-ai-native-architecture.md) &nbsp;|&nbsp;
-[Workflow de Développement Gemini -> Claude](docs/05-workflow-gemini-claude.md) &nbsp;|&nbsp;
 [Politique de Sécurité](SECURITY.md) &nbsp;|&nbsp;
 [Guide de Contribution](CONTRIBUTING.md)
 

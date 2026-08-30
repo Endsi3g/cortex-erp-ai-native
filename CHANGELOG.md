@@ -290,3 +290,61 @@ fully back, so a partial return correctly stays `Checked Out`.
   here.
 - **Upload Intent (pre-signed S3/MinIO) + ClamAV scanning** — see
   Evidence/Extraction section above.
+
+---
+
+## Third wave — Onyx self-hosted decision, widget integration, README, release
+
+### Onyx: self-hosted, widget-integrated, Gemini as default provider
+
+Decision (2026-08-30): Onyx runs **self-hosted** (not Onyx Cloud), with
+Gemini configured as its default LLM provider, and its chat surfaced
+inside Cortex via the official `<onyx-chat-widget>` web component
+rather than requiring a separate tab. Verified against the real Onyx
+docs/GitHub repo before writing anything, following the same discipline
+as the earlier `frappe/bench:v15.0.0` catch — no service names, image
+tags, or config keys were guessed:
+
+- `infra/onyx/README.md`: deployment via Onyx's own official installer/
+  `docker-compose.yml` (`onyx-dot-app/onyx` — `relational_db`, `index`,
+  `opensearch`, `cache`, `inference_model_server`, `minio`), explicitly
+  **not** vendored into this repo's own compose file (a separate,
+  independently-versioned stack, matching the PRD's "service
+  indépendant" requirement as Onyx's own architecture, not just a
+  Cortex preference). Documents the MCP-only connection path (Onyx never
+  talks to Frappe/MariaDB directly) and that Gemini-as-default is
+  configured through Onyx's own Admin Panel (Settings → LLM Providers)
+  — no reliable env var name for this was found, so it's documented as
+  a manual step rather than invented.
+- `apps/cortex_rental/cortex_rental/www/onyx-assistant.{html,py}`: a
+  Frappe `www` page (verified pattern: `.html` + `.py` with
+  `get_context()`) embedding the widget, authenticated-users-only,
+  reading `onyx_backend_url` / `onyx_widget_api_key` /
+  `onyx_widget_script_url` from `site_config.json` (never committed).
+  Explicitly documented as not weakening any server-side check — the
+  widget is client-side UX; every real tool call still goes through
+  Cortex MCP → the whitelisted, scope/tenant-checked API.
+- **Known gap, not hidden**: the widget JS bundle's exact served path
+  on a self-hosted deployment was not verified (public docs only show
+  the cloud example `https://your-cdn.com/onyx-widget.js`) — the page
+  defaults to `{backend_url}/widget/onyx-widget.js` but this needs
+  confirming against a real deployment. `onyx_widget_api_key` must be a
+  chat-only, limited-scope Onyx key (their docs are explicit it's
+  visible in client-side page source).
+
+### README, first release, PR fixes
+
+- `README.md` updated to match the actual current DocType/service/
+  endpoint inventory (was missing every DocType and service added in
+  waves one and two), corrected two stale DocType names
+  (`Cortex Consignment Owner`/`Cortex Approval Request` → their real
+  names `Consignment Owner`/`Approval Request`), added the Onyx
+  self-hosted + widget architecture, and links to `CHANGELOG.md`,
+  `HANDOFF.md`, `infra/onyx/README.md`, and ADR-004.
+- Fixed the failing `PR Conventions & PRD Compliance` check
+  (`.github/workflows/pr-verification.yml`) on PR #1: it requires the
+  PR description to reference a canonical PRD tag
+  (`PRD-ARCH`/`PRD-NFR`/`PRD-TRX`/etc.), which the original description
+  didn't include despite covering all of them.
+- First tagged release created: see the repo's Releases page for notes
+  (mirrors this changelog's summary).
