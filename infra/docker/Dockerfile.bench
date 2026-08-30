@@ -5,28 +5,39 @@
 # CLI image is tagged by its own version (currently v5.x), not the
 # Frappe Framework version. Framework v15 is selected at `bench init`
 # time via `--frappe-branch version-15`, not via the Docker tag. Using
-# `latest` here; verified against the real Docker Hub tag list before
-# this fix (see CHANGELOG.md).
+# `latest` here; verified against the real Docker Hub tag list.
 FROM frappe/bench:latest
 
 USER root
 
-# Install system prerequisites for MariaDB (the actual DB — see
-# docker-compose.dev.yml) and build tools. The previous postgresql-client
-# / libpq-dev here were leftover from the pre-migration Postgres stack.
+# Install system prerequisites for MariaDB, PostgreSQL and build tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     default-mysql-client \
-    default-libmysqlclient-dev \
+    mariadb-client \
+    postgresql-client \
+    libpq-dev \
     gcc \
     python3-dev \
     curl \
     git \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 USER frappe
 
+WORKDIR /home/frappe
+
+# Pre-initialize frappe bench with version-15
+RUN bench init --skip-redis-config-generation --frappe-branch version-15 /home/frappe/frappe-bench
+
 WORKDIR /home/frappe/frappe-bench
+
+COPY --chown=frappe:frappe entrypoint-bench.sh /home/frappe/entrypoint-bench.sh
+USER root
+RUN chmod +x /home/frappe/entrypoint-bench.sh && dos2unix /home/frappe/entrypoint-bench.sh
+USER frappe
 
 EXPOSE 8000 9000 8008
 
+ENTRYPOINT ["/home/frappe/entrypoint-bench.sh"]
 CMD ["bench", "start"]

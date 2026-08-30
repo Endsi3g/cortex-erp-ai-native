@@ -63,8 +63,8 @@ services:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-cortex_minio_admin}
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-cortex_minio_dev_secret_key}
     ports:
-      - "127.0.0.1:9000:9000" # MinIO API (Local DX only)
-      - "127.0.0.1:9001:9001" # MinIO Web Console (DX)
+      - "127.0.0.1:9090:9000" # MinIO API (Local DX only)
+      - "127.0.0.1:9091:9001" # MinIO Web Console (DX)
     volumes:
       - minio_data:/data
     networks:
@@ -79,7 +79,7 @@ services:
 
   # --- 4. Serveur Mail de Développement & Sandbox (Mailpit) ---
   mailpit:
-    image: axllent/mailpit:v1.22.4
+    image: axllent/mailpit:latest
     container_name: cortex_mailpit_dev
     restart: unless-stopped
     ports:
@@ -103,7 +103,7 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000" # Frappe Desk Web UI
-      - "9000:9000" # SocketIO WebSockets
+      - "9002:9000" # SocketIO WebSockets
     volumes:
       - ../../apps/cortex_rental:/home/frappe/frappe-bench/apps/cortex_rental
       - bench_sites:/home/frappe/frappe-bench/sites
@@ -128,6 +128,8 @@ services:
     container_name: cortex_mcp_dev
     restart: unless-stopped
     working_dir: /app
+    ports:
+      - "127.0.0.1:3100:3100" # FastMCP REST/SSE
     volumes:
       - ../../apps/cortex-mcp:/app
     environment:
@@ -141,6 +143,7 @@ services:
       - bench
     networks:
       - internal
+      - public
 
 # --- Réseaux & Isolation ---
 networks:
