@@ -4,8 +4,10 @@ try:
     import frappe
     from frappe.model.document import Document
 except ImportError:
+
     class Document:
         pass
+
     frappe = None
 
 from cortex_rental.services.pricing import PricingService
@@ -18,6 +20,7 @@ class CortexRentalTransaction(Document):
     Primary Transaction Hub for Cortex Rental Operations.
     Manages rental lifecycle Quote -> Reservation -> Contract -> Checked Out -> Returned -> Closed.
     """
+
     def validate(self):
         # 0. Enforce the lifecycle state machine unconditionally, regardless
         #    of entry path (Desk UI save, generic REST write, whitelisted
@@ -43,9 +46,7 @@ class CortexRentalTransaction(Document):
                 unit_rate = float(item.rate or 0.0)
                 qty = float(item.qty or 1.0)
                 discount = float(item.discount_percentage or 0.0)
-                item.amount = PricingService.calculate_line_total(
-                    unit_rate, qty, self.billable_days, discount
-                )
+                item.amount = PricingService.calculate_line_total(unit_rate, qty, self.billable_days, discount)
                 subtotal += item.amount
 
         self.subtotal = round(subtotal, 2)
@@ -98,10 +99,7 @@ class CortexRentalTransaction(Document):
         is_agent = self._current_actor_is_agent()
 
         allowed, error_msg = TransactionStateService.can_transition(
-            current_state=self.rental_state,
-            target_state=new_state,
-            transaction_doc=self,
-            is_agent=is_agent
+            current_state=self.rental_state, target_state=new_state, transaction_doc=self, is_agent=is_agent
         )
 
         if not allowed:
@@ -124,5 +122,5 @@ class CortexRentalTransaction(Document):
             entity_type="Cortex Rental Transaction",
             entity_id=self.name if hasattr(self, "name") else "new",
             before_state=before_state,
-            after_state={"rental_state": new_state, "reason": reason}
+            after_state={"rental_state": new_state, "reason": reason},
         )

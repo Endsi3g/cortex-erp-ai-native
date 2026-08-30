@@ -2,6 +2,7 @@
 Consignment calculation and statement service.
 Computes owner revenue share while strictly enforcing tenant/renter identity redaction.
 """
+
 from typing import Any, Dict, Optional
 
 try:
@@ -12,8 +13,14 @@ except ImportError:
 
 class ConsignmentService:
     FORBIDDEN_RENTER_KEYS = [
-        "customer", "customer_name", "client_name", "renter_name",
-        "customer_email", "renter_email", "billing_address", "contact_phone"
+        "customer",
+        "customer_name",
+        "client_name",
+        "renter_name",
+        "customer_email",
+        "renter_email",
+        "billing_address",
+        "contact_phone",
     ]
 
     @classmethod
@@ -40,7 +47,7 @@ class ConsignmentService:
         serial_no: str,
         days: float,
         rate: float,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Calculate owner payout amount and create sanitized calculation snapshot.
@@ -55,7 +62,7 @@ class ConsignmentService:
             "gross_amount": gross_amount,
             "consignment_percentage": pct,
             "payout_amount": payout_amount,
-            "metadata": metadata or {}
+            "metadata": metadata or {},
         }
 
         sanitized_snapshot = cls.sanitize_snapshot(raw_snapshot)
@@ -64,5 +71,5 @@ class ConsignmentService:
             "gross_amount": gross_amount,
             "consignment_percentage": pct,
             "owner_payout_amount": payout_amount,
-            "calculation_snapshot": sanitized_snapshot
+            "calculation_snapshot": sanitized_snapshot,
         }

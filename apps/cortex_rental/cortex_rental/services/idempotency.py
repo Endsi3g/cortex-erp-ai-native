@@ -8,6 +8,7 @@ document (duplicate quote, duplicate approval request, duplicate
 consignment payout, duplicate customer). Reusing a key with a different
 payload is rejected rather than silently returning a mismatched response.
 """
+
 from typing import Any, Callable, Dict, Optional
 import hashlib
 import json

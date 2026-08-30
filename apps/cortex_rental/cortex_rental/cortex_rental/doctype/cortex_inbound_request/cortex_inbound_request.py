@@ -1,10 +1,11 @@
-
 try:
     import frappe
     from frappe.model.document import Document
 except ImportError:
+
     class Document:
         pass
+
     frappe = None
 
 from cortex_rental.services.audit import AuditService
@@ -15,6 +16,7 @@ class CortexInboundRequest(Document):
     Structured ingestion container for incoming rental inquiries (emails, PDFs, webhooks).
     Enforces Rule #1: Structured extraction before business mutation.
     """
+
     def before_insert(self):
         if not self.status:
             self.status = "Received"
@@ -30,5 +32,5 @@ class CortexInboundRequest(Document):
             action="cortex.inbound_request.processed",
             entity_type="Cortex Inbound Request",
             entity_id=self.name if hasattr(self, "name") else "new",
-            after_state={"status": "Processed", "transaction_id": transaction_id}
+            after_state={"status": "Processed", "transaction_id": transaction_id},
         )

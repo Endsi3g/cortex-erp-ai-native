@@ -10,6 +10,7 @@ rejected. The same rule applies to per-tool agent scopes: the role gate
 is keyed off the actual `required_scope` requested, not a single coarse
 "is this any kind of agent" check.
 """
+
 from typing import List, Optional
 
 try:

@@ -3,6 +3,7 @@ import os
 try:
     from pydantic import BaseModel, Field
 except ImportError:
+
     class BaseModel:
         def __init__(self, **data):
             for k, v in data.items():

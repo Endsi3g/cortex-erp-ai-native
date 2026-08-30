@@ -2,6 +2,7 @@
 Pricing and duration computation service for Cortex Rental.
 Enforces the canonical 7 calendar days = 3 billable days rule and tier discounts.
 """
+
 from datetime import datetime
 from typing import Optional, Tuple
 import math
@@ -14,11 +15,7 @@ except ImportError:
 
 class PricingService:
     @staticmethod
-    def compute_billable_days(
-        starts_at: str,
-        ends_at: str,
-        company: Optional[str] = None
-    ) -> Tuple[int, float]:
+    def compute_billable_days(starts_at: str, ends_at: str, company: Optional[str] = None) -> Tuple[int, float]:
         """
         Calculate calendar days and billable days.
         Canonical rule: 7 calendar days = 3.0 billable days.
@@ -43,13 +40,9 @@ class PricingService:
             try:
                 rule = frappe.db.get_value(
                     "Rental Pricing Rule",
-                    {
-                        "company": company,
-                        "is_active": 1,
-                        "calendar_days": calendar_days
-                    },
+                    {"company": company, "is_active": 1, "calendar_days": calendar_days},
                     ["billable_days"],
-                    as_dict=True
+                    as_dict=True,
                 )
                 if rule and rule.billable_days:
                     return calendar_days, float(rule.billable_days)
@@ -66,11 +59,11 @@ class PricingService:
         elif calendar_days == 4:
             billable_days = 2.5
         elif calendar_days in (5, 6, 7):
-            billable_days = 3.0 # Weekly rate canonical 7d = 3d
+            billable_days = 3.0  # Weekly rate canonical 7d = 3d
         elif calendar_days <= 14:
             billable_days = 6.0
         elif calendar_days <= 30:
-            billable_days = 10.0 # Monthly rate
+            billable_days = 10.0  # Monthly rate
         else:
             billable_days = float(calendar_days) * 0.4
 
@@ -78,10 +71,7 @@ class PricingService:
 
     @staticmethod
     def calculate_line_total(
-        unit_rate: float,
-        quantity: float,
-        billable_days: float,
-        discount_percentage: float = 0.0
+        unit_rate: float, quantity: float, billable_days: float, discount_percentage: float = 0.0
     ) -> float:
         """Calculate line subtotal with billable days and discount."""
         gross = unit_rate * quantity * billable_days

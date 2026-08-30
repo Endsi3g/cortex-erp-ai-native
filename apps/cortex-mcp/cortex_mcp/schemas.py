@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 try:
     from pydantic import BaseModel, Field
 except ImportError:
+
     class BaseModel:
         def __init__(self, **data):
             for k, v in data.items():
@@ -15,8 +16,14 @@ except ImportError:
 
 
 class SearchItemsInput(BaseModel):
-    query: str = Field(default="", description="Search term for rental equipment (e.g. 'Alexa', 'Cooke', 'SkyPanel')")
-    category: Optional[str] = Field(default=None, description="Optional category filter (e.g. 'Camera Bodies', 'Cinema Lenses', 'Lighting')")
+    query: str = Field(
+        default="",
+        description="Search term for rental equipment (e.g. 'Alexa', 'Cooke', 'SkyPanel')",
+    )
+    category: Optional[str] = Field(
+        default=None,
+        description="Optional category filter (e.g. 'Camera Bodies', 'Cinema Lenses', 'Lighting')",
+    )
 
 
 class SearchCustomersInput(BaseModel):
@@ -38,13 +45,17 @@ class ItemAvailabilityRequest(BaseModel):
 class CheckAvailabilityInput(BaseModel):
     starts_at: str = Field(default="", description="Start timestamp in ISO 8601 format (e.g. '2026-09-01T09:00:00Z')")
     ends_at: str = Field(default="", description="End timestamp in ISO 8601 format (e.g. '2026-09-08T09:00:00Z')")
-    items: List[ItemAvailabilityRequest] = Field(default_factory=list, description="List of items with quantities to verify")
+    items: List[ItemAvailabilityRequest] = Field(
+        default_factory=list, description="List of items with quantities to verify"
+    )
 
 
 class QuoteLineInput(BaseModel):
     item_id: str = Field(default="", description="Item code to quote")
     quantity: float = Field(default=1.0, description="Quantity of units")
-    unit_rate: Optional[float] = Field(default=None, description="Daily rate in $ (defaults to catalog rate if omitted)")
+    unit_rate: Optional[float] = Field(
+        default=None, description="Daily rate in $ (defaults to catalog rate if omitted)"
+    )
     discount_percentage: Optional[float] = Field(default=0.0, description="Discount percentage (0-100)")
 
 
@@ -53,7 +64,9 @@ class CreateQuoteDraftInput(BaseModel):
     starts_at: str = Field(default="", description="Rental period start in ISO 8601")
     ends_at: str = Field(default="", description="Rental period end in ISO 8601")
     lines: List[QuoteLineInput] = Field(default_factory=list, description="Equipment lines included in the quote")
-    evidence_ids: Optional[List[str]] = Field(default_factory=list, description="IDs of source evidence (email, pdf upload)")
+    evidence_ids: Optional[List[str]] = Field(
+        default_factory=list, description="IDs of source evidence (email, pdf upload)"
+    )
     notes: Optional[str] = Field(default=None, description="Internal agent notes and rationale")
 
 

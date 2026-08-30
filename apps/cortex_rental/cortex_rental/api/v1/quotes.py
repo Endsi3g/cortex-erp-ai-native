@@ -30,33 +30,37 @@ def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -
         line_amount = PricingService.calculate_line_total(unit_rate, qty, billable_days, discount)
         total_amount += line_amount
 
-        processed_lines.append({
-            "item_code": item_id,
-            "qty": qty,
-            "rate": unit_rate,
-            "calendar_days": calendar_days,
-            "billable_days": billable_days,
-            "discount_percentage": discount,
-            "amount": line_amount
-        })
+        processed_lines.append(
+            {
+                "item_code": item_id,
+                "qty": qty,
+                "rate": unit_rate,
+                "calendar_days": calendar_days,
+                "billable_days": billable_days,
+                "discount_percentage": discount,
+                "amount": line_amount,
+            }
+        )
 
     tx_name = f"CR-TRX-2026-{frappe.utils.now_datetime().strftime('%s')[-5:]}" if frappe else "CR-TRX-2026-00001"
 
     if frappe:
-        doc = frappe.get_doc({
-            "doctype": "Cortex Rental Transaction",
-            "company": company,
-            "customer": customer_id,
-            "rental_state": "Quote",
-            "starts_at": starts_at,
-            "ends_at": ends_at,
-            "calendar_days": calendar_days,
-            "billable_days": billable_days,
-            "subtotal": total_amount,
-            "grand_total": total_amount,
-            "notes": payload.get("notes") or "Created by Cortex AI Intake",
-            "items": processed_lines
-        })
+        doc = frappe.get_doc(
+            {
+                "doctype": "Cortex Rental Transaction",
+                "company": company,
+                "customer": customer_id,
+                "rental_state": "Quote",
+                "starts_at": starts_at,
+                "ends_at": ends_at,
+                "calendar_days": calendar_days,
+                "billable_days": billable_days,
+                "subtotal": total_amount,
+                "grand_total": total_amount,
+                "notes": payload.get("notes") or "Created by Cortex AI Intake",
+                "items": processed_lines,
+            }
+        )
         doc.insert(ignore_permissions=True)
         tx_name = doc.name
 
@@ -66,12 +70,7 @@ def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -
         entity_type="Cortex Rental Transaction",
         entity_id=tx_name,
         evidence=payload.get("evidence_ids"),
-        after_state={
-            "id": tx_name,
-            "state": "quote",
-            "total": f"{total_amount:.2f}",
-            "billable_days": billable_days
-        }
+        after_state={"id": tx_name, "state": "quote", "total": f"{total_amount:.2f}", "billable_days": billable_days},
     )
 
     return {
@@ -84,11 +83,12 @@ def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -
         "customer_account_ready": False,
         "insurance_ready": False,
         "payment_ready": False,
-        "items_count": len(processed_lines)
+        "items_count": len(processed_lines),
     }
 
 
 if frappe:
+
     @frappe.whitelist(methods=["POST"])
     def create_quote_draft():
         require_agent_scope("agent:quote:draft")

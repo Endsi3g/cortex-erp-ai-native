@@ -4,6 +4,7 @@ Permission query hooks for Cortex Rental — enforces row-level multi-tenant
 isolation for every Company-scoped DocType. Registered per-doctype in
 hooks.py under `permission_query_conditions`.
 """
+
 try:
     import frappe
 except ImportError:

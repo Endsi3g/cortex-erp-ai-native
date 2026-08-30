@@ -25,21 +25,23 @@ def prepare_owner_statement_handler(payload: Dict[str, Any], company: str) -> Di
         serial_no=serial_no,
         days=days,
         rate=rate,
-        metadata={"note": "Automated statement prepared via FastMCP"}
+        metadata={"note": "Automated statement prepared via FastMCP"},
     )
 
     doc_id = "PAYOUT-DRAFT-001"
 
     if frappe:
-        doc = frappe.get_doc({
-            "doctype": "Consignment Payout",
-            "company": company,
-            "owner": owner_id,
-            "gross_amount": gross_amount,
-            "consignment_percentage": consignment_percentage,
-            "owner_payout_amount": payout_data["owner_payout_amount"],
-            "calculation_snapshot": frappe.as_json(payout_data["calculation_snapshot"])
-        })
+        doc = frappe.get_doc(
+            {
+                "doctype": "Consignment Payout",
+                "company": company,
+                "owner": owner_id,
+                "gross_amount": gross_amount,
+                "consignment_percentage": consignment_percentage,
+                "owner_payout_amount": payout_data["owner_payout_amount"],
+                "calculation_snapshot": frappe.as_json(payout_data["calculation_snapshot"]),
+            }
+        )
         doc.insert(ignore_permissions=True)
         doc_id = doc.name
 
@@ -48,7 +50,7 @@ def prepare_owner_statement_handler(payload: Dict[str, Any], company: str) -> Di
         action="cortex.consignment.statement_prepared",
         entity_type="Consignment Payout",
         entity_id=doc_id,
-        after_state={"owner": owner_id, "payout_amount": payout_data["owner_payout_amount"]}
+        after_state={"owner": owner_id, "payout_amount": payout_data["owner_payout_amount"]},
     )
 
     return {
@@ -57,11 +59,12 @@ def prepare_owner_statement_handler(payload: Dict[str, Any], company: str) -> Di
         "gross_amount": gross_amount,
         "consignment_percentage": consignment_percentage,
         "owner_payout_amount": payout_data["owner_payout_amount"],
-        "calculation_snapshot": payout_data["calculation_snapshot"]
+        "calculation_snapshot": payout_data["calculation_snapshot"],
     }
 
 
 if frappe:
+
     @frappe.whitelist(methods=["POST"])
     def prepare_owner_statement():
         require_agent_scope("agent:consignment:read")

@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Tuple
 
+
 def compute_billable_days(starts_at: str, ends_at: str, company: str = None) -> Tuple[int, float]:
     """
     Computes duration and billable days applying Cortex rental pricing rules:

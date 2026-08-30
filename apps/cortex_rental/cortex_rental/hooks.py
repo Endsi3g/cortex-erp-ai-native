@@ -25,7 +25,7 @@ doc_events = {
     },
     "Serial No": {
         "before_save": "cortex_rental.overrides.serial_no.before_save_serial_no",
-    }
+    },
 }
 
 # Permission Query Hooks for Multi-Tenancy

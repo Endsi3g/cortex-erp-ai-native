@@ -16,16 +16,12 @@ def check_availability_handler(payload: Dict[str, Any], company: str) -> List[Di
     item_requests = payload.get("items") or payload.get("item_requests") or []
 
     svc = AvailabilityService()
-    results = svc.check(
-        company=company,
-        starts_at=starts_at,
-        ends_at=ends_at,
-        item_requests=item_requests
-    )
+    results = svc.check(company=company, starts_at=starts_at, ends_at=ends_at, item_requests=item_requests)
     return results
 
 
 if frappe:
+
     @frappe.whitelist(methods=["POST"])
     def check_availability():
         require_agent_scope("agent:availability:read")
@@ -33,8 +29,6 @@ if frappe:
         payload = frappe.local.form_dict
         results = check_availability_handler(payload=payload, company=company)
         AuditService.record_read(
-            action="cortex.availability.checked",
-            metadata={"item_count": len(results)},
-            company=company
+            action="cortex.availability.checked", metadata={"item_count": len(results)}, company=company
         )
         return {"data": results, "meta": {"company": company}}

@@ -35,8 +35,8 @@ fi
 # 3. Python Code Formatting & Linting (Ruff / Syntax Compilation)
 echo -e "\n${YELLOW}[3/6] Analyse de style et linting Python (Ruff / Python AST)...${NC}"
 if command -v ruff &> /dev/null; then
-    ruff check apps/
-    ruff format --check apps/
+    ruff check --config ruff.toml apps/
+    ruff format --config ruff.toml --check apps/
 else
     echo "Ruff non détecté sur l'hôte — Contrôle de compilation syntaxique Python..."
     python3 -m compileall apps/ -q

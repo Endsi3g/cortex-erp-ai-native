@@ -8,13 +8,16 @@ except ImportError:
     # Standalone test/mock fallback
     class Document:
         pass
+
     frappe = None
+
 
 class AuditEvent(Document):
     """
     Append-only, immutable audit trail for all Cortex mutations.
     Strictly forbids update and delete operations.
     """
+
     def before_save(self):
         if hasattr(self, "is_new") and not self.is_new():
             if frappe:
@@ -28,6 +31,7 @@ class AuditEvent(Document):
         else:
             raise PermissionError("Audit events cannot be deleted.")
 
+
 def log_audit_event(
     company: str,
     actor_type: str,
@@ -39,7 +43,7 @@ def log_audit_event(
     after_state: Optional[Dict[str, Any]] = None,
     evidence: Optional[Any] = None,
     policy_decision: Optional[Dict[str, Any]] = None,
-    request_id: Optional[str] = None
+    request_id: Optional[str] = None,
 ) -> Any:
     """
     Helper function to atomically create an immutable audit record.

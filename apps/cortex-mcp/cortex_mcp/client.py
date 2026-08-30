@@ -19,6 +19,7 @@ class FrappeClient:
     LLM tool argument (or an instruction hidden in an ingested document)
     must never be able to redirect a request to another tenant.
     """
+
     def __init__(
         self,
         base_url: Optional[str] = None,
@@ -34,7 +35,7 @@ class FrappeClient:
             "Authorization": f"token {self.api_key}:{self.api_secret}",
             "X-Company-ID": settings.default_company,
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
         }
 
     async def call_method(

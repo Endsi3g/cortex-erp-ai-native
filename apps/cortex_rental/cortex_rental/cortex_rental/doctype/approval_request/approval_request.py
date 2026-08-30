@@ -5,17 +5,21 @@ try:
     import frappe
     from frappe.model.document import Document
 except ImportError:
+
     class Document:
         pass
+
     frappe = None
 
 from cortex_rental.cortex_rental.doctype.audit_event.audit_event import log_audit_event
+
 
 class ApprovalRequest(Document):
     """
     Supervision queue entity for sensitive AI agent actions.
     Enforces that agents can never approve their own or any approval requests.
     """
+
     def approve(self, reason: Optional[str] = None):
         if frappe:
             current_user = frappe.session.user
@@ -45,7 +49,7 @@ class ApprovalRequest(Document):
                 action="rental.approval.approved",
                 entity_type=self.entity_type,
                 entity_id=self.entity_id,
-                after_state={"status": "Approved", "decision_reason": reason}
+                after_state={"status": "Approved", "decision_reason": reason},
             )
         else:
             self.status = "Approved"
@@ -112,7 +116,7 @@ class ApprovalRequest(Document):
                 action="rental.approval.rejected",
                 entity_type=self.entity_type,
                 entity_id=self.entity_id,
-                after_state={"status": "Rejected", "decision_reason": reason}
+                after_state={"status": "Rejected", "decision_reason": reason},
             )
         else:
             self.status = "Rejected"

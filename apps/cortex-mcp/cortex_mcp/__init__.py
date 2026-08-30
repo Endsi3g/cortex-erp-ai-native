@@ -2,4 +2,5 @@
 """
 Cortex FastMCP server package for Onyx AI Agents and Frappe ERPNext.
 """
+
 __version__ = "1.0.0"

@@ -21,18 +21,20 @@ def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str
     req_id = "apr-req-mock-001"
 
     if frappe:
-        doc = frappe.get_doc({
-            "doctype": "Approval Request",
-            "company": company,
-            "action": action,
-            "entity_type": entity_type,
-            "entity_id": entity_id,
-            "status": "Pending",
-            "proposed_payload": frappe.as_json(proposed_payload) if proposed_payload else None,
-            "evidence_references": frappe.as_json(evidence_ids) if evidence_ids else None,
-            "agent_rationale": rationale,
-            "created_by_agent": actor_id
-        })
+        doc = frappe.get_doc(
+            {
+                "doctype": "Approval Request",
+                "company": company,
+                "action": action,
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "status": "Pending",
+                "proposed_payload": frappe.as_json(proposed_payload) if proposed_payload else None,
+                "evidence_references": frappe.as_json(evidence_ids) if evidence_ids else None,
+                "agent_rationale": rationale,
+                "created_by_agent": actor_id,
+            }
+        )
         doc.insert(ignore_permissions=True)
         req_id = doc.name
 
@@ -42,7 +44,7 @@ def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str
         entity_type="Approval Request",
         entity_id=req_id,
         evidence=evidence_ids,
-        after_state={"action": action, "entity_type": entity_type, "entity_id": entity_id, "status": "Pending"}
+        after_state={"action": action, "entity_type": entity_type, "entity_id": entity_id, "status": "Pending"},
     )
 
     return {
@@ -52,11 +54,12 @@ def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str
         "entity_id": entity_id,
         "status": "Pending",
         "rationale": rationale,
-        "company": company
+        "company": company,
     }
 
 
 if frappe:
+
     @frappe.whitelist(methods=["POST"])
     def submit_approval():
         require_agent_scope("agent:approval:submit")

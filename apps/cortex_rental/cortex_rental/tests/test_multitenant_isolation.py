@@ -14,6 +14,7 @@ Run for real with, e.g.:
     bench --site cortex.localhost run-tests --app cortex_rental \\
         --module cortex_rental.tests.test_multitenant_isolation
 """
+
 import unittest
 
 try:
@@ -31,9 +32,9 @@ class TestMultiTenantIsolation(unittest.TestCase):
     def setUpClass(cls):
         for company, abbr in ((cls.COMPANY_A, "CTA"), (cls.COMPANY_B, "CTB")):
             if not frappe.db.exists("Company", company):
-                frappe.get_doc({"doctype": "Company", "company_name": company, "abbr": abbr, "default_currency": "USD"}).insert(
-                    ignore_permissions=True
-                )
+                frappe.get_doc(
+                    {"doctype": "Company", "company_name": company, "abbr": abbr, "default_currency": "USD"}
+                ).insert(ignore_permissions=True)
 
         cls.user_a = "tenant-a-agent@cortex.test"
         if not frappe.db.exists("User", cls.user_a):

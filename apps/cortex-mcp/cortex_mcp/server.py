@@ -13,7 +13,9 @@ except ImportError:
             def decorator(func):
                 self.tools[func.__name__] = func
                 return func
+
             return decorator
+
 
 from cortex_mcp.config import settings
 from cortex_mcp.client import client
@@ -25,7 +27,10 @@ try:
     from cortex_rental.api.v1.quotes import create_draft_handler
     from cortex_rental.api.v1.availability import check_availability_handler
     from cortex_rental.api.v1.approvals import submit_approval_handler
-    from cortex_rental.api.v1.customers import search_customers_handler, create_customer_draft_handler
+    from cortex_rental.api.v1.customers import (
+        search_customers_handler,
+        create_customer_draft_handler,
+    )
     from cortex_rental.api.v1.items import search_items_handler
     from cortex_rental.api.v1.consignment import prepare_owner_statement_handler
 except ImportError:
@@ -83,7 +88,9 @@ async def search_customers(query: str = "") -> List[Dict[str, Any]]:
 
 
 @mcp.tool()
-async def create_customer_draft(name: str, email: Optional[str] = None, phone: Optional[str] = None, notes: Optional[str] = None) -> Dict[str, Any]:
+async def create_customer_draft(
+    name: str, email: Optional[str] = None, phone: Optional[str] = None, notes: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Create a new prospective customer draft account. Does not activate credit lines autonomously.
     """
@@ -100,7 +107,9 @@ async def create_customer_draft(name: str, email: Optional[str] = None, phone: O
 
 
 @mcp.tool()
-async def check_inventory_availability(starts_at: str, ends_at: str, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+async def check_inventory_availability(
+    starts_at: str, ends_at: str, items: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
     """
     Check real-time equipment availability for specified dates.
     Calculates safety buffers, active reservations, and maintenance locks.
@@ -118,7 +127,14 @@ async def check_inventory_availability(starts_at: str, ends_at: str, items: List
 
 
 @mcp.tool()
-async def create_quote_draft(customer_id: str, starts_at: str, ends_at: str, lines: List[Dict[str, Any]], notes: Optional[str] = None, evidence_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+async def create_quote_draft(
+    customer_id: str,
+    starts_at: str,
+    ends_at: str,
+    lines: List[Dict[str, Any]],
+    notes: Optional[str] = None,
+    evidence_ids: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     """
     Create an AI-generated quote draft in Cortex Rental.
     Applies canonical 7 days = 3 billable days rule. Does NOT lock physical inventory until approved.
@@ -129,7 +145,7 @@ async def create_quote_draft(customer_id: str, starts_at: str, ends_at: str, lin
         "ends_at": ends_at,
         "lines": lines,
         "notes": notes,
-        "evidence_ids": evidence_ids or []
+        "evidence_ids": evidence_ids or [],
     }
 
     if create_draft_handler:
@@ -143,7 +159,14 @@ async def create_quote_draft(customer_id: str, starts_at: str, ends_at: str, lin
 
 
 @mcp.tool()
-async def submit_approval_request(action: str, entity_type: str, entity_id: str, rationale: str, proposed_payload: Optional[Dict[str, Any]] = None, evidence_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+async def submit_approval_request(
+    action: str,
+    entity_type: str,
+    entity_id: str,
+    rationale: str,
+    proposed_payload: Optional[Dict[str, Any]] = None,
+    evidence_ids: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     """
     Submit a high-stakes action proposal to the human operator approval queue.
     Strict Gate: Agents cannot auto-approve. Human operator validation is required.
@@ -154,7 +177,7 @@ async def submit_approval_request(action: str, entity_type: str, entity_id: str,
         "entity_id": entity_id,
         "proposed_payload": proposed_payload,
         "rationale": rationale,
-        "evidence_ids": evidence_ids or []
+        "evidence_ids": evidence_ids or [],
     }
 
     if submit_approval_handler:
@@ -168,7 +191,14 @@ async def submit_approval_request(action: str, entity_type: str, entity_id: str,
 
 
 @mcp.tool()
-async def prepare_owner_statement(owner_id: str, gross_amount: float, consignment_percentage: float, serial_no: str, days: float = 3.0, rate: float = 1500.0) -> Dict[str, Any]:
+async def prepare_owner_statement(
+    owner_id: str,
+    gross_amount: float,
+    consignment_percentage: float,
+    serial_no: str,
+    days: float = 3.0,
+    rate: float = 1500.0,
+) -> Dict[str, Any]:
     """
     Prepare a third-party equipment consignment payout statement.
     Strict Invariant: Redacts all customer and renter identities from the owner calculation snapshot.
@@ -179,7 +209,7 @@ async def prepare_owner_statement(owner_id: str, gross_amount: float, consignmen
         "consignment_percentage": consignment_percentage,
         "serial_no": serial_no,
         "days": days,
-        "rate": rate
+        "rate": rate,
     }
 
     if prepare_owner_statement_handler:
