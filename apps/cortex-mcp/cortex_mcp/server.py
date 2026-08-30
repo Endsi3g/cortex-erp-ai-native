@@ -1,7 +1,4 @@
-import os
-import sys
 from typing import Any, Dict, List, Optional
-import json
 
 try:
     from mcp.server.fastmcp import FastMCP
@@ -20,16 +17,6 @@ except ImportError:
 
 from cortex_mcp.config import settings
 from cortex_mcp.client import client
-from cortex_mcp.schemas import (
-    SearchItemsInput,
-    SearchCustomersInput,
-    CreateCustomerDraftInput,
-    CheckAvailabilityInput,
-    CreateQuoteDraftInput,
-    SubmitApprovalRequestInput,
-    PrepareOwnerStatementInput,
-    GetTransactionInput
-)
 
 # Direct fallback import from cortex_rental services when running in unified environment
 try:

@@ -203,7 +203,21 @@ def compute_billable_days(starts_at, ends_at, company: str) -> tuple[int, float]
 
 ## 5. API REST pour Onyx & Façade MCP
 
-### 5.1 Endpoint d'Ingestion de Brouillon (`POST /api/method/cortex_rental.api.quotes.create_draft`)
+> **⚠️ Obsolète.** Les échantillons de code de cette section (§5.1)
+> décrivent une itération de conception antérieure à `api/v1/` et à
+> `Cortex Rental Transaction`. Le module `cortex_rental.api.quotes`
+> (sans `v1`) qu'ils documentaient a été supprimé du code (endpoint
+> `@frappe.whitelist` actif mais sans aucune vérification de scope agent
+> ni de Company autorisée — un vestige dangereux, pas juste mort).
+> L'implémentation réelle et sécurisée est
+> `cortex_rental.api.v1.quotes.create_quote_draft`
+> (`apps/cortex_rental/cortex_rental/api/v1/quotes.py`), qui passe par
+> `permissions.agent_scopes.get_company_context()` /
+> `require_agent_scope()` avant toute écriture. Cette section reste ici
+> pour l'historique de conception ; une réécriture complète de ce guide
+> est un suivi ouvert, pas fait dans cette passe de correction.
+
+### 5.1 Endpoint d'Ingestion de Brouillon (`POST /api/method/cortex_rental.api.quotes.create_draft`) — historique, ne pas utiliser
 ```python
 # apps/cortex_rental/cortex_rental/api/quotes.py
 import frappe

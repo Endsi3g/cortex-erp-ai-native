@@ -1,6 +1,5 @@
 import unittest
 from cortex_rental.services.pricing import PricingService
-from cortex_rental.services.consignment import ConsignmentService
 from cortex_rental.services.transaction_state import TransactionStateService
 from cortex_rental.api.v1.quotes import create_draft_handler
 from cortex_rental.api.v1.availability import check_availability_handler

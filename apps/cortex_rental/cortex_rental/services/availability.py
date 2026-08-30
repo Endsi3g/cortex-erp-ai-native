@@ -3,7 +3,6 @@ Availability and concurrency calculation service for rental inventory.
 Verifies time-window conflicts across quotes, reservations, and active contracts.
 """
 from typing import Any, Dict, List, Optional
-from datetime import datetime
 
 try:
     import frappe

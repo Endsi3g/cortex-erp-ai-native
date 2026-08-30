@@ -2,15 +2,13 @@
 Transaction lifecycle state machine and ERPNext synchronization service.
 Enforces preconditions for Quote -> Reservation -> Contract -> Checked Out -> Returned -> Closed.
 """
-from typing import Any, Dict, List, Optional, Tuple
-from datetime import datetime
+from typing import Any, Optional, Tuple
 
 try:
     import frappe
 except ImportError:
     frappe = None
 
-from cortex_rental.services.pricing import PricingService
 
 
 class TransactionStateService:

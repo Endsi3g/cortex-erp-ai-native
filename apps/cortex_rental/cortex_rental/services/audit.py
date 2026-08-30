@@ -3,7 +3,6 @@ Audit trail and governance recording service.
 Guarantees append-only, immutable event records for all Cortex operations.
 """
 from typing import Any, Dict, Optional
-import json
 
 try:
     import frappe

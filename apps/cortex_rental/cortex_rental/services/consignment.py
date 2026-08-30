@@ -2,8 +2,7 @@
 Consignment calculation and statement service.
 Computes owner revenue share while strictly enforcing tenant/renter identity redaction.
 """
-from typing import Any, Dict, List, Optional
-import json
+from typing import Any, Dict, Optional
 
 try:
     import frappe

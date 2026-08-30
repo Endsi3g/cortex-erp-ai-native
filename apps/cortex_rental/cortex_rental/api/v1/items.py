@@ -2,7 +2,6 @@ from typing import Any, Dict, List, Optional
 
 try:
     import frappe
-    from frappe import _
 except ImportError:
     frappe = None
 
