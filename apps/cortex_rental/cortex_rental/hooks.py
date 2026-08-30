@@ -27,6 +27,16 @@ app_include_css = [
     "/assets/cortex_rental/css/cortex-utilities.css",
 ]
 
+# Global floating Cortex Copilot launcher — mounted on every Desk page
+# via frappe.ready() (see cortex_copilot.bundle.js). Verified real
+# pattern: app_include_js can reference a .bundle.js with ESM imports,
+# resolved by the same esbuild pipeline that compiles a Desk Page's own
+# .bundle.js (docs.frappe.io + frappe/frappe wiki, cross-checked before
+# use — see CHANGELOG.md, eighth wave).
+app_include_js = [
+    "/assets/cortex_rental/js/cortex_copilot/cortex_copilot.bundle.js",
+]
+
 # DocType Events (Audit logging & validation hooks)
 # ------------------------------------------------
 # NOTE: a `doc_events` block referencing

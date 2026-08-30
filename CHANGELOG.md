@@ -661,3 +661,74 @@ client, no streaming/SSE, no `CortexCopilotPanel` frontend (separate
 PR, stacked on this one), the read-only MCP tool gap above, and no
 retention/deletion job for `Cortex Chat Session.retention_until` (field
 exists, nothing populates or enforces it yet).
+
+---
+
+## Eighth wave — Cortex Copilot Panel (real backend, mocked Onyx)
+
+**Problem.** Follow-up to the seventh wave, per the user's confirmed
+sequencing ("backend first, panel next"). Builds the floating,
+non-modal chat panel from the copilot-panel spec — but wired to the
+**real** `cortex_rental.api.v1.chat` endpoints from wave seven, not
+client-side mock data, since that backend already exists and works.
+
+**New verified pattern**: `app_include_js` referencing a `.bundle.js`
+with ESM imports, resolved globally on every Desk page (not just one
+Page's own bundle) via `frappe.ready()`. Cross-checked against two
+independent searches (Frappe v14 migration notes: `app_include_js`
+moved from raw JS paths to bundle references; a Frappe forum thread on
+`app_include_js` + `import` + esbuild) before writing
+`cortex_copilot.bundle.js` — this is the mechanism that makes the
+launcher appear on every page, not just a single Desk Page's route.
+
+**Added.**
+- `public/js/cortex_copilot/`: `CortexCopilotPanel.vue` (floating or
+  docked mode), `CopilotHeader`/`ContextBar`/`QuickActions`/
+  `Conversation`/`Composer`, and eight block renderers — one per real
+  `ChatBlock` type from `schemas/chat_schemas.py`
+  (`CopilotVerifiedFact`, `CopilotExtractedData`, `CopilotProposalCard`,
+  `CopilotApprovalCard`, `CopilotRiskCard`, `CopilotMissingInfoCard`,
+  `CopilotToolProgress`, `CopilotErrorCard`) — matching the backend
+  contract exactly rather than the slightly different component list
+  named in the earlier draft spec, since wave seven's shipped schema is
+  the authority now, not a prompt written before it existed.
+  `chatClient.js` calls the real endpoints; nothing here fabricates a
+  response.
+- `public/js/cortex_assistant/` + `cortex_rental/page/cortex_assistant/`:
+  the detached `/app/cortex-assistant` Desk Page, same verified
+  Vue-in-a-Desk-Page pattern as Disponibilité (fifth wave), hosting the
+  same panel component in "docked" mode.
+- Global launcher: `hooks.py`'s `app_include_js` +
+  `cortex_copilot.bundle.js`, hidden for `Guest` and non-staff roles as
+  a client-side courtesy (the real gate stays
+  `require_human_staff_role()` server-side, unaffected either way).
+- Reuses design-system components directly rather than duplicating them:
+  `CortexReadinessIndicator` for approval requirements,
+  `CortexErrorState`/`CortexEmptyState`/`CortexLoadingState` for panel
+  states — exactly the "don't duplicate Frappe UI/Cortex components"
+  rule the design system doc itself states.
+- Workspace: added a real "Assistant Cortex" shortcut to
+  `/app/cortex-assistant`; relabeled the existing widget shortcut
+  "Assistant Onyx (widget, expérimental)" so the two aren't confused —
+  one is a real, working chat backed by this wave's gateway, the other
+  is the still-unverified `<onyx-chat-widget>` embed from the fourth
+  wave.
+- `docs/frontend/copilot-panel.md`: full file map, the verified
+  `app_include_js`/`frappe.ready()` pattern, and an explicit table of
+  what's real vs. a disclosed simplification in this pass (no context
+  editor, no live route-change reactivity, proposal/approval buttons
+  re-engage the real chat pipeline or navigate to a real existing Form
+  rather than opening screens that don't exist yet, no streaming).
+
+**Honesty choices worth calling out**: `CopilotProposalCard`'s primary
+button does not create anything — there is no Transaction Composer yet
+to open prefilled, so it re-sends the proposal's own title as the next
+message through the real pipeline instead of faking a mutation.
+`CopilotApprovalCard`'s button navigates to the real `Approval Request`
+Desk Form (which does exist) rather than a fabricated approvals queue
+screen.
+
+**Not done in this pass** (tracked in `HANDOFF.md`): no streaming, no
+context editor drawer, no live reactivity to Desk navigation while the
+panel stays open, and still no real Onyx client underneath any of this
+— every response rendered here comes from `MockOnyxChatClient`.
