@@ -7,6 +7,7 @@ except ImportError:
 
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.audit import AuditService
+from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
 
 
 def search_customers_handler(query: str, company: str) -> List[Dict[str, Any]]:
@@ -89,5 +90,11 @@ if frappe:
         require_agent_scope("agent:customers:draft")
         company = get_company_context()
         payload = frappe.local.form_dict
-        result = create_customer_draft_handler(payload=payload, company=company, actor_id=frappe.session.user)
+        result = with_idempotency(
+            company=company,
+            scope="customers.create_customer_draft",
+            idempotency_key=get_idempotency_key_header(),
+            payload=payload,
+            handler=lambda: create_customer_draft_handler(payload=payload, company=company, actor_id=frappe.session.user),
+        )
         return {"data": result, "meta": {"company": company}}

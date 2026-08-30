@@ -8,6 +8,7 @@ except ImportError:
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.consignment import ConsignmentService
 from cortex_rental.services.audit import AuditService
+from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
 
 
 def prepare_owner_statement_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
@@ -66,5 +67,11 @@ if frappe:
         require_agent_scope("agent:consignment:read")
         company = get_company_context()
         payload = frappe.local.form_dict
-        result = prepare_owner_statement_handler(payload=payload, company=company)
+        result = with_idempotency(
+            company=company,
+            scope="consignment.prepare_owner_statement",
+            idempotency_key=get_idempotency_key_header(),
+            payload=payload,
+            handler=lambda: prepare_owner_statement_handler(payload=payload, company=company),
+        )
         return {"data": result, "meta": {"company": company}}

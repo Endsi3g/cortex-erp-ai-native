@@ -8,6 +8,7 @@ except ImportError:
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.audit import AuditService
+from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
 
 
 def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
@@ -93,5 +94,11 @@ if frappe:
         require_agent_scope("agent:quote:draft")
         company = get_company_context()
         payload = frappe.local.form_dict
-        result = create_draft_handler(payload=payload, company=company, actor_id=frappe.session.user)
+        result = with_idempotency(
+            company=company,
+            scope="quotes.create_quote_draft",
+            idempotency_key=get_idempotency_key_header(),
+            payload=payload,
+            handler=lambda: create_draft_handler(payload=payload, company=company, actor_id=frappe.session.user),
+        )
         return {"data": result, "meta": {"company": company}}

@@ -89,3 +89,7 @@ def customer_query_conditions(user: str) -> str:
 
     companies = ", ".join(frappe.db.escape(c) for c in allowed)
     return f"`tabCustomer`.`cortex_company` in ({companies})"
+
+
+def cortex_idempotency_record_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Idempotency Record")
