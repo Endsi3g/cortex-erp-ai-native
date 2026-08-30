@@ -198,6 +198,37 @@ recherche pré-2018). Détail : `CHANGELOG.md`, neuvième vague. Rien de
 nouveau à valider sur la tour au-delà de ce qui est déjà demandé
 ci-dessus — mêmes fichiers, mêmes commandes.
 
+### Composer de transaction (dixième vague)
+
+Nouvelle branche `feat/transaction-composer`, empilée sur
+`feat/copilot-panel`. Détail complet : `CHANGELOG.md`, dixième vague ;
+tableau "réel vs. simplifié" : `docs/frontend/transaction-composer.md`.
+
+Presque entièrement bâti sur du backend déjà existant
+(`search_customers`, `create_customer_draft`, `search_items`,
+`check_availability`, `create_quote_draft`) — un seul nouvel endpoint,
+`quotes.preview_pricing` (aperçu de prix en lecture seule, mêmes
+calculs `PricingService` que la création réelle, rien de persisté).
+Corrige aussi un vrai bug latent dans `create_quote_draft` : `lines`
+n'était jamais parsé depuis une chaîne JSON, ce qui aurait corrompu
+silencieusement toute soumission créée depuis un navigateur (jamais
+testé avant cette page — seuls MCP/tests l'appelaient, avec une vraie
+liste Python).
+
+**Sur la tour** : mêmes commandes que pour Disponibilité (§3) —
+`bench migrate` (sync la nouvelle Page `cortex-transaction-composer`
++ le nouveau raccourci Workspace), `bench build --app cortex_rental`,
+reload. En plus de ce qui est déjà demandé en §3 :
+1. La recherche client/équipement retourne-t-elle des résultats réels
+   (suppose qu'il y a des `Cortex Rental Item Profile`/`Customer` sur
+   le site) ?
+2. Le prix affiché change-t-il en direct quand on modifie une ligne ou
+   les dates, sans erreur console ?
+3. Cliquer "Créer la soumission" crée-t-il une vraie
+   `Cortex Rental Transaction` et navigue-t-il vers son Form ?
+4. Le bouton "+ Créer une soumission" de Disponibilité arrive-t-il bien
+   sur le Composer avec les dates préremplies ?
+
 ## 4. Onyx — décision actée et implémentée : self-hosted + widget intégré
 
 **Décision (2026-08-30)** : Onyx est déployé **self-hosted** (pas Onyx
@@ -230,7 +261,9 @@ Une vraie clé `GEMINI_API_KEY` a été collée en clair dans le chat par l'util
 | Job de rétention `Cortex Chat Session.retention_until` | Le champ existe, rien ne le remplit ni ne purge les sessions expirées | 0.5 jour |
 | **Confirmer que la page Disponibilité s'ouvre réellement sur la tour** | Écrit et testé en unitaire ici, jamais ouvert dans un navigateur — voir §3 pour les commandes et ce qu'il faut me rapporter | Quelques minutes une fois `bench build` fait |
 | Jeu de données de démo (fixtures) pour que la grille Disponibilité soit dense dès le premier chargement | Pas demandé explicitement pour cette passe ; à faire si la tour n'a pas encore de `Cortex Rental Item Profile`/transactions réels | 0.5 jour |
-| Écrans Composer de transaction / Check-in / Approbations / Assistant | Portée de cette passe volontairement limitée à Workspace + Disponibilité (choix confirmé avec l'utilisateur) | Composer : 1-2 jours, Check-in : 1 jour, Approbations : 1 jour, Assistant : dépend d'Onyx (§4) |
+| Écrans Check-in / Approbations (Vue dédiée) | Disponibilité, Assistant et Composer sont faits ; Check-in et Approbations restent — Check-in a déjà tout son backend (`services/checkin.py`, `Cortex Check-In`), Approbations utilise pour l'instant le Form Frappe natif d'`Approval Request` | Check-in : 1 jour, Approbations : 1 jour |
+| Confirmer que le Composer fonctionne réellement sur la tour | Écrit et testé en unitaire ici, jamais ouvert dans un navigateur — voir §3 (sous-section "Composer de transaction") | Quelques minutes une fois `bench build` fait |
+| Suggestions d'accessoires, lignes libres, rabais ligne contrôlé par permission | Pas construits dans cette passe du Composer | 0.5-1 jour |
 | Adopter `frappe-ui` (composants) sur les prochains écrans | Un problème connu (issue GitHub ouverte sur `doppio`) casse le build esbuild quand `frappe-ui` est importé dans ce pattern de Desk Page ; pas de bench ici pour le reproduire/déboguer | À réévaluer une fois §3 confirmé fonctionnel |
 | Validation sur bench réel (isolation tenant, concurrence, télémétrie agent, check-in) | Bloqué par l'environnement sandbox, pas le code — voir §2. Un bench existe maintenant sur la tour (§3), donc ces suites (`test_multitenant_isolation.py` etc., listées en §2) peuvent enfin tourner pour de vrai — à lancer | Quelques heures sur la tour |
 | Upload Intent (S3/MinIO pré-signé) | Aucun endpoint d'upload n'existe dans ce repo pour partir de quelque chose ; feature d'infra à part entière | 1-2 jours |

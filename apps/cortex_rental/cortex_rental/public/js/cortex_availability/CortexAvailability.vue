@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from "vue";
 import { STATE_META, stateKeyForRentalState } from "../cortex_shared/stateMeta.js";
+import { fmtDateTime, addDays } from "../cortex_shared/dateUtils.js";
 import CortexPageHeader from "../cortex_shared/CortexPageHeader.vue";
 import CortexStatusBadge from "../cortex_shared/CortexStatusBadge.vue";
 import CortexLoadingState from "../cortex_shared/CortexLoadingState.vue";
@@ -64,7 +65,6 @@ const sidebarCollapsed = ref(false);
 const loading = ref(true);
 const error = ref("");
 const items = ref([]);
-const resolvedCompany = ref("");
 
 let searchDebounce = null;
 
@@ -77,20 +77,6 @@ function startOfWeek(d) {
 	date.setDate(date.getDate() - day);
 	date.setHours(0, 0, 0, 0);
 	return date;
-}
-
-function addDays(d, n) {
-	const date = new Date(d);
-	date.setDate(date.getDate() + n);
-	return date;
-}
-
-function fmtDateTime(d) {
-	const pad = (n) => String(n).padStart(2, "0");
-	return (
-		`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
-		`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-	);
 }
 
 function fmtDateShort(d) {
@@ -140,11 +126,6 @@ function fetchMatrix() {
 			loading.value = false;
 			const data = (r.message && r.message.data) || { items: [] };
 			items.value = data.items || [];
-			resolvedCompany.value = (r.message && r.message.meta && r.message.meta.company) || "";
-			if (!activeCategories.size) {
-				// First load: default to "all categories" — represented as an
-				// empty active set meaning "no category filter applied" below.
-			}
 		},
 		error(r) {
 			loading.value = false;
@@ -239,15 +220,16 @@ function openTransaction(block) {
 }
 
 function createDraft() {
-	// Prefills dates + the server-resolved Company. Equipment lines still
-	// need to be added manually on the transaction form — prefilling a
-	// child table row from a query param is a real follow-up, not faked
-	// here.
-	frappe.new_doc("Cortex Rental Transaction", {
+	// Prefills dates via frappe.route_options — the standard Frappe
+	// cross-page handoff (read once in on_page_load/onMounted of the
+	// destination, then cleared), not a URL query string. Equipment
+	// lines still need to be added manually on the Composer — this
+	// grid has no per-item selection state to carry over yet.
+	frappe.route_options = {
 		starts_at: fmtDateTime(rangeStart.value),
 		ends_at: fmtDateTime(addDays(rangeStart.value, 1)),
-		company: resolvedCompany.value || undefined,
-	});
+	};
+	frappe.set_route("cortex-transaction-composer");
 }
 
 function shiftRange(delta) {
