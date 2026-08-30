@@ -22,11 +22,13 @@ Une problématique critique réside dans la gestion des conflits d'inventaire et
    - La vérification de disponibilité retourne l'état à l'instant $T$. Deux requêtes simultanées peuvent légitimement observer que le stock restant est de 1 unité.
    - La prévention des sur-engagements (double-booking) est déléguée à l'étape de **mutation** (passage à l'état `reservation` ou `contract`).
 
-3. **Stratégie de Verrouillage à la Mutation (Travaux Futurs / PRD-INV-003) :**
-   - Lors de la création ou confirmation d'une réservation, le service de transaction utilisera :
-     1. Un verrou distribué Redis atomique par équipement (`rental:lock:item:{company_id}:{item_id}`) avec TTL court (ex: 5s).
-     2. Une re-vérification de disponibilité sous transaction PostgreSQL avec `SELECT ... FOR UPDATE`.
-     3. La création atomique de la ligne et l'assignation des numéros de série.
+3. **Stratégie de Verrouillage à la Mutation (implémentée — voir
+   `services/locking.py` et `CortexRentalTransaction.transition_to`) :**
+   - Lors de la confirmation d'une réservation ou d'un contrat, le service de transaction :
+     1. Acquiert un verrou distribué Redis/Valkey atomique par équipement (`rental:lock:item:{company}:{item_code}`) avec TTL court (5s).
+     2. Re-vérifie la disponibilité sous ce verrou (`AvailabilityService.check`, en excluant la transaction courante de son propre décompte via `exclude_transaction`).
+     3. Ne commet le changement d'état (`self.save()`) que si la re-vérification confirme la disponibilité.
+   - Stack réelle : **MariaDB/InnoDB** (pas PostgreSQL — voir `infra/docker/docker-compose.dev.yml` et les DocTypes JSON, dont l'`engine` a été corrigé de `PostgreSQL` à `InnoDB`). Une future itération peut ajouter un `SELECT ... FOR UPDATE` InnoDB en complément du verrou Redis si le volume de contention l'exige ; ce n'est pas fait dans cette passe.
 
 ## Conséquences
 

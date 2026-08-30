@@ -2,8 +2,8 @@
 Audit trail and governance recording service.
 Guarantees append-only, immutable event records for all Cortex operations.
 """
+
 from typing import Any, Dict, Optional
-import json
 
 try:
     import frappe
@@ -32,11 +32,7 @@ class AuditService:
         else:
             actor_type = "Human"
 
-        return {
-            "actor_type": actor_type,
-            "actor_id": user,
-            "roles": roles
-        }
+        return {"actor_type": actor_type, "actor_id": user, "roles": roles}
 
     @classmethod
     def record_mutation(
@@ -49,7 +45,7 @@ class AuditService:
         after_state: Optional[Dict[str, Any]] = None,
         evidence: Optional[Any] = None,
         policy_decision: Optional[Dict[str, Any]] = None,
-        request_id: Optional[str] = None
+        request_id: Optional[str] = None,
     ) -> Any:
         """
         Record a state mutation into the append-only audit log.
@@ -66,16 +62,11 @@ class AuditService:
             after_state=after_state,
             evidence=evidence,
             policy_decision=policy_decision,
-            request_id=request_id
+            request_id=request_id,
         )
 
     @classmethod
-    def record_read(
-        cls,
-        action: str,
-        metadata: Optional[Dict[str, Any]] = None,
-        company: Optional[str] = None
-    ) -> None:
+    def record_read(cls, action: str, metadata: Optional[Dict[str, Any]] = None, company: Optional[str] = None) -> None:
         """
         Record a sensitive read or query event.
         """
@@ -89,7 +80,7 @@ class AuditService:
                     action=action,
                     entity_type="Query",
                     entity_id="read_operation",
-                    after_state=metadata
+                    after_state=metadata,
                 )
             except Exception:
                 pass

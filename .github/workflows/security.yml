@@ -11,31 +11,25 @@ on:
     - cron: '0 4 * * 1' # Weekly on Monday at 04:00 UTC
 
 jobs:
-  composer-audit:
-    name: Composer Dependencies Audit
+  python-dependency-audit:
+    name: Python Dependency Vulnerability Audit (pip-audit)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup PHP Environment
-        uses: shivammathur/setup-php@v2
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          php-version: '8.3'
+          python-version: '3.11'
 
-      - name: Audit Core Dependencies
-        working-directory: ./apps/cortex-core
+      - name: Install project + dev dependencies
         run: |
-          if [ -f "composer.lock" ]; then
-            composer audit || echo "::warning title=Composer Audit::Audit warnings reported."
-          fi
+          python -m pip install --upgrade pip
+          pip install pip-audit pydantic httpx
 
-      - name: Audit Plugin Dependencies
-        working-directory: ./plugins/Webkul/CortexRental
-        run: |
-          if [ -f "composer.lock" ]; then
-            composer audit || echo "::warning title=Composer Audit::Audit warnings reported."
-          fi
+      - name: Audit installed dependencies
+        run: pip-audit --strict || echo "::warning title=pip-audit::Audit warnings reported."
 
   secret-detection:
     name: Secret & Credential Leak Check
@@ -49,9 +43,16 @@ jobs:
       - name: Check for Hardcoded Secrets or Credentials
         run: |
           echo "Scanning repository for potential committed secrets..."
-          # Verify that no .env with real secrets is committed
-          if git ls-files | grep -E "(^\.env$|\.pem$|\.key$)"; then
+          if git ls-files | grep -E "(^|/)\.env$|\.pem$|\.key$|id_rsa"; then
             echo "::error title=Secret Leak::Committed environment or private key file detected!"
             exit 1
           fi
           echo "✓ No unauthorized sensitive files found in tree."
+
+      - name: Check for high-entropy / obviously live secrets in tracked text files
+        run: |
+          if git grep -InE "(AKIA[0-9A-Z]{16}|-----BEGIN (RSA|EC|OPENSSH|PGP) PRIVATE KEY-----)" -- . ':!*.md'; then
+            echo "::error title=Secret Leak::A likely live credential pattern was found in a tracked file."
+            exit 1
+          fi
+          echo "✓ No obvious live-credential patterns found."

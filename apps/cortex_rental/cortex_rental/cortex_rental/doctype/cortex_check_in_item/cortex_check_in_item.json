@@ -1,0 +1,71 @@
+{
+  "name": "Cortex Check-In Item",
+  "doctype": "DocType",
+  "module": "Cortex Rental",
+  "istable": 1,
+  "custom": 0,
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "transaction_item",
+      "fieldtype": "Data",
+      "label": "Transaction Item Row (name)",
+      "reqd": 1,
+      "description": "The `name` of the Cortex Rental Transaction Item child row this return applies to."
+    },
+    {
+      "fieldname": "item_code",
+      "fieldtype": "Link",
+      "label": "Item Code",
+      "options": "Item",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "serial_no",
+      "fieldtype": "Link",
+      "label": "Serial No",
+      "options": "Serial No",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "expected_qty",
+      "fieldtype": "Float",
+      "label": "Expected Quantity",
+      "default": "1.0",
+      "reqd": 1
+    },
+    {
+      "fieldname": "returned_qty",
+      "fieldtype": "Float",
+      "label": "Returned Quantity",
+      "default": "1.0",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "default": "Good",
+      "fieldname": "condition",
+      "fieldtype": "Select",
+      "label": "Condition",
+      "options": "Good\nDamaged\nMissing",
+      "in_list_view": 1,
+      "reqd": 1
+    },
+    {
+      "default": "Return to Stock",
+      "fieldname": "disposition",
+      "fieldtype": "Select",
+      "label": "Disposition",
+      "options": "Return to Stock\nQuarantine\nRepair\nMissing\nWrite-off",
+      "in_list_view": 1,
+      "reqd": 1,
+      "description": "Drives the Serial No's cortex_status: Return to Stock->Active, Quarantine->Quarantine, Repair->Under Repair, Missing->Missing, Write-off->Decommissioned."
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    }
+  ]
+}

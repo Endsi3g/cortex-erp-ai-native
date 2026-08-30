@@ -1,0 +1,128 @@
+{
+  "actions": [],
+  "autoname": "format:XTR-{YYYY}-{#####}",
+  "creation": "2026-08-30 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "inbound_request",
+    "evidence_references",
+    "schema_version",
+    "extracted_payload",
+    "validation_status",
+    "validation_errors",
+    "overall_confidence",
+    "review_required",
+    "model_used",
+    "actor_id",
+    "extracted_at"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "inbound_request",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Inbound Request",
+      "options": "Cortex Inbound Request"
+    },
+    {
+      "fieldname": "evidence_references",
+      "fieldtype": "Code",
+      "label": "Evidence References (JSON list of Cortex Evidence Reference names)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "schema_version",
+      "fieldtype": "Data",
+      "label": "Schema Version",
+      "default": "1.0.0",
+      "reqd": 1
+    },
+    {
+      "fieldname": "extracted_payload",
+      "fieldtype": "Code",
+      "label": "Extracted Payload (JSON, per intake_extraction_schema.json)",
+      "options": "JSON",
+      "reqd": 1
+    },
+    {
+      "default": "Invalid",
+      "fieldname": "validation_status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Validation Status",
+      "options": "Valid\nInvalid",
+      "reqd": 1
+    },
+    {
+      "fieldname": "validation_errors",
+      "fieldtype": "Code",
+      "label": "Validation Errors (JSON)",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "overall_confidence",
+      "fieldtype": "Float",
+      "in_list_view": 1,
+      "label": "Overall Confidence"
+    },
+    {
+      "default": "1",
+      "fieldname": "review_required",
+      "fieldtype": "Check",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Review Required"
+    },
+    {
+      "fieldname": "model_used",
+      "fieldtype": "Data",
+      "label": "Model Used"
+    },
+    {
+      "fieldname": "actor_id",
+      "fieldtype": "Data",
+      "label": "Actor ID",
+      "reqd": 1
+    },
+    {
+      "fieldname": "extracted_at",
+      "fieldtype": "Datetime",
+      "label": "Extracted At",
+      "reqd": 1
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex Extraction Run",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "read": 1,
+      "role": "System Manager"
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Cortex Agent Intake"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Operations Manager"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 0
+}

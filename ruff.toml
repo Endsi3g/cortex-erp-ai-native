@@ -1,0 +1,16 @@
+# Cortex ERP AI-Native — root Ruff configuration.
+#
+# CI (see .github/workflows/ci.yml) gates on `select`d rules only:
+# real correctness issues (Pyflakes "F": unused imports/names, undefined
+# names, etc.) and syntax errors ("E9"). Broader style rules (import
+# sorting, line length, docstring conventions, ...) are intentionally
+# NOT part of the CI gate yet — the codebase predates this config and a
+# blanket style pass is a separate, purely cosmetic change (see
+# docs/adr for the corresponding note), not something to bundle into
+# functional commits. Run `ruff check --select ALL apps/` locally if you
+# want the full picture; CI only fails the build on `select` below.
+target-version = "py310"
+line-length = 120
+
+[lint]
+select = ["E9", "F"]

@@ -14,25 +14,47 @@ app_license = "proprietary"
 
 # DocType Events (Audit logging & validation hooks)
 # ------------------------------------------------
-doc_events = {
-    "Quotation": {
-        "before_save": "cortex_rental.overrides.quotation.before_save_quotation",
-        "on_submit": "cortex_rental.overrides.quotation.on_submit_quotation",
-    },
-    "Sales Order": {
-        "before_save": "cortex_rental.overrides.sales_order.before_save_sales_order",
-        "on_submit": "cortex_rental.overrides.sales_order.on_submit_sales_order",
-    },
-    "Serial No": {
-        "before_save": "cortex_rental.overrides.serial_no.before_save_serial_no",
-    }
-}
+# NOTE: a `doc_events` block referencing
+# cortex_rental.overrides.{quotation,sales_order,serial_no} previously
+# lived here, but no `apps/cortex_rental/cortex_rental/overrides/`
+# module exists anywhere in this app — `bench migrate` / app boot would
+# fail on the dangling import. Nothing in this codebase or its tests
+# relies on it. Removed rather than fabricated (no spec exists for what
+# these overrides should do) — implementing real Quotation/Sales
+# Order/Serial No override behavior is an open follow-up, not something
+# to invent here.
+doc_events = {}
 
 # Permission Query Hooks for Multi-Tenancy
 # ----------------------------------------
+# Each entry MUST point to a doctype-specific wrapper (not the generic
+# no-op) so the row-level Company filter is actually applied. See
+# cortex_rental/permissions/__init__.py.
 permission_query_conditions = {
-    "Audit Event": "cortex_rental.permissions.get_permission_query_conditions",
-    "Approval Request": "cortex_rental.permissions.get_permission_query_conditions",
-    "Consignment Payout": "cortex_rental.permissions.get_permission_query_conditions",
-    "Rental Item": "cortex_rental.permissions.get_permission_query_conditions",
+    "Audit Event": "cortex_rental.permissions.audit_event_query_conditions",
+    "Approval Request": "cortex_rental.permissions.approval_request_query_conditions",
+    "Consignment Owner": "cortex_rental.permissions.consignment_owner_query_conditions",
+    "Consignment Payout": "cortex_rental.permissions.consignment_payout_query_conditions",
+    "Cortex Inbound Request": "cortex_rental.permissions.cortex_inbound_request_query_conditions",
+    "Cortex Rental Transaction": "cortex_rental.permissions.cortex_rental_transaction_query_conditions",
+    "Rental Pricing Rule": "cortex_rental.permissions.rental_pricing_rule_query_conditions",
+    "Cortex Rental Item Profile": "cortex_rental.permissions.cortex_rental_item_profile_query_conditions",
+    "Customer": "cortex_rental.permissions.customer_query_conditions",
+    "Cortex Idempotency Record": "cortex_rental.permissions.cortex_idempotency_record_query_conditions",
+    "Cortex Agent Run": "cortex_rental.permissions.cortex_agent_run_query_conditions",
+    "Cortex Agent Tool Call": "cortex_rental.permissions.cortex_agent_tool_call_query_conditions",
+    "Cortex Evidence Reference": "cortex_rental.permissions.cortex_evidence_reference_query_conditions",
+    "Cortex Extraction Run": "cortex_rental.permissions.cortex_extraction_run_query_conditions",
+    "Cortex Check-In": "cortex_rental.permissions.cortex_check_in_query_conditions",
 }
+
+# Fixtures exported/synced on `bench migrate` — provisions the granular
+# Cortex roles referenced by permissions/agent_scopes.py and the Cortex
+# Company scoping custom field on the core ERPNext Customer doctype.
+fixtures = [
+    {"dt": "Role", "filters": [["role_name", "like", "Cortex %"]]},
+    {
+        "dt": "Custom Field",
+        "filters": [["name", "in", ["Customer-cortex_company", "Serial No-cortex_status"]]],
+    },
+]

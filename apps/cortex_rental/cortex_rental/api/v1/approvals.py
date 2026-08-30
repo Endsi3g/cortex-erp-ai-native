@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 try:
     import frappe
@@ -7,6 +7,8 @@ except ImportError:
 
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.audit import AuditService
+from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
+from cortex_rental.services.agent_telemetry import log_tool_call
 
 
 def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
@@ -20,18 +22,20 @@ def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str
     req_id = "apr-req-mock-001"
 
     if frappe:
-        doc = frappe.get_doc({
-            "doctype": "Approval Request",
-            "company": company,
-            "action": action,
-            "entity_type": entity_type,
-            "entity_id": entity_id,
-            "status": "Pending",
-            "proposed_payload": frappe.as_json(proposed_payload) if proposed_payload else None,
-            "evidence_references": frappe.as_json(evidence_ids) if evidence_ids else None,
-            "agent_rationale": rationale,
-            "created_by_agent": actor_id
-        })
+        doc = frappe.get_doc(
+            {
+                "doctype": "Approval Request",
+                "company": company,
+                "action": action,
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "status": "Pending",
+                "proposed_payload": frappe.as_json(proposed_payload) if proposed_payload else None,
+                "evidence_references": frappe.as_json(evidence_ids) if evidence_ids else None,
+                "agent_rationale": rationale,
+                "created_by_agent": actor_id,
+            }
+        )
         doc.insert(ignore_permissions=True)
         req_id = doc.name
 
@@ -41,7 +45,7 @@ def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str
         entity_type="Approval Request",
         entity_id=req_id,
         evidence=evidence_ids,
-        after_state={"action": action, "entity_type": entity_type, "entity_id": entity_id, "status": "Pending"}
+        after_state={"action": action, "entity_type": entity_type, "entity_id": entity_id, "status": "Pending"},
     )
 
     return {
@@ -51,15 +55,23 @@ def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str
         "entity_id": entity_id,
         "status": "Pending",
         "rationale": rationale,
-        "company": company
+        "company": company,
     }
 
 
 if frappe:
+
     @frappe.whitelist(methods=["POST"])
+    @log_tool_call("submit_approval_request", scope="agent:approval:submit")
     def submit_approval():
         require_agent_scope("agent:approval:submit")
         company = get_company_context()
         payload = frappe.local.form_dict
-        result = submit_approval_handler(payload=payload, company=company, actor_id=frappe.session.user)
+        result = with_idempotency(
+            company=company,
+            scope="approvals.submit_approval",
+            idempotency_key=get_idempotency_key_header(),
+            payload=payload,
+            handler=lambda: submit_approval_handler(payload=payload, company=company, actor_id=frappe.session.user),
+        )
         return {"data": result, "meta": {"company": company}}

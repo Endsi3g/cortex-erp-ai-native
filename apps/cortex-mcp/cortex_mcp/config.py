@@ -3,6 +3,7 @@ import os
 try:
     from pydantic import BaseModel, Field
 except ImportError:
+
     class BaseModel:
         def __init__(self, **data):
             for k, v in data.items():
@@ -21,6 +22,12 @@ class Settings(BaseModel):
     default_company: str = os.getenv("CORTEX_COMPANY", "CineRental Montreal")
     mcp_port: int = int(os.getenv("PORT", "3100"))
     timeout_seconds: float = 15.0
+    # Logical agent persona this MCP deployment serves (e.g. cortex_intake,
+    # cortex_availability, cortex_reporting — matches apps/cortex-onyx/agents/*.yaml).
+    # Telemetry/audit label only (PRD §7 Cortex Agent Tool Call) — never used
+    # for authorization, which is enforced server-side by Frappe Roles
+    # (see cortex_rental.permissions.agent_scopes.SCOPE_ROLE_MAP).
+    agent_id: str = os.getenv("CORTEX_MCP_AGENT_ID", "cortex_intake")
 
 
 settings = Settings()

@@ -1,0 +1,92 @@
+{
+  "name": "Cortex Check-In",
+  "doctype": "DocType",
+  "module": "Cortex Rental",
+  "custom": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "format:CHK-{YYYY}-{#####}",
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "transaction",
+      "fieldtype": "Link",
+      "label": "Rental Transaction",
+      "options": "Cortex Rental Transaction",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "default": "Draft",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Draft\nCompleted",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "checked_in_by",
+      "fieldtype": "Data",
+      "label": "Checked In By",
+      "reqd": 1
+    },
+    {
+      "fieldname": "checked_in_at",
+      "fieldtype": "Datetime",
+      "label": "Checked In At"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Returned Items",
+      "options": "Cortex Check-In Item"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    },
+    {
+      "role": "Cortex Inventory Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0
+    },
+    {
+      "role": "Cortex Operations Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0
+    },
+    {
+      "role": "Rental Operator",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0
+    }
+  ]
+}

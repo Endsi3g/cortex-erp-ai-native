@@ -8,6 +8,15 @@
   "engine": "InnoDB",
   "fields": [
     {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
       "fieldname": "item_code",
       "fieldtype": "Link",
       "label": "ERPNext Item Code",
@@ -48,6 +57,20 @@
       "fieldtype": "Currency",
       "label": "Required Security Deposit ($)",
       "default": "0.0"
+    },
+    {
+      "fieldname": "is_serialized",
+      "fieldtype": "Check",
+      "label": "Is Serialized Unit",
+      "default": "1",
+      "description": "If unchecked, this item has no individual Serial No records — availability is computed from total_quantity instead of counting Serial No rows. See ADR-004."
+    },
+    {
+      "fieldname": "total_quantity",
+      "fieldtype": "Int",
+      "label": "Total Fleet Quantity (non-serialized only)",
+      "default": "0",
+      "description": "Fleet size for non-serialized items only. Ignored when is_serialized is checked, where the real Serial No count is authoritative."
     },
     {
       "fieldname": "prep_hours",

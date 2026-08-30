@@ -1,0 +1,112 @@
+{
+  "actions": [],
+  "autoname": "format:EVID-{YYYY}-{#####}",
+  "creation": "2026-08-30 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "inbound_request",
+    "source_channel",
+    "file",
+    "text_excerpt",
+    "sha256_hash",
+    "mime_type",
+    "scanned_clean",
+    "scan_notes",
+    "created_by_actor"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "inbound_request",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Inbound Request",
+      "options": "Cortex Inbound Request"
+    },
+    {
+      "fieldname": "source_channel",
+      "fieldtype": "Select",
+      "in_standard_filter": 1,
+      "label": "Source Channel",
+      "options": "email\npdf\nwebform\nchat\nvoice_transcript\nother",
+      "reqd": 1
+    },
+    {
+      "fieldname": "file",
+      "fieldtype": "Link",
+      "label": "File",
+      "options": "File",
+      "description": "The underlying Frappe File record. Never exposed to agents as a raw URL — only this Evidence Reference's name/ID."
+    },
+    {
+      "fieldname": "text_excerpt",
+      "fieldtype": "Small Text",
+      "label": "Text Excerpt",
+      "description": "For evidence that is a text fragment rather than a file (e.g. an email body quote)."
+    },
+    {
+      "fieldname": "sha256_hash",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "SHA-256 Hash",
+      "reqd": 1
+    },
+    {
+      "fieldname": "mime_type",
+      "fieldtype": "Data",
+      "label": "MIME Type"
+    },
+    {
+      "default": "0",
+      "fieldname": "scanned_clean",
+      "fieldtype": "Check",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Scanned Clean",
+      "description": "Must be set before any agent/extraction step is allowed to use this evidence. Antivirus (ClamAV, per PRD infra) integration itself is not implemented in this pass — this field structurally gates usage regardless of how it gets set."
+    },
+    {
+      "fieldname": "scan_notes",
+      "fieldtype": "Small Text",
+      "label": "Scan Notes"
+    },
+    {
+      "fieldname": "created_by_actor",
+      "fieldtype": "Data",
+      "label": "Created By Actor",
+      "reqd": 1
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex Evidence Reference",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "read": 1,
+      "role": "System Manager"
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "role": "Cortex Agent Intake"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Operations Manager"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

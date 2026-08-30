@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cortex — Assistant Onyx</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #f7f7f8; color: #1a1a1a; }
+    .cortex-onyx-header { max-width: 720px; margin: 0 auto 1.5rem; }
+    .cortex-onyx-header h1 { font-size: 1.25rem; margin-bottom: 0.25rem; }
+    .cortex-onyx-header p { color: #666; font-size: 0.9rem; }
+    .cortex-onyx-badge { display: inline-block; font-size: 0.75rem; background: #eef2ff; color: #4338ca; padding: 2px 8px; border-radius: 999px; margin-top: 0.5rem; }
+    .cortex-onyx-warning { max-width: 720px; margin: 2rem auto; padding: 1rem 1.25rem; background: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; color: #7c2d12; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="cortex-onyx-header">
+    <h1>Assistant Cortex (Onyx)</h1>
+    <p>
+      Copilote IA supervisé — brouillons de devis, disponibilité, préparation de dossiers.
+      Aucune action sensible (réservation, contrat, facture) n'est exécutée sans validation humaine.
+    </p>
+    {% if onyx_configured %}
+    <span class="cortex-onyx-badge">Modèle par défaut : {{ onyx_default_model_label }}</span>
+    {% endif %}
+  </div>
+
+  {% if onyx_configured %}
+  <!-- onyx_widget_script_url defaults to {backend_url}/widget/onyx-widget.js
+       — NOT verified against a live self-hosted Onyx instance; confirm the
+       real path from your deployment and override via site_config.json's
+       onyx_widget_script_url if it differs. See infra/onyx/README.md. -->
+  <script type="module" src="{{ onyx_widget_script_url }}"></script>
+  <onyx-chat-widget
+    backend-url="{{ onyx_backend_url }}"
+    api-key="{{ onyx_widget_api_key }}"
+  ></onyx-chat-widget>
+  {% else %}
+  <div class="cortex-onyx-warning">
+    <strong>Assistant Onyx non configuré.</strong>
+    Un administrateur doit définir <code>onyx_backend_url</code> et
+    <code>onyx_widget_api_key</code> (une clé Onyx à portée limitée,
+    <em>chat uniquement</em>) dans <code>site_config.json</code> — jamais dans
+    un fichier versionné. Voir <code>infra/onyx/README.md</code>.
+  </div>
+  {% endif %}
+</body>
+</html>
