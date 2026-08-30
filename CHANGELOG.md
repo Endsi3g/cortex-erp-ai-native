@@ -199,40 +199,94 @@ Run: https://github.com/Endsi3g/cortex-erp-ai-native/actions/runs/33285056747
 
 ---
 
-## Explicitly out of scope for this pass (open follow-ups)
+## Second wave — Gemini/Onyx validation, real bench attempt, and the 4 previously-flagged follow-ups
 
-These were noted during review but are net-new feature work or
-architecture decisions, not corrections to what exists — flagged rather
-than silently dropped or invented:
+Requested as a follow-up to the section above. Status of each item that
+was explicitly out of scope in the first wave:
 
-- **No live bench validation.** Nothing in this sandbox has run against
-  a real Frappe v15 site (no `bench init`/`new-site` — `Dockerfile.bench`
-  is only the base image with no site-provisioning script). All
-  Frappe-dependent behavior — permission_query_conditions SQL, the
-  Redis lock, the Custom Field fixtures, `bench migrate` itself — is
-  reviewed statically and unit-tested in mock mode, but not proven
-  end-to-end. Run `apps/cortex_rental/cortex_rental/tests/
-  test_multitenant_isolation.py` and `test_availability_concurrency.py`
-  on a real bench first.
-- **`Rental Item` vs. `Cortex Rental Item Profile`.** Two overlapping
-  equipment-catalog DocTypes exist; only the latter is actually used by
-  `search_items`. Needs an ADR deciding whether to merge or delete one,
-  not a unilateral pick made under a security-fix pass.
-- **Ingestion/evidence pipeline.** PRD's `Cortex Evidence Reference` and
-  `Cortex Extraction Run` DocTypes don't exist yet; only `Cortex Inbound
-  Request` does. The structured-extraction pipeline from PRD §2.1/§8 is
-  a real feature build, not a correction.
-- **`Cortex Agent Run` / `Cortex Agent Tool Call`.** Per-tool-call audit
-  DocTypes from PRD §3.3/§7 aren't implemented; `Cortex Audit Event`
-  covers business mutations but not raw tool-call logging.
-- **Check-in / partial-return workflow.** `Cortex Check-In` and `Cortex
-  Check-In Item` from PRD §4 don't exist; the quarantine fix in Phase 5
-  is a status field only, not the full receiving workflow.
-- **`docs/07-frappe-erpnext-implementation-guide.md`** documents a third,
-  earlier design iteration (raw `Quotation` mutation, no scope checks)
-  superseded twice over. Flagged with an inline warning rather than
-  rewritten — a full pass on that doc is separate work.
-- **1-site-per-client vs. shared-site-multi-Company.** Phase 1 makes the
-  shared-site model actually safe via `User Permission`, but the
-  original review's recommendation to default new pilots to 1 site per
-  client still stands as the lower-risk starting point; not decided here.
+### Gemini model test through the Onyx system prompt (`f6da28f`)
+
+Onyx itself is not vendored in this repo (only its YAML config) and
+could not be deployed here. What was actually run: the real
+`cortex_intake_system.md` system prompt against the real
+`gemini-3.7-flash` model (confirmed to exist via `GET /v1beta/models` —
+the PRD/`.env.example`-specified model; `gemini-2.0-flash` is
+deprecated, the API's own 404 pointed at `gemini-3.6-flash` first, but
+3.7 is what's actually specified) on 4 of the 10
+`prompt_injection_security_tests.json` cases. All 4 (system-prompt
+override, cross-tenant exfiltration, indirect document injection,
+forced availability hallucination) were correctly refused/contained.
+See `docs/evals/2026-08-30-onyx-intake-gemini-3.7-flash.md` — this is a
+prompt-quality signal, not a security proof; the code-level fixes hold
+regardless of model behavior, and the full agentic tool-calling path
+still needs a real Onyx+MCP+bench deployment.
+
+### Real Frappe bench validation — attempted, blocked by environment, not code (`0aee7dc`)
+
+Found and fixed a real bug while trying: `infra/docker/Dockerfile.bench`
+referenced `frappe/bench:v15.0.0`, a tag that has **never existed** on
+Docker Hub (verified against the actual tag list) — Gemini fabricated
+it. Fixed to `frappe/bench:latest` (Framework v15 is chosen via `bench
+init --frappe-branch version-15`, not the image tag), and swapped its
+Postgres system deps for the real MariaDB ones. Provisioning itself hit
+a hard wall: pulling MariaDB/Valkey filled this sandbox's disk to 99%
+(146 MB free), and Docker Desktop crashed as a result. Cleaned up
+(images/volumes removed, disk back to 6.2 GB free) rather than retrying
+blind — 6.2 GB is still too tight for a full frappe+erpnext+node_modules
+build, and this is a sandbox disk-space limit, not something fixable in
+code. The frappe-gated tests throughout this repo remain unexecuted
+here; they're written and ready for the first real `bench run-tests`.
+
+### `Rental Item` vs. `Cortex Rental Item Profile` — decided (`0aee7dc`, ADR-004)
+
+`Rental Item` deleted (confirmed unreferenced by any service/API/test).
+`Cortex Rental Item Profile` is now the sole canonical catalog DocType;
+gained the two fields `Rental Item` had that it genuinely needed
+(`is_serialized`, `total_quantity`) so non-serialized items are now
+modeled at all — `AvailabilityService` branches on `is_serialized`
+instead of always counting `Serial No` rows. See
+`docs/adr/ADR-004-rental-item-catalog-consolidation.md`.
+
+### `Cortex Agent Run` / `Cortex Agent Tool Call` — implemented (`f6da28f`)
+
+New DocTypes + a `@log_tool_call` decorator applied to all 7 agent-facing
+endpoints, recording Success/Denied/Error with timing, correlated by a
+caller-supplied `X-Request-ID` (cortex-mcp's `FrappeClient` now sends
+one per call, plus `X-Cortex-Agent-Id` from a new `CORTEX_MCP_AGENT_ID`
+setting) — separate from `Cortex Audit Event`, which only covers
+business mutations, not the agent-facing API surface itself.
+
+### Evidence/Extraction pipeline — implemented, explicitly bounded (`580c483`)
+
+New `Cortex Evidence Reference` (hashed file/text, gated by a
+`scanned_clean` flag) and `Cortex Extraction Run` (schema-validated,
+confidence-scored) DocTypes. `intake_extraction_schema.json` — previously
+pure documentation — is now actually enforced via `jsonschema`, with
+`review_required` set below the 0.85 confidence threshold the intake
+prompt already promises. **Not** implemented: the PRD's pre-signed
+S3/MinIO "Upload Intent" direct-upload flow (no upload endpoint exists
+anywhere in this codebase to build on — a separate infra feature) and
+ClamAV scanning (the gate field exists; nothing sets it automatically
+yet). Both are real gaps, not silently dropped.
+
+### Check-in / partial-return / quarantine workflow — implemented (`5bfced0`)
+
+New `Cortex Check-In` / `Cortex Check-In Item` DocTypes (human-staff-only,
+no MCP tool — physical receiving needs a person scanning serial numbers).
+Completing one updates each returned `Serial No`'s `cortex_status` per
+disposition and a new `returned_qty` on the transaction line; the
+transaction only moves `Checked Out -> Returned` once every line is
+fully back, so a partial return correctly stays `Checked Out`.
+
+### Still open after this wave
+
+- **No live bench validation** (see above — environment-blocked, not
+  a code gap).
+- **`docs/07-frappe-erpnext-implementation-guide.md`** still documents
+  a superseded design iteration; flagged inline, not rewritten.
+- **1-site-per-client vs. shared-site-multi-Company** — Phase 1 makes
+  the shared model safe, but the lower-risk pilot default
+  recommendation from the original review still stands; not decided
+  here.
+- **Upload Intent (pre-signed S3/MinIO) + ClamAV scanning** — see
+  Evidence/Extraction section above.
