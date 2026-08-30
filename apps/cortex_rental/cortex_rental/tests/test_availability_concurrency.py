@@ -34,6 +34,44 @@ class TestAvailabilityAndConcurrency(unittest.TestCase):
         self.assertEqual(result[0]["total_fleet_quantity"], 0.0)
         self.assertFalse(result[0]["is_available"])
 
+    def test_non_serialized_item_uses_total_quantity_not_serial_count(self):
+        """
+        ADR-004: an item whose Cortex Rental Item Profile has
+        is_serialized=0 has no Serial No records at all — availability
+        must come from total_quantity, not a (necessarily zero) Serial
+        No count.
+        """
+        from cortex_rental.services.availability import AvailabilityService
+
+        company = "Cortex Test Co A"
+        item_code = "itm-non-serialized-cable-bundle"
+        if not frappe.db.exists("Item", item_code):
+            frappe.get_doc(
+                {"doctype": "Item", "item_code": item_code, "item_name": item_code, "is_stock_item": 1}
+            ).insert(ignore_permissions=True)
+        if not frappe.db.exists("Cortex Rental Item Profile", {"item_code": item_code}):
+            frappe.get_doc(
+                {
+                    "doctype": "Cortex Rental Item Profile",
+                    "company": company,
+                    "item_code": item_code,
+                    "item_name": item_code,
+                    "daily_rate": 25.0,
+                    "replacement_value": 200.0,
+                    "is_serialized": 0,
+                    "total_quantity": 12,
+                }
+            ).insert(ignore_permissions=True)
+
+        result = AvailabilityService().check(
+            company=company,
+            starts_at="2026-09-01T09:00:00Z",
+            ends_at="2026-09-08T09:00:00Z",
+            item_requests=[{"item_id": item_code, "quantity": 5}],
+        )
+        self.assertEqual(result[0]["total_fleet_quantity"], 12.0)
+        self.assertTrue(result[0]["is_available"])
+
     def test_quarantined_serial_excluded_from_available_count(self):
         from cortex_rental.services.availability import AvailabilityService
 

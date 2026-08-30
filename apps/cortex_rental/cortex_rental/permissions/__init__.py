@@ -60,10 +60,6 @@ def cortex_rental_transaction_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Cortex Rental Transaction")
 
 
-def rental_item_query_conditions(user: str) -> str:
-    return _company_scoped_condition(user, "Rental Item")
-
-
 def rental_pricing_rule_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Rental Pricing Rule")
 

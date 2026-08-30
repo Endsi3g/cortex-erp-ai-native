@@ -1,14 +1,22 @@
 # ==============================================================================
 # CORTEX ERP AI-NATIVE — FRAPPE BENCH DEVELOPMENT DOCKERFILE
 # ==============================================================================
-FROM frappe/bench:v15.0.0
+# NOTE: `frappe/bench:v15.0.0` never existed on Docker Hub — the bench
+# CLI image is tagged by its own version (currently v5.x), not the
+# Frappe Framework version. Framework v15 is selected at `bench init`
+# time via `--frappe-branch version-15`, not via the Docker tag. Using
+# `latest` here; verified against the real Docker Hub tag list before
+# this fix (see CHANGELOG.md).
+FROM frappe/bench:latest
 
 USER root
 
-# Install system prerequisites for PostgreSQL and build tools
+# Install system prerequisites for MariaDB (the actual DB — see
+# docker-compose.dev.yml) and build tools. The previous postgresql-client
+# / libpq-dev here were leftover from the pre-migration Postgres stack.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql-client \
-    libpq-dev \
+    default-mysql-client \
+    default-libmysqlclient-dev \
     gcc \
     python3-dev \
     curl \

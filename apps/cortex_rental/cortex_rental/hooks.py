@@ -37,7 +37,6 @@ permission_query_conditions = {
     "Consignment Payout": "cortex_rental.permissions.consignment_payout_query_conditions",
     "Cortex Inbound Request": "cortex_rental.permissions.cortex_inbound_request_query_conditions",
     "Cortex Rental Transaction": "cortex_rental.permissions.cortex_rental_transaction_query_conditions",
-    "Rental Item": "cortex_rental.permissions.rental_item_query_conditions",
     "Rental Pricing Rule": "cortex_rental.permissions.rental_pricing_rule_query_conditions",
     "Cortex Rental Item Profile": "cortex_rental.permissions.cortex_rental_item_profile_query_conditions",
     "Customer": "cortex_rental.permissions.customer_query_conditions",

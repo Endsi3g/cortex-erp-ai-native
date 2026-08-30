@@ -64,16 +64,35 @@ class AvailabilityService:
                 )
                 continue
 
-            total_fleet = frappe.db.count("Serial No", {"company": company, "item_code": item_id})
-
-            unavailable_status_qty = frappe.db.count(
-                "Serial No",
-                {
-                    "company": company,
-                    "item_code": item_id,
-                    "cortex_status": ["in", UNAVAILABLE_SERIAL_STATUSES],
-                },
+            # Cortex Rental Item Profile is the single catalog source of
+            # truth (see ADR-004) — is_serialized decides how fleet size
+            # is computed. Defaults to serialized/Serial-No-counted when
+            # no profile exists, matching the prior (pre-ADR-004)
+            # behavior for items that predate a profile record.
+            profile = frappe.db.get_value(
+                "Cortex Rental Item Profile",
+                {"company": company, "item_code": item_id},
+                ["is_serialized", "total_quantity"],
+                as_dict=True,
             )
+            is_serialized = bool(profile.is_serialized) if profile else True
+
+            if is_serialized:
+                total_fleet = frappe.db.count("Serial No", {"company": company, "item_code": item_id})
+                unavailable_status_qty = frappe.db.count(
+                    "Serial No",
+                    {
+                        "company": company,
+                        "item_code": item_id,
+                        "cortex_status": ["in", UNAVAILABLE_SERIAL_STATUSES],
+                    },
+                )
+            else:
+                # Non-serialized items have no individual Serial No
+                # records; total_quantity on the profile is authoritative
+                # and there is no per-unit quarantine/repair status.
+                total_fleet = float(profile.total_quantity or 0) if profile else 0.0
+                unavailable_status_qty = 0
 
             filters = {
                 "company": company,
