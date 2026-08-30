@@ -5,12 +5,27 @@ app_description = "AI-Native Rental, Availability & Consignment Management for F
 app_email = "architecture@cortex.local"
 app_license = "proprietary"
 
+# Branding — placeholder mark (see docs/design-system.md "Branding
+# Frappe"); `app_logo_url`/`app_icon`/`app_color` are real hooks.py keys
+# (verified against docs.frappe.io/framework/user/en/python-api/hooks),
+# not guessed. This does not touch any core Frappe file.
+app_logo_url = "/assets/cortex_rental/images/cortex-logo.svg"
+app_icon = "octicon octicon-briefcase"
+app_color = "#4F46E5"
+
 # Includes in <head>
 # ------------------
 
-# include js, css files in header of desk.html
-# app_include_css = "/assets/cortex_rental/css/cortex_rental.css"
-# app_include_js = "/assets/cortex_rental/js/cortex_rental.js"
+# Cortex Operations System design tokens/theme/utilities — plain CSS,
+# no build step (see cortex-tokens.css header for why). Injected into
+# desk.html only, never web.html — this app has no public-facing pages
+# beyond the one authenticated www/onyx-assistant.html, which loads its
+# own styling and isn't part of the Desk chrome these files target.
+app_include_css = [
+    "/assets/cortex_rental/css/cortex-tokens.css",
+    "/assets/cortex_rental/css/cortex-theme.css",
+    "/assets/cortex_rental/css/cortex-utilities.css",
+]
 
 # DocType Events (Audit logging & validation hooks)
 # ------------------------------------------------

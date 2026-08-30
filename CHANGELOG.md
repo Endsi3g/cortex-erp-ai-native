@@ -487,3 +487,87 @@ verification against a live bench — this was written and syntax/unit-
 tested here, but never opened in a browser, because no bench is
 reachable from this environment. See `HANDOFF.md` §2 for the exact
 build/reload commands to run on the machine that does have one.
+
+---
+
+## Sixth wave — Cortex Operations System design system foundation
+
+**Problem.** A live screenshot from a real deployment (tower machine)
+showed the app working but visually bare — no design system, no
+reusable components, hand-copied colors per page (Availability's own
+ad-hoc `STATE_META`). The user supplied a detailed, prescriptive design
+spec ("Cortex Operations System": tokens, typography, spacing, 9
+foundation components, WCAG 2.2 AA requirements) and asked for it to be
+implemented — explicitly scoped to the foundation only, not the
+remaining operational screens.
+
+**Packaging decision** (confirmed with the user before writing code):
+the spec's literal `apps/cortex_rental/frontend/` npm+Vite+TypeScript
+project was **not** adopted. CSS custom properties + plain Vue SFCs
+under `public/`, no new build pipeline — same reasoning as the fifth
+wave's Desk-Page-over-SPA choice: a second, unverified build pipeline
+with no bench to test it against would repeat a risk already avoided.
+Tailwind (also specified) wasn't adopted for the same reason (needs a
+PostCSS/Vite build step) — a small hand-rolled utility set instead.
+
+**Added.**
+- `apps/cortex_rental/cortex_rental/public/css/`: `cortex-tokens.css`
+  (full palette + business-state tokens, spacing/radius/shadow/motion/
+  focus-ring), `cortex-theme.css` (typography scale, focus-visible ring,
+  `prefers-reduced-motion`, everything scoped under `.cortex-app` so
+  nothing here can touch core Frappe Desk styling), `cortex-utilities.css`
+  (buttons, badges, density modes, skeleton shimmer). Wired via
+  `hooks.py`'s `app_include_css` (verified real hooks.py keys against
+  docs.frappe.io before use — not guessed).
+- `apps/cortex_rental/cortex_rental/public/js/cortex_shared/`: nine
+  components (`CortexStatusBadge`, `CortexRiskBadge`,
+  `CortexReadinessIndicator`, `CortexEmptyState`, `CortexPageHeader`,
+  `CortexEvidenceLink`, `CortexAuditTimeline`, `CortexLoadingState`,
+  `CortexErrorState`) plus `stateMeta.js`, the single source of truth
+  every badge reads from (real `rental_state`/`cortex_status` values →
+  design-token keys). `CortexEvidenceLink` and `CortexAuditTimeline` are
+  explicitly placeholders — they render caller-supplied data, no real
+  preview/download or Audit Event query wired yet.
+- **États — wired vs. reserved** (`docs/design-system.md`): the spec
+  proposes 16 state tokens; only 12 correspond to a real DocType value
+  today (`Cortex Rental Transaction.rental_state` or
+  `Serial No.cortex_status`). `draft`, `partial_return`,
+  `invoice_prepared`, `invoiced` are defined as tokens (forward
+  compatible) but explicitly marked as not reachable by any screen
+  today — the same "no dead links" discipline as the Workspace, applied
+  to design tokens.
+- `bin/check-contrast.py`: a dependency-free WCAG 2.2 AA contrast
+  checker (no JS test runner exists in this repo) that parses the
+  actual shipped CSS tokens and computes real contrast ratios. **First
+  run found every single state badge's border color from the spec
+  failed the 3:1 non-text-contrast minimum against the page** — the
+  pastel ~50-level border tints measured as low as 1.36:1, because the
+  badge fills themselves are only ~1.1:1 against white, so the border
+  is what actually has to carry the component's visible boundary, not
+  decorate it. Fixed by swapping every state's border to its palette's
+  500/600/700-level shade (same hue, same intent, real contrast) — not
+  eyeballed, re-verified by the same script until it passed clean.
+  Also caught and fixed two text-contrast shortfalls (`cancelled` label
+  at 4.34:1, destructive-button hover text at 4.41:1, both under 4.5:1).
+- Retrofitted `CortexAvailability.vue` (fifth wave) onto the new
+  system: `CortexPageHeader` replaces its hand-rolled toolbar, calendar
+  bars/legend/sidebar dots pull color and label from `stateMeta.js`
+  instead of a locally duplicated map, loading/error/empty states use
+  the new shared components, and every hardcoded hex color in its
+  `<style>` block is now a `var(--cortex-*)` token reference. Confirms
+  the design system actually works on a real screen rather than staying
+  an unused foundation (deliberate choice, confirmed with the user).
+- Branding: `app_logo_url`/`app_icon`/`app_color` in `hooks.py`
+  (verified real hooks.py keys) plus a placeholder indigo monogram SVG
+  — a real brand mark is a later decision, not invented here.
+- `docs/design-system.md` and `docs/design-system-component-contracts.md`.
+
+**Not done in this pass** (by design, per the spec's own scoping and
+the user's confirmed choices): dark mode (light-mode tokens only —
+the spec itself warns against a "faux dark mode" shipped unvalidated),
+responsive breakpoints (no page needs tablette/mobile layout yet),
+`frappe-ui` component adoption (same known esbuild-import risk as the
+fifth wave), and the remaining page-specific components
+(`CortexAvailabilityCell`, `CortexSerialAssignment`,
+`CortexApprovalCard`, etc.) — those arrive with the screen that
+actually uses them, not as unused scaffolding.

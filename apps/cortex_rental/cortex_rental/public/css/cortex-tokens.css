@@ -1,0 +1,221 @@
+/*
+ * Cortex Operations System — design tokens.
+ *
+ * Plain CSS custom properties, not TypeScript token modules — a
+ * deliberate choice (see docs/design-system.md "Packaging" section):
+ * this app has no npm/Vite build step today (Cortex Availability uses
+ * Frappe's native Vue-in-a-Desk-Page pipeline, no separate frontend
+ * project), and adding a second, unverified build pipeline just to get
+ * typed tokens wasn't worth the risk with no bench available to test
+ * it against. Loaded via hooks.py `app_include_css` — no build step,
+ * works identically for native Desk Pages and any future SPA.
+ *
+ * Light mode only in this pass (see design-system.md "Dark mode").
+ */
+
+:root {
+	/* ---- Neutrals ---- */
+	--cortex-bg: #f8fafc;
+	--cortex-surface: #ffffff;
+	--cortex-surface-subtle: #f1f5f9;
+	--cortex-surface-hover: #eaf0f7;
+	--cortex-border: #e2e8f0;
+	--cortex-border-strong: #cbd5e1;
+
+	--cortex-text: #0f172a;
+	--cortex-text-secondary: #475569;
+	--cortex-text-muted: #64748b;
+	--cortex-text-disabled: #94a3b8;
+	--cortex-inverse: #ffffff;
+
+	/* ---- Brand: Cortex indigo ---- */
+	--cortex-primary-50: #eef2ff;
+	--cortex-primary-100: #e0e7ff;
+	--cortex-primary-200: #c7d2fe;
+	--cortex-primary-300: #a5b4fc;
+	--cortex-primary-400: #818cf8;
+	--cortex-primary-500: #6366f1;
+	--cortex-primary-600: #4f46e5;
+	--cortex-primary-700: #4338ca;
+	--cortex-primary-800: #3730a3;
+	--cortex-primary-900: #312e81;
+
+	/* ---- Success / availability / finalized ---- */
+	--cortex-success-50: #ecfdf5;
+	--cortex-success-100: #d1fae5;
+	--cortex-success-500: #10b981;
+	--cortex-success-600: #059669;
+	--cortex-success-700: #047857;
+
+	/* ---- Warning / reservation / attention ---- */
+	--cortex-warning-50: #fffbeb;
+	--cortex-warning-100: #fef3c7;
+	--cortex-warning-500: #f59e0b;
+	--cortex-warning-600: #d97706;
+	--cortex-warning-700: #b45309;
+
+	/* ---- Danger / conflict / missing ---- */
+	--cortex-danger-50: #fef2f2;
+	--cortex-danger-100: #fee2e2;
+	--cortex-danger-500: #ef4444;
+	--cortex-danger-600: #dc2626;
+	--cortex-danger-700: #b91c1c;
+
+	/* ---- Info / contract ---- */
+	--cortex-info-50: #eff6ff;
+	--cortex-info-100: #dbeafe;
+	--cortex-info-500: #3b82f6;
+	--cortex-info-600: #2563eb;
+	--cortex-info-700: #1d4ed8;
+
+	/* ---- Violet / field ops, equipment out ---- */
+	--cortex-violet-50: #f5f3ff;
+	--cortex-violet-100: #ede9fe;
+	--cortex-violet-500: #8b5cf6;
+	--cortex-violet-600: #7c3aed;
+	--cortex-violet-700: #6d28d9;
+
+	/*
+	 * ---- Business state tokens ----
+	 * WIRED = an actual doctype value uses this today
+	 *   (Cortex Rental Transaction.rental_state or Serial No.cortex_status).
+	 * RESERVED = defined for forward compatibility with this spec's
+	 *   proposed state model, but no doctype emits this value yet — do
+	 *   not build UI that implies it exists until it's real (see
+	 *   docs/design-system.md "États — wired vs. reserved").
+	 */
+
+	/* WIRED — Cortex Rental Transaction.rental_state = "Quote" */
+	--state-quote-bg: #f1f5f9;
+	--state-quote-text: #334155;
+	--state-quote-border: #64748b;
+
+	/* RESERVED — no separate "Draft" transaction state exists; kept for
+	   components (e.g. approval/evidence drafts) that aren't a rental_state */
+	--state-draft-bg: #f1f5f9;
+	--state-draft-text: #475569;
+	--state-draft-border: #64748b;
+
+	/* WIRED — "Reservation" */
+	--state-reservation-bg: #fffbeb;
+	--state-reservation-text: #92400e;
+	--state-reservation-border: #b45309;
+
+	/* WIRED — "Contract" */
+	--state-contract-bg: #eff6ff;
+	--state-contract-text: #1d4ed8;
+	--state-contract-border: #3b82f6;
+
+	/* WIRED — "Checked Out" */
+	--state-checked-out-bg: #f5f3ff;
+	--state-checked-out-text: #6d28d9;
+	--state-checked-out-border: #8b5cf6;
+
+	/* RESERVED — no partial-return transaction state exists yet;
+	   services/checkin.py tracks returned_qty per line but the parent
+	   transaction stays "Checked Out" until fully returned */
+	--state-partial-return-bg: #ecfeff;
+	--state-partial-return-text: #0e7490;
+	--state-partial-return-border: #0891b2;
+
+	/* WIRED — "Returned" */
+	--state-returned-bg: #ecfdf5;
+	--state-returned-text: #047857;
+	--state-returned-border: #059669;
+
+	/* RESERVED — no erpnext_sales_invoice link or invoicing states exist
+	   yet (tracked as an open gap in HANDOFF.md) */
+	--state-invoice-prepared-bg: #eff6ff;
+	--state-invoice-prepared-text: #1d4ed8;
+	--state-invoice-prepared-border: #3b82f6;
+	--state-invoiced-bg: #ecfdf5;
+	--state-invoiced-text: #047857;
+	--state-invoiced-border: #059669;
+
+	/* WIRED — "Closed" (operational close, not a financial state — see
+	   README's "Statut de maturité" note) */
+	--state-closed-bg: #f1f5f9;
+	--state-closed-text: #475569;
+	--state-closed-border: #64748b;
+
+	/* WIRED — "Cancelled" */
+	--state-cancelled-bg: #f1f5f9;
+	--state-cancelled-text: #475569;
+	--state-cancelled-border: #64748b;
+
+	/* WIRED — "Disputed" */
+	--state-disputed-bg: #fef2f2;
+	--state-disputed-text: #b91c1c;
+	--state-disputed-border: #ef4444;
+
+	/* WIRED — used as a UI signal (get_matrix's has_conflict), not a
+	   rental_state value itself */
+	--state-conflict-bg: #fef2f2;
+	--state-conflict-text: #b91c1c;
+	--state-conflict-border: #ef4444;
+
+	/* WIRED — Serial No.cortex_status = "Quarantine" (also a rental_state) */
+	--state-quarantine-bg: #fff7ed;
+	--state-quarantine-text: #c2410c;
+	--state-quarantine-border: #ea580c;
+
+	/* WIRED — Serial No.cortex_status = "Under Repair" */
+	--state-repair-bg: #fff1f2;
+	--state-repair-text: #be123c;
+	--state-repair-border: #f43f5e;
+
+	/* WIRED — Serial No.cortex_status = "Missing" */
+	--state-missing-bg: #fef2f2;
+	--state-missing-text: #991b1b;
+	--state-missing-border: #dc2626;
+
+	/* ---- Spacing ---- */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 20px;
+	--space-6: 24px;
+	--space-8: 32px;
+	--space-10: 40px;
+	--space-12: 48px;
+
+	/* ---- Radius ---- */
+	--radius-sm: 6px;
+	--radius-md: 8px;
+	--radius-lg: 12px;
+	--radius-xl: 16px;
+	--radius-pill: 999px;
+
+	/* ---- Elevation ---- */
+	--shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+	--shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+	--shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
+
+	/* ---- Focus ring — WCAG 2.2 AA visible-focus requirement ---- */
+	--focus-ring-color: var(--cortex-primary-600);
+	--focus-ring-width: 2px;
+	--focus-ring-offset: 2px;
+
+	/* ---- Motion ---- */
+	--motion-fast: 120ms ease;
+	--motion-base: 180ms ease;
+	--motion-slow: 260ms ease;
+
+	/* ---- Typography ---- */
+	--font-sans:
+		"Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	--font-mono:
+		"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+	/*
+	 * "Inter" is listed first per the spec, but no webfont file is
+	 * shipped in this pass — self-hosting one unverified (no bench to
+	 * confirm it actually loads) or pulling from an external CDN (a
+	 * network dependency this internal ops tool shouldn't need) were
+	 * both worse than the honest option: the system fallbacks
+	 * (San Francisco on Mac, Segoe UI on Windows) render close to
+	 * Inter's aesthetic already. Revisit once a real bench can confirm
+	 * a self-hosted Inter file actually renders correctly.
+	 */
+}

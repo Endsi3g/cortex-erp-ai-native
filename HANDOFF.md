@@ -78,7 +78,7 @@ git -C apps/cortex_rental pull origin main   # si cortex_rental est son propre c
 # cd /chemin/vers/Cortex-ERP-AI-Native && git pull origin main
 
 bench --site <ton-site> migrate      # sync la nouvelle Page + le nouveau Workspace + le nouveau champ/API
-bench build --app cortex_rental      # compile cortex_availability.bundle.js
+bench build --app cortex_rental      # compile cortex_availability.bundle.js + copie les CSS design system
 bench restart                        # ou redémarre le process bench start / supervisor selon ton setup
 ```
 
@@ -107,6 +107,29 @@ est documenté et vérifié contre `docs.frappe.io`, mais chaque bench a sa
 propre configuration Node/esbuild. Si `bench build` échoue sur cet
 import spécifiquement, c'est la première chose à me rapporter.
 
+### Design system (sixième vague)
+
+Ajouté sur la même branche/PR : `apps/cortex_rental/cortex_rental/public/css/`
+(tokens/thème/utilitaires Cortex Operations System),
+`public/js/cortex_shared/` (9 composants Vue réutilisables +
+`stateMeta.js`), branding (`hooks.py`, logo placeholder), et
+`Disponibilité` retrofité pour consommer ce système au lieu de ses
+couleurs codées en dur. Détail complet : `CHANGELOG.md` sixième vague,
+`docs/design-system.md`, `docs/design-system-component-contracts.md`.
+
+Les mêmes commandes ci-dessus (`bench migrate` + `bench build` +
+reload) suffisent — rien de nouveau à installer, aucun `yarn`/`npm`
+requis (voir "Packaging" dans `docs/design-system.md`). Ce qui reste à
+confirmer sur la tour :
+1. Les fichiers CSS sont-ils bien chargés dans le Desk (F12 → Network,
+   chercher `cortex-tokens.css`) ?
+2. Les couleurs d'état sur la grille Disponibilité correspondent-elles
+   à la palette documentée (ambre/bleu/violet pleins pour
+   réservation/contrat/sorti) ?
+3. `python3 bin/check-contrast.py` — déjà vérifié ici sans bench
+   (parse juste le CSS), mais vaut la peine de le relancer si les
+   tokens changent.
+
 ## 4. Onyx — décision actée et implémentée : self-hosted + widget intégré
 
 **Décision (2026-08-30)** : Onyx est déployé **self-hosted** (pas Onyx
@@ -131,6 +154,7 @@ Une vraie clé `GEMINI_API_KEY` a été collée en clair dans le chat par l'util
 
 | Item | Pourquoi ce n'est pas fait | Effort estimé |
 |---|---|---|
+| **Chat backend (Cortex Chat Session/Message/Context Snapshot, gateway, agent router, mocks) + panneau Copilot Vue** | Deux specs détaillées reçues, portée volontairement clarifiée avec l'utilisateur avant de commencer (packaging TS/npm vs. CSS+JS, un seul PR vs. plusieurs) — voir la conversation pour les réponses une fois données | Backend mocké : 2-3 jours. Panneau Vue mocké : 2-3 jours |
 | **Confirmer que la page Disponibilité s'ouvre réellement sur la tour** | Écrit et testé en unitaire ici, jamais ouvert dans un navigateur — voir §3 pour les commandes et ce qu'il faut me rapporter | Quelques minutes une fois `bench build` fait |
 | Jeu de données de démo (fixtures) pour que la grille Disponibilité soit dense dès le premier chargement | Pas demandé explicitement pour cette passe ; à faire si la tour n'a pas encore de `Cortex Rental Item Profile`/transactions réels | 0.5 jour |
 | Écrans Composer de transaction / Check-in / Approbations / Assistant | Portée de cette passe volontairement limitée à Workspace + Disponibilité (choix confirmé avec l'utilisateur) | Composer : 1-2 jours, Check-in : 1 jour, Approbations : 1 jour, Assistant : dépend d'Onyx (§4) |

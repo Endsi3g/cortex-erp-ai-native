@@ -1,13 +1,22 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from "vue";
+import { STATE_META, stateKeyForRentalState } from "../cortex_shared/stateMeta.js";
+import CortexPageHeader from "../cortex_shared/CortexPageHeader.vue";
+import CortexStatusBadge from "../cortex_shared/CortexStatusBadge.vue";
+import CortexLoadingState from "../cortex_shared/CortexLoadingState.vue";
+import CortexErrorState from "../cortex_shared/CortexErrorState.vue";
+import CortexEmptyState from "../cortex_shared/CortexEmptyState.vue";
 
 // ---------------------------------------------------------------------
 // Constants — mirrors cortex_rental_item_profile.json's `category`
-// Select options and the rental_state values on Cortex Rental
-// Transaction. Kept in sync by hand for now (no endpoint exposes
+// Select options. Kept in sync by hand for now (no endpoint exposes
 // DocType meta to this page yet); a drift here is cosmetic (a filter
 // option would just never match anything), not a security or data
 // issue, so it's an accepted simplification for this first pass.
+//
+// The transaction states themselves come from cortex_shared/stateMeta.js
+// (STATE_META) — single source of truth shared with every other Cortex
+// page, not redefined here (see docs/design-system.md).
 // ---------------------------------------------------------------------
 const CATEGORIES = [
 	"Camera Bodies",
@@ -19,13 +28,26 @@ const CATEGORIES = [
 	"Power & Batteries",
 ];
 
-const STATE_META = {
-	Quote: { label: "Soumission", color: "#94a3b8" }, // gray — non-blocking
-	Reservation: { label: "Réservation", color: "#f59e0b" }, // amber — blocking, unconfirmed
-	Contract: { label: "Contrat", color: "#2563eb" }, // blue — confirmed
-	"Checked Out": { label: "Sorti", color: "#7c3aed" }, // violet — equipment out
+// This grid only ever shows the states get_matrix can return (see
+// api/v1/availability.py's ALL_MATRIX_STATES) — a subset of the full
+// STATE_META key set (which also covers Returned/Closed/Disputed/etc.
+// for other screens). Raw values match `rental_state` exactly, as
+// returned by the API; token keys (right-hand side) are what
+// stateMeta.js indexes STATE_META/BLOCK_FILL_VAR by.
+const GRID_RENTAL_STATES = ["Quote", "Reservation", "Contract", "Checked Out"];
+
+// Solid ("plein", per the design spec) fill for the calendar bars —
+// deliberately more saturated than the pale badge backgrounds
+// (--state-*-bg) used elsewhere, matching "Reservation : ambre plein.
+// Contract : bleu plein." in docs/design-system.md's Disponibilité
+// section. Reuses the same base palette tokens rather than inventing a
+// third color per state.
+const BLOCK_FILL_VAR = {
+	quote: "var(--cortex-border-strong)",
+	reservation: "var(--cortex-warning-500)",
+	contract: "var(--cortex-info-600)",
+	checked_out: "var(--cortex-violet-600)",
 };
-const STATE_ORDER = ["Quote", "Reservation", "Contract", "Checked Out"];
 
 const VIEW_DAYS = { day: 1, week: 7, month: 30 };
 
@@ -36,7 +58,7 @@ const viewMode = ref("week");
 const refDate = ref(startOfWeek(new Date()));
 const search = ref("");
 const activeCategories = reactive(new Set());
-const activeStates = reactive(new Set(STATE_ORDER));
+const activeStates = reactive(new Set(GRID_RENTAL_STATES));
 const sidebarCollapsed = ref(false);
 
 const loading = ref(true);
@@ -185,17 +207,18 @@ function blockStyle(block) {
 	const endOffsetDays = Math.min(columns.value.length, (block._end - rangeStart.value) / dayMs);
 	const left = offsetDays * cellWidth.value;
 	const width = Math.max(cellWidth.value * 0.4, (endOffsetDays - offsetDays) * cellWidth.value - 4);
-	const meta = STATE_META[block.rental_state] || { color: "#64748b" };
+	const stateKey = stateKeyForRentalState(block.rental_state);
 	return {
 		left: `${left}px`,
 		width: `${width}px`,
 		top: `${block._lane * LANE_HEIGHT + 4}px`,
-		background: meta.color,
+		background: BLOCK_FILL_VAR[stateKey] || "var(--cortex-text-disabled)",
 	};
 }
 
-function stateLabel(state) {
-	return (STATE_META[state] || {}).label || state;
+function stateLabel(rentalState) {
+	const key = stateKeyForRentalState(rentalState);
+	return (STATE_META[key] || {}).label || rentalState;
 }
 
 function toggleCategory(cat) {
@@ -238,13 +261,9 @@ function goToday() {
 </script>
 
 <template>
-	<div class="cx-app" :class="{ 'cx-sidebar-collapsed': sidebarCollapsed }">
-		<header class="cx-toolbar">
-			<div class="cx-toolbar-left">
-				<h2 class="cx-title">Disponibilité</h2>
-				<span class="cx-range-label">{{ rangeLabel }}</span>
-			</div>
-			<div class="cx-toolbar-right">
+	<div class="cortex-app cx-app" :class="{ 'cx-sidebar-collapsed': sidebarCollapsed }">
+		<CortexPageHeader title="Disponibilité" :subtitle="rangeLabel">
+			<template #secondary>
 				<div class="cx-nav-group">
 					<button class="cx-btn cx-btn-icon" @click="shiftRange(-1)" title="Période précédente">‹</button>
 					<button class="cx-btn" @click="goToday">Aujourd'hui</button>
@@ -268,9 +287,11 @@ function goToday() {
 					placeholder="Rechercher un équipement…"
 					aria-label="Rechercher un équipement"
 				/>
+			</template>
+			<template #primary>
 				<button class="cx-btn cx-btn-primary" @click="createDraft">+ Créer une soumission</button>
-			</div>
-		</header>
+			</template>
+		</CortexPageHeader>
 
 		<div class="cx-body">
 			<aside class="cx-sidebar">
@@ -296,32 +317,39 @@ function goToday() {
 					</section>
 					<section class="cx-filter-group">
 						<h4>État</h4>
-						<label v-for="state in STATE_ORDER" :key="state" class="cx-check">
+						<label v-for="state in GRID_RENTAL_STATES" :key="state" class="cx-check">
 							<input
 								type="checkbox"
 								:checked="activeStates.has(state)"
 								@change="toggleState(state)"
 							/>
-							<span class="cx-dot" :style="{ background: STATE_META[state].color }"></span>
-							<span>{{ STATE_META[state].label }}</span>
+							<span
+								class="cx-dot"
+								:style="{ background: BLOCK_FILL_VAR[stateKeyForRentalState(state)] }"
+							></span>
+							<span>{{ stateLabel(state) }}</span>
 						</label>
 					</section>
 				</div>
 			</aside>
 
 			<main class="cx-grid-wrap">
-				<div v-if="loading" class="cx-state-panel">
-					<div class="cx-skeleton" v-for="n in 6" :key="n"></div>
+				<div v-if="loading" style="padding: var(--space-4)">
+					<CortexLoadingState :rows="6" :row-height="32" />
 				</div>
 
-				<div v-else-if="error" class="cx-state-panel cx-error">
-					<p>{{ error }}</p>
-					<button class="cx-btn" @click="fetchMatrix">Réessayer</button>
+				<div v-else-if="error" style="padding: var(--space-4)">
+					<CortexErrorState
+						:message="error"
+						consequence="Aucune réservation n'a été créée."
+						@retry="fetchMatrix"
+					/>
 				</div>
 
-				<div v-else-if="!filteredItems.length" class="cx-state-panel cx-empty">
-					<p>Aucun équipement ne correspond à ces filtres pour cette période.</p>
-				</div>
+				<CortexEmptyState
+					v-else-if="!filteredItems.length"
+					message="Aucun équipement ne correspond à ces filtres pour cette période."
+				/>
 
 				<div v-else class="cx-grid" :style="{ '--cell-w': cellWidth + 'px', '--col-count': columns.length }">
 					<div class="cx-grid-header">
@@ -342,9 +370,7 @@ function goToday() {
 						<div class="cx-row-label" :title="item.item_code">
 							<span class="cx-item-name">{{ item.item_name || item.item_code }}</span>
 							<span class="cx-item-fleet">{{ item.fleet_quantity }} unités</span>
-							<span v-if="item.has_conflict" class="cx-conflict-badge" title="Conflit potentiel détecté">
-								conflit
-							</span>
+							<CortexStatusBadge v-if="item.has_conflict" state="conflict" tooltip="Conflit potentiel détecté" />
 						</div>
 						<div
 							class="cx-row-track"
@@ -375,101 +401,50 @@ function goToday() {
 		</div>
 
 		<footer class="cx-legend">
-			<span v-for="state in STATE_ORDER" :key="state" class="cx-legend-item">
-				<span class="cx-dot" :style="{ background: STATE_META[state].color }"></span>
-				{{ STATE_META[state].label }}
+			<span v-for="state in GRID_RENTAL_STATES" :key="state" class="cx-legend-item">
+				<span class="cx-dot" :style="{ background: BLOCK_FILL_VAR[stateKeyForRentalState(state)] }"></span>
+				{{ stateLabel(state) }}
 			</span>
-			<span class="cx-legend-item">
-				<span class="cx-dot" style="background: #dc2626"></span>
-				Conflit
-			</span>
+			<CortexStatusBadge state="conflict" />
 		</footer>
 	</div>
 </template>
 
 <style scoped>
+/* Buttons (.cx-btn / .cx-btn-primary) and the loading skeleton shimmer
+   come from cortex-utilities.css now — not redefined here (see
+   docs/design-system.md "Conventions d'intégration"). Everything below
+   is layout specific to this page's calendar grid. */
+
 .cx-app {
 	display: flex;
 	flex-direction: column;
 	height: calc(100vh - var(--navbar-height, 56px) - 40px);
 	font-size: 13px;
-	color: var(--text-color, #1f2937);
 }
 
-.cx-toolbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 10px 16px;
-	border-bottom: 1px solid var(--border-color, #e5e7eb);
-	flex-wrap: wrap;
-	gap: 10px;
-}
-.cx-toolbar-left {
-	display: flex;
-	align-items: baseline;
-	gap: 10px;
-}
-.cx-title {
-	margin: 0;
-	font-size: 16px;
-	font-weight: 600;
-}
-.cx-range-label {
-	color: var(--text-muted, #6b7280);
-	font-variant-numeric: tabular-nums;
-}
-.cx-toolbar-right {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	flex-wrap: wrap;
-}
 .cx-nav-group,
 .cx-view-toggle {
 	display: inline-flex;
-	border: 1px solid var(--border-color, #e5e7eb);
-	border-radius: 6px;
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-md);
 	overflow: hidden;
 }
-.cx-btn {
-	border: none;
-	background: var(--control-bg, #fff);
-	padding: 5px 10px;
-	cursor: pointer;
-	font-size: 12.5px;
-	color: inherit;
-}
-.cx-btn + .cx-btn {
-	border-left: 1px solid var(--border-color, #e5e7eb);
-}
-.cx-btn:hover {
-	background: var(--control-bg-on-gray, #f3f4f6);
-}
-.cx-btn-active {
-	background: #4f46e5;
-	color: #fff;
+.cx-nav-group .cx-btn,
+.cx-view-toggle .cx-btn {
+	border-radius: 0;
 }
 .cx-btn-icon {
 	width: 28px;
 	font-weight: 700;
 }
-.cx-btn-primary {
-	background: #4f46e5;
-	color: #fff;
-	border-radius: 6px;
-	padding: 6px 12px;
-	font-weight: 600;
-}
-.cx-btn-primary:hover {
-	background: #4338ca;
-}
 .cx-search {
-	border: 1px solid var(--border-color, #e5e7eb);
-	border-radius: 6px;
-	padding: 5px 10px;
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-md);
+	padding: 5px var(--space-3);
 	min-width: 220px;
 	font-size: 12.5px;
+	font-family: inherit;
 }
 
 .cx-body {
@@ -483,8 +458,8 @@ function goToday() {
 	position: relative;
 	width: 220px;
 	flex-shrink: 0;
-	border-right: 1px solid var(--border-color, #e5e7eb);
-	transition: width 0.22s ease;
+	border-right: 1px solid var(--cortex-border);
+	transition: width var(--motion-base);
 	overflow: hidden;
 }
 .cx-sidebar-collapsed .cx-sidebar {
@@ -492,9 +467,9 @@ function goToday() {
 }
 .cx-sidebar-content {
 	width: 220px;
-	padding: 14px 12px;
+	padding: var(--space-4) var(--space-3);
 	opacity: 1;
-	transition: opacity 0.15s ease;
+	transition: opacity var(--motion-fast);
 	overflow-y: auto;
 	height: 100%;
 }
@@ -504,13 +479,13 @@ function goToday() {
 }
 .cx-sidebar-toggle {
 	position: absolute;
-	top: 8px;
+	top: var(--space-2);
 	right: -2px;
 	width: 18px;
 	height: 18px;
 	border-radius: 50%;
-	border: 1px solid var(--border-color, #e5e7eb);
-	background: var(--control-bg, #fff);
+	border: 1px solid var(--cortex-border);
+	background: var(--cortex-surface);
 	cursor: pointer;
 	z-index: 2;
 	font-size: 11px;
@@ -524,57 +499,34 @@ function goToday() {
 	transform: rotate(180deg);
 }
 .cx-filter-group {
-	margin-bottom: 18px;
+	margin-bottom: var(--space-5);
 }
 .cx-filter-group h4 {
-	margin: 0 0 8px;
+	margin: 0 0 var(--space-2);
 	font-size: 11px;
+	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
-	color: var(--text-muted, #6b7280);
+	color: var(--cortex-text-secondary);
 }
 .cx-check {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: var(--space-2);
 	padding: 3px 0;
 	cursor: pointer;
+	font-size: 13px;
 }
 .cx-hint {
 	font-size: 11px;
-	color: var(--text-muted, #9ca3af);
-	margin: 4px 0 0;
+	color: var(--cortex-text-disabled);
+	margin: var(--space-1) 0 0;
 }
 
 .cx-grid-wrap {
 	flex: 1;
 	overflow: auto;
 	position: relative;
-}
-
-.cx-state-panel {
-	padding: 40px 24px;
-	text-align: center;
-	color: var(--text-muted, #6b7280);
-}
-.cx-skeleton {
-	height: 32px;
-	border-radius: 6px;
-	margin-bottom: 8px;
-	background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%);
-	background-size: 400% 100%;
-	animation: cx-shimmer 1.4s ease infinite;
-}
-@keyframes cx-shimmer {
-	0% {
-		background-position: 100% 50%;
-	}
-	100% {
-		background-position: 0 50%;
-	}
-}
-.cx-error {
-	color: #b91c1c;
 }
 
 .cx-grid {
@@ -585,16 +537,16 @@ function goToday() {
 	display: flex;
 	position: sticky;
 	top: 0;
-	background: var(--fg-color, #fff);
+	background: var(--cortex-surface);
 	z-index: 3;
-	border-bottom: 1px solid var(--border-color, #e5e7eb);
+	border-bottom: 1px solid var(--cortex-border);
 }
 .cx-corner {
 	width: 220px;
 	flex-shrink: 0;
 	position: sticky;
 	left: 0;
-	background: var(--fg-color, #fff);
+	background: var(--cortex-surface);
 	z-index: 4;
 }
 .cx-header-cols {
@@ -602,29 +554,29 @@ function goToday() {
 }
 .cx-header-cell {
 	flex-shrink: 0;
-	padding: 8px 6px;
+	padding: var(--space-2) 6px;
 	font-size: 11px;
 	text-align: center;
-	color: var(--text-muted, #6b7280);
-	border-left: 1px solid var(--border-color, #f3f4f6);
+	color: var(--cortex-text-muted);
+	border-left: 1px solid var(--cortex-surface-subtle);
 }
 
 .cx-grid-row {
 	display: flex;
-	border-bottom: 1px solid var(--border-color, #f3f4f6);
+	border-bottom: 1px solid var(--cortex-surface-subtle);
 }
 .cx-row-label {
 	width: 220px;
 	flex-shrink: 0;
 	position: sticky;
 	left: 0;
-	background: var(--fg-color, #fff);
+	background: var(--cortex-surface);
 	z-index: 2;
-	padding: 8px 10px;
+	padding: var(--space-2) var(--space-3);
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
-	border-right: 1px solid var(--border-color, #e5e7eb);
+	border-right: 1px solid var(--cortex-border);
 }
 .cx-item-name {
 	font-weight: 600;
@@ -634,16 +586,7 @@ function goToday() {
 }
 .cx-item-fleet {
 	font-size: 11px;
-	color: var(--text-muted, #6b7280);
-}
-.cx-conflict-badge {
-	font-size: 10.5px;
-	font-weight: 600;
-	color: #b91c1c;
-	background: #fee2e2;
-	border-radius: 4px;
-	padding: 1px 6px;
-	width: fit-content;
+	color: var(--cortex-text-muted);
 }
 
 .cx-row-track {
@@ -653,15 +596,15 @@ function goToday() {
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	border-left: 1px solid var(--border-color, #f3f4f6);
+	border-left: 1px solid var(--cortex-surface-subtle);
 }
 .cx-block {
 	position: absolute;
-	border-radius: 5px;
-	color: #fff;
+	border-radius: var(--radius-sm);
+	color: var(--cortex-inverse);
 	font-size: 11px;
 	font-weight: 600;
-	padding: 4px 8px;
+	padding: 4px var(--space-2);
 	height: 24px;
 	display: flex;
 	align-items: center;
@@ -669,7 +612,7 @@ function goToday() {
 	overflow: hidden;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+	box-shadow: var(--shadow-xs);
 }
 .cx-block:hover {
 	filter: brightness(0.92);
@@ -677,17 +620,18 @@ function goToday() {
 
 .cx-legend {
 	display: flex;
-	gap: 18px;
-	padding: 8px 16px;
-	border-top: 1px solid var(--border-color, #e5e7eb);
+	gap: var(--space-5);
+	padding: var(--space-2) var(--space-4);
+	border-top: 1px solid var(--cortex-border);
 	font-size: 11.5px;
-	color: var(--text-muted, #6b7280);
+	color: var(--cortex-text-muted);
 	flex-wrap: wrap;
+	align-items: center;
 }
 .cx-legend-item {
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
+	gap: var(--space-2);
 }
 .cx-dot {
 	width: 9px;
