@@ -14,19 +14,16 @@ app_license = "proprietary"
 
 # DocType Events (Audit logging & validation hooks)
 # ------------------------------------------------
-doc_events = {
-    "Quotation": {
-        "before_save": "cortex_rental.overrides.quotation.before_save_quotation",
-        "on_submit": "cortex_rental.overrides.quotation.on_submit_quotation",
-    },
-    "Sales Order": {
-        "before_save": "cortex_rental.overrides.sales_order.before_save_sales_order",
-        "on_submit": "cortex_rental.overrides.sales_order.on_submit_sales_order",
-    },
-    "Serial No": {
-        "before_save": "cortex_rental.overrides.serial_no.before_save_serial_no",
-    },
-}
+# NOTE: a `doc_events` block referencing
+# cortex_rental.overrides.{quotation,sales_order,serial_no} previously
+# lived here, but no `apps/cortex_rental/cortex_rental/overrides/`
+# module exists anywhere in this app — `bench migrate` / app boot would
+# fail on the dangling import. Nothing in this codebase or its tests
+# relies on it. Removed rather than fabricated (no spec exists for what
+# these overrides should do) — implementing real Quotation/Sales
+# Order/Serial No override behavior is an open follow-up, not something
+# to invent here.
+doc_events = {}
 
 # Permission Query Hooks for Multi-Tenancy
 # ----------------------------------------
@@ -52,5 +49,8 @@ permission_query_conditions = {
 # Company scoping custom field on the core ERPNext Customer doctype.
 fixtures = [
     {"dt": "Role", "filters": [["role_name", "like", "Cortex %"]]},
-    {"dt": "Custom Field", "filters": [["name", "=", "Customer-cortex_company"]]},
+    {
+        "dt": "Custom Field",
+        "filters": [["name", "in", ["Customer-cortex_company", "Serial No-cortex_status"]]],
+    },
 ]

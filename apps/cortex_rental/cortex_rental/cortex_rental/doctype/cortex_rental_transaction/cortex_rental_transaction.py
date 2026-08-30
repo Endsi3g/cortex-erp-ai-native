@@ -13,6 +13,14 @@ except ImportError:
 from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.transaction_state import TransactionStateService
 from cortex_rental.services.audit import AuditService
+from cortex_rental.services.availability import AvailabilityService
+from cortex_rental.services.locking import reservation_lock
+
+# States that block inventory (PRD §4). Confirming into one of these
+# must happen under the per-item reservation lock, with a fresh
+# availability re-check — a positive read-only availability check made
+# moments earlier (ADR-002) is not a guarantee.
+BLOCKING_STATES = {"Reservation", "Contract"}
 
 
 class CortexRentalTransaction(Document):
@@ -109,8 +117,12 @@ class CortexRentalTransaction(Document):
                 raise PermissionError(error_msg)
 
         before_state = {"rental_state": self.rental_state}
-        self.rental_state = new_state
-        self.save()
+
+        if frappe and new_state in BLOCKING_STATES:
+            self._commit_transition_under_lock(new_state)
+        else:
+            self.rental_state = new_state
+            self.save()
 
         # Synchronize with ERPNext documents
         TransactionStateService.sync_with_erpnext(self)
@@ -124,3 +136,37 @@ class CortexRentalTransaction(Document):
             before_state=before_state,
             after_state={"rental_state": new_state, "reason": reason},
         )
+
+    def _commit_transition_under_lock(self, new_state: str):
+        """
+        Serialize "re-check availability, then flip state" per item so
+        two concurrent confirmations of the last unit can't both
+        succeed (ADR-002). The read-only availability check an operator
+        or agent saw moments earlier is not a guarantee by itself.
+        """
+        item_codes = sorted({item.item_code for item in (self.items or []) if item.item_code})
+
+        from contextlib import ExitStack
+
+        with ExitStack() as locks:
+            for code in item_codes:
+                locks.enter_context(reservation_lock(self.company, code))
+
+            item_requests = [{"item_id": item.item_code, "quantity": item.qty} for item in (self.items or [])]
+            checks = AvailabilityService().check(
+                company=self.company,
+                starts_at=str(self.starts_at),
+                ends_at=str(self.ends_at),
+                item_requests=item_requests,
+                exclude_transaction=self.name if not self.is_new() else None,
+            )
+            unavailable = [c["item_id"] for c in checks if not c["is_available"]]
+            if unavailable:
+                frappe.throw(
+                    f"Cannot confirm {new_state}: insufficient availability for {', '.join(unavailable)} "
+                    "in the requested window (re-checked under lock).",
+                    frappe.ValidationError,
+                )
+
+            self.rental_state = new_state
+            self.save()
