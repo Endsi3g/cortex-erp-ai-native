@@ -1,0 +1,327 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"cxHdrMain\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Cortex Rental</b></span>\",\"col\":12}},{\"id\":\"cxHdrQuick\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Acc\\u00e8s rapide</span>\",\"col\":12}},{\"id\":\"cxShAvail\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Disponibilit\\u00e9\",\"col\":3}},{\"id\":\"cxShTrx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transactions\",\"col\":3}},{\"id\":\"cxShAppr\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approbations\",\"col\":3}},{\"id\":\"cxShOnyx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assistant Onyx\",\"col\":3}},{\"id\":\"cxSpacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"cxHdrCards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modules</b></span>\",\"col\":12}},{\"id\":\"cxCardOps\",\"type\":\"card\",\"data\":{\"card_name\":\"Op\\u00e9rations\",\"col\":4}},{\"id\":\"cxCardCat\",\"type\":\"card\",\"data\":{\"card_name\":\"Catalogue\",\"col\":4}},{\"id\":\"cxCardCli\",\"type\":\"card\",\"data\":{\"card_name\":\"Clients\",\"col\":4}},{\"id\":\"cxCardFin\",\"type\":\"card\",\"data\":{\"card_name\":\"Finance\",\"col\":4}},{\"id\":\"cxCardIntel\",\"type\":\"card\",\"data\":{\"card_name\":\"Intelligence\",\"col\":4}},{\"id\":\"cxCardAdmin\",\"type\":\"card\",\"data\":{\"card_name\":\"Administration\",\"col\":4}}]",
+ "creation": "2026-08-30 00:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Cortex Rental",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Opérations",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transactions de location",
+   "link_count": 0,
+   "link_to": "Cortex Rental Transaction",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Retours / Check-in",
+   "link_count": 0,
+   "link_to": "Cortex Check-In",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "File d'approbations",
+   "link_count": 0,
+   "link_to": "Approval Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Demandes entrantes (intake)",
+   "link_count": 0,
+   "link_to": "Cortex Inbound Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Catalogue",
+   "link_count": 5,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Profils de location (Cortex)",
+   "link_count": 0,
+   "link_to": "Cortex Rental Item Profile",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Articles (ERPNext Item)",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Numéros de série",
+   "link_count": 0,
+   "link_to": "Serial No",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Propriétaires en consignation",
+   "link_count": 0,
+   "link_to": "Consignment Owner",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Règles de prix",
+   "link_count": 0,
+   "link_to": "Rental Pricing Rule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Clients",
+   "link_count": 1,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Clients",
+   "link_count": 0,
+   "link_to": "Customer",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Finance",
+   "link_count": 1,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Versements de consignation",
+   "link_count": 0,
+   "link_to": "Consignment Payout",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Intelligence",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Exécutions d'agent",
+   "link_count": 0,
+   "link_to": "Cortex Agent Run",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Appels d'outil",
+   "link_count": 0,
+   "link_to": "Cortex Agent Tool Call",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Références de preuve",
+   "link_count": 0,
+   "link_to": "Cortex Evidence Reference",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Exécutions d'extraction",
+   "link_count": 0,
+   "link_to": "Cortex Extraction Run",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Administration",
+   "link_count": 2,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Journal d'audit",
+   "link_count": 0,
+   "link_to": "Audit Event",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Enregistrements d'idempotence",
+   "link_count": 0,
+   "link_to": "Cortex Idempotency Record",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-08-30 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Cortex Rental",
+ "name": "Cortex Rental",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Cortex System Manager"
+  },
+  {
+   "role": "Cortex Operations Manager"
+  },
+  {
+   "role": "Cortex Counter Staff"
+  },
+  {
+   "role": "Cortex Inventory Manager"
+  },
+  {
+   "role": "Cortex Finance Manager"
+  },
+  {
+   "role": "Cortex Consignment Manager"
+  },
+  {
+   "role": "Cortex Account Reviewer"
+  },
+  {
+   "role": "Rental Manager"
+  },
+  {
+   "role": "Rental Operator"
+  }
+ ],
+ "sequence_id": 1.0,
+ "shortcuts": [
+  {
+   "label": "Disponibilité",
+   "link_to": "cortex-availability",
+   "type": "Page",
+   "color": "Blue",
+   "doc_view": ""
+  },
+  {
+   "label": "Transactions",
+   "link_to": "Cortex Rental Transaction",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Approbations",
+   "link_to": "Approval Request",
+   "type": "DocType",
+   "color": "Yellow",
+   "doc_view": "List",
+   "stats_filter": "{\n    \"status\": \"Pending\"\n}"
+  },
+  {
+   "label": "Assistant Onyx",
+   "type": "URL",
+   "url": "/onyx-assistant",
+   "color": "Green",
+   "doc_view": ""
+  }
+ ],
+ "title": "Cortex Rental",
+ "type": "Workspace"
+}

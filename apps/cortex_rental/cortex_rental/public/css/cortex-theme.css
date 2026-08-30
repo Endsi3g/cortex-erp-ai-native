@@ -1,0 +1,116 @@
+/*
+ * Cortex Operations System — theme layer.
+ *
+ * Everything here is scoped under `.cortex-app` (the root class every
+ * Cortex page/component must wrap itself in — see
+ * docs/design-system.md "Conventions d'intégration"). Nothing here
+ * targets bare `body`/`*`/Frappe's own classes — this app must not
+ * modify Frappe Desk's core styling, only add its own on top of it.
+ *
+ * Light mode only in this pass — see cortex-tokens.css and
+ * docs/design-system.md "Dark mode" for why, and where a future
+ * `:root[data-theme="dark"]` block would go without disturbing this one.
+ */
+
+.cortex-app {
+	--navbar-height: 56px;
+	font-family: var(--font-sans);
+	color: var(--cortex-text);
+	background: var(--cortex-bg);
+}
+
+.cortex-app,
+.cortex-app *,
+.cortex-app *::before,
+.cortex-app *::after {
+	box-sizing: border-box;
+}
+
+/* ---- Typography scale (see docs/design-system.md "Typographie") ---- */
+.cx-title-page {
+	font-size: 26px;
+	font-weight: 700;
+	line-height: 1.25;
+	color: var(--cortex-text);
+}
+.cx-title-section {
+	font-size: 19px;
+	font-weight: 625;
+	line-height: 1.3;
+	color: var(--cortex-text);
+}
+.cx-title-card {
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.35;
+	color: var(--cortex-text);
+}
+.cx-text-body {
+	font-size: 14px;
+	font-weight: 425;
+	line-height: 1.5;
+	color: var(--cortex-text);
+}
+.cx-text-table {
+	font-size: 13.5px;
+	font-weight: 450;
+	line-height: 1.4;
+	color: var(--cortex-text);
+}
+.cx-text-label {
+	font-size: 12px;
+	font-weight: 575;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--cortex-text-secondary);
+}
+.cx-text-meta {
+	font-size: 12px;
+	font-weight: 425;
+	color: var(--cortex-text-muted);
+}
+.cx-text-kpi {
+	font-size: 32px;
+	font-weight: 675;
+	line-height: 1.15;
+	color: var(--cortex-text);
+	font-variant-numeric: tabular-nums;
+}
+.cx-text-mono {
+	font-family: var(--font-mono);
+	font-size: 12.5px;
+	font-weight: 475;
+}
+
+/* Rule from the spec: never critical info in disabled/muted-gray text. */
+.cx-text-critical {
+	color: var(--cortex-text);
+	font-weight: 550;
+}
+
+/* ---- Focus ring — WCAG 2.2 AA "visible focus" ---- */
+.cortex-app :focus-visible {
+	outline: var(--focus-ring-width) solid var(--focus-ring-color);
+	outline-offset: var(--focus-ring-offset);
+	border-radius: var(--radius-sm);
+}
+
+/* ---- Surfaces ---- */
+.cx-surface {
+	background: var(--cortex-surface);
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-md);
+}
+.cx-surface-subtle {
+	background: var(--cortex-surface-subtle);
+	border-radius: var(--radius-md);
+}
+
+/* ---- Motion — respects reduced-motion regardless of caller ---- */
+@media (prefers-reduced-motion: reduce) {
+	.cortex-app * {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+	}
+}

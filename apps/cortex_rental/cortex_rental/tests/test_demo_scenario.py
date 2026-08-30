@@ -2,7 +2,7 @@ import unittest
 from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.transaction_state import TransactionStateService
 from cortex_rental.api.v1.quotes import create_draft_handler
-from cortex_rental.api.v1.availability import check_availability_handler
+from cortex_rental.api.v1.availability import check_availability_handler, get_matrix_handler
 from cortex_rental.api.v1.approvals import submit_approval_handler
 from cortex_rental.api.v1.consignment import prepare_owner_statement_handler
 from cortex_rental.cortex_rental.doctype.approval_request.approval_request import ApprovalRequest
@@ -46,6 +46,19 @@ class TestCortexDemoScenario(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertTrue(results[0]["is_available"])
         self.assertEqual(results[0]["available_quantity"], 10.0)
+
+    def test_availability_matrix_requires_date_window(self):
+        with self.assertRaises(ValueError):
+            get_matrix_handler({"starts_at": self.starts_at}, self.company)
+
+    def test_availability_matrix_no_frappe_returns_labeled_mock(self):
+        # In this sandbox `frappe` is unimportable, so get_matrix_handler
+        # takes its documented mocked branch (same contract as
+        # AvailabilityService.check without a live DB) rather than
+        # silently fabricating a real-looking grid.
+        result = get_matrix_handler({"starts_at": self.starts_at, "ends_at": self.ends_at}, self.company)
+        self.assertEqual(result["items"], [])
+        self.assertIn("Mocked result", result["notes"])
 
     def test_step_6_pricing_rule_7d_equals_3d(self):
         calendar_days, billable_days = PricingService.compute_billable_days("2026-09-01", "2026-09-08", self.company)

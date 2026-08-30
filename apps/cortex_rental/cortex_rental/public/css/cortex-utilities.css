@@ -1,0 +1,135 @@
+/*
+ * Cortex Operations System — hand-rolled utility classes.
+ *
+ * The spec's tech stack calls for Tailwind. Not adopted in this pass:
+ * Tailwind needs a PostCSS/Vite build step to generate anything beyond
+ * its (huge) default CDN bundle, and this app deliberately has no
+ * build step yet (see cortex-tokens.css header). Rather than load an
+ * unbuilt Tailwind CDN script into every Desk page (global-scope risk,
+ * plus a page-weight cost for classes we'd never use), this file hand-
+ * rolls only the small, specific set of utilities Cortex components
+ * actually need. Revisit once a real build pipeline exists.
+ */
+
+.cortex-app .cx-flex {
+	display: flex;
+}
+.cortex-app .cx-flex-col {
+	display: flex;
+	flex-direction: column;
+}
+.cortex-app .cx-items-center {
+	align-items: center;
+}
+.cortex-app .cx-justify-between {
+	justify-content: space-between;
+}
+.cortex-app .cx-gap-1 {
+	gap: var(--space-1);
+}
+.cortex-app .cx-gap-2 {
+	gap: var(--space-2);
+}
+.cortex-app .cx-gap-3 {
+	gap: var(--space-3);
+}
+.cortex-app .cx-gap-4 {
+	gap: var(--space-4);
+}
+
+/* ---- Badge base — every status/risk badge builds on this ---- */
+.cortex-app .cx-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	padding: 3px var(--space-3);
+	border-radius: var(--radius-pill);
+	border: 1px solid transparent;
+	font-size: 12.5px;
+	font-weight: 575;
+	line-height: 1.4;
+	white-space: nowrap;
+}
+.cortex-app .cx-badge-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+/* ---- Buttons — primary / secondary / destructive, per spec §5 ---- */
+.cortex-app .cx-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: 6px var(--space-3);
+	border-radius: var(--radius-md);
+	border: 1px solid var(--cortex-border);
+	background: var(--cortex-surface);
+	color: var(--cortex-text);
+	font-size: 13px;
+	font-weight: 550;
+	cursor: pointer;
+	transition: background var(--motion-fast), border-color var(--motion-fast);
+}
+.cortex-app .cx-btn:hover {
+	background: var(--cortex-surface-hover);
+}
+.cortex-app .cx-btn-primary {
+	background: var(--cortex-primary-600);
+	border-color: var(--cortex-primary-600);
+	color: var(--cortex-inverse);
+}
+.cortex-app .cx-btn-primary:hover {
+	background: var(--cortex-primary-700);
+	border-color: var(--cortex-primary-700);
+}
+.cortex-app .cx-btn-destructive {
+	background: var(--cortex-surface);
+	border-color: var(--cortex-danger-500);
+	color: var(--cortex-danger-700);
+}
+.cortex-app .cx-btn-destructive:hover {
+	background: var(--cortex-danger-50);
+}
+
+/* Shared "active" modifier for toggle-button groups (view mode, audit
+   timeline operational/technical, etc.) — one definition instead of
+   each page redefining it. */
+.cortex-app .cx-btn-active,
+.cortex-app .cx-btn-active:hover {
+	background: var(--cortex-primary-600);
+	border-color: var(--cortex-primary-600);
+	color: var(--cortex-inverse);
+}
+
+/* ---- Density modes — comfortable (default) vs. compact ----
+   Toggle by adding `cx-density-compact` on the `.cortex-app` root. */
+.cortex-app {
+	--cx-row-py: 10px;
+	--cx-row-gap: var(--space-3);
+}
+.cortex-app.cx-density-compact {
+	--cx-row-py: 5px;
+	--cx-row-gap: var(--space-2);
+}
+.cortex-app .cx-row-padded {
+	padding-top: var(--cx-row-py);
+	padding-bottom: var(--cx-row-py);
+}
+
+/* ---- Skeleton loading shimmer — shared by CortexLoadingState ---- */
+.cortex-app .cx-skeleton {
+	border-radius: var(--radius-sm);
+	background: linear-gradient(90deg, var(--cortex-surface-subtle) 25%, var(--cortex-border) 37%, var(--cortex-surface-subtle) 63%);
+	background-size: 400% 100%;
+	animation: cx-shimmer 1.4s ease infinite;
+}
+@keyframes cx-shimmer {
+	0% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0 50%;
+	}
+}
