@@ -46,17 +46,23 @@
 
 Le script universel `./bin/deploy.sh` prend en charge l'installation, les migrations MariaDB, la compilation des bundles Vue 3 et le chargement des données de test.
 
-### Option A : Sur le Bench Frappe natif (la Tour)
+### Option A : Déploiement 1-Clic Complet (Installation de A à Z)
+```bash
+./bin/deploy.sh 1click --site cortex.local
+```
+*(Installe et configure automatiquement : Frappe Bench v15, ERPNext v15, cortex_rental, base MariaDB, bundles Vue 3, données de démo et lance la validation des tests).*
+
+### Option B : Sur le Bench Frappe existant (la Tour)
 ```bash
 ./bin/deploy.sh tour --site cortex.local
 ```
 
-### Option B : Via Docker Compose (Stack complète isolée)
+### Option C : Via Docker Compose (Stack conteneurisée isolée)
 ```bash
 ./bin/deploy.sh docker
 ```
 
-### Option C : Charger uniquement les données de démo
+### Option D : Charger uniquement les données de démo
 ```bash
 ./bin/deploy.sh fixtures --site cortex.local
 ```

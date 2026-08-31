@@ -74,7 +74,12 @@ détail complet) :
 ```bash
 cd /chemin/vers/Cortex-ERP-AI-Native
 git pull origin main
+
+# Mode 1 : Mise à jour et migration sur bench existant
 ./bin/deploy.sh tour --site <ton-site>
+
+# Mode 2 : Installation automatique complète de A à Z (bench, erpnext, cortex, fixtures, tests)
+./bin/deploy.sh 1click --site <ton-site>
 ```
 
 Le script s'occupe de tout automatiquement :
