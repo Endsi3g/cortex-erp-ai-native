@@ -63,6 +63,24 @@
       "description": "Drives the Serial No's cortex_status: Return to Stock->Active, Quarantine->Quarantine, Repair->Under Repair, Missing->Missing, Write-off->Decommissioned."
     },
     {
+      "fieldname": "damage_severity",
+      "fieldtype": "Select",
+      "label": "Damage Severity",
+      "options": "None\nCosmetic\nFunctional\nBlocking"
+    },
+    {
+      "fieldname": "damage_type",
+      "fieldtype": "Select",
+      "label": "Damage Type",
+      "options": "None\nPhysical / Impact\nOptical Scratch\nElectronic Failure\nLiquid / Moisture\nCable / Connector\nMissing Parts\nOther"
+    },
+    {
+      "fieldname": "estimated_repair_cost",
+      "fieldtype": "Currency",
+      "label": "Estimated Repair Cost",
+      "default": "0.0"
+    },
+    {
       "fieldname": "notes",
       "fieldtype": "Small Text",
       "label": "Notes"

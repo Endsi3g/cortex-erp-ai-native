@@ -107,6 +107,86 @@ the spec's explicit example ("Aucune réservation n'a été créée").
 
 Emits `retry`. `role="alert"` so assistive tech announces it immediately.
 
+## CortexKpiSummary
+
+Full-width KPI card per `design-system-accounting-pnl.md` §11: Total
+Income − Total Expense = Net Profit, on one shared baseline. Not
+Accounting-specific by name — reusable by any future financial
+statement screen needing the same three-figure summary.
+
+| Prop | Type | Required |
+|---|---|---|
+| `totalIncome` | `number` | no (default `0`) |
+| `totalExpense` | `number` | no (default `0`) |
+| `netProfit` | `number` | no (default `0`) |
+| `currency` | `string` | no (default `"USD"`) |
+| `locale` | `string` | no (default `"en-US"`) |
+
+Formats via `Intl.NumberFormat` (`formatters.js`'s `formatCurrency`),
+never a manual string build. No events.
+
+## CortexFinancialChart
+
+Hand-rolled inline SVG line chart (no charting library — see
+`cortex-tokens.css` "Packaging" for why this app avoids new
+dependencies). Renders whatever accumulation state the caller's data is
+already in — does not accumulate client-side.
+
+| Prop | Type | Required |
+|---|---|---|
+| `periods` | `Array<{key, label, income, expense, profitLoss}>` | yes |
+| `currency` | `string` | no (default `"USD"`) |
+| `locale` | `string` | no (default `"en-US"`) |
+
+Series colors come from `--accounting-income`/`--accounting-expense`/
+`--accounting-profit` (`cortex-tokens.css`), not the general Cortex
+indigo brand tokens. Y-axis scale is computed from the real data's max
+value, not a fixed mockup scale. Hover shows a tooltip naming each
+series (never color alone); a visually-hidden (`cx-sr-only`) real
+`<table>` of the same data ships alongside the SVG for screen readers,
+per spec §12's accessibility requirement.
+
+## CortexFinancialTable / CortexAccountRow
+
+Hierarchical financial statement table (spec §13). Real
+`<table>`/`<th scope="col">` markup — genuinely tabular data, unlike
+the flex-div grid `CortexAvailability.vue` uses for its calendar.
+
+**CortexFinancialTable**
+
+| Prop | Type | Required |
+|---|---|---|
+| `periods` | `Array<{key, label}>` | yes |
+| `accounts` | `Array<AccountRow>` | yes |
+| `currency` | `string` | no (default `"USD"`) |
+| `locale` | `string` | no (default `"en-US"`) |
+
+**CortexAccountRow** (recursive — a component invoking itself by
+filename in its own template, real Vue 3 SFC behavior). Root is a
+`<tr>` plus a sibling `<template v-if>` of child `<tr>`s (Vue 3
+multi-root/fragment components) — not verified against this app's real
+`bench build` yet, same caveat as everything else with no bench in this
+sandbox.
+
+| Prop | Type | Required |
+|---|---|---|
+| `node` | `AccountRow` (`{id, name, depth, type, children, values, total}`) | yes |
+| `periodKeys` | `Array<string>` | yes |
+| `currency` | `string` | no |
+| `locale` | `string` | no |
+
+Local `expanded` state (default `true`), toggled by a 28px button with
+`aria-expanded` and a `aria-label` naming the account — chevron rotates
+90° per spec. Zero values render muted, negative values render in
+danger red (never negative-signal by color alone — the minus sign in
+the formatted currency string carries the meaning too).
+
+## Shared module: `formatters.js`
+
+Not a component — `formatCurrency(value, currency, locale)`, a thin
+`Intl.NumberFormat` wrapper per spec §11. Used by every financial
+component above instead of each one building its own currency string.
+
 ## Shared module: `stateMeta.js`
 
 Not a component — the single source of truth every badge component

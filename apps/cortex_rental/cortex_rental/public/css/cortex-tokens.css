@@ -169,6 +169,19 @@
 	--state-missing-text: #991b1b;
 	--state-missing-border: #dc2626;
 
+	/*
+	 * ---- Accounting / financial statements ----
+	 * Scoped separately from the general Cortex indigo brand palette
+	 * above — docs/design-system-accounting-pnl.md specifies a distinct
+	 * 3-color series (Income/Expense/Net Profit) for financial screens
+	 * only. Buttons/controls on those screens still use the standard
+	 * --cortex-primary-* system (see CortexAccountingPnl.vue) rather
+	 * than the spec's separate blue, to keep one action color app-wide.
+	 */
+	--accounting-income: #e785b2;
+	--accounting-expense: #3d8dcc;
+	--accounting-profit: #52b57c;
+
 	/* ---- Spacing ---- */
 	--space-1: 4px;
 	--space-2: 8px;

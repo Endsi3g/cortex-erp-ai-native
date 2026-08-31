@@ -838,3 +838,113 @@ exists; shown honestly on the real Form after creation instead).
 **Not done in this pass** (tracked in `HANDOFF.md`): accessory/kit
 suggestions, free-text lines, and permission-gated line-level discount
 overrides (this pass's discount field has no permission check at all).
+
+## Eleventh wave — Cortex Accounting / Profit and Loss Statement
+
+**Problem.** `docs/design-system-accounting-pnl.md` specified a full
+Accounting/P&L screen but its own architecture section assumed a
+Next.js/shadcn stack — this app deliberately has no npm/Vite build
+step (`docs/design-system.md` "Packaging"). Confirmed with the user
+before building anything: stay on the existing Vue-3-in-a-Desk-Page
+pattern, no second frontend stack, same as every other Cortex screen.
+
+**Built on ERPNext's own accounting engine, not a new one.** This app
+already depends on `erpnext` (see `HANDOFF.md`'s `bench get-app
+erpnext` step), which owns GL Entry, Fiscal Year, and a working
+`Profit and Loss Statement` report. `api/v1/accounting.py::
+get_profit_and_loss` calls that report's `execute()` and reshapes its
+output into the KPI/period/account-tree JSON the screen renders —
+reimplementing double-entry P&L math here would have duplicated a
+system ERPNext already owns correctly.
+
+**Not verified against a live bench** (same caveat as every other
+Frappe/ERPNext integration point in this app — no bench in this
+sandbox). The exact column/row field names ERPNext's report returns
+(`account`, `account_name`, `indent`, a "Total Income"/"Total Expense"/
+"Net Profit" row by name rather than a flag) are documented assumptions
+in `accounting.py`'s module docstring, not confirmed output. Only the
+pure reshaping logic (`transform_pnl_report`, `_build_pnl_filters`) is
+tested here (12 tests, `test_accounting_pnl.py`) — the whitelisted
+endpoint itself needs a real bench run to prove ERPNext's actual
+version matches these assumptions.
+
+**New finance-only permission gate.** `require_human_staff_role()`
+(used everywhere else) grants Counter Staff/Inventory Manager/
+Consignment Manager access too — too broad for company-wide financial
+statements. Added `require_finance_role()`
+(`permissions/agent_scopes.py`), scoped to Operations Manager, Finance
+Manager, Account Reviewer, and Rental Manager.
+
+**Two toolbar fields shown disabled, not wired**: `Branch` and `Report
+View` from the design mockup have no equivalent ERPNext filter on this
+report — same "don't build a dead link" rule already applied to
+unwired state tokens in `design-system.md`. `Company` is shown
+read-only (resolved server-side via `get_company_context()`), not a
+picker — this page doesn't add a second way to select tenant Company.
+
+**Added.**
+- `cortex_rental/page/cortex_accounting_pnl/` +
+  `public/js/cortex_accounting_pnl/`: the page, same verified
+  Vue-in-a-Desk-Page pattern as every other Cortex screen.
+- `api/v1/accounting.py`: `get_profit_and_loss` (whitelisted GET),
+  plus the pure `_build_pnl_filters`/`transform_pnl_report` functions.
+- 4 new shared components (`public/js/cortex_shared/`):
+  `CortexKpiSummary`, `CortexFinancialChart` (hand-rolled inline SVG,
+  no charting library), `CortexFinancialTable` + `CortexAccountRow`
+  (recursive, real `<table>`/`th scope="col"` markup — genuinely
+  tabular data, unlike Availability's flex-div calendar grid). Plus
+  `formatters.js::formatCurrency`. Documented in
+  `docs/design-system-component-contracts.md`.
+- `cortex-tokens.css`: `--accounting-income`/`--accounting-expense`/
+  `--accounting-profit`, scoped separately from the general Cortex
+  indigo brand palette per the spec's distinct 3-color series.
+  `cortex-utilities.css`: `.cx-sr-only` (visually-hidden accessible
+  fallback, used by the chart's screen-reader data table).
+  Buttons/controls on this screen still use the standard
+  `--cortex-primary-*` action color, not the spec's separate blue —
+  keeps one action color app-wide.
+- Workspace: added a "Profit and Loss Statement" shortcut and a Finance
+  card link.
+- 12 new tests (`test_accounting_pnl.py`), all passing without a
+  bench (pure transform/filter logic, synthetic ERPNext-shaped input).
+- Finalisation P&L :
+  - Menu d'actions et d'export : export CSV direct côté client avec indentation hiérarchique et KPI, vue d'impression et export PDF `@media print` épurée, et lien vers le rapport natif ERPNext.
+  - Drill-down interactif : clic sur les comptes feuilles (`type === "account"`) ouvrant le Grand Livre ERPNext (`General Ledger`) préfiltré sur le compte, la société et la période sélectionnée.
+  - Autocomplétion native HTML via `<datalist>` pour `Fiscal Year`, `Cost Center`, et `Finance Book` chargées dynamiquement depuis l'API Frappe.
+  - Sélecteur d'états financiers (*Profit and Loss Statement* actif, *Balance Sheet* et *Cash Flow* réservés).
+
+## Twelfth wave — Cortex Check-in Scanner & Equipment Returns (PRD-RET)
+
+**Scope & Design Decisions.**
+Aligned with the user through a structured interview (`/grill-me`):
+- Dedicated native Frappe Desk Page `/app/cortex-checkin` using Vue 3 SFC (same zero-npm verified pattern).
+- Continuous 3-step workflow without blocking modals:
+  1. *Live Scan & Colisage* (Fast scan bar, synthesized Web Audio feedback, auto-match serials, steppers for bulk non-serialized items).
+  2. *Diagnostic & Revue des Écarts* (Technical inspection cards for Damaged/Quarantine/Missing items, severity, damage type, estimated repair cost).
+  3. *Bilan, Relevé de Restitution & Clôture* (Summary KPIs, double option for partial vs loss-settled return, print-ready Return Receipt).
+- Multi-tenant scoping via `get_company_context()` and idempotent write protection (`with_idempotency`).
+
+**Added.**
+- `cortex_rental/page/cortex_checkin/` + `public/js/cortex_checkin/`: Desk page and Vue 3 application bundle.
+- `services/checkin.py`: `search_active_transactions`, `lookup_scan_target`, and `process_checkin`.
+- `api/v1/checkin.py`: endpoints `get_active_transactions`, `lookup_scan`, and `submit_checkin`.
+- `cortex_check_in.json` & `cortex_check_in_item.json`: DocType fields for damage severity, damage type, estimated repair costs, and finalization modes.
+- `cortex_rental_transaction.js`: "Effectuer le Check-in" action button on the Desk form when in `Checked Out` state.
+- `cortex-rental.json`: Added "Check-in & Retours" shortcut and Operations card link.
+- `test_checkin_api.py`: Unit tests for handlers, parsing, scan lookup, and mock checkin processing (85 tests passing total).
+- `docs/frontend/checkin-scanner.md`: Complete frontend contract and architecture guide.
+
+## Thirteenth wave — SaaS-Grade Hardening, Universal Deployment Script & Demo Fixtures
+
+**Scope & Architecture Decisions.**
+- **Backend Performance**: Batch SQL queries in `availability.py` (`GROUP BY item_code`) and `services/checkin.py` (`search_active_transactions`), eliminating N+1 loops.
+- **Deep Multi-tenant Isolation**: Strict tenant boundary assertions on all serial numbers and transaction items in `process_checkin`.
+- **Frontend SaaS Finish**: Reusable reactive `toastBus.js` / `CortexToast.vue` for non-blocking feedback and `cx-tabular-nums` typography.
+- **Universal Deployment Script (`./bin/deploy.sh`)**: Multi-target deployment script supporting `tour` (native bench), `docker` (complete Compose stack), and `fixtures`.
+- **Demo Fixtures Generator (`cortex_rental/fixtures/demo_data.py`)**: Idempotent generator creating a full cinema rental company ("Cortex Cinema Rentals"), customer ("Dune 3 Productions"), camera/optics catalog with real serial numbers, and live transactions across all lifecycle states.
+
+**Added.**
+- `bin/deploy.sh`: Turnkey deployment script with interactive prompts and `--with-fixtures` / `--skip-fixtures` flags.
+- `cortex_rental/fixtures/demo_data.py`: Frappe bench fixture generator (`bench execute cortex_rental.fixtures.demo_data.provision_demo_data`).
+- `test_demo_fixtures.py`: Unit tests for demo fixtures provisioning (87/87 tests passing).
+- `public/js/cortex_shared/toastBus.js` & `CortexToast.vue`: Centralized reactive toast notifications system.

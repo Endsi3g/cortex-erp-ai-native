@@ -90,10 +90,26 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     item_codes = [p.item_code for p in profiles]
 
     fleet_by_item: Dict[str, float] = {}
-    for p in profiles:
-        if p.is_serialized:
-            fleet_by_item[p.item_code] = frappe.db.count("Serial No", {"company": company, "item_code": p.item_code})
-        else:
+    serialized_codes = [p.item_code for p in profiles if p.is_serialized]
+    if serialized_codes and frappe:
+        counts = frappe.db.sql(
+            """
+            SELECT item_code, COUNT(*) AS count
+            FROM `tabSerial No`
+            WHERE company = %(company)s AND item_code IN %(item_codes)s
+            GROUP BY item_code
+            """,
+            {"company": company, "item_codes": tuple(serialized_codes)},
+            as_dict=True,
+        )
+        count_map = {row.item_code: float(row.count) for row in counts}
+        for p in profiles:
+            if p.is_serialized:
+                fleet_by_item[p.item_code] = count_map.get(p.item_code, 0.0)
+            else:
+                fleet_by_item[p.item_code] = float(p.total_quantity or 0)
+    else:
+        for p in profiles:
             fleet_by_item[p.item_code] = float(p.total_quantity or 0)
 
     blocks_by_item: Dict[str, List[Dict[str, Any]]] = {code: [] for code in item_codes}

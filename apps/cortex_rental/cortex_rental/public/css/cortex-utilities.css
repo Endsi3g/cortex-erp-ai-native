@@ -118,6 +118,22 @@
 	padding-bottom: var(--cx-row-py);
 }
 
+/* ---- Visually-hidden accessible fallback — e.g. CortexFinancialChart's
+   real data table for screen readers behind a visual-only SVG chart
+   (spec §12: "fournir un tableau de données accessible"). Standard
+   clip-based pattern, not display:none (which screen readers skip). */
+.cortex-app .cx-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
 /* ---- Skeleton loading shimmer — shared by CortexLoadingState ---- */
 .cortex-app .cx-skeleton {
 	border-radius: var(--radius-sm);
@@ -132,4 +148,19 @@
 	100% {
 		background-position: 0 50%;
 	}
+}
+
+/* ---- SaaS Typography & Numerical Alignment ---- */
+.cortex-app .cx-tabular-nums,
+.cx-tabular-nums {
+	font-variant-numeric: tabular-nums lining-nums;
+	font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* ---- High-Contrast Keyboard Focus Ring (WCAG AA) ---- */
+.cortex-app :focus-visible,
+.cx-focus-ring:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--cortex-surface, #ffffff), 0 0 0 4px var(--cortex-primary-500, #1683dc);
+	border-color: var(--cortex-primary-500, #1683dc);
 }

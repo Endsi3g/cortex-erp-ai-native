@@ -48,6 +48,13 @@
       "label": "Checked In At"
     },
     {
+      "default": "Auto",
+      "fieldname": "finalize_mode",
+      "fieldtype": "Select",
+      "label": "Finalize Mode",
+      "options": "Auto\nPartial Return\nFull Return\nSettle With Loss"
+    },
+    {
       "fieldname": "items",
       "fieldtype": "Table",
       "label": "Returned Items",

@@ -56,6 +56,18 @@ HUMAN_STAFF_ROLES = [
     "Rental Operator",
 ]
 
+# Narrower than HUMAN_STAFF_ROLES: gates financial statements (P&L,
+# future Balance Sheet/Cash Flow screens). Counter Staff / Inventory
+# Manager / Consignment Manager / Rental Operator can operate rentals
+# without ever seeing company-wide financials — same "granular scope,
+# not one coarse staff check" principle as SCOPE_ROLE_MAP.
+FINANCE_STAFF_ROLES = [
+    "Cortex Operations Manager",
+    "Cortex Finance Manager",
+    "Cortex Account Reviewer",
+    "Rental Manager",
+]
+
 
 def require_human_staff_role() -> None:
     """
@@ -79,6 +91,31 @@ def require_human_staff_role() -> None:
 
     frappe.throw(
         "Unauthorized: this action requires a human staff role and is never available to an agent identity.",
+        frappe.PermissionError,
+    )
+
+
+def require_finance_role() -> None:
+    """
+    Gate for endpoints exposing company-wide financial statements. A
+    subset of `require_human_staff_role` — every finance-gated role is
+    also a human staff role, but not every human staff role can see
+    financials (e.g. Counter Staff, Inventory Manager).
+    """
+    if not frappe:
+        return
+
+    user = frappe.session.user
+    roles = set(frappe.get_roles(user))
+
+    if user == "Administrator" or "System Manager" in roles or "Cortex System Manager" in roles:
+        return
+
+    if roles & set(FINANCE_STAFF_ROLES):
+        return
+
+    frappe.throw(
+        "Unauthorized: this action requires a finance role.",
         frappe.PermissionError,
     )
 

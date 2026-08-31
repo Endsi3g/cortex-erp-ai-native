@@ -1,0 +1,27 @@
+{
+ "content": null,
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "module": "Cortex Rental",
+ "name": "cortex-checkin",
+ "owner": "Administrator",
+ "page_name": "Cortex Check-in & Retours",
+ "restrict_to_domain": "",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Cortex System Manager"},
+  {"role": "Cortex Operations Manager"},
+  {"role": "Cortex Counter Staff"},
+  {"role": "Cortex Inventory Manager"},
+  {"role": "Cortex Finance Manager"},
+  {"role": "Cortex Consignment Manager"},
+  {"role": "Rental Manager"},
+  {"role": "Rental Operator"}
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Check-in & Retours"
+}

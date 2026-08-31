@@ -99,36 +99,35 @@ Les gestionnaires de parcs audiovisuels, d'équipements de tournage, d'éclairag
 
 ### IV. Comptoir de Départ, Retour & Traçabilité Fin-en-Fin
 - **Comptoir de départ (Check-out)** : Validation instantanée par lecture de code-barres / QR code des numéros de série et accessoires.
-- **Contrôle qualité & Quarantaine (Check-in)** : Détection immédiate des articles manquants ou endommagés, bascule automatique en atelier/réparation et enregistrement des preuves probantes.
-
-<br/>
-
----
-
-## 🏛️ Composants Implémentés dans le Dépôt
-
-### 1. Application Frappe Métier (`apps/cortex_rental`)
+- **Contrôle qualité & Quarantaine (Check-in)** : Détection imm### 1. Application Frappe Métier (`apps/cortex_rental`)
+- **Écrans & Pages Frappe Desk (Vue 3 SFC / esbuild)** :
+  - **Scanner Check-in & Retours (`/app/cortex-checkin`)** : Réception matérielle par scan direct (Web Audio cues), inspection d'avarie structurée (sévérité, type de dommage, frais estimés) et bilan de clôture avec reçu de restitution imprimable.
+  - **Matrice de Disponibilité (`/app/cortex-availability`)** : Vue calendaire temps réel du parc d'équipements avec filtres et détection des conflits.
+  - **Composer de Transaction (`/app/cortex-transaction-composer`)** : Élaboration de devis en temps réel, calcul de tarification dynamique (règle 7j=3j) et création de clients à la volée.
+  - **P&L Financier (`/app/cortex-accounting-pnl`)** : Compte de résultat hiérarchique avec drill-down vers le Grand Livre ERPNext, export CSV direct et impression/PDF épurée.
 - **DocTypes Clés** :
-  - `Cortex Rental Transaction` : Hub transactionnel de location gérant la machine à états (`Quote` $\rightarrow$ `Reservation` $\rightarrow$ `Contract` $\rightarrow$ `Checked Out` $\rightarrow$ `Returned` $\rightarrow$ `Closed`), appliquée de façon inconditionnelle dans `validate()` (pas seulement via l'API). Synchronise `Quotation`/`Sales Order` ERPNext. **`Closed` est un état opérationnel, pas financier** : aucun lien vers `Sales Invoice`/`Payment Entry` n'existe encore dans le DocType (`erpnext_sales_invoice` reste à ajouter) — la vérité de facturation reste dans ERPNext, pas dans `rental_state`, tant que ce lien n'existe pas.
+  - `Cortex Rental Transaction` : Hub transactionnel de location gérant la machine à états (`Quote` $\rightarrow$ `Reservation` $\rightarrow$ `Contract` $\rightarrow$ `Checked Out` $\rightarrow$ `Returned` $\rightarrow$ `Closed`), appliquée de façon inconditionnelle dans `validate()` (pas seulement via l'API). Synchronise `Quotation`/`Sales Order` ERPNext.
   - `Cortex Rental Transaction Item` : Table enfant pour les lignes d'équipements de la transaction.
   - `Cortex Rental Item Profile` : Profil de location rattaché à l'Item ERPNext (taux journalier, valeur de remplacement, caution).
   - `Consignment Owner` & `Consignment Payout` : Moteur de calcul de reversement propriétaire avec **anonymisation stricte du locataire** (allowlist + denylist unifiées, voir services).
   - `Approval Request` : File d'approbation humaine avec **barrière stricte interdisant l'auto-approbation par un agent**, branchée sur la vraie transition de transaction.
-  - `Audit Event` : Journal d'audit append-only **au niveau applicatif** — `before_save`/`on_trash` interdisent l'update/delete via les chemins DocType normaux, les rôles applicatifs n'ont ni write ni delete. Ça ne couvre pas `frappe.db.set_value()`/`frappe.db.sql()` direct, la console bench, ni un `System Manager` en accès break-glass — durcissement DB/ops et audit des exports restent un suivi ouvert (voir `HANDOFF.md`).
-  - `Cortex Inbound Request`, `Cortex Evidence Reference`, `Cortex Extraction Run` : pipeline d'ingestion structurée, hash SHA-256 et validation JSON Schema réelle de l'extraction (PRD §2.1/§8).
-  - `Cortex Agent Run`, `Cortex Agent Tool Call` : journalisation structurée de chaque appel d'outil agent (succès/refus/erreur), distincte de l'Audit Event (PRD §7).
+  - `Audit Event` : Journal d'audit append-only **au niveau applicatif** (`before_save`/`on_trash` immuables).
+  - `Cortex Inbound Request`, `Cortex Evidence Reference`, `Cortex Extraction Run` : pipeline d'ingestion structurée, hash SHA-256 et validation JSON Schema réelle de l'extraction.
+  - `Cortex Agent Run`, `Cortex Agent Tool Call` : journalisation structurée de chaque appel d'outil agent.
   - `Cortex Idempotency Record` : déduplication des écritures via `Idempotency-Key`.
-  - `Cortex Check-In`, `Cortex Check-In Item` : retours partiels, quarantaine, réparation — humain uniquement, aucun outil agent (PRD §4).
+  - `Cortex Check-In`, `Cortex Check-In Item` : retours partiels, déclarations de perte/bris, quarantaine et remise en stock.
 - **Services Métier Python** (`services/`) :
   - `pricing.py` : Application de la règle canonique **7 jours calendaires = 3 jours facturables**.
   - `availability.py` : Disponibilité temps réel, distinction sérialisé/non-sérialisé, exclusion quarantaine/réparation.
-  - `locking.py` : Verrou Redis/Valkey par (company, item_code) + revalidation de disponibilité avant écriture, à la confirmation d'une réservation. Granularité par `item_code`, pas encore par `serial_no` individuel ni par créneau — une couche, pas une garantie transactionnelle complète (pas de `SELECT ... FOR UPDATE` MariaDB en complément pour l'instant, voir ADR-002). Non éprouvé sous charge concurrente réelle.
+  - `locking.py` : Verrou Redis/Valkey par (company, item_code) + revalidation de disponibilité avant écriture.
   - `consignment.py` : Split propriétaire, allowlist de snapshot + purge des données locataire.
-  - `transaction_state.py` : Machine à états, appliquée de façon inconditionnelle (`validate()`), pas seulement via l'API.
-  - `audit.py`, `agent_telemetry.py`, `idempotency.py`, `evidence.py`, `extraction.py`, `checkin.py`.
+  - `transaction_state.py` : Machine à états, appliquée de façon inconditionnelle (`validate()`).
+  - `checkin.py` : Recherche optimisée par lots, résolution instantanée de codes/QR et traitement atomique audité des réceptions.
+  - `audit.py`, `agent_telemetry.py`, `idempotency.py`, `evidence.py`, `extraction.py`.
 - **Endpoints REST Métier Versionnés** (`/api/method/cortex_rental.api.v1.*`) :
-  - `items.py`, `customers.py`, `availability.py`, `quotes.py`, `approvals.py`, `consignment.py`, `intake.py`, `checkin.py`, `health.py`.
-- **Assistant intégré** (`www/onyx-assistant.html`, **statut expérimental / à valider en staging**) : page Frappe embarquant le widget Onyx (`<onyx-chat-widget>`) — voir §Onyx ci-dessous. Le chemin exact du bundle JS et la compatibilité avec la version Onyx épinglée n'ont pas été vérifiés contre un déploiement réel.
+  - `items.py`, `customers.py`, `availability.py`, `quotes.py`, `approvals.py`, `consignment.py`, `intake.py`, `checkin.py`, `accounting.py`, `health.py`.
+- **Générateur de Fixtures de Démo** (`cortex_rental/fixtures/demo_data.py`) :
+  - Provisioning idempotent de société cinéma (*Cortex Cinema Rentals*), clients, catalogue caméra/optiques avec numéros de série réels et transactions actives.
 
 ### 2. Façade Python FastMCP (`apps/cortex-mcp`)
 - Serveur FastMCP exposant des outils typés Pydantic pour Onyx (aucun n'accepte de paramètre `company` — le tenant est fixé côté déploiement MCP, jamais choisi par l'agent) :
@@ -138,9 +137,9 @@ Les gestionnaires de parcs audiovisuels, d'équipements de tournage, d'éclairag
   - `register_evidence`, `record_structured_extraction`
 
 ### 3. Onyx (self-hosted, service séparé)
-- Onyx tourne en dehors de ce dépôt, self-hosted (backend + Postgres/OpenSearch/Redis/MinIO propres à Onyx) — voir `infra/onyx/README.md` pour le déploiement, la connexion réseau à Cortex MCP, et la configuration de **Gemini comme fournisseur LLM par défaut** (panneau admin Onyx).
+- Onyx tourne en dehors de ce dépôt, self-hosted (backend + Postgres/OpenSearch/Redis/MinIO propres à Onyx) — voir `infra/onyx/README.md`.
 - Configuration déclarative des agents Cortex (`apps/cortex-onyx`) : `cortex-intake`, `cortex-availability`, `rental-copilot`, prompts système, schémas JSON, politiques d'escalade.
-- Intégration visuelle dans Cortex via le widget `<onyx-chat-widget>` embarqué dans `www/onyx-assistant.html` — **expérimental, à valider en staging contre la version Onyx réellement épinglée** avant tout usage pilote. Purement côté client : aucun affaiblissement des vérifications de scope/tenant côté API, qui restent la vraie barrière de sécurité.
+- Intégration visuelle dans Cortex via le widget `<onyx-chat-widget>` embarqué dans `www/onyx-assistant.html`.
 
 <br/>
 
@@ -172,7 +171,7 @@ Les gestionnaires de parcs audiovisuels, d'équipements de tournage, d'éclairag
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           Cortex Operator Interface                         │
 │  - Frappe Desk Standard : Navigation, Workspaces, Reports, Timeline & Audit │
-│  - Frappe UI (Vue 3) : Matrice Disponibilité, Scanner Check-in, Hub Approvals│
+│  - Frappe UI (Vue 3) : Matrice Disponibilité, Scanner Check-in, P&L, Composer│
 └──────────────────────────────────────┬──────────────────────────────────────┘
                                        │
 ┌──────────────────────────────────────▼──────────────────────────────────────┐
@@ -207,28 +206,36 @@ Les gestionnaires de parcs audiovisuels, d'équipements de tournage, d'éclairag
 │  www/onyx-assistant.html (Cortex)    │
 │  Intégration visuelle uniquement —   │
 │  aucun contournement des scopes API  │
-└───────────────────────────────────────┘
+└──────────────────────────────────────┘
 ```
 
 <br/>
 
 ---
 
-## 🚀 Démarrage Rapide & Commandes
+## 🚀 Démarrage Rapide & Déploiement
+
+### 1. Script de Déploiement Universel (`./bin/deploy.sh`)
 
 ```bash
-# 1. Validation complète avant revue (Ruff --config ruff.toml, format, pytest, schémas DocType)
+# Déploiement sur le Bench natif (la Tour) avec injection interactive des fixtures :
+./bin/deploy.sh tour --site cortex.local
+
+# Déploiement de la stack complète via Docker Compose :
+./bin/deploy.sh docker
+
+# Injection seule des données de démo (société, parc caméras, sorties actives) :
+./bin/deploy.sh fixtures --site cortex.local
+```
+
+### 2. Validation & Tests de Développement
+
+```bash
+# Validation complète avant revue (Ruff, syntaxes Python, schémas DocTypes, 87 tests unitaires)
 ./bin/pre-claude-check.sh
 
-# 2. Exécution des tests directement (pytest, préféré ; PYTHONPATH requis)
+# Exécution des tests Python (pytest ou unittest)
 PYTHONPATH=apps/cortex_rental:apps/cortex-mcp pytest apps/ -v
-
-# 3. Démarrage de l'environnement Docker local
-make up
-
-# 4. Logs des services
-make logs-bench
-make logs-mcp
 ```
 
 > ⚠️ Aucune de ces commandes Docker n'a été exécutée avec succès jusqu'au

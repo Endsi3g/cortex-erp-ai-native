@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"cxHdrMain\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Cortex Rental</b></span>\",\"col\":12}},{\"id\":\"cxHdrQuick\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Acc\\u00e8s rapide</span>\",\"col\":12}},{\"id\":\"cxShAvail\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Disponibilit\\u00e9\",\"col\":3}},{\"id\":\"cxShNewTrx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Nouvelle transaction\",\"col\":3}},{\"id\":\"cxShTrx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transactions\",\"col\":3}},{\"id\":\"cxShAppr\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approbations\",\"col\":3}},{\"id\":\"cxShOnyx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assistant Onyx (widget, exp\\u00e9rimental)\",\"col\":3}},{\"id\":\"cxSpacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"cxHdrCards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modules</b></span>\",\"col\":12}},{\"id\":\"cxCardOps\",\"type\":\"card\",\"data\":{\"card_name\":\"Op\\u00e9rations\",\"col\":4}},{\"id\":\"cxCardCat\",\"type\":\"card\",\"data\":{\"card_name\":\"Catalogue\",\"col\":4}},{\"id\":\"cxCardCli\",\"type\":\"card\",\"data\":{\"card_name\":\"Clients\",\"col\":4}},{\"id\":\"cxCardFin\",\"type\":\"card\",\"data\":{\"card_name\":\"Finance\",\"col\":4}},{\"id\":\"cxCardIntel\",\"type\":\"card\",\"data\":{\"card_name\":\"Intelligence\",\"col\":4}},{\"id\":\"cxCardAdmin\",\"type\":\"card\",\"data\":{\"card_name\":\"Administration\",\"col\":4}},{\"id\":\"cxShAssistant\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assistant Cortex\",\"col\":3}}]",
+ "content": "[{\"id\":\"cxHdrMain\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Cortex Rental</b></span>\",\"col\":12}},{\"id\":\"cxHdrQuick\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Acc\\u00e8s rapide</span>\",\"col\":12}},{\"id\":\"cxShAvail\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Disponibilit\\u00e9\",\"col\":3}},{\"id\":\"cxShNewTrx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Nouvelle transaction\",\"col\":3}},{\"id\":\"cxShCheckin\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Check-in & Retours\",\"col\":3}},{\"id\":\"cxShTrx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transactions\",\"col\":3}},{\"id\":\"cxShAppr\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approbations\",\"col\":3}},{\"id\":\"cxShPnl\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Profit and Loss Statement\",\"col\":3}},{\"id\":\"cxShOnyx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assistant Onyx (widget, exp\\u00e9rimental)\",\"col\":3}},{\"id\":\"cxSpacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"cxHdrCards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modules</b></span>\",\"col\":12}},{\"id\":\"cxCardOps\",\"type\":\"card\",\"data\":{\"card_name\":\"Op\\u00e9rations\",\"col\":4}},{\"id\":\"cxCardCat\",\"type\":\"card\",\"data\":{\"card_name\":\"Catalogue\",\"col\":4}},{\"id\":\"cxCardCli\",\"type\":\"card\",\"data\":{\"card_name\":\"Clients\",\"col\":4}},{\"id\":\"cxCardFin\",\"type\":\"card\",\"data\":{\"card_name\":\"Finance\",\"col\":4}},{\"id\":\"cxCardIntel\",\"type\":\"card\",\"data\":{\"card_name\":\"Intelligence\",\"col\":4}},{\"id\":\"cxCardAdmin\",\"type\":\"card\",\"data\":{\"card_name\":\"Administration\",\"col\":4}},{\"id\":\"cxShAssistant\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assistant Cortex\",\"col\":3}}]",
  "creation": "2026-08-30 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -16,7 +16,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Opérations",
-   "link_count": 4,
+   "link_count": 5,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -28,6 +28,17 @@
    "link_count": 0,
    "link_to": "Cortex Rental Transaction",
    "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scanner de Check-in",
+   "link_count": 0,
+   "link_to": "cortex-checkin",
+   "link_type": "Page",
    "onboard": 0,
    "type": "Link"
   },
@@ -150,7 +161,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Finance",
-   "link_count": 1,
+   "link_count": 2,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -162,6 +173,17 @@
    "link_count": 0,
    "link_to": "Consignment Payout",
    "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Profit and Loss Statement",
+   "link_count": 0,
+   "link_to": "cortex-accounting-pnl",
+   "link_type": "Page",
    "onboard": 0,
    "type": "Link"
   },
@@ -307,6 +329,13 @@
    "doc_view": ""
   },
   {
+   "label": "Check-in & Retours",
+   "link_to": "cortex-checkin",
+   "type": "Page",
+   "color": "Purple",
+   "doc_view": ""
+  },
+  {
    "label": "Transactions",
    "link_to": "Cortex Rental Transaction",
    "type": "DocType",
@@ -316,10 +345,18 @@
   {
    "label": "Approbations",
    "link_to": "Approval Request",
+   "link_type": "DocType",
    "type": "DocType",
    "color": "Yellow",
    "doc_view": "List",
    "stats_filter": "{\n    \"status\": \"Pending\"\n}"
+  },
+  {
+   "label": "Profit and Loss Statement",
+   "link_to": "cortex-accounting-pnl",
+   "type": "Page",
+   "color": "Green",
+   "doc_view": ""
   },
   {
    "label": "Assistant Onyx (widget, expérimental)",

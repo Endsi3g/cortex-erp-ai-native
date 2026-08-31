@@ -5,6 +5,8 @@ import CortexPageHeader from "../cortex_shared/CortexPageHeader.vue";
 import CortexStatusBadge from "../cortex_shared/CortexStatusBadge.vue";
 import CortexErrorState from "../cortex_shared/CortexErrorState.vue";
 import CortexEmptyState from "../cortex_shared/CortexEmptyState.vue";
+import CortexToast from "../cortex_shared/CortexToast.vue";
+import { toast } from "../cortex_shared/toastBus.js";
 
 // ---------------------------------------------------------------------
 // State
@@ -116,6 +118,7 @@ function createCustomerDraft() {
 			newCustomerSaving.value = false;
 			const data = r.message && r.message.data;
 			if (data) {
+				toast.success("✓ Nouveau client créé avec succès !");
 				selectCustomer({ id: data.id, name: data.customer_name });
 				newCustomer.customer_name = "";
 				newCustomer.email = "";
@@ -127,6 +130,7 @@ function createCustomerDraft() {
 			newCustomerError.value =
 				(r && r.responseJSON && (r.responseJSON.message || r.responseJSON.exc)) ||
 				"Impossible de créer le client.";
+			toast.error(newCustomerError.value);
 		},
 	});
 }
@@ -287,6 +291,7 @@ function submit() {
 			submitting.value = false;
 			const data = r.message && r.message.data;
 			if (data && data.id) {
+				toast.success(`✓ Soumission ${data.id} créée avec succès !`);
 				frappe.set_route("Form", "Cortex Rental Transaction", data.id);
 			}
 		},
@@ -295,6 +300,7 @@ function submit() {
 			submitError.value =
 				(r && r.responseJSON && (r.responseJSON.message || r.responseJSON.exc)) ||
 				"Impossible de créer la soumission. Aucune transaction n'a été créée.";
+			toast.error(submitError.value);
 		},
 	});
 }
@@ -302,6 +308,7 @@ function submit() {
 
 <template>
 	<div class="cortex-app cx-composer">
+		<CortexToast />
 		<CortexPageHeader title="Nouvelle transaction" subtitle="Une soumission (quote) ne bloque pas l'inventaire.">
 			<template #primary>
 				<button class="cx-btn cx-btn-primary" :disabled="!canSubmit || submitting" @click="submit">

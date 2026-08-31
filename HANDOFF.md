@@ -1,6 +1,6 @@
 # Handoff — Cortex ERP AI-Native
 
-**Date** : 2026-08-30
+**Date** : 2026-08-31
 **Repo** : https://github.com/Endsi3g/cortex-erp-ai-native
 **Branches** : [PR #1](https://github.com/Endsi3g/cortex-erp-ai-native/pull/1) (remédiation sécurité + décision Onyx) fusionné dans `main` — `main` est désormais la branche à jour. Travail en cours sur le frontend (cinquième vague, voir `CHANGELOG.md`) fait directement sur `main`.
 **Détail complet** : `CHANGELOG.md` (quoi, pourquoi, preuves). Ce document est le point d'entrée opérationnel pour la suite — pas une redite du changelog.
@@ -69,18 +69,27 @@ détail complet) :
 - `cortex_rental/cortex_rental/workspace/cortex-rental/` — le Workspace
   `Cortex Rental`, ne pointe que vers ce qui existe réellement.
 
-**Sur la tour, une fois `git pull` fait sur `main`** :
+**Sur la tour (ou sur n'importe quel bench Frappe natif)**, exécute simplement le script de déploiement universel :
 
 ```bash
-cd ~/frappe-bench   # ou le chemin réel du bench sur la tour
-git -C apps/cortex_rental pull origin main   # si cortex_rental est son propre clone/submodule
-# sinon, si le bench pointe directement sur ce repo monorepo :
-# cd /chemin/vers/Cortex-ERP-AI-Native && git pull origin main
-
-bench --site <ton-site> migrate      # sync la nouvelle Page + le nouveau Workspace + le nouveau champ/API
-bench build --app cortex_rental      # compile cortex_availability.bundle.js + copie les CSS design system
-bench restart                        # ou redémarre le process bench start / supervisor selon ton setup
+cd /chemin/vers/Cortex-ERP-AI-Native
+git pull origin main
+./bin/deploy.sh tour --site <ton-site>
 ```
+
+Le script s'occupe de tout automatiquement :
+1. Détection et validation du `frappe-bench`.
+2. Synchronisation et liaison de `cortex_rental`.
+3. Exécution de `bench migrate`.
+4. Compilation des bundles JS Vue 3 (`bench build --app cortex_rental`).
+5. Injection interactive du jeu de données de démo complet (`cortex_rental.fixtures.demo_data`).
+6. Redémarrage des services et healthcheck HTTP.
+
+*(Alternative locale avec Docker)* :
+```bash
+./bin/deploy.sh docker
+```
+
 
 Puis dans le navigateur : recharger `/app`, le Workspace **Cortex
 Rental** doit apparaître dans la barre latérale native (celle-là même
@@ -229,6 +238,61 @@ reload. En plus de ce qui est déjà demandé en §3 :
 4. Le bouton "+ Créer une soumission" de Disponibilité arrive-t-il bien
    sur le Composer avec les dates préremplies ?
 
+### Comptabilité — Profit and Loss Statement (onzième vague)
+
+Détail complet : `CHANGELOG.md`, onzième vague. Avant de construire,
+confirmé avec l'utilisateur de rester sur Vue 3 natif (pas de
+Next.js/shadcn) malgré le spec `docs/design-system-accounting-pnl.md`
+qui suggérait un stack React — cohérent avec la décision déjà actée
+dans `docs/design-system.md` "Packaging".
+
+Contrairement aux écrans précédents, celui-ci **appelle le rapport
+`Profit and Loss Statement` natif d'ERPNext** (`erpnext.accounts.
+report.profit_and_loss_statement`) plutôt que d'inventer une nouvelle
+logique comptable — ce dépôt dépend déjà d'`erpnext` (voir §2,
+`bench get-app erpnext`).
+
+**Le point le plus incertain de cette passe** : la forme exacte que
+`execute()` retourne (noms de colonnes/champs de ligne) n'a pas pu être
+vérifiée contre un vrai ERPNext installé — aucun bench accessible ici.
+`api/v1/accounting.py` documente précisément quelles hypothèses sont
+faites (voir son docstring de module) ; seule la logique pure de
+reformattage est testée ici (12 tests, sans bench).
+
+**Sur la tour, une fois `git pull` fait** : mêmes commandes que pour
+Disponibilité (§3) — `bench migrate` (sync la nouvelle Page
+`cortex-accounting-pnl` + le nouveau raccourci Workspace),
+`bench build --app cortex_rental`, reload. Ce que j'ai besoin que tu me
+rapportes en plus de ce qui est déjà demandé en §3 :
+1. La page `/app/cortex-accounting-pnl` s'ouvre-t-elle sans erreur JS ?
+2. **Le plus important** : l'appel à `get_profit_and_loss` réussit-il
+   côté serveur, ou lève-t-il une exception Python ? Si oui, le
+   traceback complet me permet de corriger les hypothèses de noms de
+   champs dans `accounting.py` contre la vraie forme que retourne
+   `profit_and_loss_statement.execute()` sur cette version d'ERPNext.
+3. Si l'appel réussit : les montants affichés (KPI, graphique, tableau
+   hiérarchique) correspondent-ils à des données réelles du site (des
+   `GL Entry` existent-elles pour la Company testée) ?
+### Check-in Scanner & Réception Matérielle (douzième vague)
+
+Détail complet : `CHANGELOG.md`, douzième vague ; documentation technique et contrat frontend : `docs/frontend/checkin-scanner.md`.
+
+Conçu via la session d'alignement (`/grill-me`), ce module implémente le troisième écran majeur de l'ERP (`/app/cortex-checkin`), permettant la réception accélérée au comptoir, la numérisation avec retour audio synthétisé Web Audio API, la gestion des équipements sérialisés vs vrac, l'inspection technique d'avaries/manquants, et l'émission d'un bon de retour imprimable.
+
+**Ce qui a été ajouté** :
+- `cortex_rental/page/cortex_checkin/` + `public/js/cortex_checkin/`: Page Desk native `/app/cortex-checkin` et bundle Vue 3 (`CortexCheckin.vue`).
+- `api/v1/checkin.py`: endpoints `get_active_transactions`, `lookup_scan`, et `submit_checkin` (avec `with_idempotency`).
+- `services/checkin.py`: `search_active_transactions`, `lookup_scan_target`, et `process_checkin`.
+- `cortex_rental_transaction.js`: bouton contextuel "Effectuer le Check-in" sur le formulaire de transaction `Checked Out`.
+- `cortex-rental.json`: raccourci Workspace "Check-in & Retours".
+- 8 tests unitaires dans `test_checkin_api.py` (85 tests réussis au total).
+
+**Sur la tour, une fois `git pull` fait** : mêmes commandes que pour les autres écrans — `bench migrate` (sync la nouvelle Page `cortex-checkin` + les champs DocType `damage_severity`, `damage_type`, `estimated_repair_cost`), `bench build --app cortex_rental`, reload. Ce que j'ai besoin que tu me rapportes :
+1. La page `/app/cortex-checkin` s'ouvre-t-elle sans erreur JS ?
+2. Le scanner au pistolet / saisie clavier déclenche-t-il bien le bip sonore et le flash vert lors de la réception d'un équipement ?
+3. La soumission finale d'un retour complet fait-elle bien passer la transaction en `Returned` et met-elle à jour le statut des numéros de série ?
+4. L'impression du bon de retour (`🖨️ Imprimer`) produit-elle une mise en page épurée sans barre de navigation ?
+
 ## 4. Onyx — décision actée et implémentée : self-hosted + widget intégré
 
 **Décision (2026-08-30)** : Onyx est déployé **self-hosted** (pas Onyx
@@ -253,15 +317,17 @@ Une vraie clé `GEMINI_API_KEY` a été collée en clair dans le chat par l'util
 
 | Item | Pourquoi ce n'est pas fait | Effort estimé |
 |---|---|---|
+| **Confirmer que la page Check-in Scanner fonctionne réellement sur la tour** | Écrit et testé en unitaire ici, jamais ouvert dans un navigateur — voir §3 (sous-section "Check-in Scanner") pour ce qu'il faut rapporter | Quelques minutes une fois `bench build` fait |
 | **Confirmer que le panneau Copilot s'ouvre/fonctionne réellement sur la tour** | Écrit et syntaxiquement vérifié ici, jamais ouvert dans un navigateur — voir §3 (sous-section "Panneau Cortex Copilot") pour ce qu'il faut rapporter | Quelques minutes une fois `bench build` fait |
-| Brancher `CopilotProposalCard`/`CopilotApprovalCard` sur un vrai Composer/file d'approbation | Ces écrans n'existent pas encore — les boutons relancent la conversation réelle ou naviguent vers le Form `Approval Request` existant à la place | Dépend de la construction du Composer/de la file d'approbation |
+| **Confirmer la forme réelle de `profit_and_loss_statement.execute()`** | `api/v1/accounting.py` documente des hypothèses sur les noms de colonnes/lignes ERPNext, jamais vérifiées contre un vrai ERPNext — voir §3 (sous-section "Comptabilité") | Quelques minutes une fois `bench build` fait, en priorité le traceback si `get_profit_and_loss` échoue |
+| Brancher `CopilotProposalCard`/`CopilotApprovalCard` sur un vrai Composer/file d'approbation | Ces écrans n'existent pas encore — les boutons relancent la conversation réelle ou naviguent vers le Form `Approval Request` existant à la place | Dépend de la construction de la file d'approbation dédiée |
+| Centre de supervision des Approbations (Vue dédiée Vue 3) | Disponibilité, Assistant, Composer et Check-in sont faits ; Approbations utilise pour l'instant le Form Frappe natif d'`Approval Request` | 1 jour |
 | Client Onyx réel (remplacer `MockOnyxChatClient`) | Aucun Onyx déployé dans cet environnement (§4) — `OnyxChatClient` est une interface prête à recevoir une vraie implémentation HTTP | 0.5-1 jour une fois Onyx accessible |
 | Outil MCP en lecture seule pour transaction/check-in/approbation | `ToolPolicyResolver` donne une liste d'outils vide à `cortex-returns`/`cortex-approval-assistant` faute d'un tool `search`/`read` réel dans `cortex-mcp` — ces agents ne peuvent rien faire tant que ça n'existe pas | 0.5-1 jour par outil |
 | Streaming/SSE pour le chat | `send_message` est synchrone (réponse complète), pas de polling ni de WebSocket — le spec le prévoit comme étape 12, après stabilisation | 1-2 jours |
 | Job de rétention `Cortex Chat Session.retention_until` | Le champ existe, rien ne le remplit ni ne purge les sessions expirées | 0.5 jour |
 | **Confirmer que la page Disponibilité s'ouvre réellement sur la tour** | Écrit et testé en unitaire ici, jamais ouvert dans un navigateur — voir §3 pour les commandes et ce qu'il faut me rapporter | Quelques minutes une fois `bench build` fait |
 | Jeu de données de démo (fixtures) pour que la grille Disponibilité soit dense dès le premier chargement | Pas demandé explicitement pour cette passe ; à faire si la tour n'a pas encore de `Cortex Rental Item Profile`/transactions réels | 0.5 jour |
-| Écrans Check-in / Approbations (Vue dédiée) | Disponibilité, Assistant et Composer sont faits ; Check-in et Approbations restent — Check-in a déjà tout son backend (`services/checkin.py`, `Cortex Check-In`), Approbations utilise pour l'instant le Form Frappe natif d'`Approval Request` | Check-in : 1 jour, Approbations : 1 jour |
 | Confirmer que le Composer fonctionne réellement sur la tour | Écrit et testé en unitaire ici, jamais ouvert dans un navigateur — voir §3 (sous-section "Composer de transaction") | Quelques minutes une fois `bench build` fait |
 | Suggestions d'accessoires, lignes libres, rabais ligne contrôlé par permission | Pas construits dans cette passe du Composer | 0.5-1 jour |
 | Adopter `frappe-ui` (composants) sur les prochains écrans | Un problème connu (issue GitHub ouverte sur `doppio`) casse le build esbuild quand `frappe-ui` est importé dans ce pattern de Desk Page ; pas de bench ici pour le reproduire/déboguer | À réévaluer une fois §3 confirmé fonctionnel |
