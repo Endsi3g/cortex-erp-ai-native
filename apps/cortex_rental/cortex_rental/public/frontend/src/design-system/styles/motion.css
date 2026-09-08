@@ -1,0 +1,87 @@
+/**
+ * Cortex OS — Operational Green Design System
+ * Motion & Reduced-Motion Stylesheet
+ * 
+ * Complies with WCAG 2.2 SC 2.3.3 (Animation from Interactions)
+ * and WCAG 2.2 SC 2.2.2 (Pause, Stop, Hide).
+ */
+
+/* Standard Timing & Animation Utilities */
+.cx-motion-fast {
+  transition: all var(--motion-fast, 120ms cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.cx-motion-base {
+  transition: all var(--motion-base, 180ms cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.cx-motion-slow {
+  transition: all var(--motion-slow, 240ms cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+/* Shimmer Animation for Skeletons */
+@keyframes cx-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Spin Animation for Buttons & Loaders */
+@keyframes cx-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ping Animation for Live Status Indicators */
+@keyframes cx-ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* 
+ * Strict WCAG 2.2 Reduced-Motion Enforcement:
+ * When prefers-reduced-motion is active, clamp all durations to 0.001ms,
+ * eliminate keyframe animations, disable smooth scrolling, and ensure
+ * instant non-disorienting UI transitions.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .cx-skeleton {
+    animation: none !important;
+    background: var(--cortex-surface-subtle, #f1f5f9) !important;
+  }
+
+  .cx-status-indicator__pulse {
+    animation: none !important;
+    display: none !important;
+  }
+
+  .cx-btn__spinner-svg {
+    animation: none !important;
+  }
+
+  .cx-modal-fade-enter-active,
+  .cx-modal-fade-leave-active,
+  .cx-modal-fade-enter-active .cx-modal-dialog,
+  .cx-modal-fade-leave-active .cx-modal-dialog {
+    transition: none !important;
+    transform: none !important;
+  }
+}

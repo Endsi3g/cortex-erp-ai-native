@@ -27,8 +27,10 @@ USER frappe
 
 WORKDIR /home/frappe
 
-# Pre-initialize frappe bench with version-15
-RUN bench init --skip-redis-config-generation --frappe-branch version-15 /home/frappe/frappe-bench
+# Pre-initialize frappe bench with version-15 and ERPNext
+RUN bench init --skip-redis-config-generation --frappe-branch version-15 /home/frappe/frappe-bench \
+    && cd /home/frappe/frappe-bench \
+    && bench get-app --branch version-15 erpnext
 
 WORKDIR /home/frappe/frappe-bench
 

@@ -19,7 +19,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-cortex_root_dev_password}
       MYSQL_DATABASE: ${DB_DATABASE:-_cortex_dev}
-      MYSQL_USER: ${DB_USERNAME:-cortex_user}
+      MYSQL_USER: ${DB_USERNAME:-_cortex_dev}
       MYSQL_PASSWORD: ${DB_PASSWORD:-cortex_local_dev_password_only}
     ports:
       - "127.0.0.1:3306:3306" # Local DX only
@@ -111,6 +111,8 @@ services:
       DB_HOST: mariadb
       DB_PORT: 3306
       DB_TYPE: mariadb
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-cortex_root_dev_password}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
       REDIS_CACHE: redis://valkey:6379/0
       REDIS_QUEUE: redis://valkey:6379/1
     depends_on:

@@ -82,14 +82,32 @@ STATE_KEYS = [
     "missing",
 ]
 
+# The 7 canonical AI state tokens defined in cortex-tokens.css.
+AI_STATE_KEYS = [
+    "verified",
+    "extracted",
+    "proposed",
+    "needs-confirmation",
+    "approval-required",
+    "approved-executed",
+    "blocked-by-policy",
+]
+
 
 def main():
-    css_text = TOKENS_CSS.read_text()
+    if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+
+    css_text = TOKENS_CSS.read_text(encoding="utf-8")
     tokens = parse_tokens(css_text)
 
     failures = []
     checked = 0
 
+    # 1. Check business states
     for key in STATE_KEYS:
         bg = tokens.get(f"state-{key}-bg")
         text = tokens.get(f"state-{key}-text")
@@ -109,13 +127,40 @@ def main():
         # The border's real job (see module docstring): stay perceivable
         # against the page background the badge is placed on, not its
         # own pale fill. Check both realistic surfaces.
-        for page_key in ("cortex-surface", "cortex-surface-subtle"):
+        for page_key in ("cortex-surface", "cortex-surface-subtle", "cortex-canvas"):
             page_bg = tokens[page_key]
             border_ratio = contrast_ratio(page_bg, border)
             checked += 1
             if border_ratio < GRAPHICAL_MIN_RATIO:
                 failures.append(
                     f"state-{key}: border {border} on {page_key} {page_bg} = {border_ratio:.2f}:1, "
+                    f"below WCAG 2.2 AA graphical-object minimum {GRAPHICAL_MIN_RATIO}:1"
+                )
+
+    # 2. Check 7 canonical AI states
+    for key in AI_STATE_KEYS:
+        bg = tokens.get(f"ai-state-{key}-bg")
+        text = tokens.get(f"ai-state-{key}-text")
+        border = tokens.get(f"ai-state-{key}-border")
+        if not (bg and text and border):
+            failures.append(f"ai-state-{key}: missing bg/text/border token(s) in {TOKENS_CSS.name}")
+            continue
+
+        checked += 1
+        text_ratio = contrast_ratio(bg, text)
+        if text_ratio < TEXT_MIN_RATIO:
+            failures.append(
+                f"ai-state-{key}: text {text} on bg {bg} = {text_ratio:.2f}:1, "
+                f"below WCAG 2.2 AA normal-text minimum {TEXT_MIN_RATIO}:1"
+            )
+
+        for page_key in ("cortex-surface", "cortex-surface-subtle", "cortex-canvas"):
+            page_bg = tokens[page_key]
+            border_ratio = contrast_ratio(page_bg, border)
+            checked += 1
+            if border_ratio < GRAPHICAL_MIN_RATIO:
+                failures.append(
+                    f"ai-state-{key}: border {border} on {page_key} {page_bg} = {border_ratio:.2f}:1, "
                     f"below WCAG 2.2 AA graphical-object minimum {GRAPHICAL_MIN_RATIO}:1"
                 )
 

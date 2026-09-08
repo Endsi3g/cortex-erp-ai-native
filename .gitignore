@@ -70,3 +70,7 @@ __pycache__/
 .ruff_cache/
 *.egg-info/
 .mypy_cache/
+
+# Multi-Agent Run Workspaces
+.agents/
+agents/

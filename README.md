@@ -44,27 +44,43 @@
 
 ## Démarrage Rapide en 1 Commande
 
-Le script universel `./bin/deploy.sh` prend en charge l'installation, les migrations MariaDB, la compilation des bundles Vue 3 et le chargement des données de test.
+Le script universel prend en charge l'installation, les migrations MariaDB, la compilation des bundles Vue 3 et le chargement des données de test sur **Linux/macOS** (`./bin/deploy.sh`) et **Windows** (`.\bin\deploy.ps1`).
 
 ### Option A : Déploiement 1-Clic Complet (Installation de A à Z)
 ```bash
+# Linux / macOS
 ./bin/deploy.sh 1click --site cortex.local
+
+# Windows (PowerShell)
+.\bin\deploy.ps1 1click --site cortex.local
 ```
 *(Installe et configure automatiquement : Frappe Bench v15, ERPNext v15, cortex_rental, base MariaDB, bundles Vue 3, données de démo et lance la validation des tests).*
 
 ### Option B : Sur le Bench Frappe existant (la Tour)
 ```bash
+# Linux / macOS
 ./bin/deploy.sh tour --site cortex.local
+
+# Windows (PowerShell)
+.\bin\deploy.ps1 tour --site cortex.local
 ```
 
 ### Option C : Via Docker Compose (Stack conteneurisée isolée)
 ```bash
+# Linux / macOS
 ./bin/deploy.sh docker
+
+# Windows (PowerShell)
+.\bin\deploy.ps1 docker
 ```
 
 ### Option D : Charger uniquement les données de démo
 ```bash
+# Linux / macOS
 ./bin/deploy.sh fixtures --site cortex.local
+
+# Windows (PowerShell)
+.\bin\deploy.ps1 fixtures --site cortex.local
 ```
 *(Crée automatiquement la société "Cortex Cinema Rentals", le client "Dune 3 Productions", le parc de caméras ARRI/Cooke et des locations prêtes pour la démo).*
 

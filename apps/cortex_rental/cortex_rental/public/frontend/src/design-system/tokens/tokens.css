@@ -1,0 +1,35 @@
+:root {
+  --cortex-bg: #F2F7F4;
+  --cortex-surface: #FFFFFF;
+  --cortex-surface-subtle: #E8F1EC;
+  --cortex-surface-dark: #08120D;
+  --cortex-border: #D0E0D7;
+  --cortex-border-dark: #102019;
+  
+  --cortex-primary-50: #E8F7EE;
+  --cortex-primary-100: #C8EDD6;
+  --cortex-primary-400: #14B86A;
+  --cortex-primary-500: #087A43;
+  --cortex-primary-600: #066336;
+  --cortex-primary-700: #044C29;
+  --cortex-primary-900: #08120D;
+
+  --cortex-ink-50: #F2F7F4;
+  --cortex-ink-100: #E2ECE6;
+  --cortex-ink-200: #C5D8CD;
+  --cortex-ink-500: #527563;
+  --cortex-ink-800: #102019;
+  --cortex-ink-900: #08120D;
+
+  --cortex-text-primary: #08120D;
+  --cortex-text-secondary: #365345;
+  --cortex-text-muted: #638474;
+  --cortex-text-inverse: #FFFFFF;
+
+  --cortex-status-verified: #087A43;
+  --cortex-status-extracted: #6D28D9;
+  --cortex-status-proposed: #059669;
+  --cortex-status-alert: #D97706;
+  --cortex-status-error: #DC2626;
+  --cortex-status-info: #2563EB;
+}

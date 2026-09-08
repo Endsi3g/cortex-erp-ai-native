@@ -9,12 +9,13 @@ sudo chown -R frappe:frappe "${SITES_DIR}" 2>/dev/null || true
 
 mkdir -p "${SITES_DIR}" "${BENCH_DIR}/logs"
 
-# 1. Initialize Common Site Config with default_site
+# 1. Initialize Common Site Config with default_site & root password
 cat <<EOF > "${SITES_DIR}/common_site_config.json"
 {
   "db_host": "${DB_HOST:-mariadb}",
   "db_port": ${DB_PORT:-3306},
   "db_type": "${DB_TYPE:-mariadb}",
+  "root_password": "${DB_ROOT_PASSWORD:-cortex_root_dev_password}",
   "redis_cache": "${REDIS_CACHE:-redis://valkey:6379/0}",
   "redis_queue": "${REDIS_QUEUE:-redis://valkey:6379/1}",
   "redis_socketio": "redis://valkey:6379/2",
@@ -26,37 +27,20 @@ cat <<EOF > "${SITES_DIR}/common_site_config.json"
 }
 EOF
 
-# 2. Write clean apps.txt
+# 2. Ensure ERPNext is acquired
+if [ ! -d "${BENCH_DIR}/apps/erpnext" ]; then
+    echo "Downloading ERPNext version-15..."
+    bench get-app erpnext --branch version-15 || true
+fi
+
+# Write clean apps.txt
 cat <<EOF > "${SITES_DIR}/apps.txt"
 frappe
+erpnext
 cortex_rental
 EOF
 
-# 3. Create default site cortex.local config if absent
-SITE_DIR="${SITES_DIR}/cortex.local"
-mkdir -p "${SITE_DIR}/logs" "${SITE_DIR}/public/files" "${SITE_DIR}/private/files"
-
-if [ ! -f "${SITE_DIR}/site_config.json" ]; then
-    echo "cortex.local" > "${SITES_DIR}/currentsite.txt"
-    cat <<EOF > "${SITE_DIR}/site_config.json"
-{
-  "db_name": "${DB_DATABASE:-_cortex_dev}",
-  "db_user": "${DB_USERNAME:-cortex_user}",
-  "db_password": "${DB_PASSWORD:-cortex_local_dev_password_only}",
-  "db_type": "${DB_TYPE:-mariadb}",
-  "db_host": "${DB_HOST:-mariadb}",
-  "db_port": ${DB_PORT:-3306},
-  "developer_mode": 1
-}
-EOF
-fi
-
-# Ensure localhost alias exists
-if [ ! -d "${SITES_DIR}/localhost" ] && [ ! -L "${SITES_DIR}/localhost" ]; then
-    ln -sf cortex.local "${SITES_DIR}/localhost" || true
-fi
-
-# 4. Install cortex_rental in editable mode
+# 3. Install cortex_rental in editable mode
 if [ -d "${BENCH_DIR}/apps/cortex_rental" ]; then
     echo "Installing cortex_rental in editable mode..."
     if [ -f "${BENCH_DIR}/env/bin/pip" ]; then
@@ -66,7 +50,36 @@ if [ -d "${BENCH_DIR}/apps/cortex_rental" ]; then
     fi
 fi
 
-# 5. Ensure Procfile exists
+# 4. Create or Migrate default site cortex.local
+SITE_DIR="${SITES_DIR}/cortex.local"
+
+if [ ! -f "${SITE_DIR}/site_config.json" ]; then
+    echo "Initializing new site cortex.local..."
+    bench new-site cortex.local \
+        --admin-password "${ADMIN_PASSWORD:-admin}" \
+        --mariadb-root-password "${DB_ROOT_PASSWORD:-cortex_root_dev_password}" \
+        --install-app erpnext \
+        --install-app cortex_rental || true
+    echo "cortex.local" > "${SITES_DIR}/currentsite.txt"
+else
+    echo "Existing site cortex.local found. Ensuring apps are installed & migrating..."
+    bench --site cortex.local install-app erpnext 2>/dev/null || true
+    bench --site cortex.local install-app cortex_rental 2>/dev/null || true
+    bench --site cortex.local migrate || true
+fi
+
+# Ensure localhost alias exists
+if [ ! -d "${SITES_DIR}/localhost" ] && [ ! -L "${SITES_DIR}/localhost" ]; then
+    ln -sf cortex.local "${SITES_DIR}/localhost" || true
+fi
+
+# 5. Build Vue 3 bundles
+if [ -d "${BENCH_DIR}/apps/cortex_rental" ]; then
+    echo "Building cortex_rental frontend bundles..."
+    bench build --app cortex_rental || true
+fi
+
+# 6. Ensure Procfile exists
 cat <<EOF > "${BENCH_DIR}/Procfile"
 web: bench serve --port 8000
 worker_short: bench worker --queue short

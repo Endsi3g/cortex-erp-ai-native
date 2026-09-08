@@ -1,6 +1,7 @@
 [
   {
     "doctype": "Custom Field",
+    "name": "Customer-cortex_company",
     "dt": "Customer",
     "fieldname": "cortex_company",
     "label": "Cortex Tenant Company",
@@ -13,6 +14,7 @@
   },
   {
     "doctype": "Custom Field",
+    "name": "Serial No-cortex_status",
     "dt": "Serial No",
     "fieldname": "cortex_status",
     "label": "Cortex Rental Status",
