@@ -30,6 +30,8 @@ export const RentalLineItemSchema = z.object({
   owner_code: z.string().optional()
 })
 
+export type RentalLineItem = z.infer<typeof RentalLineItemSchema>
+
 export const RentalReadinessSchema = z.object({
   customer_account_ready: z.boolean(),
   insurance_ready: z.boolean(),

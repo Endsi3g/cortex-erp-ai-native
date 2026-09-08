@@ -10,6 +10,7 @@ export const ApprovalTypeSchema = z.enum([
 ])
 
 export const ApprovalStatusSchema = z.enum(['pending', 'approved', 'rejected', 'expired'])
+export type ApprovalStatus = z.infer<typeof ApprovalStatusSchema>
 
 export const ApprovalRequestItemSchema = ProvenanceMetaSchema.extend({
   id: z.string(),
