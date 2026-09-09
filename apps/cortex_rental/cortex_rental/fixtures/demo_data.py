@@ -220,7 +220,6 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
 
 
 def _ensure_pricing_rules(company: str) -> None:
-    rule_name = "RULE-7DAY-3DAY"
     existing = frappe.db.get_value("Rental Pricing Rule", {"company": company, "rule_name": "7 Days for 3"}, "name")
     if not existing:
         doc = frappe.get_doc(

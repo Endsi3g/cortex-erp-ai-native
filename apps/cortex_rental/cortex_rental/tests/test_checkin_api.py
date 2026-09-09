@@ -4,15 +4,10 @@ Tests validation logic, handlers, parsing, and data shaping.
 """
 
 import unittest
-from unittest.mock import MagicMock, patch
 
 from cortex_rental.api.v1.checkin import complete_checkin_handler, submit_checkin_handler
 from cortex_rental.services.checkin import (
     DISPOSITION_TO_SERIAL_STATUS,
-    _apply_disposition,
-    _increment_returned_qty,
-    _is_fully_returned,
-    complete_checkin,
     lookup_scan_target,
     process_checkin,
     search_active_transactions,
@@ -78,10 +73,6 @@ class TestCheckinServiceAndApi(unittest.TestCase):
                 self.qty = qty
                 self.returned_qty = returned_qty
 
-        class MockTxn:
-            def __init__(self, items):
-                self.items = items
-
         class MockCheckinRow:
             def __init__(self, transaction_item, item_code, serial_no, returned_qty):
                 self.transaction_item = transaction_item
@@ -91,7 +82,6 @@ class TestCheckinServiceAndApi(unittest.TestCase):
 
         item1 = MockItem("row-1", "CAM-01", "SN-100", 1.0, 0.0)
         item2 = MockItem("row-2", "CABLE-BNC", None, 5.0, 2.0)
-        txn = MockTxn([item1, item2])
 
         checkin_row1 = MockCheckinRow("row-1", "CAM-01", "SN-100", 1.0)
         checkin_row2 = MockCheckinRow(None, "CABLE-BNC", None, 3.0)
