@@ -170,12 +170,22 @@ def get_allowed_companies(user: Optional[str] = None) -> List[str]:
         has_company_table = False
 
     if not has_company_table:
+        try:
+            from cortex_rental.setup import ensure_prerequisites
+            ensure_prerequisites()
+            if frappe.db and hasattr(frappe.db, "table_exists"):
+                has_company_table = bool(frappe.db.table_exists("Company"))
+        except Exception:
+            pass
+
+    if not has_company_table:
         default = None
         try:
             default = frappe.defaults.get_user_default("Company", user) if hasattr(frappe, "defaults") else None
         except Exception:
             pass
         return [default] if default else ["CineRental Montreal"]
+
 
     try:
         if user == "Administrator" or "System Manager" in frappe.get_roles(user):

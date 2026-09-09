@@ -40,6 +40,12 @@ def search_active_transactions(company: str, query: Optional[str] = None) -> Lis
     if not frappe:
         return []
 
+    try:
+        if frappe.db and hasattr(frappe.db, "table_exists") and not frappe.db.table_exists("Cortex Rental Transaction"):
+            return []
+    except Exception:
+        return []
+
     filters: Dict[str, Any] = {
         "company": company,
         "rental_state": "Checked Out",
@@ -54,7 +60,8 @@ def search_active_transactions(company: str, query: Optional[str] = None) -> Lis
             ["customer_name", "like", q],
         ]
 
-    txns = frappe.get_all(
+    try:
+        txns = frappe.get_all(
         "Cortex Rental Transaction",
         filters=filters,
         or_filters=or_filters,
@@ -72,6 +79,8 @@ def search_active_transactions(company: str, query: Optional[str] = None) -> Lis
         order_by="ends_at asc, creation desc",
         limit=50,
     )
+    except Exception:
+        return []
 
     if not txns:
         return []

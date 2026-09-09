@@ -63,8 +63,15 @@ if [ ! -f "${SITE_DIR}/site_config.json" ]; then
     echo "cortex.local" > "${SITES_DIR}/currentsite.txt"
 else
     echo "Existing site cortex.local found. Ensuring apps are installed & migrating..."
-    bench --site cortex.local install-app erpnext 2>/dev/null || true
-    bench --site cortex.local install-app cortex_rental 2>/dev/null || true
+    if ! bench --site cortex.local list-apps 2>/dev/null | grep -q "^erpnext$"; then
+        echo "Installing erpnext on cortex.local..."
+        bench --site cortex.local install-app erpnext || true
+    fi
+    if ! bench --site cortex.local list-apps 2>/dev/null | grep -q "^cortex_rental$"; then
+        echo "Installing cortex_rental on cortex.local..."
+        bench --site cortex.local install-app cortex_rental || true
+    fi
+    echo "Migrating cortex.local database schema..."
     bench --site cortex.local migrate || true
 fi
 

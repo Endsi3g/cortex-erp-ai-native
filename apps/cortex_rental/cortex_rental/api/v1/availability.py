@@ -124,7 +124,14 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
             fleet_by_item[p.item_code] = float(p.total_quantity or 0)
 
     blocks_by_item: Dict[str, List[Dict[str, Any]]] = {code: [] for code in item_codes}
-    if item_codes:
+    has_trx_table = False
+    try:
+        if frappe and frappe.db and hasattr(frappe.db, "table_exists"):
+            has_trx_table = bool(frappe.db.table_exists("Cortex Rental Transaction"))
+    except Exception:
+        has_trx_table = False
+
+    if item_codes and frappe and has_trx_table:
         rows = frappe.db.sql(
             """
             SELECT t.name AS transaction, t.rental_state, t.customer,
