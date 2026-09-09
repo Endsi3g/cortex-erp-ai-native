@@ -317,6 +317,7 @@ deploy_tour() {
 
     log_step "2/5" "Execution des migrations de schema MariaDB..."
     cd "${BENCH_DIR}"
+    bench --site "${SITE}" install-app erpnext >/dev/null 2>&1 || true
     bench --site "${SITE}" install-app cortex_rental >/dev/null 2>&1 || true
     bench --site "${SITE}" migrate
     log_success "Migrations MariaDB executees avec succes."

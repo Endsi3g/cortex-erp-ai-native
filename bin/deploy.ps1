@@ -489,9 +489,9 @@ function Deploy-Tour {
         & $envPip install -e "$cortexSource" --no-deps 2>$null | Out-Null
     }
     Log-Success "cortex_rental synchronise dans le bench."
-
     Log-Step "2/5" "Execution des migrations de schema MariaDB..."
     Set-Location $benchDir
+    try { Invoke-Bench @("--site", "$Site", "install-app", "erpnext") 2>$null | Out-Null } catch {}
     try { Invoke-Bench @("--site", "$Site", "install-app", "cortex_rental") 2>$null | Out-Null } catch {}
     Invoke-Bench @("--site", "$Site", "migrate")
     Log-Success "Migrations MariaDB executees avec succes."

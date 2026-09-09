@@ -4,6 +4,7 @@ app_publisher = "Cortex AI-Native ERP Team"
 app_description = "AI-Native Rental, Availability & Consignment Management for Frappe & ERPNext"
 app_email = "architecture@cortex.local"
 app_license = "proprietary"
+required_apps = ["erpnext"]
 
 # Branding — placeholder mark (see docs/design-system.md "Branding
 # Frappe"); `app_logo_url`/`app_icon`/`app_color` are real hooks.py keys
