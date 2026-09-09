@@ -91,22 +91,33 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
 
     fleet_by_item: Dict[str, float] = {}
     serialized_codes = [p.item_code for p in profiles if p.is_serialized]
-    if serialized_codes and frappe:
-        counts = frappe.db.sql(
-            """
-            SELECT item_code, COUNT(*) AS count
-            FROM `tabSerial No`
-            WHERE company = %(company)s AND item_code IN %(item_codes)s
-            GROUP BY item_code
-            """,
-            {"company": company, "item_codes": tuple(serialized_codes)},
-            as_dict=True,
-        )
-        count_map = {row.item_code: float(row.count) for row in counts}
-        for p in profiles:
-            if p.is_serialized:
-                fleet_by_item[p.item_code] = count_map.get(p.item_code, 0.0)
-            else:
+    has_serial_table = False
+    try:
+        if frappe and frappe.db and hasattr(frappe.db, "table_exists"):
+            has_serial_table = bool(frappe.db.table_exists("Serial No"))
+    except Exception:
+        has_serial_table = False
+
+    if serialized_codes and frappe and has_serial_table:
+        try:
+            counts = frappe.db.sql(
+                """
+                SELECT item_code, COUNT(*) AS count
+                FROM `tabSerial No`
+                WHERE company = %(company)s AND item_code IN %(item_codes)s
+                GROUP BY item_code
+                """,
+                {"company": company, "item_codes": tuple(serialized_codes)},
+                as_dict=True,
+            )
+            count_map = {row.item_code: float(row.count) for row in counts}
+            for p in profiles:
+                if p.is_serialized:
+                    fleet_by_item[p.item_code] = count_map.get(p.item_code, 0.0)
+                else:
+                    fleet_by_item[p.item_code] = float(p.total_quantity or 0)
+        except Exception:
+            for p in profiles:
                 fleet_by_item[p.item_code] = float(p.total_quantity or 0)
     else:
         for p in profiles:

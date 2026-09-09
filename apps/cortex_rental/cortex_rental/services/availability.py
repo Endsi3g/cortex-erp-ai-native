@@ -77,7 +77,14 @@ class AvailabilityService:
             )
             is_serialized = bool(profile.is_serialized) if profile else True
 
-            if is_serialized:
+            has_serial_table = False
+            try:
+                if frappe.db and hasattr(frappe.db, "table_exists"):
+                    has_serial_table = bool(frappe.db.table_exists("Serial No"))
+            except Exception:
+                has_serial_table = False
+
+            if is_serialized and has_serial_table:
                 total_fleet = frappe.db.count("Serial No", {"company": company, "item_code": item_id})
                 unavailable_status_qty = frappe.db.count(
                     "Serial No",
@@ -88,9 +95,8 @@ class AvailabilityService:
                     },
                 )
             else:
-                # Non-serialized items have no individual Serial No
-                # records; total_quantity on the profile is authoritative
-                # and there is no per-unit quarantine/repair status.
+                # Non-serialized items (or environments without ERPNext Serial No)
+                # use total_quantity on the profile.
                 total_fleet = float(profile.total_quantity or 0) if profile else 0.0
                 unavailable_status_qty = 0
 
