@@ -35,7 +35,7 @@ app_include_css = [
 # .bundle.js (docs.frappe.io + frappe/frappe wiki, cross-checked before
 # use — see CHANGELOG.md, eighth wave).
 app_include_js = [
-    "/assets/cortex_rental/js/cortex_copilot/cortex_copilot.bundle.js",
+    "cortex_copilot.bundle.js",
 ]
 
 # DocType Events (Audit logging & validation hooks)

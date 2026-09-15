@@ -1,4 +1,4 @@
-﻿"""
+"""
 Cortex Rental - Schema Prerequisites & Setup Hooks
 
 Ensures required DocTypes (Company, Customer, Item, Serial No) exist in the Frappe
@@ -30,7 +30,7 @@ def _ensure_doctype_stub(doctype_name: str, fields: List[Dict[str, Any]], module
                 "doctype": "DocType",
                 "name": doctype_name,
                 "module": module,
-                "custom": 0,
+                "custom": 1,
                 "is_submittable": 0,
                 "fields": fields,
                 "permissions": [
@@ -121,17 +121,56 @@ def ensure_prerequisites() -> None:
         )
 
 
+def setup_cortex_sidebar() -> None:
+    """
+    Ensures that only the 'Cortex Rental' workspace is visible in the Frappe Desk sidebar.
+    Hides all standard ERPNext and Frappe workspaces (Accounting, Buying, HR, etc.)
+    by setting is_hidden = 1, and guarantees Cortex Rental has is_hidden = 0, public = 1,
+    and sequence_id = 1.0.
+    """
+    if not frappe or not getattr(frappe, "db", None):
+        return
+
+    try:
+        if frappe.db.table_exists("Workspace"):
+            frappe.db.sql(
+                """
+                UPDATE `tabWorkspace`
+                SET `is_hidden` = 1
+                WHERE `name` != 'Cortex Rental'
+                """
+            )
+            frappe.db.sql(
+                """
+                UPDATE `tabWorkspace`
+                SET `is_hidden` = 0, `public` = 1, `sequence_id` = 1.0
+                WHERE `name` = 'Cortex Rental'
+                """
+            )
+            frappe.db.commit()
+    except Exception:
+        pass
+
+
 def before_migrate() -> None:
     ensure_prerequisites()
 
 
 def after_migrate() -> None:
     ensure_prerequisites()
+    setup_cortex_sidebar()
 
 
 def after_install() -> None:
     ensure_prerequisites()
+    setup_cortex_sidebar()
 
 
 def boot_session(bootinfo: Any = None) -> None:
     ensure_prerequisites()
+    setup_cortex_sidebar()
+    if bootinfo and isinstance(bootinfo, dict) and "allowed_workspaces" in bootinfo:
+        bootinfo["allowed_workspaces"] = [
+            ws for ws in bootinfo["allowed_workspaces"]
+            if ws.get("name") == "Cortex Rental"
+        ]
