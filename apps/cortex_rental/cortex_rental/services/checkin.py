@@ -54,10 +54,15 @@ def search_active_transactions(company: str, query: Optional[str] = None) -> Lis
     or_filters = None
     if query:
         q = f"%{query.strip()}%"
-        # Find matching customer IDs if user searched by customer name
+        # Find matching customer IDs if user searched by customer name.
+        # Scope by company (PRD-NFR-6: multi-tenant isolation).
         matching_cust_ids = [
             c["name"]
-            for c in frappe.get_all("Customer", filters={"customer_name": ("like", q)}, fields=["name"])
+            for c in frappe.get_all(
+                "Customer",
+                filters={"customer_name": ("like", q), "cortex_company": company},
+                fields=["name"],
+            )
         ]
         or_filters = [["name", "like", q], ["customer", "like", q]]
         if matching_cust_ids:
@@ -74,7 +79,8 @@ def search_active_transactions(company: str, query: Optional[str] = None) -> Lis
                 "rental_state",
                 "starts_at",
                 "ends_at",
-                "grand_total",
+                "grand_total",  # DocType field name (maps to total_amount in UI)
+                "currency",
                 "creation",
             ],
             order_by="ends_at asc, creation desc",
@@ -167,7 +173,7 @@ def search_active_transactions(company: str, query: Optional[str] = None) -> Lis
                 "rental_state": t["rental_state"],
                 "starts_at": str(t["starts_at"]) if t.get("starts_at") else "",
                 "ends_at": str(t["ends_at"]) if t.get("ends_at") else "",
-                "currency": "USD",
+                "currency": t.get("currency") or "CAD",
                 "total_amount": float(t.get("grand_total") or 0.0),
                 "total_lines": len(items),
                 "total_qty": total_qty,

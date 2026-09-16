@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any, Dict, List
 
 try:
@@ -11,16 +12,28 @@ from cortex_rental.services.idempotency import get_idempotency_key_header, with_
 from cortex_rental.services.agent_telemetry import log_tool_call
 
 
+@lru_cache(maxsize=None)
+def _customer_fields() -> tuple:
+    """
+    Return the tuple of Customer DocType fields that exist in the current schema.
+    Cached at process level — schema columns do not change at runtime.
+    """
+    base = ["name", "customer_name"]
+    if frappe and hasattr(frappe.db, "has_column"):
+        for col in ("customer_group", "territory", "custom_insurance_valid_until", "disabled", "cortex_company"):
+            if frappe.db.has_column("Customer", col):
+                base.append(col)
+    return tuple(base)
+
+
 def search_customers_handler(query: str, company: str) -> List[Dict[str, Any]]:
     if frappe:
-        fields = ["name", "customer_name"]
-        for col in ["customer_group", "territory", "custom_insurance_valid_until"]:
-            if hasattr(frappe.db, "has_column") and frappe.db.has_column("Customer", col):
-                fields.append(col)
+        fields = list(_customer_fields())
         filters: Dict[str, Any] = {}
-        if hasattr(frappe.db, "has_column") and frappe.db.has_column("Customer", "disabled"):
+        if "disabled" in fields:
             filters["disabled"] = 0
-        if hasattr(frappe.db, "has_column") and frappe.db.has_column("Customer", "cortex_company"):
+        # Scope by tenant — PRD-NFR-6: every query MUST be scoped by company.
+        if "cortex_company" in fields:
             filters["cortex_company"] = company
 
         customers = frappe.get_all("Customer", filters=filters, fields=fields)
