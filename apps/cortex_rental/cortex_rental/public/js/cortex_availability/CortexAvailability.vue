@@ -240,6 +240,30 @@ function shiftRange(delta) {
 function goToday() {
 	refDate.value = viewMode.value === "week" ? startOfWeek(new Date()) : new Date(new Date().setHours(0, 0, 0, 0));
 }
+
+function jumpToDate(dateStr) {
+	const d = new Date(dateStr + "T00:00:00");
+	refDate.value = viewMode.value === "week" ? startOfWeek(d) : d;
+}
+
+const kpiStats = computed(() => {
+	let checkedOut = 0;
+	let reservations = 0;
+	let contracts = 0;
+	let quotes = 0;
+	for (const it of items.value) {
+		for (const b of it.blocks || []) {
+			if (b.rental_state === "Checked Out") checkedOut++;
+			else if (b.rental_state === "Reservation") reservations++;
+			else if (b.rental_state === "Contract") contracts++;
+			else if (b.rental_state === "Quote") quotes++;
+		}
+	}
+	const total = items.value.length;
+	const active = checkedOut + reservations + contracts;
+	const rate = total > 0 ? Math.min(100, Math.round((active / total) * 100)) : 0;
+	return { total, checkedOut, reservations, contracts, quotes, rate };
+});
 </script>
 
 <template>
@@ -274,6 +298,43 @@ function goToday() {
 				<button class="cx-btn cx-btn-primary" @click="createDraft">+ Créer une soumission</button>
 			</template>
 		</CortexPageHeader>
+
+		<!-- Live KPI Hero Summary Bar -->
+		<div class="cx-kpi-bar">
+			<div class="cx-kpi-item">
+				<span class="cx-kpi-title">Catalogue Parc</span>
+				<div class="cx-kpi-metric">{{ kpiStats.total }}</div>
+				<span class="cx-kpi-caption">Équipements au catalogue</span>
+			</div>
+			<div class="cx-kpi-item cx-kpi-violet">
+				<span class="cx-kpi-title">En Tournage (Sortis)</span>
+				<div class="cx-kpi-metric">{{ kpiStats.checkedOut }}</div>
+				<span class="cx-kpi-caption">Unités sur le terrain</span>
+			</div>
+			<div class="cx-kpi-item cx-kpi-amber">
+				<span class="cx-kpi-title">Réservations Fermes</span>
+				<div class="cx-kpi-metric">{{ kpiStats.reservations }}</div>
+				<span class="cx-kpi-caption">Stocks bloqués</span>
+			</div>
+			<div class="cx-kpi-item cx-kpi-blue">
+				<span class="cx-kpi-title">Contrats Validés</span>
+				<div class="cx-kpi-metric">{{ kpiStats.contracts }}</div>
+				<span class="cx-kpi-caption">Prêts pour quai magasin</span>
+			</div>
+			<div class="cx-kpi-item cx-kpi-teal">
+				<span class="cx-kpi-title">Taux d'Engagement</span>
+				<div class="cx-kpi-metric">{{ kpiStats.rate }}%</div>
+				<span class="cx-kpi-caption">Flotte en mission</span>
+			</div>
+		</div>
+
+		<!-- Quick Navigation Jumps -->
+		<div class="cx-quick-jumps">
+			<span class="cx-jump-label">⚡ Saut rapide calendrier :</span>
+			<button class="cx-jump-chip" @click="jumpToDate('2026-09-14')">🎬 Mi-Septembre 2026 (Pic Tournages)</button>
+			<button class="cx-jump-chip" @click="jumpToDate('2026-10-01')">🔴 Début Octobre 2026 (Réservations Netflix)</button>
+			<button class="cx-jump-chip" @click="jumpToDate('2026-11-01')">✨ Novembre 2026 (Devis A24)</button>
+		</div>
 
 		<div class="cx-body">
 			<aside class="cx-sidebar">
@@ -621,5 +682,82 @@ function goToday() {
 	border-radius: 50%;
 	display: inline-block;
 	flex-shrink: 0;
+}
+
+/* KPI Hero Banner */
+.cx-kpi-bar {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: var(--space-3);
+	padding: var(--space-3) var(--space-4);
+	background: var(--cortex-surface);
+	border-bottom: 1px solid var(--cortex-border);
+}
+.cx-kpi-item {
+	padding: var(--space-3);
+	background: var(--cortex-surface-subtle);
+	border-radius: var(--radius-md);
+	border: 1px solid var(--cortex-border);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cx-kpi-item:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-sm);
+}
+.cx-kpi-title {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--cortex-text-muted);
+}
+.cx-kpi-metric {
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--cortex-text-primary);
+	line-height: 1.2;
+}
+.cx-kpi-caption {
+	font-size: 11px;
+	color: var(--cortex-text-disabled);
+}
+.cx-kpi-violet .cx-kpi-metric { color: var(--cortex-violet-600); }
+.cx-kpi-amber .cx-kpi-metric { color: var(--cortex-warning-500); }
+.cx-kpi-blue .cx-kpi-metric { color: var(--cortex-info-600); }
+.cx-kpi-teal .cx-kpi-metric { color: #0d9488; }
+
+/* Quick Jumps */
+.cx-quick-jumps {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: var(--space-2) var(--space-4);
+	background: var(--cortex-surface);
+	border-bottom: 1px solid var(--cortex-border);
+	overflow-x: auto;
+}
+.cx-jump-label {
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--cortex-text-muted);
+	white-space: nowrap;
+}
+.cx-jump-chip {
+	font-size: 11.5px;
+	padding: 3px 10px;
+	border-radius: var(--radius-full);
+	border: 1px solid var(--cortex-border);
+	background: var(--cortex-surface-subtle);
+	color: var(--cortex-text-primary);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+.cx-jump-chip:hover {
+	background: var(--cortex-border);
+	border-color: var(--cortex-border-strong);
 }
 </style>

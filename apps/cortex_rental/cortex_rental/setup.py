@@ -174,3 +174,57 @@ def boot_session(bootinfo: Any = None) -> None:
             ws for ws in bootinfo["allowed_workspaces"]
             if ws.get("name") == "Cortex Rental"
         ]
+
+
+def _whitelist(fn: Any) -> Any:
+    if frappe and hasattr(frappe, "whitelist"):
+        return frappe.whitelist()(fn)
+    return fn
+
+
+CORTEX_WORKSPACE_ORDER = [
+    "Disponibilité",
+    "Devis & Locations",
+    "Check-in & Retours",
+    "Parc Matériel",
+    "Facturation & P&L",
+    "Supervision & IA",
+    "Cortex Rental",
+]
+
+
+@_whitelist
+def get_cortex_workspace_sidebar_items() -> Dict[str, Any]:
+    """
+    Override of frappe.desk.desktop.get_workspace_sidebar_items.
+    Filters the sidebar items so that ONLY the dedicated Cortex workspaces
+    are presented in the Frappe Desk workspace sidebar.
+    """
+    if not frappe:
+        return {"pages": []}
+
+    try:
+        from frappe.desk.desktop import get_workspace_sidebar_items as original_get_sidebar
+        sidebar = original_get_sidebar()
+        if isinstance(sidebar, dict) and "pages" in sidebar:
+            filtered = [
+                p for p in sidebar["pages"]
+                if p.get("name") in CORTEX_WORKSPACE_ORDER or p.get("title") in CORTEX_WORKSPACE_ORDER
+            ]
+            # Sort by defined sequence
+            def _sort_key(p: Dict[str, Any]) -> int:
+                name = p.get("title") or p.get("name") or ""
+                return CORTEX_WORKSPACE_ORDER.index(name) if name in CORTEX_WORKSPACE_ORDER else 99
+
+            filtered.sort(key=_sort_key)
+            sidebar["pages"] = filtered
+        return sidebar
+    except Exception:
+        # Fallback to direct DB query if core function encounters an issue
+        pages = frappe.get_all(
+            "Workspace",
+            filters={"name": ["in", CORTEX_WORKSPACE_ORDER], "is_hidden": 0},
+            fields=["name", "title", "for_user", "parent_page", "content", "public"],
+            order_by="sequence_id asc"
+        )
+        return {"pages": pages}

@@ -61,6 +61,10 @@ export function clearContext(chatSessionId) {
 // ---------------------------------------------------------------------
 const ROUTE_TO_PAGE = {
 	"cortex-availability": "availability",
+	"cortex-transaction-composer": "transaction",
+	"cortex-checkin": "checkin",
+	"cortex-accounting-pnl": "dashboard",
+	"cortex-assistant": "dashboard",
 };
 
 export function resolveDeskContext() {

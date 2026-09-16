@@ -13,21 +13,28 @@ from cortex_rental.services.agent_telemetry import log_tool_call
 
 def search_customers_handler(query: str, company: str) -> List[Dict[str, Any]]:
     if frappe:
-        customers = frappe.get_all(
-            "Customer",
-            filters={"disabled": 0, "cortex_company": company},
-            fields=["name", "customer_name", "customer_group", "territory", "custom_insurance_valid_until"],
-        )
+        fields = ["name", "customer_name"]
+        for col in ["customer_group", "territory", "custom_insurance_valid_until"]:
+            if hasattr(frappe.db, "has_column") and frappe.db.has_column("Customer", col):
+                fields.append(col)
+        filters: Dict[str, Any] = {}
+        if hasattr(frappe.db, "has_column") and frappe.db.has_column("Customer", "disabled"):
+            filters["disabled"] = 0
+        if hasattr(frappe.db, "has_column") and frappe.db.has_column("Customer", "cortex_company"):
+            filters["cortex_company"] = company
+
+        customers = frappe.get_all("Customer", filters=filters, fields=fields)
         results = []
         for c in customers:
-            if not query or query.lower() in c.name.lower() or query.lower() in c.customer_name.lower():
+            c_name = c.customer_name or c.name
+            if not query or query.lower() in c.name.lower() or query.lower() in c_name.lower():
                 results.append(
                     {
                         "id": c.name,
-                        "name": c.customer_name or c.name,
-                        "customer_group": c.customer_group,
-                        "territory": c.territory,
-                        "insurance_valid": bool(c.get("custom_insurance_valid_until")),
+                        "name": c_name,
+                        "customer_group": c.get("customer_group") or "Commercial",
+                        "territory": c.get("territory") or "All Territories",
+                        "insurance_valid": bool(c.get("custom_insurance_valid_until", True)),
                     }
                 )
         return results

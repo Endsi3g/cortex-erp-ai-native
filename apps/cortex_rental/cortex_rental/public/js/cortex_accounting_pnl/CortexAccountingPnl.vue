@@ -129,6 +129,13 @@ function toggleExportMenu() {
 	exportMenuOpen.value = !exportMenuOpen.value;
 }
 
+function setPeriod(from, to) {
+	filters.fromDate = from;
+	filters.toDate = to;
+	filters.fiscalYear = "2026";
+	fetchReport();
+}
+
 function exportToCsv() {
 	exportMenuOpen.value = false;
 	if (!report.value || !report.value.accounts) return;
@@ -225,6 +232,14 @@ onMounted(() => {
 				<button class="cx-btn" @click="fetchReport" aria-label="Actualiser le rapport">↻ Actualiser</button>
 			</template>
 		</CortexPageHeader>
+
+		<!-- Fast Financial Periods Selection -->
+		<div class="cx-pnl-quick-periods">
+			<span class="cx-quick-label">⚡ Période financière 1-clic :</span>
+			<button class="cx-quick-chip" @click="setPeriod('2026-09-01', '2026-09-30')">📅 Septembre 2026 (Tournages actifs)</button>
+			<button class="cx-quick-chip" @click="setPeriod('2026-07-01', '2026-09-30')">📅 Trimestre T3 2026</button>
+			<button class="cx-quick-chip" @click="setPeriod('2026-01-01', '2026-12-31')">📅 Année Fiscale 2026</button>
+		</div>
 
 		<section ref="toolbarEl" class="cx-toolbar cx-surface">
 			<div class="cx-toolbar-grid">
@@ -542,5 +557,35 @@ onMounted(() => {
 	.cx-pnl-content-block {
 		page-break-inside: avoid;
 	}
+}
+
+/* Quick Financial Periods */
+.cx-pnl-quick-periods {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	margin-bottom: var(--space-3);
+	flex-wrap: wrap;
+}
+.cx-quick-label {
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--cortex-text-muted);
+}
+.cx-quick-chip {
+	font-size: 11.5px;
+	padding: 4px 12px;
+	border-radius: var(--radius-full);
+	border: 1px solid var(--cortex-border);
+	background: var(--cortex-surface);
+	color: var(--cortex-text-primary);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+.cx-quick-chip:hover {
+	background: var(--cortex-primary-50);
+	border-color: var(--cortex-primary-300);
+	color: var(--cortex-primary-700);
 }
 </style>

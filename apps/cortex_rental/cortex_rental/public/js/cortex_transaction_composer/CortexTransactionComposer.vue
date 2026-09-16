@@ -38,6 +38,55 @@ const pricingError = ref("");
 const submitting = ref(false);
 const submitError = ref("");
 
+const QUICK_CUSTOMERS = [
+	{ id: "CUST-DUNE3", name: "Dune 3 Productions" },
+	{ id: "CUST-NETFLIX", name: "Netflix Feature Unit" },
+	{ id: "CUST-A24", name: "A24 Indie Spotlight" },
+	{ id: "CUST-KAEL", name: "Kael & Co Studio" },
+	{ id: "CUST-HBO", name: "HBO Series Montreal" },
+	{ id: "CUST-APPLE", name: "Apple Original Prod" }
+];
+
+const PACKAGES = [
+	{
+		title: "🎬 Pack Fiction ARRI + Cooke",
+		items: [
+			{ item_id: "ARRI-ALX35", name: "ARRI Alexa 35 Camera Body", category: "Camera Bodies", quantity: 1, unit_rate: 2500.0, discount_percentage: 0 },
+			{ item_id: "COOKE-S4I-SET", name: "Cooke S4/i Prime 5-Lens Set", category: "Cinema Lenses", quantity: 1, unit_rate: 1600.0, discount_percentage: 0 },
+			{ item_id: "OCONNOR-2575D", name: "O'Connor 2575D Fluid Head", category: "Grip & Rigging", quantity: 1, unit_rate: 450.0, discount_percentage: 0 },
+			{ item_id: "TERADEK-BOLT-4K-MAX", name: "Teradek Bolt 4K MAX Kit", category: "Monitors & Wireless Video", quantity: 1, unit_rate: 480.0, discount_percentage: 0 }
+		]
+	},
+	{
+		title: "🎥 Pack Docu Solo FX9",
+		items: [
+			{ item_id: "SONY-FX9", name: "Sony FX9 Full-Frame Cinema Kit", category: "Camera Bodies", quantity: 1, unit_rate: 450.0, discount_percentage: 0 },
+			{ item_id: "CANON-CINE-SET", name: "Canon Cinema Prime 4-Lens Set", category: "Cinema Lenses", quantity: 1, unit_rate: 650.0, discount_percentage: 0 },
+			{ item_id: "SACHTLER-VIDEO20", name: "Sachtler Video 20 Tripod Kit", category: "Grip & Rigging", quantity: 1, unit_rate: 160.0, discount_percentage: 0 },
+			{ item_id: "SENNHEISER-MKH416", name: "Sennheiser MKH416 Shotgun Mic", category: "Audio", quantity: 1, unit_rate: 85.0, discount_percentage: 0 }
+		]
+	},
+	{
+		title: "💡 Kit Éclairage Studio",
+		items: [
+			{ item_id: "APUTURE-1200D", name: "Aputure Electro Storm 1200d", category: "Lighting", quantity: 2, unit_rate: 280.0, discount_percentage: 0 },
+			{ item_id: "ARRI-SKYPANEL-S60C", name: "ARRI SkyPanel S60-C Softlight", category: "Lighting", quantity: 2, unit_rate: 320.0, discount_percentage: 0 },
+			{ item_id: "ASTERA-TITAN-8KIT", name: "Astera Titan Tube 8-Kit", category: "Lighting", quantity: 1, unit_rate: 350.0, discount_percentage: 0 }
+		]
+	}
+];
+
+function applyPackage(pkg) {
+	lines.value = pkg.items.map(it => ({ ...it, availability: null }));
+	onLinesChanged();
+	toast.info(`Modèle "${pkg.title}" chargé.`);
+}
+
+function quickSelectCustomer(c) {
+	selectCustomer(c);
+	toast.info(`Client sélectionné : ${c.name}`);
+}
+
 let itemSearchDebounce = null;
 let customerSearchDebounce = null;
 let pricingDebounce = null;
@@ -317,6 +366,22 @@ function submit() {
 			</template>
 		</CortexPageHeader>
 
+		<!-- Fast Presets Toolbar -->
+		<div class="cx-presets-toolbar">
+			<div class="cx-preset-section">
+				<span class="cx-preset-label">⚡ Sélection client 1-clic :</span>
+				<button v-for="qc in QUICK_CUSTOMERS" :key="qc.id" class="cx-preset-btn" @click="quickSelectCustomer(qc)">
+					{{ qc.name }}
+				</button>
+			</div>
+			<div class="cx-preset-section">
+				<span class="cx-preset-label">🎬 Modèles de devis complets :</span>
+				<button v-for="pkg in PACKAGES" :key="pkg.title" class="cx-preset-btn cx-pkg-btn" @click="applyPackage(pkg)">
+					{{ pkg.title }}
+				</button>
+			</div>
+		</div>
+
 		<div class="cx-composer-body">
 			<main class="cx-composer-main">
 				<!-- Client -->
@@ -468,6 +533,14 @@ function submit() {
 						<dt class="cx-text-label">Total</dt>
 						<dd class="cx-text-kpi">{{ pricing.total }} $</dd>
 					</dl>
+
+					<div v-if="pricing && pricing.calendar_days > pricing.billable_days" class="cx-savings-banner">
+						<span class="cx-savings-icon">⚡</span>
+						<div class="cx-savings-text">
+							<strong>Règle 7j = 3j active</strong>
+							<p>{{ (pricing.calendar_days - pricing.billable_days).toFixed(1) }} jours offerts sur cette période !</p>
+						</div>
+					</div>
 				</template>
 				<p v-else class="cx-text-meta">Ajoutez un équipement pour voir le prix.</p>
 
@@ -591,5 +664,81 @@ function submit() {
 .cx-summary-list dd {
 	margin: 0;
 	text-align: right;
+}
+
+/* Presets Toolbar */
+.cx-presets-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	margin-bottom: var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	background: var(--cortex-surface);
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-md);
+}
+.cx-preset-section {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	flex-wrap: wrap;
+}
+.cx-preset-label {
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--cortex-text-muted);
+	white-space: nowrap;
+}
+.cx-preset-btn {
+	font-size: 11.5px;
+	padding: 3px 10px;
+	border-radius: var(--radius-full);
+	border: 1px solid var(--cortex-border);
+	background: var(--cortex-surface-subtle);
+	color: var(--cortex-text-primary);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+.cx-preset-btn:hover {
+	background: var(--cortex-primary-50);
+	border-color: var(--cortex-primary-300);
+	color: var(--cortex-primary-700);
+}
+.cx-pkg-btn {
+	background: #f0fdf4;
+	border-color: #bbf7d0;
+	color: #15803d;
+	font-weight: 500;
+}
+.cx-pkg-btn:hover {
+	background: #dcfce7;
+	border-color: #86efac;
+	color: #166534;
+}
+
+/* Savings Banner */
+.cx-savings-banner {
+	margin-top: var(--space-3);
+	padding: var(--space-2) var(--space-3);
+	background: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	border-radius: var(--radius-md);
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+.cx-savings-icon {
+	font-size: 18px;
+}
+.cx-savings-text strong {
+	font-size: 12px;
+	color: #15803d;
+	display: block;
+}
+.cx-savings-text p {
+	font-size: 11px;
+	color: #166534;
+	margin: 0;
 }
 </style>

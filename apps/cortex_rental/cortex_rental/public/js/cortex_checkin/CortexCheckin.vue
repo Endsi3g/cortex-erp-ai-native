@@ -437,6 +437,11 @@ function printReceipt() {
 function navigateToTransaction(name) {
 	frappe.set_route("Form", "Cortex Rental Transaction", name);
 }
+
+function testQuickScan(code) {
+	scanInput.value = code;
+	handleScanSubmit();
+}
 </script>
 
 <template>
@@ -497,6 +502,17 @@ function navigateToTransaction(name) {
 
 			<div v-if="scanFeedbackMsg" class="cx-scan-feedback" :class="`cx-feedback-${scanFlash}`">
 				{{ scanFeedbackMsg }}
+			</div>
+
+			<!-- Quick Simulation Scan Chips -->
+			<div class="cx-quick-test-scans">
+				<span class="cx-quick-label">⚡ Scan test 1-clic :</span>
+				<button class="cx-quick-chip" @click="testQuickScan('SN-ALX-001')">📷 Alexa 35 (Dune 3)</button>
+				<button class="cx-quick-chip" @click="testQuickScan('SN-CK-001')">🔍 Cooke S4/i (Dune 3)</button>
+				<button class="cx-quick-chip" @click="testQuickScan('SN-MLF-001')">🎥 Alexa Mini LF (Netflix)</button>
+				<button class="cx-quick-chip" @click="testQuickScan('SN-RED-001')">🔴 RED V-Raptor (HBO)</button>
+				<button class="cx-quick-chip" @click="testQuickScan('SN-FX9-001')">📹 Sony FX9 (A24)</button>
+				<button class="cx-quick-chip" @click="testQuickScan('CR-TRX-2026-00001')">📋 Contrat Dune 3</button>
 			</div>
 
 			<!-- Active Checked-Out Transactions Table -->
@@ -640,6 +656,20 @@ function navigateToTransaction(name) {
 
 				<div v-if="scanFeedbackMsg" class="cx-scan-feedback" :class="`cx-feedback-${scanFlash}`">
 					{{ scanFeedbackMsg }}
+				</div>
+
+				<!-- Quick Click-to-Scan for Items in this Transaction -->
+				<div class="cx-quick-test-scans">
+					<span class="cx-quick-label">⚡ Scan direct des articles du dossier :</span>
+					<button
+						v-for="item in returnItems"
+						:key="item.transaction_item"
+						class="cx-quick-chip"
+						:class="{ 'cx-quick-chip-scanned': item.is_scanned }"
+						@click="testQuickScan(item.serial_no || item.item_code)"
+					>
+						{{ item.is_scanned ? '✓ ' : '📷 ' }}{{ item.serial_no || item.item_code }}
+					</button>
 				</div>
 
 				<!-- Quick Action Toolbar -->
@@ -1741,5 +1771,41 @@ function navigateToTransaction(name) {
 		box-shadow: none;
 		padding: 0;
 	}
+}
+
+/* Quick Simulation Scans */
+.cx-quick-test-scans {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	margin-top: var(--space-2);
+	flex-wrap: wrap;
+}
+.cx-quick-label {
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--cortex-text-muted);
+}
+.cx-quick-chip {
+	font-size: 11.5px;
+	padding: 3px 10px;
+	border-radius: var(--radius-full);
+	border: 1px solid var(--cortex-border);
+	background: var(--cortex-surface-subtle);
+	color: var(--cortex-text-primary);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+.cx-quick-chip:hover {
+	background: var(--cortex-primary-50);
+	border-color: var(--cortex-primary-300);
+	color: var(--cortex-primary-700);
+}
+.cx-quick-chip-scanned {
+	background: #ecfdf5 !important;
+	border-color: #a7f3d0 !important;
+	color: #047857 !important;
+	font-weight: 600;
 }
 </style>
