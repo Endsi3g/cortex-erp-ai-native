@@ -1,4 +1,6 @@
 <script setup>
+import { ICONS } from "../cortex_shared/CortexIcons.js";
+
 defineProps({
 	title: { type: String, default: "Cortex Copilot" },
 	subtitle: { type: String, default: "" },
@@ -22,7 +24,7 @@ defineEmits(["close", "detach"]);
 				aria-label="Ouvrir en page complète"
 				@click="$emit('detach')"
 			>
-				↗
+				<span class="cx-icon-sm" v-html="ICONS.sparkles"></span>
 			</button>
 			<button
 				v-if="closable"
@@ -31,7 +33,7 @@ defineEmits(["close", "detach"]);
 				aria-label="Fermer le panneau Cortex Copilot"
 				@click="$emit('close')"
 			>
-				✕
+				<span class="cx-icon-sm" v-html="ICONS.x"></span>
 			</button>
 		</div>
 	</header>

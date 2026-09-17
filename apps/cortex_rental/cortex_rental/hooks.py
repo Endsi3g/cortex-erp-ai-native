@@ -35,7 +35,7 @@ app_include_css = [
 # .bundle.js (docs.frappe.io + frappe/frappe wiki, cross-checked before
 # use — see CHANGELOG.md, eighth wave).
 app_include_js = [
-    "/assets/cortex_rental/js/cortex_copilot/cortex_copilot.bundle.js",
+    "cortex_copilot.bundle.js",
 ]
 
 # DocType Events (Audit logging & validation hooks)
@@ -93,3 +93,8 @@ before_migrate = "cortex_rental.setup.before_migrate"
 after_migrate = "cortex_rental.setup.after_migrate"
 after_install = "cortex_rental.setup.after_install"
 boot_session = "cortex_rental.setup.boot_session"
+
+# Whitelisted Method Overrides
+override_whitelisted_methods = {
+    "frappe.desk.desktop.get_workspace_sidebar_items": "cortex_rental.setup.get_cortex_workspace_sidebar_items",
+}

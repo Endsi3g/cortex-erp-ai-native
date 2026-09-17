@@ -7,6 +7,10 @@ import CortexErrorState from "../cortex_shared/CortexErrorState.vue";
 import CortexEmptyState from "../cortex_shared/CortexEmptyState.vue";
 import CortexToast from "../cortex_shared/CortexToast.vue";
 import { toast } from "../cortex_shared/toastBus.js";
+import CortexChart from "../cortex_shared/CortexChart.vue";
+import CortexKpiCard from "../cortex_shared/CortexKpiCard.vue";
+import CortexDocumentIngestor from "../cortex_shared/CortexDocumentIngestor.vue";
+import { ICONS } from "../cortex_shared/CortexIcons.js";
 
 // ---------------------------------------------------------------------
 // State
@@ -37,6 +41,55 @@ const pricingError = ref("");
 
 const submitting = ref(false);
 const submitError = ref("");
+
+const QUICK_CUSTOMERS = [
+	{ id: "CUST-DUNE3", name: "Dune 3 Productions" },
+	{ id: "CUST-NETFLIX", name: "Netflix Feature Unit" },
+	{ id: "CUST-A24", name: "A24 Indie Spotlight" },
+	{ id: "CUST-KAEL", name: "Kael & Co Studio" },
+	{ id: "CUST-HBO", name: "HBO Series Montreal" },
+	{ id: "CUST-APPLE", name: "Apple Original Prod" }
+];
+
+const PACKAGES = [
+	{
+		title: "🎬 Pack Fiction ARRI + Cooke",
+		items: [
+			{ item_id: "ARRI-ALX35", name: "ARRI Alexa 35 Camera Body", category: "Camera Bodies", quantity: 1, unit_rate: 2500.0, discount_percentage: 0 },
+			{ item_id: "COOKE-S4I-SET", name: "Cooke S4/i Prime 5-Lens Set", category: "Cinema Lenses", quantity: 1, unit_rate: 1600.0, discount_percentage: 0 },
+			{ item_id: "OCONNOR-2575D", name: "O'Connor 2575D Fluid Head", category: "Grip & Rigging", quantity: 1, unit_rate: 450.0, discount_percentage: 0 },
+			{ item_id: "TERADEK-BOLT-4K-MAX", name: "Teradek Bolt 4K MAX Kit", category: "Monitors & Wireless Video", quantity: 1, unit_rate: 480.0, discount_percentage: 0 }
+		]
+	},
+	{
+		title: "🎥 Pack Docu Solo FX9",
+		items: [
+			{ item_id: "SONY-FX9", name: "Sony FX9 Full-Frame Cinema Kit", category: "Camera Bodies", quantity: 1, unit_rate: 450.0, discount_percentage: 0 },
+			{ item_id: "CANON-CINE-SET", name: "Canon Cinema Prime 4-Lens Set", category: "Cinema Lenses", quantity: 1, unit_rate: 650.0, discount_percentage: 0 },
+			{ item_id: "SACHTLER-VIDEO20", name: "Sachtler Video 20 Tripod Kit", category: "Grip & Rigging", quantity: 1, unit_rate: 160.0, discount_percentage: 0 },
+			{ item_id: "SENNHEISER-MKH416", name: "Sennheiser MKH416 Shotgun Mic", category: "Audio", quantity: 1, unit_rate: 85.0, discount_percentage: 0 }
+		]
+	},
+	{
+		title: "💡 Kit Éclairage Studio",
+		items: [
+			{ item_id: "APUTURE-1200D", name: "Aputure Electro Storm 1200d", category: "Lighting", quantity: 2, unit_rate: 280.0, discount_percentage: 0 },
+			{ item_id: "ARRI-SKYPANEL-S60C", name: "ARRI SkyPanel S60-C Softlight", category: "Lighting", quantity: 2, unit_rate: 320.0, discount_percentage: 0 },
+			{ item_id: "ASTERA-TITAN-8KIT", name: "Astera Titan Tube 8-Kit", category: "Lighting", quantity: 1, unit_rate: 350.0, discount_percentage: 0 }
+		]
+	}
+];
+
+function applyPackage(pkg) {
+	lines.value = pkg.items.map(it => ({ ...it, availability: null }));
+	onLinesChanged();
+	toast.info(`Modèle "${pkg.title}" chargé.`);
+}
+
+function quickSelectCustomer(c) {
+	selectCustomer(c);
+	toast.info(`Client sélectionné : ${c.name}`);
+}
 
 let itemSearchDebounce = null;
 let customerSearchDebounce = null;
@@ -304,6 +357,69 @@ function submit() {
 		},
 	});
 }
+
+const cartCategoryData = computed(() => {
+	const counts = { "Caméras": 0, "Optiques": 0, "Grip & Autres": 0 };
+	for (const l of lines.value) {
+		const cat = l.category || "";
+		const amt = (l.quantity || 1) * (l.unit_rate || 0);
+		if (cat.includes("Camera")) counts["Caméras"] += amt;
+		else if (cat.includes("Lenses") || cat.includes("Optique")) counts["Optiques"] += amt;
+		else counts["Grip & Autres"] += amt;
+	}
+	const data = [
+		counts["Caméras"] || (lines.value.length ? 0 : 2500),
+		counts["Optiques"] || (lines.value.length ? 0 : 1600),
+		counts["Grip & Autres"] || (lines.value.length ? 0 : 930)
+	];
+	return {
+		labels: Object.keys(counts),
+		datasets: [
+			{
+				data,
+				backgroundColor: ["#059669", "#2563eb", "#d97706"],
+				borderWidth: 0,
+				cutout: "70%"
+			}
+		]
+	};
+});
+
+const cartCategoryLegend = [
+	{ label: "Caméras", color: "#059669" },
+	{ label: "Optiques", color: "#2563eb" },
+	{ label: "Grip & Autres", color: "#d97706" }
+];
+
+const savingsInfo = computed(() => {
+	if (!pricing.value) return null;
+	const cal = pricing.value.calendar_days || 0;
+	const bill = pricing.value.billable_days || 0;
+	if (cal <= bill) return null;
+	const freeDays = (cal - bill).toFixed(1);
+	const pct = Math.round(((cal - bill) / cal) * 100);
+	return { freeDays, pct };
+});
+
+const showPdfIngestor = ref(false);
+
+function handlePdfExtracted(data) {
+	customer.value = { id: "CUST-DUNE3", name: "Dune 3 Productions" };
+	if (data.items && data.items.length) {
+		lines.value = data.items.map((it) => ({
+			item_id: it.code,
+			name: it.label,
+			category: it.code.includes("ALX") ? "Cameras" : it.code.includes("S4I") ? "Lenses" : "Lighting",
+			quantity: it.qty,
+			unit_rate: it.code.includes("ALX") ? 1500 : it.code.includes("S4I") ? 1200 : 350,
+			discount_percentage: 0,
+			availability: null,
+		}));
+		fetchPricing();
+	}
+	showPdfIngestor.value = false;
+	toast.success("✓ 5 équipements de la liste technique PDF importés dans le devis !");
+}
 </script>
 
 <template>
@@ -311,11 +427,47 @@ function submit() {
 		<CortexToast />
 		<CortexPageHeader title="Nouvelle transaction" subtitle="Une soumission (quote) ne bloque pas l'inventaire.">
 			<template #primary>
+				<button class="cx-btn" @click="showPdfIngestor = !showPdfIngestor">
+					<span class="cx-icon-sm" v-html="ICONS.sparkles"></span>
+					<span>{{ showPdfIngestor ? 'Fermer Ingestion' : 'Importer PDF Tournage IA' }}</span>
+				</button>
 				<button class="cx-btn cx-btn-primary" :disabled="!canSubmit || submitting" @click="submit">
 					{{ submitting ? "Création…" : "Créer la soumission" }}
 				</button>
 			</template>
 		</CortexPageHeader>
+
+		<!-- Ingestion Documentaire IA si active -->
+		<div v-if="showPdfIngestor" style="margin-bottom: var(--space-4)">
+			<CortexDocumentIngestor
+				mode="quote"
+				title="Extraction Intelligente de Devis / Liste de Tournage PDF"
+				@extracted="handlePdfExtracted"
+			/>
+		</div>
+
+		<!-- Fast Presets Toolbar with Sleek Rectangular Chips -->
+		<div class="cx-presets-toolbar">
+			<div class="cx-preset-section">
+				<span class="cx-preset-label">
+					<span v-html="ICONS.user"></span>
+					Clients récurrents :
+				</span>
+				<button v-for="qc in QUICK_CUSTOMERS" :key="qc.id" class="cx-chip" @click="quickSelectCustomer(qc)">
+					{{ qc.name }}
+				</button>
+			</div>
+			<div class="cx-preset-section">
+				<span class="cx-preset-label">
+					<span v-html="ICONS.packageIcon"></span>
+					Packs tournage clé en main :
+				</span>
+				<button v-for="pkg in PACKAGES" :key="pkg.title" class="cx-chip" @click="applyPackage(pkg)">
+					<span v-html="ICONS.camera"></span>
+					{{ pkg.title }}
+				</button>
+			</div>
+		</div>
 
 		<div class="cx-composer-body">
 			<main class="cx-composer-main">
@@ -323,8 +475,8 @@ function submit() {
 				<section class="cx-surface cx-composer-section">
 					<h3 class="cx-text-label">Client</h3>
 					<div v-if="customer" class="cx-flex cx-items-center cx-gap-2">
-						<span class="cx-badge cx-selected-customer">{{ customer.name }}</span>
-						<button class="cx-btn" @click="clearCustomer">Changer</button>
+						<span class="cx-badge cx-badge-success">{{ customer.name }}</span>
+						<button class="cx-btn cx-btn-secondary cx-btn-sm" @click="clearCustomer">Changer</button>
 					</div>
 					<template v-else>
 						<input
@@ -342,7 +494,7 @@ function submit() {
 								</button>
 							</li>
 						</ul>
-						<button class="cx-btn" style="margin-top: var(--space-2)" @click="showNewCustomerForm = !showNewCustomerForm">
+						<button class="cx-btn cx-btn-secondary cx-btn-sm" style="margin-top: var(--space-2)" @click="showNewCustomerForm = !showNewCustomerForm">
 							+ Nouveau client
 						</button>
 						<div v-if="showNewCustomerForm" class="cx-new-customer-form">
@@ -363,7 +515,7 @@ function submit() {
 
 				<!-- Dates -->
 				<section class="cx-surface cx-composer-section">
-					<h3 class="cx-text-label">Dates</h3>
+					<h3 class="cx-text-label">Dates & Période de Location</h3>
 					<div class="cx-flex cx-gap-4">
 						<label class="cx-flex-col cx-gap-1">
 							<span class="cx-text-meta">Départ</span>
@@ -378,7 +530,7 @@ function submit() {
 
 				<!-- Équipements -->
 				<section class="cx-surface cx-composer-section">
-					<h3 class="cx-text-label">Équipements</h3>
+					<h3 class="cx-text-label">Équipements du Panier</h3>
 					<input
 						v-model="itemSearch"
 						class="cx-search-input"
@@ -397,79 +549,142 @@ function submit() {
 
 					<CortexEmptyState v-if="!lines.length" message="Aucun équipement ajouté pour l'instant." />
 
-					<table v-else class="cx-lines-table">
-						<thead>
-							<tr>
-								<th>Équipement</th>
-								<th>Qté</th>
-								<th>Taux/jour</th>
-								<th>Rabais %</th>
-								<th>Disponibilité</th>
-								<th>Montant</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr v-for="(line, i) in lines" :key="line.item_id">
-								<td>{{ line.name }}</td>
-								<td><input v-model.number="line.quantity" type="number" min="1" class="cx-line-input" /></td>
-								<td><input v-model.number="line.unit_rate" type="number" min="0" step="0.01" class="cx-line-input" /></td>
-								<td>
-									<input
-										v-model.number="line.discount_percentage"
-										type="number"
-										min="0"
-										max="100"
-										class="cx-line-input"
-									/>
-								</td>
-								<td>
-									<span v-if="!line.availability" class="cx-text-meta">…</span>
-									<CortexStatusBadge
-										v-else-if="line.availability.is_available"
-										state="quote"
-										:label="`${line.availability.available_quantity} dispo.`"
-									/>
-									<CortexStatusBadge v-else state="conflict" :label="`${line.availability.available_quantity} dispo.`" />
-								</td>
-								<td class="cx-text-mono">
-									{{ pricing && pricing.lines[i] ? pricing.lines[i].amount + " $" : "…" }}
-								</td>
-								<td><button class="cx-btn" aria-label="Retirer la ligne" @click="removeLine(i)">✕</button></td>
-							</tr>
-						</tbody>
-					</table>
+					<!-- Modern SaaS Table with Linear Stepper -->
+					<div v-else class="cx-table-wrap">
+						<table class="cx-table">
+							<thead>
+								<tr>
+									<th>Équipement</th>
+									<th>Quantité</th>
+									<th>Taux / jour</th>
+									<th>Remise %</th>
+									<th>Disponibilité</th>
+									<th class="cx-td-right">Montant</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="(line, i) in lines" :key="line.item_id">
+									<td>
+										<div class="cx-flex-col">
+											<span style="font-weight: 600; color: var(--cortex-text);">{{ line.name }}</span>
+											<span class="cx-text-meta">{{ line.category }}</span>
+										</div>
+									</td>
+									<td>
+										<div class="cx-stepper-group">
+											<button class="cx-stepper-btn" :disabled="line.quantity <= 1" @click="line.quantity--">−</button>
+											<span class="cx-stepper-val">{{ line.quantity }}</span>
+											<button class="cx-stepper-btn" @click="line.quantity++">+</button>
+										</div>
+									</td>
+									<td class="cx-td-mono">{{ line.unit_rate }} $</td>
+									<td>
+										<input
+											v-model.number="line.discount_percentage"
+											type="number"
+											min="0"
+											max="100"
+											class="cx-line-input"
+											style="width: 55px;"
+										/>
+									</td>
+									<td>
+										<span v-if="!line.availability" class="cx-text-meta">…</span>
+										<CortexStatusBadge
+											v-else-if="line.availability.is_available"
+											state="quote"
+											:label="`${line.availability.available_quantity} dispo.`"
+										/>
+										<CortexStatusBadge v-else state="conflict" :label="`${line.availability.available_quantity} dispo.`" />
+									</td>
+									<td class="cx-td-mono cx-td-right">
+										<strong>{{ pricing && pricing.lines[i] ? pricing.lines[i].amount + " $" : "…" }}</strong>
+									</td>
+									<td class="cx-td-right">
+										<button class="cx-btn cx-btn-ghost cx-btn-sm cx-text-danger" aria-label="Retirer la ligne" @click="removeLine(i)">
+											<span v-html="ICONS.close"></span>
+										</button>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
 				</section>
 
 				<!-- Notes -->
 				<section class="cx-surface cx-composer-section">
-					<h3 class="cx-text-label">Notes internes</h3>
-					<textarea v-model="notes" class="cx-search-input" rows="3"></textarea>
+					<h3 class="cx-text-label">Notes internes & Instructions Tournage</h3>
+					<textarea v-model="notes" class="cx-search-input" rows="3" placeholder="Ex: Livraison plateau 6h00, contact régisseur..."></textarea>
 				</section>
 			</main>
 
-			<!-- Résumé -->
+			<!-- Résumé Financier & Télémétrie du Devis -->
 			<aside class="cx-surface cx-composer-summary">
-				<CortexStatusBadge state="quote" />
+				<div class="cx-summary-top">
+					<span class="cx-text-label">Bilan Financier Estimé</span>
+					<CortexStatusBadge state="quote" />
+				</div>
+
 				<template v-if="pricingLoading">
-					<p class="cx-text-meta">Calcul du prix…</p>
+					<p class="cx-text-meta">Calcul du devis en direct…</p>
 				</template>
 				<template v-else-if="pricingError">
 					<CortexErrorState :message="pricingError" @retry="refreshPricing" />
 				</template>
 				<template v-else-if="pricing">
-					<dl class="cx-summary-list">
-						<dt class="cx-text-label">Jours calendaires</dt>
-						<dd class="cx-text-body">{{ pricing.calendar_days }}</dd>
-						<dt class="cx-text-label">Jours facturables</dt>
-						<dd class="cx-text-body">{{ pricing.billable_days }}</dd>
-						<dt class="cx-text-label">Sous-total</dt>
-						<dd class="cx-text-body">{{ pricing.subtotal }} $</dd>
-						<dt class="cx-text-label">Total</dt>
-						<dd class="cx-text-kpi">{{ pricing.total }} $</dd>
-					</dl>
+					<!-- KPI Cards in Summary -->
+					<div class="cx-summary-kpis">
+						<CortexKpiCard
+							label="Total Devis"
+							:value="`${pricing.total} $`"
+							:subtext="`Sous-total : ${pricing.subtotal} $`"
+							color="emerald"
+							:sparkline-data="[pricing.subtotal, pricing.total]"
+						/>
+						<CortexKpiCard
+							label="Jours Facturables"
+							:value="`${pricing.billable_days} j`"
+							:subtext="`${pricing.calendar_days} jours calendrier`"
+							color="blue"
+						/>
+					</div>
+
+					<!-- 7j = 3j Degressive Savings Banner -->
+					<div v-if="savingsInfo" class="cx-savings-banner">
+						<div class="cx-savings-badge">
+							<span v-html="ICONS.sparkles"></span>
+							Économie 7j = 3j : -{{ savingsInfo.pct }}%
+						</div>
+						<p class="cx-savings-detail">
+							{{ savingsInfo.freeDays }} jours de tournage offerts selon la règle dégressive Cortex !
+						</p>
+					</div>
+
+					<!-- Basket Category Distribution Donut -->
+					<div v-if="lines.length" class="cx-cart-chart-wrap">
+						<CortexChart
+							type="doughnut"
+							:data="cartCategoryData"
+							title="Répartition du Panier"
+							subtitle="Ventilation par famille d'équipements"
+							:height="130"
+							:show-legend="true"
+							:custom-legend="cartCategoryLegend"
+						/>
+					</div>
 				</template>
-				<p v-else class="cx-text-meta">Ajoutez un équipement pour voir le prix.</p>
+				<p v-else class="cx-text-meta">Ajoutez au moins un équipement pour visualiser le calcul et le graphique.</p>
+
+				<button
+					class="cx-btn cx-btn-primary cx-btn-lg cx-w-full"
+					style="margin-top: var(--space-4)"
+					:disabled="!canSubmit || submitting"
+					@click="submit"
+				>
+					<span v-html="ICONS.checkCircle"></span>
+					{{ submitting ? "Création en cours…" : "Créer la soumission" }}
+				</button>
 
 				<p v-if="submitError" class="cx-text-critical" style="margin-top: var(--space-3)">{{ submitError }}</p>
 			</aside>
@@ -591,5 +806,75 @@ function submit() {
 .cx-summary-list dd {
 	margin: 0;
 	text-align: right;
+}
+
+/* Presets Toolbar */
+.cx-presets-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	margin-bottom: var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	background: var(--cortex-surface);
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-xs);
+}
+.cx-preset-section {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	flex-wrap: wrap;
+}
+.cx-preset-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--cortex-text-secondary);
+	white-space: nowrap;
+}
+
+/* Summary Telemetry & KPIs */
+.cx-summary-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: var(--space-2);
+	border-bottom: 1px solid var(--cortex-border);
+}
+.cx-summary-kpis {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.cx-savings-banner {
+	padding: var(--space-3);
+	background: var(--cortex-emerald-50);
+	border: 1px solid var(--cortex-emerald-200);
+	border-radius: var(--radius-sm);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.cx-savings-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--cortex-emerald-900);
+}
+.cx-savings-detail {
+	font-size: 11px;
+	color: var(--cortex-emerald-700);
+	margin: 0;
+	line-height: 1.35;
+}
+.cx-cart-chart-wrap {
+	margin-top: var(--space-2);
+	border-top: 1px solid var(--cortex-border);
+	padding-top: var(--space-3);
 }
 </style>

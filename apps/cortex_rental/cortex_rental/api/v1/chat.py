@@ -34,8 +34,15 @@ def _raise_validation_error(exc: ValidationError) -> None:
 
 
 def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Dict[str, Any]:
+    cleaned = {k: v for k, v in payload.items() if k not in ("cmd", "csrf_token", "_")}
+    if isinstance(cleaned.get("context"), str):
+        if frappe:
+            cleaned["context"] = frappe.parse_json(cleaned["context"])
+        else:
+            import json
+            cleaned["context"] = json.loads(cleaned["context"])
     try:
-        request = SendMessageRequest.model_validate(payload)
+        request = SendMessageRequest.model_validate(cleaned)
     except ValidationError as exc:
         _raise_validation_error(exc)
         return {}  # unreachable when frappe is available; keeps type-checkers happy
