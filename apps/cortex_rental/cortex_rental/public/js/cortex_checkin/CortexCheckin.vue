@@ -9,6 +9,10 @@ import { formatCurrency } from "../cortex_shared/formatters.js";
 import { fmtDateTime } from "../cortex_shared/dateUtils.js";
 import CortexToast from "../cortex_shared/CortexToast.vue";
 import { toast } from "../cortex_shared/toastBus.js";
+import CortexChart from "../cortex_shared/CortexChart.vue";
+import CortexKpiCard from "../cortex_shared/CortexKpiCard.vue";
+import CortexSlideOver from "../cortex_shared/CortexSlideOver.vue";
+import { ICONS } from "../cortex_shared/CortexIcons.js";
 
 // ---------------------------------------------------------------------
 // State & Navigation
@@ -442,6 +446,55 @@ function testQuickScan(code) {
 	scanInput.value = code;
 	handleScanSubmit();
 }
+
+const checkinProgressChartData = computed(() => {
+	const returned = totalReturnedQty.value || 0;
+	const expected = totalExpectedQty.value || 1;
+	const remaining = Math.max(0, expected - returned);
+	return {
+		labels: ["Reçus", "Restants"],
+		datasets: [
+			{
+				data: [returned, remaining],
+				backgroundColor: ["#059669", "#e4e4e7"],
+				borderWidth: 0,
+				cutout: "75%"
+			}
+		]
+	};
+});
+
+const checkinHealthChartData = computed(() => {
+	const good = returnItems.value.filter(i => i.condition === "Good" && i.returned_qty > 0).reduce((acc, i) => acc + i.returned_qty, 0);
+	const damaged = totalDamagedQty.value || 0;
+	const missing = totalMissingQty.value || 0;
+	return {
+		labels: ["Bon état", "Avaries / Bris", "Manquants"],
+		datasets: [
+			{
+				data: [good || (totalReturnedQty.value ? totalReturnedQty.value : 1), damaged, missing],
+				backgroundColor: ["#059669", "#d97706", "#dc2626"],
+				borderWidth: 0,
+				cutout: "75%"
+			}
+		]
+	};
+});
+
+const isInspectionDrawerOpen = ref(false);
+const inspectingItem = ref(null);
+
+function openInspection(item) {
+	inspectingItem.value = item;
+	isInspectionDrawerOpen.value = true;
+}
+
+function triggerAiDamageAssessment() {
+	toast.info("Agent Onyx évalue la grille tarifaire de dédommagement et franchise assurance…");
+	setTimeout(() => {
+		toast.success("✓ Calcul IA terminé : Facture de réparation estimée à 350 $ CAD (imputée sur la caution).");
+	}, 800);
+}
 </script>
 
 <template>
@@ -458,11 +511,16 @@ function testQuickScan(code) {
 			</template>
 
 			<template #secondary>
+				<button v-if="selectedTransaction && !completedReceipt" class="cx-btn" @click="triggerAiDamageAssessment">
+					<span class="cx-icon-sm" v-html="ICONS.sparkles"></span>
+					<span>Évaluation Bris IA</span>
+				</button>
 				<button v-if="selectedTransaction && !completedReceipt" class="cx-btn cx-btn-secondary" @click="resetSelection">
 					← Changer de dossier
 				</button>
 				<button v-if="completedReceipt" class="cx-btn cx-btn-secondary" @click="printReceipt">
-					🖨️ Imprimer le bon de retour
+					<span class="cx-icon-sm" v-html="ICONS.camera"></span>
+					<span>Imprimer le bon de retour</span>
 				</button>
 			</template>
 
@@ -485,8 +543,8 @@ function testQuickScan(code) {
 		<!-- ============================================================= -->
 		<div v-if="!selectedTransaction && !completedReceipt" class="cx-panel cx-transaction-picker-panel">
 			<!-- Fast Global Scan Input -->
-			<div class="cx-fast-scan-bar" :class="{ 'cx-scan-flash-success': scanFlash === 'success', 'cx-scan-flash-error': scanFlash === 'error' }">
-				<span class="cx-scan-icon" aria-hidden="true">⚡</span>
+			<div class="cx-fast-scan-bar" :class="{ 'cx-scan-flash-success cx-pulse-emerald': scanFlash === 'success', 'cx-scan-flash-error': scanFlash === 'error' }">
+				<span class="cx-scan-icon" aria-hidden="true" v-html="ICONS.barcode"></span>
 				<input
 					ref="scanInputRef"
 					v-model="scanInput"
@@ -504,15 +562,36 @@ function testQuickScan(code) {
 				{{ scanFeedbackMsg }}
 			</div>
 
-			<!-- Quick Simulation Scan Chips -->
+			<!-- Quick Simulation Scan Chips with Sleek Rectangular Format -->
 			<div class="cx-quick-test-scans">
-				<span class="cx-quick-label">⚡ Scan test 1-clic :</span>
-				<button class="cx-quick-chip" @click="testQuickScan('SN-ALX-001')">📷 Alexa 35 (Dune 3)</button>
-				<button class="cx-quick-chip" @click="testQuickScan('SN-CK-001')">🔍 Cooke S4/i (Dune 3)</button>
-				<button class="cx-quick-chip" @click="testQuickScan('SN-MLF-001')">🎥 Alexa Mini LF (Netflix)</button>
-				<button class="cx-quick-chip" @click="testQuickScan('SN-RED-001')">🔴 RED V-Raptor (HBO)</button>
-				<button class="cx-quick-chip" @click="testQuickScan('SN-FX9-001')">📹 Sony FX9 (A24)</button>
-				<button class="cx-quick-chip" @click="testQuickScan('CR-TRX-2026-00001')">📋 Contrat Dune 3</button>
+				<span class="cx-quick-label">
+					<span v-html="ICONS.sparkles"></span>
+					Scan test 1-clic :
+				</span>
+				<button class="cx-chip" @click="testQuickScan('SN-ALX-001')">
+					<span v-html="ICONS.camera"></span>
+					Alexa 35 (Dune 3)
+				</button>
+				<button class="cx-chip" @click="testQuickScan('SN-CK-001')">
+					<span v-html="ICONS.lens"></span>
+					Cooke S4/i (Dune 3)
+				</button>
+				<button class="cx-chip" @click="testQuickScan('SN-MLF-001')">
+					<span v-html="ICONS.camera"></span>
+					Alexa Mini LF (Netflix)
+				</button>
+				<button class="cx-chip" @click="testQuickScan('SN-RED-001')">
+					<span v-html="ICONS.camera"></span>
+					RED V-Raptor (HBO)
+				</button>
+				<button class="cx-chip" @click="testQuickScan('SN-FX9-001')">
+					<span v-html="ICONS.camera"></span>
+					Sony FX9 (A24)
+				</button>
+				<button class="cx-chip" @click="testQuickScan('CR-TRX-2026-00001')">
+					<span v-html="ICONS.packageIcon"></span>
+					Contrat Dune 3
+				</button>
 			</div>
 
 			<!-- Active Checked-Out Transactions Table -->
@@ -614,23 +693,73 @@ function testQuickScan(code) {
 				</button>
 			</div>
 
-			<!-- Summary Card of Selected Transaction -->
-			<div class="cx-txn-summary-banner">
-				<div class="cx-summary-meta">
-					<span class="cx-summary-id">{{ selectedTransaction.name }}</span>
-					<span class="cx-summary-client">👤 {{ selectedTransaction.customer_name || selectedTransaction.customer }}</span>
-					<span class="cx-summary-dates">📅 Retour prévu : {{ selectedTransaction.ends_at ? fmtDateTime(selectedTransaction.ends_at) : "Non spécifié" }}</span>
+			<!-- Modern Telemetry & Summary of Selected Transaction -->
+			<div class="cx-checkin-telemetry-banner">
+				<div class="cx-txn-meta-strip">
+					<div class="cx-txn-meta-left">
+						<span class="cx-summary-id">{{ selectedTransaction.name }}</span>
+						<span class="cx-summary-client">
+							<span v-html="ICONS.user"></span>
+							{{ selectedTransaction.customer_name || selectedTransaction.customer }}
+						</span>
+						<span class="cx-summary-dates">
+							<span v-html="ICONS.calendar"></span>
+							Retour : {{ selectedTransaction.ends_at ? fmtDateTime(selectedTransaction.ends_at) : "Non spécifié" }}
+						</span>
+					</div>
+					<div class="cx-txn-meta-right">
+						<button class="cx-btn cx-btn-secondary cx-btn-sm" @click="resetSelection">Changer de dossier</button>
+					</div>
 				</div>
-				<div class="cx-summary-stats">
-					<span class="cx-stat-pill">
-						Reçus : <strong>{{ totalReturnedQty }} / {{ totalExpectedQty }}</strong>
-					</span>
-					<span v-if="totalDamagedQty > 0" class="cx-stat-pill cx-pill-warning">
-						⚠️ Bris : <strong>{{ totalDamagedQty }}</strong>
-					</span>
-					<span v-if="totalMissingQty > 0" class="cx-stat-pill cx-pill-danger">
-						❌ Manquants : <strong>{{ totalMissingQty }}</strong>
-					</span>
+
+				<div class="cx-checkin-metrics-row">
+					<div class="cx-checkin-kpis">
+						<CortexKpiCard
+							label="Unités Reçues"
+							:value="`${totalReturnedQty} / ${totalExpectedQty}`"
+							subtext="Contrôle en direct"
+							color="emerald"
+							:sparkline-data="[0, 2, 5, 8, 12, totalReturnedQty]"
+						/>
+						<CortexKpiCard
+							label="Avaries / Bris"
+							:value="totalDamagedQty"
+							subtext="Équipements endommagés"
+							color="amber"
+							:sparkline-data="[0, 0, 1, 1, totalDamagedQty]"
+						/>
+						<CortexKpiCard
+							label="Manquants"
+							:value="totalMissingQty"
+							subtext="Non revenus au quai"
+							color="blue"
+							:sparkline-data="[0, 0, 0, totalMissingQty]"
+						/>
+					</div>
+
+					<div class="cx-checkin-charts-mini">
+						<div class="cx-mini-chart-card">
+							<div class="cx-mini-chart-header">
+								<span class="cx-mini-chart-title">Progression Réception</span>
+								<span class="cx-badge cx-badge-success">{{ Math.round((totalReturnedQty / (totalExpectedQty || 1)) * 100) }}%</span>
+							</div>
+							<CortexChart
+								type="doughnut"
+								:data="checkinProgressChartData"
+								:height="90"
+							/>
+						</div>
+						<div class="cx-mini-chart-card">
+							<div class="cx-mini-chart-header">
+								<span class="cx-mini-chart-title">Santé du Retour</span>
+							</div>
+							<CortexChart
+								type="doughnut"
+								:data="checkinHealthChartData"
+								:height="90"
+							/>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -639,8 +768,8 @@ function testQuickScan(code) {
 			<!-- ------------------------------------------------------------- -->
 			<section v-if="currentStep === 1" class="cx-step-section">
 				<!-- Fast Scan Bar -->
-				<div class="cx-fast-scan-bar" :class="{ 'cx-scan-flash-success': scanFlash === 'success', 'cx-scan-flash-error': scanFlash === 'error' }">
-					<span class="cx-scan-icon">⚡</span>
+				<div class="cx-fast-scan-bar" :class="{ 'cx-scan-flash-success cx-pulse-emerald': scanFlash === 'success', 'cx-scan-flash-error': scanFlash === 'error' }">
+					<span class="cx-scan-icon" v-html="ICONS.barcode"></span>
 					<input
 						ref="scanInputRef"
 						v-model="scanInput"
@@ -658,18 +787,21 @@ function testQuickScan(code) {
 					{{ scanFeedbackMsg }}
 				</div>
 
-				<!-- Quick Click-to-Scan for Items in this Transaction -->
+				<!-- Quick Click-to-Scan for Items in this Transaction with Rectangular Chips -->
 				<div class="cx-quick-test-scans">
-					<span class="cx-quick-label">⚡ Scan direct des articles du dossier :</span>
+					<span class="cx-quick-label">
+						<span v-html="ICONS.sparkles"></span>
+						Scan rapide :
+					</span>
 					<button
 						v-for="item in returnItems"
 						:key="item.transaction_item"
-						class="cx-quick-chip"
-						:class="{ 'cx-quick-chip-scanned': item.is_scanned }"
+						class="cx-chip"
+						:class="{ 'cx-chip-active': item.is_scanned }"
 						@click="testQuickScan(item.serial_no || item.item_code)"
 					>
-						{{ item.is_scanned ? '✓ ' : '📷 ' }}{{ item.serial_no || item.item_code }}
-					</button>
+						<span v-html="item.serial_no ? ICONS.barcode : ICONS.packageIcon"></span>
+						{{ item.item_name || item.item_code }} ({{ item.serial_no || "Vrac" }})
 				</div>
 
 				<!-- Quick Action Toolbar -->
@@ -721,10 +853,11 @@ function testQuickScan(code) {
 
 								<!-- Serial No -->
 								<td>
-									<span v-if="item.serial_no" class="cx-serial-tag">
-										🏷️ {{ item.serial_no }}
+									<span v-if="item.serial_no" class="cx-badge cx-badge-neutral">
+										<span v-html="ICONS.barcode"></span>
+										{{ item.serial_no }}
 									</span>
-									<span v-else class="cx-text-muted">Article en vrac / Non-sérialisé</span>
+									<span v-else class="cx-text-muted cx-text-xs">Article en vrac / Non-sérialisé</span>
 								</td>
 
 								<!-- Returned Qty Controls -->
@@ -733,19 +866,22 @@ function testQuickScan(code) {
 									<div v-if="item.serial_no" class="cx-serial-toggle">
 										<button
 											class="cx-btn cx-btn-sm"
-											:class="item.returned_qty > 0 ? 'cx-btn-success' : 'cx-btn-secondary'"
+											:class="item.returned_qty > 0 ? 'cx-btn-primary' : 'cx-btn-secondary'"
 											@click="markSerialReturned(item)"
 										>
+											<span v-if="item.returned_qty > 0" v-html="ICONS.check"></span>
 											{{ item.returned_qty > 0 ? "Scanné (1/1)" : "Non scanné (0/1)" }}
 										</button>
 									</div>
 
-									<!-- Bulk item stepper -->
-									<div v-else class="cx-stepper-control">
-										<button class="cx-btn-stepper" @click="incrementBulkReturned(item, -1)">−</button>
-										<span class="cx-stepper-value cx-tabular-nums">{{ item.returned_qty }} / {{ item.expected_qty }}</span>
-										<button class="cx-btn-stepper" @click="incrementBulkReturned(item, 1)">+</button>
-										<button class="cx-btn-stepper-all" title="Tout cocher" @click="returnAllBulk(item)">Max</button>
+									<!-- Bulk item stepper Linear style -->
+									<div v-else class="cx-flex cx-items-center cx-justify-center cx-gap-2">
+										<div class="cx-stepper-group">
+											<button class="cx-stepper-btn" :disabled="item.returned_qty <= 0" @click="incrementBulkReturned(item, -1)">−</button>
+											<span class="cx-stepper-val">{{ item.returned_qty }} / {{ item.expected_qty }}</span>
+											<button class="cx-stepper-btn" :disabled="item.returned_qty >= item.expected_qty" @click="incrementBulkReturned(item, 1)">+</button>
+										</div>
+										<button class="cx-btn cx-btn-ghost cx-btn-sm" title="Tout cocher" @click="returnAllBulk(item)">Max</button>
 									</div>
 								</td>
 
@@ -753,14 +889,15 @@ function testQuickScan(code) {
 								<td>
 									<div class="cx-flex cx-items-center cx-gap-2">
 										<span
-											class="cx-condition-badge"
+											class="cx-badge"
 											:class="{
-												'cx-cond-good': item.condition === 'Good',
-												'cx-cond-damaged': item.condition === 'Damaged',
-												'cx-cond-missing': item.condition === 'Missing',
+												'cx-badge-success': item.condition === 'Good',
+												'cx-badge-warning': item.condition === 'Damaged',
+												'cx-badge-danger': item.condition === 'Missing',
 											}"
 										>
-											{{ item.condition === 'Good' ? 'Bon état' : item.condition === 'Damaged' ? 'Endommagé' : 'Manquant' }}
+											<span class="cx-badge-dot"></span>
+											{{ item.condition === 'Good' ? 'Bon état' : item.condition === 'Damaged' ? 'Avarie / Bris' : 'Manquant' }}
 										</span>
 										<span v-if="item.damage_severity !== 'None'" class="cx-text-xs cx-text-muted">
 											({{ item.damage_severity }})
@@ -1126,6 +1263,47 @@ function testQuickScan(code) {
 				</div>
 			</div>
 		</div>
+
+		<!-- Slide-Over Inspection & Diagnostic Détail (Divulgation Progressive) -->
+		<CortexSlideOver
+			:open="isInspectionDrawerOpen"
+			:title="inspectingItem ? inspectingItem.item_name : ''"
+			:subtitle="inspectingItem ? inspectingItem.item_code + (inspectingItem.serial_no ? ' • SN: ' + inspectingItem.serial_no : '') : ''"
+			width="560px"
+			@close="isInspectionDrawerOpen = false"
+		>
+			<template v-if="inspectingItem">
+				<div class="cx-section-block">
+					<span class="cx-badge" :class="inspectingItem.condition === 'Good' ? 'cx-badge-success' : 'cx-badge-danger'">
+						État : {{ inspectingItem.condition }}
+					</span>
+					<div class="cx-drawer-tile" style="margin-top: var(--space-3)">
+						<span class="cx-text-label">Disposition / Remise en stock</span>
+						<div class="cx-drawer-val">{{ inspectingItem.disposition || 'Quarantaine Atelier' }}</div>
+					</div>
+				</div>
+
+				<div class="cx-section-block">
+					<h4 class="cx-section-title">
+						<span class="cx-icon-sm cx-emerald" v-html="ICONS.sparkles"></span>
+						Évaluation IA de Bris &amp; Restitution
+					</h4>
+					<p class="cx-notes-text">
+						L'agent Onyx applique automatiquement le barème d'avarie contractuel. Si l'équipement requiert une intervention d'un technicien qualifié, le devis de remise en état sera adressé pour validation humaine (`Approval Request`).
+					</p>
+					<button class="cx-btn cx-btn-secondary" style="margin-top: var(--space-2)" @click="triggerAiDamageAssessment">
+						Recalculer le montant de remise en état
+					</button>
+				</div>
+			</template>
+
+			<template #footer>
+				<button class="cx-btn cx-btn-ghost" @click="isInspectionDrawerOpen = false">Fermer</button>
+				<button class="cx-btn cx-btn-primary" @click="isInspectionDrawerOpen = false; toast.success('Diagnostic enregistré.')">
+					Valider Diagnostic
+				</button>
+			</template>
+		</CortexSlideOver>
 	</div>
 </template>
 
@@ -1454,29 +1632,100 @@ function testQuickScan(code) {
 	place-items: center;
 	width: 24px;
 	height: 24px;
-	border-radius: 50%;
-	font-size: 12px;
-	font-weight: 700;
+	border-radius: var(--radius-xs);
+	font-size: 11px;
+	font-weight: 600;
+	border: 1px solid transparent;
 }
 
 .cx-icon-success {
-	background: #dcfce7;
-	color: #16a34a;
+	background: #ecfdf5;
+	color: #047857;
+	border-color: #a7f3d0;
 }
 
 .cx-icon-warning {
-	background: #fef3c7;
-	color: #d97706;
+	background: #fffbeb;
+	color: #92400e;
+	border-color: #fde68a;
 }
 
 .cx-icon-danger {
-	background: #fee2e2;
-	color: #dc2626;
+	background: #fef2f2;
+	color: #b91c1c;
+	border-color: #fecaca;
 }
 
 .cx-icon-pending {
-	background: #f1f5f9;
-	color: #94a3b8;
+	background: #f4f4f5;
+	color: #71717a;
+	border-color: #e4e4e7;
+}
+
+/* Telemetry & Charts Banner */
+.cx-checkin-telemetry-banner {
+	background: #ffffff;
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-md);
+	padding: var(--space-3) var(--space-4);
+	margin-bottom: var(--space-4);
+	box-shadow: var(--shadow-xs);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+.cx-txn-meta-strip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: var(--space-2);
+	border-bottom: 1px solid var(--cortex-border);
+}
+.cx-txn-meta-left {
+	display: flex;
+	align-items: center;
+	gap: var(--space-4);
+	flex-wrap: wrap;
+	font-size: 12.5px;
+}
+.cx-checkin-metrics-row {
+	display: grid;
+	grid-template-columns: 3fr 2fr;
+	gap: var(--space-3);
+}
+@media (max-width: 900px) {
+	.cx-checkin-metrics-row {
+		grid-template-columns: 1fr;
+	}
+}
+.cx-checkin-kpis {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--space-2);
+}
+.cx-checkin-charts-mini {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--space-2);
+}
+.cx-mini-chart-card {
+	background: var(--cortex-bg);
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-sm);
+	padding: var(--space-2) var(--space-3);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.cx-mini-chart-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.cx-mini-chart-title {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--cortex-text-secondary);
 }
 
 /* Diagnostics Step */

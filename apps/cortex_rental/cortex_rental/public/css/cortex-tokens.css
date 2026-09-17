@@ -10,44 +10,56 @@
  */
 
 :root {
-	/* ---- Ink Neutrals (Canvas & Elevation) ---- */
-	--cortex-bg: #f8fafc;
-	--cortex-canvas: #f2f7f4;
+	/* ---- Clean Zinc Neutrals (Canvas & Elevation) ---- */
+	--cortex-bg: #fafafa;
+	--cortex-canvas: #f4f4f5;
 	--cortex-surface: #ffffff;
-	--cortex-surface-subtle: #f1f5f9;
-	--cortex-surface-hover: #e3ece6;
-	--cortex-border: #cbdcd2;
-	--cortex-border-strong: #182c24;
+	--cortex-surface-subtle: #f4f4f5;
+	--cortex-surface-hover: #f1f5f9;
+	--cortex-border: #e4e4e7;
+	--cortex-border-strong: #71717a;
 
-	--cortex-text: #08120d;
-	--cortex-text-secondary: #264034;
-	--cortex-text-muted: #436354;
-	--cortex-text-disabled: #6d9685;
+	--cortex-text: #09090b;
+	--cortex-text-secondary: #52525b;
+	--cortex-text-muted: #71717a;
+	--cortex-text-disabled: #a1a1aa;
 	--cortex-inverse: #ffffff;
 
-	/* ---- Operational Green (Brand & Primary Action) ---- */
-	--cortex-green-50: #edfbf2;
-	--cortex-green-100: #dcfce7;
-	--cortex-green-200: #bbf7d0;
-	--cortex-green-300: #86efac;
-	--cortex-green-400: #14b86a;
-	--cortex-green-500: #087a43;
-	--cortex-green-600: #087a43;
-	--cortex-green-700: #065f34;
-	--cortex-green-800: #044727;
-	--cortex-green-900: #022b17;
+	/* ---- Minimal Mono-Accent (Emerald Deep #059669) ---- */
+	--cortex-emerald-50: #ecfdf5;
+	--cortex-emerald-100: #d1fae5;
+	--cortex-emerald-200: #a7f3d0;
+	--cortex-emerald-300: #6ee7b7;
+	--cortex-emerald-400: #34d399;
+	--cortex-emerald-500: #10b981;
+	--cortex-emerald-600: #059669;
+	--cortex-emerald-700: #047857;
+	--cortex-emerald-800: #065f34;
+	--cortex-emerald-900: #064e3b;
+
+	/* Legacy Green Aliases for backwards compatibility */
+	--cortex-green-50: #ecfdf5;
+	--cortex-green-100: #d1fae5;
+	--cortex-green-200: #a7f3d0;
+	--cortex-green-300: #6ee7b7;
+	--cortex-green-400: #34d399;
+	--cortex-green-500: #10b981;
+	--cortex-green-600: #059669;
+	--cortex-green-700: #047857;
+	--cortex-green-800: #065f34;
+	--cortex-green-900: #064e3b;
 
 	/* Primary Brand Aliases */
-	--cortex-primary-50: #edfbf2;
-	--cortex-primary-100: #dcfce7;
-	--cortex-primary-200: #bbf7d0;
-	--cortex-primary-300: #86efac;
-	--cortex-primary-400: #14b86a;
-	--cortex-primary-500: #087a43;
-	--cortex-primary-600: #087a43;
+	--cortex-primary-50: #ecfdf5;
+	--cortex-primary-100: #d1fae5;
+	--cortex-primary-200: #a7f3d0;
+	--cortex-primary-300: #6ee7b7;
+	--cortex-primary-400: #34d399;
+	--cortex-primary-500: #059669;
+	--cortex-primary-600: #047857;
 	--cortex-primary-700: #065f34;
-	--cortex-primary-800: #044727;
-	--cortex-primary-900: #022b17;
+	--cortex-primary-800: #064e3b;
+	--cortex-primary-900: #022c22;
 
 	/* ---- Success / Availability / Finalized ---- */
 	--cortex-success-50: #ecfdf5;

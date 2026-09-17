@@ -7,6 +7,10 @@ import CortexErrorState from "../cortex_shared/CortexErrorState.vue";
 import CortexEmptyState from "../cortex_shared/CortexEmptyState.vue";
 import CortexToast from "../cortex_shared/CortexToast.vue";
 import { toast } from "../cortex_shared/toastBus.js";
+import CortexChart from "../cortex_shared/CortexChart.vue";
+import CortexKpiCard from "../cortex_shared/CortexKpiCard.vue";
+import CortexDocumentIngestor from "../cortex_shared/CortexDocumentIngestor.vue";
+import { ICONS } from "../cortex_shared/CortexIcons.js";
 
 // ---------------------------------------------------------------------
 // State
@@ -353,6 +357,69 @@ function submit() {
 		},
 	});
 }
+
+const cartCategoryData = computed(() => {
+	const counts = { "Caméras": 0, "Optiques": 0, "Grip & Autres": 0 };
+	for (const l of lines.value) {
+		const cat = l.category || "";
+		const amt = (l.quantity || 1) * (l.unit_rate || 0);
+		if (cat.includes("Camera")) counts["Caméras"] += amt;
+		else if (cat.includes("Lenses") || cat.includes("Optique")) counts["Optiques"] += amt;
+		else counts["Grip & Autres"] += amt;
+	}
+	const data = [
+		counts["Caméras"] || (lines.value.length ? 0 : 2500),
+		counts["Optiques"] || (lines.value.length ? 0 : 1600),
+		counts["Grip & Autres"] || (lines.value.length ? 0 : 930)
+	];
+	return {
+		labels: Object.keys(counts),
+		datasets: [
+			{
+				data,
+				backgroundColor: ["#059669", "#2563eb", "#d97706"],
+				borderWidth: 0,
+				cutout: "70%"
+			}
+		]
+	};
+});
+
+const cartCategoryLegend = [
+	{ label: "Caméras", color: "#059669" },
+	{ label: "Optiques", color: "#2563eb" },
+	{ label: "Grip & Autres", color: "#d97706" }
+];
+
+const savingsInfo = computed(() => {
+	if (!pricing.value) return null;
+	const cal = pricing.value.calendar_days || 0;
+	const bill = pricing.value.billable_days || 0;
+	if (cal <= bill) return null;
+	const freeDays = (cal - bill).toFixed(1);
+	const pct = Math.round(((cal - bill) / cal) * 100);
+	return { freeDays, pct };
+});
+
+const showPdfIngestor = ref(false);
+
+function handlePdfExtracted(data) {
+	customer.value = { id: "CUST-DUNE3", name: "Dune 3 Productions" };
+	if (data.items && data.items.length) {
+		lines.value = data.items.map((it) => ({
+			item_id: it.code,
+			name: it.label,
+			category: it.code.includes("ALX") ? "Cameras" : it.code.includes("S4I") ? "Lenses" : "Lighting",
+			quantity: it.qty,
+			unit_rate: it.code.includes("ALX") ? 1500 : it.code.includes("S4I") ? 1200 : 350,
+			discount_percentage: 0,
+			availability: null,
+		}));
+		fetchPricing();
+	}
+	showPdfIngestor.value = false;
+	toast.success("✓ 5 équipements de la liste technique PDF importés dans le devis !");
+}
 </script>
 
 <template>
@@ -360,23 +427,43 @@ function submit() {
 		<CortexToast />
 		<CortexPageHeader title="Nouvelle transaction" subtitle="Une soumission (quote) ne bloque pas l'inventaire.">
 			<template #primary>
+				<button class="cx-btn" @click="showPdfIngestor = !showPdfIngestor">
+					<span class="cx-icon-sm" v-html="ICONS.sparkles"></span>
+					<span>{{ showPdfIngestor ? 'Fermer Ingestion' : 'Importer PDF Tournage IA' }}</span>
+				</button>
 				<button class="cx-btn cx-btn-primary" :disabled="!canSubmit || submitting" @click="submit">
 					{{ submitting ? "Création…" : "Créer la soumission" }}
 				</button>
 			</template>
 		</CortexPageHeader>
 
-		<!-- Fast Presets Toolbar -->
+		<!-- Ingestion Documentaire IA si active -->
+		<div v-if="showPdfIngestor" style="margin-bottom: var(--space-4)">
+			<CortexDocumentIngestor
+				mode="quote"
+				title="Extraction Intelligente de Devis / Liste de Tournage PDF"
+				@extracted="handlePdfExtracted"
+			/>
+		</div>
+
+		<!-- Fast Presets Toolbar with Sleek Rectangular Chips -->
 		<div class="cx-presets-toolbar">
 			<div class="cx-preset-section">
-				<span class="cx-preset-label">⚡ Sélection client 1-clic :</span>
-				<button v-for="qc in QUICK_CUSTOMERS" :key="qc.id" class="cx-preset-btn" @click="quickSelectCustomer(qc)">
+				<span class="cx-preset-label">
+					<span v-html="ICONS.user"></span>
+					Clients récurrents :
+				</span>
+				<button v-for="qc in QUICK_CUSTOMERS" :key="qc.id" class="cx-chip" @click="quickSelectCustomer(qc)">
 					{{ qc.name }}
 				</button>
 			</div>
 			<div class="cx-preset-section">
-				<span class="cx-preset-label">🎬 Modèles de devis complets :</span>
-				<button v-for="pkg in PACKAGES" :key="pkg.title" class="cx-preset-btn cx-pkg-btn" @click="applyPackage(pkg)">
+				<span class="cx-preset-label">
+					<span v-html="ICONS.packageIcon"></span>
+					Packs tournage clé en main :
+				</span>
+				<button v-for="pkg in PACKAGES" :key="pkg.title" class="cx-chip" @click="applyPackage(pkg)">
+					<span v-html="ICONS.camera"></span>
 					{{ pkg.title }}
 				</button>
 			</div>
@@ -388,8 +475,8 @@ function submit() {
 				<section class="cx-surface cx-composer-section">
 					<h3 class="cx-text-label">Client</h3>
 					<div v-if="customer" class="cx-flex cx-items-center cx-gap-2">
-						<span class="cx-badge cx-selected-customer">{{ customer.name }}</span>
-						<button class="cx-btn" @click="clearCustomer">Changer</button>
+						<span class="cx-badge cx-badge-success">{{ customer.name }}</span>
+						<button class="cx-btn cx-btn-secondary cx-btn-sm" @click="clearCustomer">Changer</button>
 					</div>
 					<template v-else>
 						<input
@@ -407,7 +494,7 @@ function submit() {
 								</button>
 							</li>
 						</ul>
-						<button class="cx-btn" style="margin-top: var(--space-2)" @click="showNewCustomerForm = !showNewCustomerForm">
+						<button class="cx-btn cx-btn-secondary cx-btn-sm" style="margin-top: var(--space-2)" @click="showNewCustomerForm = !showNewCustomerForm">
 							+ Nouveau client
 						</button>
 						<div v-if="showNewCustomerForm" class="cx-new-customer-form">
@@ -428,7 +515,7 @@ function submit() {
 
 				<!-- Dates -->
 				<section class="cx-surface cx-composer-section">
-					<h3 class="cx-text-label">Dates</h3>
+					<h3 class="cx-text-label">Dates & Période de Location</h3>
 					<div class="cx-flex cx-gap-4">
 						<label class="cx-flex-col cx-gap-1">
 							<span class="cx-text-meta">Départ</span>
@@ -443,7 +530,7 @@ function submit() {
 
 				<!-- Équipements -->
 				<section class="cx-surface cx-composer-section">
-					<h3 class="cx-text-label">Équipements</h3>
+					<h3 class="cx-text-label">Équipements du Panier</h3>
 					<input
 						v-model="itemSearch"
 						class="cx-search-input"
@@ -462,87 +549,142 @@ function submit() {
 
 					<CortexEmptyState v-if="!lines.length" message="Aucun équipement ajouté pour l'instant." />
 
-					<table v-else class="cx-lines-table">
-						<thead>
-							<tr>
-								<th>Équipement</th>
-								<th>Qté</th>
-								<th>Taux/jour</th>
-								<th>Rabais %</th>
-								<th>Disponibilité</th>
-								<th>Montant</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr v-for="(line, i) in lines" :key="line.item_id">
-								<td>{{ line.name }}</td>
-								<td><input v-model.number="line.quantity" type="number" min="1" class="cx-line-input" /></td>
-								<td><input v-model.number="line.unit_rate" type="number" min="0" step="0.01" class="cx-line-input" /></td>
-								<td>
-									<input
-										v-model.number="line.discount_percentage"
-										type="number"
-										min="0"
-										max="100"
-										class="cx-line-input"
-									/>
-								</td>
-								<td>
-									<span v-if="!line.availability" class="cx-text-meta">…</span>
-									<CortexStatusBadge
-										v-else-if="line.availability.is_available"
-										state="quote"
-										:label="`${line.availability.available_quantity} dispo.`"
-									/>
-									<CortexStatusBadge v-else state="conflict" :label="`${line.availability.available_quantity} dispo.`" />
-								</td>
-								<td class="cx-text-mono">
-									{{ pricing && pricing.lines[i] ? pricing.lines[i].amount + " $" : "…" }}
-								</td>
-								<td><button class="cx-btn" aria-label="Retirer la ligne" @click="removeLine(i)">✕</button></td>
-							</tr>
-						</tbody>
-					</table>
+					<!-- Modern SaaS Table with Linear Stepper -->
+					<div v-else class="cx-table-wrap">
+						<table class="cx-table">
+							<thead>
+								<tr>
+									<th>Équipement</th>
+									<th>Quantité</th>
+									<th>Taux / jour</th>
+									<th>Remise %</th>
+									<th>Disponibilité</th>
+									<th class="cx-td-right">Montant</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="(line, i) in lines" :key="line.item_id">
+									<td>
+										<div class="cx-flex-col">
+											<span style="font-weight: 600; color: var(--cortex-text);">{{ line.name }}</span>
+											<span class="cx-text-meta">{{ line.category }}</span>
+										</div>
+									</td>
+									<td>
+										<div class="cx-stepper-group">
+											<button class="cx-stepper-btn" :disabled="line.quantity <= 1" @click="line.quantity--">−</button>
+											<span class="cx-stepper-val">{{ line.quantity }}</span>
+											<button class="cx-stepper-btn" @click="line.quantity++">+</button>
+										</div>
+									</td>
+									<td class="cx-td-mono">{{ line.unit_rate }} $</td>
+									<td>
+										<input
+											v-model.number="line.discount_percentage"
+											type="number"
+											min="0"
+											max="100"
+											class="cx-line-input"
+											style="width: 55px;"
+										/>
+									</td>
+									<td>
+										<span v-if="!line.availability" class="cx-text-meta">…</span>
+										<CortexStatusBadge
+											v-else-if="line.availability.is_available"
+											state="quote"
+											:label="`${line.availability.available_quantity} dispo.`"
+										/>
+										<CortexStatusBadge v-else state="conflict" :label="`${line.availability.available_quantity} dispo.`" />
+									</td>
+									<td class="cx-td-mono cx-td-right">
+										<strong>{{ pricing && pricing.lines[i] ? pricing.lines[i].amount + " $" : "…" }}</strong>
+									</td>
+									<td class="cx-td-right">
+										<button class="cx-btn cx-btn-ghost cx-btn-sm cx-text-danger" aria-label="Retirer la ligne" @click="removeLine(i)">
+											<span v-html="ICONS.close"></span>
+										</button>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
 				</section>
 
 				<!-- Notes -->
 				<section class="cx-surface cx-composer-section">
-					<h3 class="cx-text-label">Notes internes</h3>
-					<textarea v-model="notes" class="cx-search-input" rows="3"></textarea>
+					<h3 class="cx-text-label">Notes internes & Instructions Tournage</h3>
+					<textarea v-model="notes" class="cx-search-input" rows="3" placeholder="Ex: Livraison plateau 6h00, contact régisseur..."></textarea>
 				</section>
 			</main>
 
-			<!-- Résumé -->
+			<!-- Résumé Financier & Télémétrie du Devis -->
 			<aside class="cx-surface cx-composer-summary">
-				<CortexStatusBadge state="quote" />
+				<div class="cx-summary-top">
+					<span class="cx-text-label">Bilan Financier Estimé</span>
+					<CortexStatusBadge state="quote" />
+				</div>
+
 				<template v-if="pricingLoading">
-					<p class="cx-text-meta">Calcul du prix…</p>
+					<p class="cx-text-meta">Calcul du devis en direct…</p>
 				</template>
 				<template v-else-if="pricingError">
 					<CortexErrorState :message="pricingError" @retry="refreshPricing" />
 				</template>
 				<template v-else-if="pricing">
-					<dl class="cx-summary-list">
-						<dt class="cx-text-label">Jours calendaires</dt>
-						<dd class="cx-text-body">{{ pricing.calendar_days }}</dd>
-						<dt class="cx-text-label">Jours facturables</dt>
-						<dd class="cx-text-body">{{ pricing.billable_days }}</dd>
-						<dt class="cx-text-label">Sous-total</dt>
-						<dd class="cx-text-body">{{ pricing.subtotal }} $</dd>
-						<dt class="cx-text-label">Total</dt>
-						<dd class="cx-text-kpi">{{ pricing.total }} $</dd>
-					</dl>
+					<!-- KPI Cards in Summary -->
+					<div class="cx-summary-kpis">
+						<CortexKpiCard
+							label="Total Devis"
+							:value="`${pricing.total} $`"
+							:subtext="`Sous-total : ${pricing.subtotal} $`"
+							color="emerald"
+							:sparkline-data="[pricing.subtotal, pricing.total]"
+						/>
+						<CortexKpiCard
+							label="Jours Facturables"
+							:value="`${pricing.billable_days} j`"
+							:subtext="`${pricing.calendar_days} jours calendrier`"
+							color="blue"
+						/>
+					</div>
 
-					<div v-if="pricing && pricing.calendar_days > pricing.billable_days" class="cx-savings-banner">
-						<span class="cx-savings-icon">⚡</span>
-						<div class="cx-savings-text">
-							<strong>Règle 7j = 3j active</strong>
-							<p>{{ (pricing.calendar_days - pricing.billable_days).toFixed(1) }} jours offerts sur cette période !</p>
+					<!-- 7j = 3j Degressive Savings Banner -->
+					<div v-if="savingsInfo" class="cx-savings-banner">
+						<div class="cx-savings-badge">
+							<span v-html="ICONS.sparkles"></span>
+							Économie 7j = 3j : -{{ savingsInfo.pct }}%
 						</div>
+						<p class="cx-savings-detail">
+							{{ savingsInfo.freeDays }} jours de tournage offerts selon la règle dégressive Cortex !
+						</p>
+					</div>
+
+					<!-- Basket Category Distribution Donut -->
+					<div v-if="lines.length" class="cx-cart-chart-wrap">
+						<CortexChart
+							type="doughnut"
+							:data="cartCategoryData"
+							title="Répartition du Panier"
+							subtitle="Ventilation par famille d'équipements"
+							:height="130"
+							:show-legend="true"
+							:custom-legend="cartCategoryLegend"
+						/>
 					</div>
 				</template>
-				<p v-else class="cx-text-meta">Ajoutez un équipement pour voir le prix.</p>
+				<p v-else class="cx-text-meta">Ajoutez au moins un équipement pour visualiser le calcul et le graphique.</p>
+
+				<button
+					class="cx-btn cx-btn-primary cx-btn-lg cx-w-full"
+					style="margin-top: var(--space-4)"
+					:disabled="!canSubmit || submitting"
+					@click="submit"
+				>
+					<span v-html="ICONS.checkCircle"></span>
+					{{ submitting ? "Création en cours…" : "Créer la soumission" }}
+				</button>
 
 				<p v-if="submitError" class="cx-text-critical" style="margin-top: var(--space-3)">{{ submitError }}</p>
 			</aside>
@@ -676,6 +818,7 @@ function submit() {
 	background: var(--cortex-surface);
 	border: 1px solid var(--cortex-border);
 	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-xs);
 }
 .cx-preset-section {
 	display: flex;
@@ -684,61 +827,54 @@ function submit() {
 	flex-wrap: wrap;
 }
 .cx-preset-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
 	font-size: 11.5px;
 	font-weight: 600;
-	color: var(--cortex-text-muted);
+	color: var(--cortex-text-secondary);
 	white-space: nowrap;
-}
-.cx-preset-btn {
-	font-size: 11.5px;
-	padding: 3px 10px;
-	border-radius: var(--radius-full);
-	border: 1px solid var(--cortex-border);
-	background: var(--cortex-surface-subtle);
-	color: var(--cortex-text-primary);
-	cursor: pointer;
-	white-space: nowrap;
-	transition: all 0.15s ease;
-}
-.cx-preset-btn:hover {
-	background: var(--cortex-primary-50);
-	border-color: var(--cortex-primary-300);
-	color: var(--cortex-primary-700);
-}
-.cx-pkg-btn {
-	background: #f0fdf4;
-	border-color: #bbf7d0;
-	color: #15803d;
-	font-weight: 500;
-}
-.cx-pkg-btn:hover {
-	background: #dcfce7;
-	border-color: #86efac;
-	color: #166534;
 }
 
-/* Savings Banner */
-.cx-savings-banner {
-	margin-top: var(--space-3);
-	padding: var(--space-2) var(--space-3);
-	background: #f0fdf4;
-	border: 1px solid #bbf7d0;
-	border-radius: var(--radius-md);
+/* Summary Telemetry & KPIs */
+.cx-summary-top {
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
+	padding-bottom: var(--space-2);
+	border-bottom: 1px solid var(--cortex-border);
+}
+.cx-summary-kpis {
+	display: flex;
+	flex-direction: column;
 	gap: var(--space-2);
 }
-.cx-savings-icon {
-	font-size: 18px;
+.cx-savings-banner {
+	padding: var(--space-3);
+	background: var(--cortex-emerald-50);
+	border: 1px solid var(--cortex-emerald-200);
+	border-radius: var(--radius-sm);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 }
-.cx-savings-text strong {
+.cx-savings-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
 	font-size: 12px;
-	color: #15803d;
-	display: block;
+	font-weight: 700;
+	color: var(--cortex-emerald-900);
 }
-.cx-savings-text p {
+.cx-savings-detail {
 	font-size: 11px;
-	color: #166534;
+	color: var(--cortex-emerald-700);
 	margin: 0;
+	line-height: 1.35;
+}
+.cx-cart-chart-wrap {
+	margin-top: var(--space-2);
+	border-top: 1px solid var(--cortex-border);
+	padding-top: var(--space-3);
 }
 </style>

@@ -1,0 +1,25 @@
+{
+ "content": null,
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "module": "Cortex Rental",
+ "name": "cortex-fleet",
+ "owner": "Administrator",
+ "page_name": "Cortex Fleet",
+ "restrict_to_domain": "",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Cortex System Manager"},
+  {"role": "Cortex Operations Manager"},
+  {"role": "Cortex Counter Staff"},
+  {"role": "Cortex Inventory Manager"},
+  {"role": "Rental Manager"},
+  {"role": "Rental Operator"}
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Parc Matériel & Maintenance"
+}

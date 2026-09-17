@@ -186,6 +186,7 @@ CORTEX_WORKSPACE_ORDER = [
     "Devis & Locations",
     "Check-in & Retours",
     "Parc Matériel",
+    "Clients & Risque",
     "Facturation & P&L",
     "Supervision & IA",
     "Cortex Rental",

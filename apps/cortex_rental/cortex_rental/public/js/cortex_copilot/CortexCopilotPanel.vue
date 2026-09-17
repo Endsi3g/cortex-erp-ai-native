@@ -6,6 +6,7 @@ import CopilotQuickActions from "./CopilotQuickActions.vue";
 import CopilotConversation from "./CopilotConversation.vue";
 import CopilotComposer from "./CopilotComposer.vue";
 import { sendMessage, resolveDeskContext } from "./chatClient.js";
+import { ICONS } from "../cortex_shared/CortexIcons.js";
 
 const props = defineProps({
 	// 'floating': slide-in overlay (global mount, cortex_copilot.bundle.js).
@@ -192,7 +193,9 @@ const panelStyle = computed(() =>
 			title="Cortex Copilot (⌘J / Ctrl+J)"
 			@click="open(false)"
 		>
-			✦
+			<span class="cp-launcher-icon" v-html="ICONS.sparkles"></span>
+			<span class="cp-launcher-text">Copilot</span>
+			<span class="cp-launcher-kbd">⌘J</span>
 		</button>
 
 		<div v-if="mode === 'docked' || isOpen" class="cp-panel" :class="mode" :style="panelStyle" role="complementary" aria-label="Cortex Copilot">
@@ -227,19 +230,39 @@ const panelStyle = computed(() =>
 	position: fixed;
 	right: var(--space-6);
 	bottom: var(--space-6);
-	width: 48px;
-	height: 48px;
-	border-radius: 50%;
-	background: var(--cortex-primary-600);
-	color: var(--cortex-inverse);
-	border: none;
-	font-size: 20px;
+	height: 38px;
+	padding: 0 var(--space-3);
+	border-radius: var(--radius-md);
+	background: var(--cortex-surface);
+	color: var(--cortex-text-primary);
+	border: 1px solid var(--cortex-border);
+	font-size: 12.5px;
+	font-weight: 500;
 	cursor: pointer;
-	box-shadow: var(--shadow-md);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 	pointer-events: auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.15s ease;
 }
 .cp-launcher:hover {
-	background: var(--cortex-primary-700);
+	border-color: var(--cortex-primary-400);
+	background: var(--cortex-surface-muted);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+.cp-launcher-icon {
+	display: inline-flex;
+	color: var(--cortex-primary-600);
+}
+.cp-launcher-kbd {
+	font-size: 10px;
+	padding: 1px 4px;
+	background: var(--cortex-surface-muted);
+	border: 1px solid var(--cortex-border);
+	border-radius: 4px;
+	color: var(--cortex-text-muted);
+	font-family: var(--font-mono);
 }
 
 .cp-panel {
