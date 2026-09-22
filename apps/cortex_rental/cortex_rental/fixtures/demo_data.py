@@ -89,13 +89,40 @@ def _ensure_customer() -> str:
             if existing:
                 cust_id = existing[0].name
             else:
+                cust_group = "Commercial"
+                if frappe.db.table_exists("Customer Group") and not frappe.db.exists("Customer Group", cust_group):
+                    try:
+                        cg = frappe.get_doc({
+                            "doctype": "Customer Group",
+                            "customer_group_name": cust_group,
+                            "is_group": 0,
+                        })
+                        cg.flags.ignore_mandatory = True
+                        cg.insert(ignore_permissions=True)
+                    except Exception:
+                        pass
+
+                territory = "All Territories"
+                if frappe.db.table_exists("Territory") and not frappe.db.exists("Territory", territory):
+                    try:
+                        t = frappe.get_doc({
+                            "doctype": "Territory",
+                            "territory_name": territory,
+                            "is_group": 0,
+                        })
+                        t.flags.ignore_mandatory = True
+                        t.insert(ignore_permissions=True)
+                    except Exception:
+                        pass
+
                 doc = frappe.get_doc(
                     {
                         "doctype": "Customer",
                         "customer_name": CUSTOMER_NAME,
                         "customer_type": "Company",
-                        "customer_group": "Commercial",
-                        "territory": "All Territories",
+                        "customer_group": cust_group,
+                        "territory": territory,
+                        "cortex_company": COMPANY_NAME,
                         "cortex_account_status": "Approved",
                         "cortex_insurance_status": "Valid",
                         "cortex_credit_limit": 50000.0,
