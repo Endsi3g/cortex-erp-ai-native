@@ -19,6 +19,7 @@ frappe.pages["cortex-checkin"].on_page_show = function (wrapper) {
 };
 
 async function load_cortex_checkin(wrapper) {
+	$(wrapper).find(".page-head").hide();
 	const $parent = $(wrapper).find(".layout-main-section");
 	$parent.empty();
 	$parent.css({ padding: 0 });

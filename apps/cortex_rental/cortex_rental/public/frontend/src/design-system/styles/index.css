@@ -1,7 +1,11 @@
 /**
  * Cortex OS — Operational Green Design System
  * Main Stylesheet Bundle
+ *
+ * frappe-ui/style.css emits @tailwind base/components/utilities + Inter font.
+ * Custom Cortex overrides come after to retain brand identity.
  */
 
+@import 'frappe-ui/style.css';
 @import './motion.css';
 @import './cortex-base.css';

@@ -20,6 +20,7 @@ frappe.pages["cortex-accounting-pnl"].on_page_show = function (wrapper) {
 };
 
 async function load_cortex_accounting_pnl(wrapper) {
+	$(wrapper).find(".page-head").hide();
 	const $parent = $(wrapper).find(".layout-main-section");
 	$parent.empty();
 	$parent.css({ padding: 0 });

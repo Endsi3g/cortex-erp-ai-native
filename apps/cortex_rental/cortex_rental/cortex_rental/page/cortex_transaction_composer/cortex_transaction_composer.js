@@ -19,6 +19,7 @@ frappe.pages["cortex-transaction-composer"].on_page_show = function (wrapper) {
 };
 
 async function load_cortex_transaction_composer(wrapper) {
+	$(wrapper).find(".page-head").hide();
 	const $parent = $(wrapper).find(".layout-main-section");
 	$parent.empty();
 	$parent.css({ padding: 0 });

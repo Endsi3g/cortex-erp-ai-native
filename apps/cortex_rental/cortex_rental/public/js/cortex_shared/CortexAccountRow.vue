@@ -22,6 +22,7 @@ const props = defineProps({
 	fiscalYear: { type: String, default: "" },
 	fromDate: { type: String, default: "" },
 	toDate: { type: String, default: "" },
+	rowNumber: { type: [Number, String], default: "" },
 });
 
 const expanded = ref(true);
@@ -56,8 +57,11 @@ function openGeneralLedger() {
 
 <template>
 	<tr class="cx-account-row" :class="{ 'cx-account-row-group': node.type === 'group' }">
+		<td class="cx-account-row-num">
+			{{ rowNumber }}
+		</td>
 		<td class="cx-account-row-name-cell">
-			<span class="cx-account-row-indent" :style="{ width: node.depth * 24 + 'px' }" aria-hidden="true"></span>
+			<span class="cx-account-row-indent" :style="{ width: node.depth * 20 + 'px' }" aria-hidden="true"></span>
 			<button
 				v-if="hasChildren"
 				type="button"
@@ -66,7 +70,9 @@ function openGeneralLedger() {
 				:aria-label="(expanded ? 'Réduire ' : 'Développer ') + node.name"
 				@click="toggle"
 			>
-				<span class="cx-chevron" :class="{ 'cx-chevron-expanded': expanded }" aria-hidden="true">›</span>
+				<span class="cx-chevron" :class="{ 'cx-chevron-expanded': expanded }" aria-hidden="true">
+					{{ expanded ? '∨' : '›' }}
+				</span>
 			</button>
 			<span v-else class="cx-account-row-toggle-spacer" aria-hidden="true"></span>
 			
@@ -96,9 +102,10 @@ function openGeneralLedger() {
 	</tr>
 	<template v-if="hasChildren && expanded">
 		<CortexAccountRow
-			v-for="child in node.children"
+			v-for="(child, cIdx) in node.children"
 			:key="child.id"
 			:node="child"
+			:row-number="rowNumber ? `${rowNumber}.${cIdx + 1}` : ''"
 			:period-keys="periodKeys"
 			:currency="currency"
 			:locale="locale"
@@ -113,9 +120,16 @@ function openGeneralLedger() {
 <style scoped>
 .cx-account-row td {
 	padding: var(--space-2) var(--space-3);
-	border-bottom: 1px solid var(--cortex-surface-subtle);
+	border-bottom: 1px solid #f3f4f6;
 	font-size: 13.5px;
 	font-weight: 450;
+}
+.cx-account-row-num {
+	width: 44px;
+	text-align: center;
+	color: #9ca3af;
+	font-size: 12px;
+	font-weight: 500;
 }
 .cx-account-row:hover td {
 	background: var(--cortex-surface-hover);

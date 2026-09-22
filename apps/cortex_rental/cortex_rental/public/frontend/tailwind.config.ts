@@ -1,9 +1,12 @@
 import type { Config } from 'tailwindcss'
+import preset from 'frappe-ui/tailwind'
 
 const config: Config = {
+  presets: [preset],
   content: [
     './index.html',
-    './src/**/*.{vue,js,ts,jsx,tsx}'
+    './src/**/*.{vue,js,ts,jsx,tsx}',
+    './node_modules/frappe-ui/src/**/*.{vue,js,ts,jsx,tsx}'
   ],
   theme: {
     extend: {

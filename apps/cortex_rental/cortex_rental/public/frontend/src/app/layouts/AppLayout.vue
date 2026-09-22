@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-screen w-screen overflow-hidden bg-cortex-bg text-cortex-text-primary font-sans antialiased">
-    <!-- Desktop Collapsible Sidebar (248px -> 72px) -->
+    <!-- Desktop Collapsible Sidebar -->
     <AppSidebar class="hidden md:flex" />
 
     <!-- Main Workspace Container -->

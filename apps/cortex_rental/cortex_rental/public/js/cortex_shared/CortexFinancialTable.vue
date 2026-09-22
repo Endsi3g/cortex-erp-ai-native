@@ -25,6 +25,7 @@ const periodKeys = props.periods.map((p) => p.key);
 		<table class="cx-financial-table">
 			<thead>
 				<tr>
+					<th scope="col" style="width: 44px; text-align: center; color: #9ca3af;">#</th>
 					<th scope="col" class="cx-financial-table-name-header">Account</th>
 					<th v-for="p in periods" :key="p.key" scope="col" class="cx-financial-table-value-header">
 						{{ p.label }}
@@ -33,9 +34,10 @@ const periodKeys = props.periods.map((p) => p.key);
 			</thead>
 			<tbody>
 				<CortexAccountRow
-					v-for="node in accounts"
+					v-for="(node, idx) in accounts"
 					:key="node.id"
 					:node="node"
+					:row-number="idx + 1"
 					:period-keys="periodKeys"
 					:currency="currency"
 					:locale="locale"

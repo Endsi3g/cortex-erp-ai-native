@@ -1,18 +1,21 @@
 <template>
-  <CompanyProvider>
-    <ToastProvider>
-      <ModalProvider>
-        <component :is="resolvedLayout">
-          <RouterView />
-        </component>
-      </ModalProvider>
-    </ToastProvider>
-  </CompanyProvider>
+  <FrappeUIProvider>
+    <CompanyProvider>
+      <ToastProvider>
+        <ModalProvider>
+          <component :is="resolvedLayout">
+            <RouterView />
+          </component>
+        </ModalProvider>
+      </ToastProvider>
+    </CompanyProvider>
+  </FrappeUIProvider>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, RouterView } from 'vue-router'
+import { FrappeUIProvider } from 'frappe-ui'
 import { useNavigationStore } from '@/stores/navigation'
 import { useCopilotStore } from '@/stores/copilot'
 import AppLayout from '@/app/layouts/AppLayout.vue'

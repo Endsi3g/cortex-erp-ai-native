@@ -1,17 +1,8 @@
 <script setup>
-// Cortex Shell Layout — wraps each page with sidebar + optional topbar.
-//
-// Mounted INSIDE the Frappe Desk page content area (the Vue root div
-// `.cortex-app`). The shell adds a left sidebar column within the page
-// content, NOT outside the Frappe chrome. The sidebar overlays the Frappe
-// Desk workspace nav only within this page's render area.
-//
-// Usage (in each page component):
-//   <CortexShell active-page="pnl">
-//     <!-- page content goes here -->
-//   </CortexShell>
-import CortexSidebar from "./CortexSidebar.vue";
-
+// Cortex Shell Layout — wraps each page content area.
+// Native Frappe Desk manages the main workspace sidebar and top navigation.
+// Inner content is displayed directly on the clean workspace canvas without
+// nesting a secondary sidebar.
 defineProps({
 	activePage: { type: String, default: "" },
 });
@@ -19,7 +10,6 @@ defineProps({
 
 <template>
 	<div class="cx-shell">
-		<CortexSidebar :active-page="activePage" />
 		<div class="cx-shell-body">
 			<slot />
 		</div>
@@ -29,8 +19,9 @@ defineProps({
 <style scoped>
 .cx-shell {
 	display: flex;
+	width: 100%;
 	min-height: calc(100vh - var(--navbar-height, 56px));
-	background: var(--cortex-canvas);
+	background: #ffffff;
 }
 
 .cx-shell-body {
@@ -39,5 +30,6 @@ defineProps({
 	overflow-x: hidden;
 	display: flex;
 	flex-direction: column;
+	padding: 0 1.5rem 2rem;
 }
 </style>

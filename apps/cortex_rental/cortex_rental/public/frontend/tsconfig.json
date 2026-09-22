@@ -18,7 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@locales/*": ["locales/*"]
+      "@locales/*": ["locales/*"],
+      "frappe-ui": ["src/types/frappe-ui.d.ts"]
     },
     "types": ["vite/client", "vitest/globals"]
   },

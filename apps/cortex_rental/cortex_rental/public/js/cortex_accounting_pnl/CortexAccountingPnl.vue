@@ -306,55 +306,58 @@ onMounted(() => {
 						</datalist>
 					</div>
 
-					<!-- Fiscal Year label + select -->
-					<div class="cx-field cx-field-labeled">
-						<span class="cx-filter-label">Fiscal Year</span>
-						<input
+					<!-- Fiscal Year select -->
+					<div class="cx-field">
+						<select
 							id="pnl-fiscal-year"
 							v-model="filters.fiscalYear"
-							class="cx-filter-input cx-filter-input-highlight"
-							type="text"
-							list="pnl-fiscal-years-list"
+							class="cx-filter-input cx-select-with-arrow"
 							:disabled="Boolean(filters.fromDate && filters.toDate)"
-						/>
-						<datalist id="pnl-fiscal-years-list">
-							<option v-for="fy in fiscalYearsList" :key="fy" :value="fy" />
-						</datalist>
+						>
+							<option value="">Fiscal Year</option>
+							<option v-for="fy in fiscalYearsList" :key="fy" :value="fy">{{ fy }}</option>
+						</select>
 					</div>
 
-					<!-- From Date -->
+					<!-- From Date (2024-2025) -->
 					<div class="cx-field">
 						<input
 							id="pnl-from-date"
 							v-model="filters.fromDate"
 							class="cx-filter-input"
-							type="date"
+							type="text"
+							onfocus="(this.type='date')"
+							onblur="if(!this.value)(this.type='text')"
+							placeholder="2024-2025"
 						/>
 					</div>
 
-					<!-- To Date -->
+					<!-- To Date (2024-2025) -->
 					<div class="cx-field">
 						<input
 							id="pnl-to-date"
 							v-model="filters.toDate"
 							class="cx-filter-input"
-							type="date"
+							type="text"
+							onfocus="(this.type='date')"
+							onblur="if(!this.value)(this.type='text')"
+							placeholder="2024-2025"
 						/>
 					</div>
 
 					<!-- Periodicity -->
 					<div class="cx-field">
-						<select id="pnl-periodicity" v-model="filters.periodicity" class="cx-filter-input">
+						<select id="pnl-periodicity" v-model="filters.periodicity" class="cx-filter-input cx-select-with-arrow">
 							<option v-for="p in PERIODICITIES" :key="p" :value="p">{{ p }}</option>
 						</select>
 					</div>
 				</div>
 
 				<!-- Row 2 -->
-				<div class="cx-filter-grid" style="margin-top: 6px">
+				<div class="cx-filter-grid" style="margin-top: 8px">
 					<!-- Currency -->
 					<div class="cx-field">
-						<select id="pnl-currency" v-model="filters.currency" class="cx-filter-input">
+						<select id="pnl-currency" v-model="filters.currency" class="cx-filter-input cx-select-with-arrow">
 							<option value="">Currency</option>
 							<option value="CAD">CAD</option>
 							<option value="USD">USD</option>
@@ -377,7 +380,7 @@ onMounted(() => {
 						</datalist>
 					</div>
 
-					<!-- Branch (disabled — no backing filter) -->
+					<!-- Branch (disabled) -->
 					<div class="cx-field">
 						<input
 							class="cx-filter-input"
@@ -399,11 +402,11 @@ onMounted(() => {
 						/>
 					</div>
 
-					<!-- Report View (disabled) -->
-					<div class="cx-field cx-field-labeled">
-						<span class="cx-filter-label">Report View</span>
-						<select class="cx-filter-input" disabled title="Vue Standard uniquement">
-							<option>Standard</option>
+					<!-- Report View -->
+					<div class="cx-field">
+						<select class="cx-filter-input cx-select-with-arrow" disabled title="Vue Standard uniquement">
+							<option>Report View</option>
+							<option selected>Standard</option>
 						</select>
 					</div>
 
@@ -620,17 +623,16 @@ onMounted(() => {
 /* ── Filter bar ───────────────────────────────────────── */
 /* Image ref: fields directly on page background, no card elevation */
 .cx-filter-bar {
-	background: var(--cortex-surface);
-	border: 1px solid var(--cortex-border);
-	border-radius: var(--radius-lg);
-	padding: var(--space-3) var(--space-4);
-	margin-bottom: var(--space-4);
+	background: transparent;
+	border: none;
+	padding: 0;
+	margin-bottom: var(--space-6);
 }
 
 .cx-filter-grid {
 	display: grid;
 	grid-template-columns: repeat(6, 1fr);
-	gap: var(--space-3);
+	gap: 10px;
 }
 
 .cx-field {
@@ -639,71 +641,47 @@ onMounted(() => {
 	position: relative;
 }
 
-.cx-field-labeled {
-	position: relative;
-}
-
-.cx-filter-label {
-	position: absolute;
-	top: 50%;
-	left: var(--space-3);
-	transform: translateY(-50%);
-	font-size: 11px;
-	font-weight: 600;
-	color: var(--cortex-text-muted);
-	pointer-events: none;
-	z-index: 1;
-}
-
-.cx-filter-input {
-	height: 34px;
-	border: 1px solid var(--cortex-border);
-	border-radius: var(--radius-md);
-	background: var(--cortex-surface-subtle);
-	color: var(--cortex-text);
+.cx-filter-input,
+.cx-field-readonly {
+	height: 32px;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	border-radius: 8px;
+	background: #f4f5f7;
+	color: #1f2937;
 	font-size: 13px;
 	font-family: inherit;
-	padding: 0 var(--space-3);
+	padding: 0 10px;
 	width: 100%;
-	transition: border-color var(--motion-fast), box-shadow var(--motion-fast);
+	transition: all 0.15s ease;
 	appearance: none;
 	-webkit-appearance: none;
 }
 .cx-filter-input::placeholder {
-	color: var(--cortex-text-muted);
-	font-size: 12px;
+	color: #6b7280;
+	font-size: 13px;
 }
 .cx-filter-input:focus-visible {
 	outline: none;
-	border-color: var(--cortex-emerald-500);
-	box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
-	background: var(--cortex-surface);
+	border-color: #9ca3af;
+	background: #ffffff;
 }
 .cx-filter-input:disabled {
-	color: var(--cortex-text-disabled);
+	color: #9ca3af;
 	cursor: not-allowed;
-	opacity: 0.6;
+	opacity: 0.7;
 }
 
-/* Fiscal Year — matches image: label floated left, value prominent */
-.cx-filter-input-highlight {
-	padding-left: 80px; /* room for inline label */
-	background: var(--cortex-emerald-50);
-	border-color: var(--cortex-emerald-200);
-	color: var(--cortex-text);
-	font-weight: 500;
+.cx-select-with-arrow {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 8px center;
+	padding-right: 24px;
+	cursor: pointer;
 }
 
 .cx-field-readonly {
-	height: 34px;
 	display: flex;
 	align-items: center;
-	padding: 0 var(--space-3);
-	border-radius: var(--radius-md);
-	background: var(--cortex-surface-subtle);
-	border: 1px solid var(--cortex-border);
-	color: var(--cortex-text);
-	font-size: 13px;
 	font-weight: 500;
 	overflow: hidden;
 	white-space: nowrap;
@@ -721,11 +699,11 @@ onMounted(() => {
 	align-items: center;
 	gap: var(--space-2);
 	font-size: 13px;
-	color: var(--cortex-text);
+	color: #374151;
 	cursor: pointer;
 }
 .cx-check-inline input[type="checkbox"] {
-	accent-color: var(--cortex-emerald-600);
+	accent-color: #10b981;
 	width: 14px;
 	height: 14px;
 }
@@ -734,9 +712,8 @@ onMounted(() => {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-top: var(--space-3);
-	padding-top: var(--space-3);
-	border-top: 1px solid var(--cortex-border);
+	margin-top: 10px;
+	padding-top: 10px;
 }
 
 /* ── Feedback (loading/error) ─────────────────────────── */
@@ -748,89 +725,83 @@ onMounted(() => {
 .cx-kpi-strip {
 	display: flex;
 	align-items: center;
-	background: var(--cortex-surface);
-	border: 1px solid var(--cortex-border);
-	border-radius: var(--radius-lg);
-	overflow: hidden;
-	margin-bottom: var(--space-4);
+	justify-content: center;
+	background: transparent;
+	border: none;
+	margin: 20px 0 28px;
+	gap: 48px;
 }
 
 .cx-kpi-cell {
-	flex: 1;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	padding: var(--space-6) var(--space-4);
 	text-align: center;
-	gap: var(--space-2);
-	border-right: 1px solid var(--cortex-border);
-}
-.cx-kpi-cell:last-of-type {
-	border-right: none;
+	gap: 6px;
+	border: none;
+	padding: 0;
 }
 
 .cx-kpi-label {
-	font-size: 12px;
-	font-weight: 500;
-	color: var(--cortex-text-muted);
+	font-size: 13px;
+	font-weight: 450;
+	color: #6b7280;
 	letter-spacing: 0.01em;
 }
 
 .cx-kpi-value {
-	font-size: 26px;
+	font-size: 24px;
 	font-weight: 600;
-	color: var(--cortex-text);
-	letter-spacing: -0.02em;
-	line-height: 1.1;
+	color: #111827;
+	letter-spacing: -0.01em;
+	line-height: 1.2;
 }
 
 .cx-kpi-profit {
-	color: var(--accounting-profit, #52b57c);
+	color: #22c55e;
 }
 
 .cx-kpi-loss {
-	color: var(--cortex-danger-600);
+	color: #ef4444;
 }
 
-/* Operator circle — matches image: circle with symbol */
+/* Operator square — matches image: soft rounded rect */
 .cx-kpi-op {
 	flex-shrink: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0 var(--space-1);
 }
 
 .cx-kpi-op-symbol {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 28px;
-	height: 28px;
-	border-radius: 50%;
-	border: 1.5px solid var(--cortex-border-strong);
-	font-size: 14px;
-	font-weight: 500;
-	color: var(--cortex-text-muted);
-	background: var(--cortex-surface);
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	border: 1px solid #e5e7eb;
+	font-size: 13px;
+	font-weight: 600;
+	color: #9ca3af;
+	background: #ffffff;
 	line-height: 1;
 }
 
 /* ── Chart panel ──────────────────────────────────────── */
 .cx-chart-panel {
-	background: var(--cortex-surface);
-	border: 1px solid var(--cortex-border);
-	border-radius: var(--radius-lg);
-	padding: var(--space-4) var(--space-4) var(--space-2);
-	margin-bottom: var(--space-4);
+	background: #ffffff;
+	border: none;
+	padding: 12px 0 20px;
+	margin-bottom: 20px;
 }
 
 /* ── Table panel ──────────────────────────────────────── */
 .cx-table-panel {
-	background: var(--cortex-surface);
-	border: 1px solid var(--cortex-border);
-	border-radius: var(--radius-lg);
+	background: #ffffff;
+	border-top: 1px solid #f3f4f6;
+	border-radius: 0;
 	overflow: hidden;
 }
 
