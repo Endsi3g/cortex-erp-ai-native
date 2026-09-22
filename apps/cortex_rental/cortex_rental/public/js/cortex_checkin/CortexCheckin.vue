@@ -804,6 +804,7 @@ function triggerAiDamageAssessment() {
 					>
 						<span v-html="item.serial_no ? ICONS.barcode : ICONS.packageIcon"></span>
 						{{ item.item_name || item.item_code }} ({{ item.serial_no || "Vrac" }})
+					</button>
 				</div>
 
 				<!-- Quick Action Toolbar -->
