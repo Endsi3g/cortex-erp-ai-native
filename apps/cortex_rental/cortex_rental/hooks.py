@@ -12,7 +12,7 @@ required_apps = ["erpnext"]
 # not guessed. This does not touch any core Frappe file.
 app_logo_url = "/assets/cortex_rental/images/cortex-logo.svg"
 app_icon = "octicon octicon-briefcase"
-app_color = "#4F46E5"
+app_color = "#059669"
 
 # Includes in <head>
 # ------------------

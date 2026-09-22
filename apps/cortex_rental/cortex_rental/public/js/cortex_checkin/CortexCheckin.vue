@@ -12,6 +12,7 @@ import { toast } from "../cortex_shared/toastBus.js";
 import CortexChart from "../cortex_shared/CortexChart.vue";
 import CortexKpiCard from "../cortex_shared/CortexKpiCard.vue";
 import CortexSlideOver from "../cortex_shared/CortexSlideOver.vue";
+import CortexShell from "../cortex_shared/CortexShell.vue";
 import { ICONS } from "../cortex_shared/CortexIcons.js";
 
 // ---------------------------------------------------------------------
@@ -498,7 +499,8 @@ function triggerAiDamageAssessment() {
 </script>
 
 <template>
-	<div class="cx-checkin-app cortex-app">
+	<CortexShell active-page="checkin">
+		<div class="cx-checkin-app cortex-app">
 		<!-- Global Toast Container -->
 		<CortexToast />
 		<!-- Top Page Header -->
@@ -1305,6 +1307,7 @@ function triggerAiDamageAssessment() {
 			</template>
 		</CortexSlideOver>
 	</div>
+	</CortexShell>
 </template>
 
 <style scoped>

@@ -10,6 +10,7 @@ import CortexEmptyState from "../cortex_shared/CortexEmptyState.vue";
 import CortexKpiCard from "../cortex_shared/CortexKpiCard.vue";
 import CortexChart from "../cortex_shared/CortexChart.vue";
 import CortexCommandBar from "../cortex_shared/CortexCommandBar.vue";
+import CortexShell from "../cortex_shared/CortexShell.vue";
 import { ICONS } from "../cortex_shared/CortexIcons.js";
 
 // ---------------------------------------------------------------------
@@ -355,7 +356,8 @@ function applyAiConflictResolution() {
 </script>
 
 <template>
-	<div class="cortex-app cx-app" :class="{ 'cx-sidebar-collapsed': sidebarCollapsed }">
+	<CortexShell active-page="availability">
+		<div class="cortex-app cx-app" :class="{ 'cx-sidebar-collapsed': sidebarCollapsed }">
 		<CortexCommandBar />
 		<CortexPageHeader title="Disponibilité" :subtitle="rangeLabel">
 			<template #secondary>
@@ -610,6 +612,7 @@ function applyAiConflictResolution() {
 			<CortexStatusBadge state="conflict" />
 		</footer>
 	</div>
+	</CortexShell>
 </template>
 
 <style scoped>

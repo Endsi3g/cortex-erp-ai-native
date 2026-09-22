@@ -181,6 +181,54 @@ Local `expanded` state (default `true`), toggled by a 28px button with
 danger red (never negative-signal by color alone — the minus sign in
 the formatted currency string carries the meaning too).
 
+## CortexShell
+
+Top-level structural wrapper that mounts the icon sidebar inside the Frappe Desk page content area (`.cortex-app`), without disturbing the Desk chrome or global navbar.
+
+| Prop | Type | Required | Notes |
+|---|---|---|---|
+| `activePage` | `string` | no | Key of the current page (`'operations'`, `'availability'`, `'rentals'`, `'composer'`, `'checkin'`, `'consignment'`, `'approvals'`, `'pnl'`) to highlight the active icon. |
+
+Slots: `default` (main page content).
+
+## CortexSidebar
+
+Icon-only navigation bar rendered on the left flank of each Cortex page.
+
+| Prop | Type | Required | Notes |
+|---|---|---|---|
+| `activePage` | `string` | no | Matches one of the 8 canonical navigation items. |
+
+Features:
+- Logo mark with letter "C" on top (`--cortex-emerald-600`).
+- 8 canonical navigation items using `frappe.set_route()` for genuine Frappe router navigation.
+- Native HTML `title` attributes for accessible tooltips without external dependencies.
+- User initials avatar and settings shortcuts in the bottom dock.
+
+## CortexKpiCard
+
+Metric card supporting numeric values, trends, status badges, and inline SVG sparklines.
+
+| Prop | Type | Required | Notes |
+|---|---|---|---|
+| `title` | `string` | yes | Metric label (e.g. "Taux d'utilisation"). |
+| `value` | `string \| number` | yes | Main displayed value. |
+| `trend` | `string \| number` | no | Trend percentage or text. |
+| `badge` | `string` | no | Contextual status label. |
+| `sparklineData` | `Array<number>` | no | Points rendered as an inline responsive SVG sparkline. |
+
+## CortexChart
+
+Wrapper component supporting responsive line and doughnut telemetry charts via Frappe / Chart.js integration.
+
+| Prop | Type | Required | Notes |
+|---|---|---|---|
+| `type` | `'line' \| 'doughnut' \| 'bar'` | yes | Chart type. |
+| `data` | `Object` | yes | Standard dataset conforming to Chart.js specification. |
+| `height` | `number` | no (default 200) | Height in pixels. |
+| `title` | `string` | no | Panel header title. |
+| `subtitle` | `string` | no | Panel descriptive subtitle. |
+
 ## Shared module: `formatters.js`
 
 Not a component — `formatCurrency(value, currency, locale)`, a thin

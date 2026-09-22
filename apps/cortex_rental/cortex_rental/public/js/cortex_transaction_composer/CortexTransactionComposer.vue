@@ -10,6 +10,7 @@ import { toast } from "../cortex_shared/toastBus.js";
 import CortexChart from "../cortex_shared/CortexChart.vue";
 import CortexKpiCard from "../cortex_shared/CortexKpiCard.vue";
 import CortexDocumentIngestor from "../cortex_shared/CortexDocumentIngestor.vue";
+import CortexShell from "../cortex_shared/CortexShell.vue";
 import { ICONS } from "../cortex_shared/CortexIcons.js";
 
 // ---------------------------------------------------------------------
@@ -423,7 +424,8 @@ function handlePdfExtracted(data) {
 </script>
 
 <template>
-	<div class="cortex-app cx-composer">
+	<CortexShell active-page="composer">
+		<div class="cortex-app cx-composer">
 		<CortexToast />
 		<CortexPageHeader title="Nouvelle transaction" subtitle="Une soumission (quote) ne bloque pas l'inventaire.">
 			<template #primary>
@@ -690,6 +692,7 @@ function handlePdfExtracted(data) {
 			</aside>
 		</div>
 	</div>
+	</CortexShell>
 </template>
 
 <style scoped>

@@ -1,28 +1,27 @@
 <script setup>
-// Accounting — Profit and Loss Statement (design-system-accounting-
-// pnl.md). Real data via cortex_rental.api.v1.accounting.
-// get_profit_and_loss, which wraps ERPNext's own P&L report.
+// Accounting — Profit and Loss Statement
+// Visuellement aligné sur la référence hero_image.jpg :
+//   • KPI strip plat 3 colonnes (Income − Expense = Profit) sans sparklines
+//   • Graphique ligne unique (CortexFinancialChart) avec 3 séries
+//   • Barre de filtres en grille 6 colonnes, fond page, sans carte élevée
+//   • Tableau hiérarchique avec numéros de lignes
+//   • Pas d'AI summary banner — données centrales, zéro décoration
 //
-// Company is shown read-only: get_company_context() resolves the tenant
-// server-side from the caller's authorized Companies (PRD multi-tenant strict).
-// Branch and Report View are disabled per spec (no backing filter in this report).
-//
-// Features added per drill-down:
-// - Financial statements switcher dropdown (P&L active, BS/CF reserved).
-// - Export menu (instant client-side CSV, Print/PDF @media print, ERPNext link).
-// - Native datalists for Fiscal Year, Cost Center, and Finance Book autocomplete.
-// - Filter context propagation for leaf account GL drill-down.
+// Données réelles via cortex_rental.api.v1.accounting.get_profit_and_loss
+// (wrapping du rapport ERPNext standard).
+// Company read-only : résolu server-side depuis les Companies autorisées
+// de l'utilisateur (multi-tenant strict, PRD-ARCH).
+
 import { reactive, ref, computed, onMounted } from "vue";
+import CortexShell from "../cortex_shared/CortexShell.vue";
 import CortexPageHeader from "../cortex_shared/CortexPageHeader.vue";
 import CortexLoadingState from "../cortex_shared/CortexLoadingState.vue";
 import CortexErrorState from "../cortex_shared/CortexErrorState.vue";
-import CortexKpiSummary from "../cortex_shared/CortexKpiSummary.vue";
+import CortexEmptyState from "../cortex_shared/CortexEmptyState.vue";
 import CortexFinancialChart from "../cortex_shared/CortexFinancialChart.vue";
 import CortexFinancialTable from "../cortex_shared/CortexFinancialTable.vue";
 import CortexToast from "../cortex_shared/CortexToast.vue";
 import { toast } from "../cortex_shared/toastBus.js";
-import CortexChart from "../cortex_shared/CortexChart.vue";
-import CortexKpiCard from "../cortex_shared/CortexKpiCard.vue";
 import { ICONS } from "../cortex_shared/CortexIcons.js";
 
 const PERIODICITIES = ["Monthly", "Quarterly", "Half-Yearly", "Yearly"];
@@ -32,7 +31,7 @@ const filters = reactive({
 	fiscalYear: String(new Date().getFullYear()),
 	fromDate: "",
 	toDate: "",
-	periodicity: "Monthly",
+	periodicity: "Quarterly",
 	currency: "",
 	costCenter: "",
 	project: "",
@@ -50,9 +49,20 @@ const fiscalYearsList = ref([]);
 const costCentersList = ref([]);
 const financeBooksList = ref([]);
 
-const displayCurrency = computed(() => filters.currency || "USD");
+const displayCurrency = computed(() => filters.currency || "CAD");
 const companyLabel = computed(() => (report.value && report.value.company) || "—");
-const hasData = computed(() => Boolean(report.value && report.value.accounts && report.value.accounts.length));
+const hasData = computed(
+	() => Boolean(report.value && report.value.accounts && report.value.accounts.length)
+);
+
+// KPI values straight from the API response
+const totalIncome = computed(() => (report.value && report.value.totalIncome) || 0);
+const totalExpense = computed(() => (report.value && report.value.totalExpense) || 0);
+const netProfit = computed(() => (report.value && report.value.netProfit) || 0);
+const marginPercentage = computed(() => {
+	const income = totalIncome.value || 1;
+	return Math.round((netProfit.value / income) * 100);
+});
 
 function fetchReport() {
 	loading.value = true;
@@ -135,7 +145,7 @@ function toggleExportMenu() {
 function setPeriod(from, to) {
 	filters.fromDate = from;
 	filters.toDate = to;
-	filters.fiscalYear = "2026";
+	filters.fiscalYear = "";
 	fetchReport();
 }
 
@@ -144,7 +154,7 @@ function exportToCsv() {
 	if (!report.value || !report.value.accounts) return;
 
 	const periods = report.value.periods || [];
-	const headers = ["Account", ...periods.map((p) => `"${p.label.replace(/"/g, '""')}"`)];
+	const headers = ["Account", ...periods.map((p) => `"${p.label.replace(/"/g, '""')}"`),];
 	const rows = [headers.join(",")];
 
 	function appendNode(node) {
@@ -155,14 +165,10 @@ function exportToCsv() {
 			return Number(v) || 0;
 		});
 		rows.push([name, ...vals].join(","));
-		if (node.children && node.children.length) {
-			node.children.forEach(appendNode);
-		}
+		if (node.children && node.children.length) node.children.forEach(appendNode);
 	}
 
 	report.value.accounts.forEach(appendNode);
-
-	// Summary KPI rows
 	rows.push("");
 	rows.push([`"Total Income"`, ...periods.map((p) => p.income || 0)].join(","));
 	rows.push([`"Total Expense"`, ...periods.map((p) => p.expense || 0)].join(","));
@@ -171,12 +177,12 @@ function exportToCsv() {
 	const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(rows.join("\n"));
 	const link = document.createElement("a");
 	link.setAttribute("href", csvContent);
-	const periodLabel = filters.fiscalYear || `${filters.fromDate}_to_${filters.toDate}`;
+	const periodLabel = filters.fiscalYear || `${filters.fromDate}_${filters.toDate}`;
 	link.setAttribute("download", `Cortex_Pnl_${filters.periodicity}_${periodLabel}.csv`);
 	document.body.appendChild(link);
 	link.click();
 	document.body.removeChild(link);
-	toast.success("✓ Export CSV généré et téléchargé avec succès !");
+	toast.success("✓ Export CSV généré avec succès !");
 }
 
 function triggerPrint() {
@@ -191,391 +197,362 @@ function openStandardReport() {
 	}
 }
 
+function formatCurrency(val) {
+	if (val === undefined || val === null) return "$ 0.00";
+	return new Intl.NumberFormat("en-CA", {
+		style: "currency",
+		currency: displayCurrency.value || "CAD",
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	}).format(val);
+}
+
 onMounted(() => {
 	loadFilterOptions();
 	fetchReport();
 });
-
-const pnlBarChartData = computed(() => {
-	if (!report.value || !report.value.periods || !report.value.periods.length) {
-		return {
-			labels: ["Septembre 2026", "Octobre 2026", "Novembre 2026"],
-			datasets: [
-				{ label: "Revenus", data: [48000, 62000, 75000], backgroundColor: "#059669", borderRadius: 4 },
-				{ label: "Dépenses", data: [18000, 22000, 24000], backgroundColor: "#2563eb", borderRadius: 4 }
-			]
-		};
-	}
-	const labels = report.value.periods.map(p => p.label || p.key || "");
-	const incomeData = report.value.periods.map(p => p.income || 0);
-	const expenseData = report.value.periods.map(p => p.expense || 0);
-
-	return {
-		labels,
-		datasets: [
-			{ label: "Revenus", data: incomeData, backgroundColor: "#059669", borderRadius: 4 },
-			{ label: "Dépenses", data: expenseData, backgroundColor: "#2563eb", borderRadius: 4 }
-		]
-	};
-});
-
-const pnlMarginDonutData = computed(() => {
-	const income = (report.value && report.value.totalIncome) || 84000;
-	const expense = (report.value && report.value.totalExpense) || 32000;
-	const profit = Math.max(0, income - expense);
-
-	return {
-		labels: ["Marge Nette", "Charges & Dépenses"],
-		datasets: [
-			{
-				data: [profit, expense],
-				backgroundColor: ["#059669", "#d97706"],
-				borderWidth: 0,
-				cutout: "70%"
-			}
-		]
-	};
-});
-
-function formatCurrency(val) {
-	if (val === undefined || val === null) return "0 $";
-	return new Intl.NumberFormat("fr-CA", {
-		style: "currency",
-		currency: displayCurrency.value || "CAD",
-		maximumFractionDigits: 0
-	}).format(val);
-}
-
-const marginPercentage = computed(() => {
-	const income = (report.value && report.value.totalIncome) || 1;
-	const profit = (report.value && report.value.netProfit) || 0;
-	return Math.round((profit / (income || 1)) * 100);
-});
-
-const pnlDonutLegend = computed(() => {
-	const income = (report.value && report.value.totalIncome) || 1;
-	const expense = (report.value && report.value.totalExpense) || 0;
-	const profit = Math.max(0, income - expense);
-	const marginPct = Math.round((profit / (income || 1)) * 100);
-	return [
-		{ label: "Marge Nette", color: "#059669", value: `${marginPct}%` },
-		{ label: "Charges", color: "#d97706", value: `${100 - marginPct}%` }
-	];
-});
 </script>
 
 <template>
-	<div class="cortex-app cx-app">
-		<CortexToast />
-		<CortexPageHeader title="Profit and Loss Statement" subtitle="Accounting">
-			<template #secondary>
-				<select class="cx-select-statement" aria-label="Sélectionner l'état financier">
-					<option value="pnl" selected>Profit and Loss Statement</option>
-					<option value="bs" disabled>Balance Sheet (Bientôt)</option>
-					<option value="cf" disabled>Cash Flow Statement (Bientôt)</option>
-				</select>
+	<CortexShell active-page="pnl">
+		<div class="cx-pnl-root">
+			<CortexToast />
 
-				<div class="cx-export-dropdown-wrap">
+			<!-- ── Page Header ──────────────────────────────────────── -->
+			<CortexPageHeader title="Profit and Loss Statement" subtitle="Accounting">
+				<template #secondary>
+					<!-- Financial statements switcher -->
+					<select class="cx-select-statement" aria-label="Sélectionner l'état financier">
+						<option value="pnl" selected>Financial Statements ◊</option>
+						<option value="bs" disabled>Balance Sheet (Bientôt)</option>
+						<option value="cf" disabled>Cash Flow (Bientôt)</option>
+					</select>
+
+					<!-- Export / Actions dropdown -->
+					<div class="cx-export-wrap">
+						<button
+							type="button"
+							class="cx-btn"
+							:aria-expanded="exportMenuOpen"
+							@click="toggleExportMenu"
+						>
+							Actions ◊
+						</button>
+						<div v-if="exportMenuOpen" class="cx-export-menu" role="menu">
+							<button type="button" class="cx-export-item" role="menuitem" @click="exportToCsv">
+								<span v-html="ICONS.fileText" class="cx-icon-sm" aria-hidden="true" />
+								Exporter CSV
+							</button>
+							<button type="button" class="cx-export-item" role="menuitem" @click="triggerPrint">
+								<span v-html="ICONS.printer" class="cx-icon-sm" aria-hidden="true" />
+								Imprimer / PDF
+							</button>
+							<div class="cx-export-divider" role="separator" />
+							<button
+								type="button"
+								class="cx-export-item"
+								role="menuitem"
+								@click="openStandardReport"
+							>
+								<span v-html="ICONS.arrowRight" class="cx-icon-sm" aria-hidden="true" />
+								Ouvrir dans ERPNext
+							</button>
+						</div>
+					</div>
+
+					<!-- Refresh -->
 					<button
 						type="button"
-						class="cx-btn"
-						:aria-expanded="exportMenuOpen"
-						aria-label="Options d'exportation et actions"
+						class="cx-btn cx-btn-icon"
+						@click="fetchReport"
+						aria-label="Actualiser le rapport"
+					>
+						<span v-html="ICONS.refresh" aria-hidden="true" />
+					</button>
+
+					<!-- More options (...) -->
+					<button
+						type="button"
+						class="cx-btn cx-btn-icon"
+						aria-label="Plus d'actions"
 						@click="toggleExportMenu"
 					>
-						<span>Actions / Export ▾</span>
+						<span aria-hidden="true" style="font-weight: 700; letter-spacing: 1px; font-size: 14px;">···</span>
 					</button>
-					<div v-if="exportMenuOpen" class="cx-export-dropdown-menu">
-						<button type="button" class="cx-export-item" :disabled="!hasData" @click="exportToCsv">
-							<span class="cx-icon-sm" v-html="ICONS.fileText"></span>
-							<span>Exporter en CSV</span>
-						</button>
-						<button type="button" class="cx-export-item" :disabled="!hasData" @click="triggerPrint">
-							<span class="cx-icon-sm" v-html="ICONS.camera"></span>
-							<span>Imprimer / PDF</span>
-						</button>
-						<div class="cx-export-divider"></div>
-						<button type="button" class="cx-export-item" @click="openStandardReport">
-							<span class="cx-icon-sm" v-html="ICONS.sparkles"></span>
-							<span>Ouvrir dans ERPNext</span>
-						</button>
+				</template>
+			</CortexPageHeader>
+
+			<!-- ── Filter Bar ───────────────────────────────────────── -->
+			<section ref="toolbarEl" class="cx-filter-bar">
+				<!-- Row 1 -->
+				<div class="cx-filter-grid">
+					<!-- Company (read-only, server-resolved) -->
+					<div class="cx-field">
+						<div class="cx-field-readonly" :title="companyLabel">{{ companyLabel }}</div>
+					</div>
+
+					<!-- Finance Book -->
+					<div class="cx-field">
+						<input
+							id="pnl-finance-book"
+							v-model="filters.financeBook"
+							class="cx-filter-input"
+							type="text"
+							list="pnl-finance-books-list"
+							placeholder="Finance Book"
+						/>
+						<datalist id="pnl-finance-books-list">
+							<option v-for="fb in financeBooksList" :key="fb" :value="fb" />
+						</datalist>
+					</div>
+
+					<!-- Fiscal Year label + select -->
+					<div class="cx-field cx-field-labeled">
+						<span class="cx-filter-label">Fiscal Year</span>
+						<input
+							id="pnl-fiscal-year"
+							v-model="filters.fiscalYear"
+							class="cx-filter-input cx-filter-input-highlight"
+							type="text"
+							list="pnl-fiscal-years-list"
+							:disabled="Boolean(filters.fromDate && filters.toDate)"
+						/>
+						<datalist id="pnl-fiscal-years-list">
+							<option v-for="fy in fiscalYearsList" :key="fy" :value="fy" />
+						</datalist>
+					</div>
+
+					<!-- From Date -->
+					<div class="cx-field">
+						<input
+							id="pnl-from-date"
+							v-model="filters.fromDate"
+							class="cx-filter-input"
+							type="date"
+						/>
+					</div>
+
+					<!-- To Date -->
+					<div class="cx-field">
+						<input
+							id="pnl-to-date"
+							v-model="filters.toDate"
+							class="cx-filter-input"
+							type="date"
+						/>
+					</div>
+
+					<!-- Periodicity -->
+					<div class="cx-field">
+						<select id="pnl-periodicity" v-model="filters.periodicity" class="cx-filter-input">
+							<option v-for="p in PERIODICITIES" :key="p" :value="p">{{ p }}</option>
+						</select>
 					</div>
 				</div>
 
-				<button class="cx-btn" @click="fetchReport" aria-label="Actualiser le rapport">
-					<span class="cx-icon-sm" v-html="ICONS.refresh"></span>
-					<span>Actualiser</span>
-				</button>
-			</template>
-		</CortexPageHeader>
+				<!-- Row 2 -->
+				<div class="cx-filter-grid" style="margin-top: 6px">
+					<!-- Currency -->
+					<div class="cx-field">
+						<select id="pnl-currency" v-model="filters.currency" class="cx-filter-input">
+							<option value="">Currency</option>
+							<option value="CAD">CAD</option>
+							<option value="USD">USD</option>
+							<option value="EUR">EUR</option>
+						</select>
+					</div>
 
-		<!-- Fast Financial Periods Selection -->
-		<div class="cx-pnl-quick-periods">
-			<span class="cx-quick-label">
-				<span class="cx-icon-sm" v-html="ICONS.calendar"></span>
-				Période rapide :
-			</span>
-			<button class="cx-chip" @click="setPeriod('2026-09-01', '2026-09-30')">Septembre 2026 (Tournages)</button>
-			<button class="cx-chip" @click="setPeriod('2026-07-01', '2026-09-30')">Trimestre T3 2026</button>
-			<button class="cx-chip" @click="setPeriod('2026-01-01', '2026-12-31')">Année Fiscale 2026</button>
-		</div>
+					<!-- Cost Center -->
+					<div class="cx-field">
+						<input
+							id="pnl-cost-center"
+							v-model="filters.costCenter"
+							class="cx-filter-input"
+							type="text"
+							list="pnl-cost-centers-list"
+							placeholder="Cost Center"
+						/>
+						<datalist id="pnl-cost-centers-list">
+							<option v-for="cc in costCentersList" :key="cc" :value="cc" />
+						</datalist>
+					</div>
 
-		<section ref="toolbarEl" class="cx-toolbar cx-surface">
-			<div class="cx-toolbar-grid">
-				<div class="cx-field">
-					<span class="cx-text-label">Company</span>
-					<div class="cx-field-readonly">{{ companyLabel }}</div>
-				</div>
-				<div class="cx-field">
-					<label class="cx-text-label" for="pnl-finance-book">Finance Book</label>
-					<input
-						id="pnl-finance-book"
-						v-model="filters.financeBook"
-						class="report-control"
-						type="text"
-						list="pnl-finance-books-list"
-						placeholder="Principal"
-					/>
-					<datalist id="pnl-finance-books-list">
-						<option v-for="fb in financeBooksList" :key="fb" :value="fb" />
-					</datalist>
-				</div>
-				<div class="cx-field">
-					<label class="cx-text-label" for="pnl-fiscal-year">Fiscal Year</label>
-					<input
-						id="pnl-fiscal-year"
-						v-model="filters.fiscalYear"
-						class="report-control"
-						type="text"
-						list="pnl-fiscal-years-list"
-						:disabled="Boolean(filters.fromDate && filters.toDate)"
-					/>
-					<datalist id="pnl-fiscal-years-list">
-						<option v-for="fy in fiscalYearsList" :key="fy" :value="fy" />
-					</datalist>
-				</div>
-				<div class="cx-field">
-					<label class="cx-text-label" for="pnl-from-date">From Date</label>
-					<input id="pnl-from-date" v-model="filters.fromDate" class="report-control" type="date" />
-				</div>
-				<div class="cx-field">
-					<label class="cx-text-label" for="pnl-to-date">To Date</label>
-					<input id="pnl-to-date" v-model="filters.toDate" class="report-control" type="date" />
-				</div>
-				<div class="cx-field">
-					<label class="cx-text-label" for="pnl-periodicity">Periodicity</label>
-					<select id="pnl-periodicity" v-model="filters.periodicity" class="report-control">
-						<option v-for="p in PERIODICITIES" :key="p" :value="p">{{ p }}</option>
-					</select>
+					<!-- Branch (disabled — no backing filter) -->
+					<div class="cx-field">
+						<input
+							class="cx-filter-input"
+							type="text"
+							disabled
+							placeholder="Branch"
+							title="Aucun filtre Branch sur ce rapport"
+						/>
+					</div>
+
+					<!-- Project -->
+					<div class="cx-field">
+						<input
+							id="pnl-project"
+							v-model="filters.project"
+							class="cx-filter-input"
+							type="text"
+							placeholder="Project"
+						/>
+					</div>
+
+					<!-- Report View (disabled) -->
+					<div class="cx-field cx-field-labeled">
+						<span class="cx-filter-label">Report View</span>
+						<select class="cx-filter-input" disabled title="Vue Standard uniquement">
+							<option>Standard</option>
+						</select>
+					</div>
+
+					<!-- Accumulated Values checkbox -->
+					<div class="cx-field cx-field-check-inline">
+						<label class="cx-check-inline">
+							<input type="checkbox" v-model="filters.accumulatedValues" />
+							<span>Accumulated Values</span>
+						</label>
+					</div>
 				</div>
 
-				<div class="cx-field">
-					<label class="cx-text-label" for="pnl-currency">Currency</label>
-					<input id="pnl-currency" v-model="filters.currency" class="report-control" type="text" placeholder="USD" />
-				</div>
-				<div class="cx-field">
-					<label class="cx-text-label" for="pnl-cost-center">Cost Center</label>
-					<input
-						id="pnl-cost-center"
-						v-model="filters.costCenter"
-						class="report-control"
-						type="text"
-						list="pnl-cost-centers-list"
-					/>
-					<datalist id="pnl-cost-centers-list">
-						<option v-for="cc in costCentersList" :key="cc" :value="cc" />
-					</datalist>
-				</div>
-				<div class="cx-field">
-					<label class="cx-text-label cx-text-disabled" for="pnl-branch">Branch</label>
-					<input
-						id="pnl-branch"
-						class="report-control"
-						type="text"
-						disabled
-						placeholder="Non disponible"
-						title="Aucun filtre Branch sur ce rapport"
-					/>
-				</div>
-				<div class="cx-field">
-					<label class="cx-text-label" for="pnl-project">Project</label>
-					<input id="pnl-project" v-model="filters.project" class="report-control" type="text" />
-				</div>
-				<div class="cx-field">
-					<label class="cx-text-label cx-text-disabled" for="pnl-report-view">Report View</label>
-					<select id="pnl-report-view" class="report-control" disabled title="Une seule vue disponible pour l'instant">
-						<option>Standard</option>
-					</select>
-				</div>
-				<div class="cx-field cx-field-checkbox">
-					<label class="cx-check">
-						<input type="checkbox" v-model="filters.accumulatedValues" />
-						<span>Accumulated Values</span>
+				<!-- Row 3: FB entries + Apply -->
+				<div class="cx-filter-footer">
+					<label class="cx-check-inline">
+						<input type="checkbox" v-model="filters.includeDefaultBookEntries" />
+						<span>Include Default FB Entries</span>
 					</label>
+					<button type="button" class="cx-btn cx-btn-primary" @click="fetchReport">
+						Appliquer
+					</button>
 				</div>
+			</section>
+
+			<!-- ── Loading ──────────────────────────────────────────── -->
+			<div v-if="loading" class="cx-pnl-feedback">
+				<CortexLoadingState :rows="6" :row-height="36" />
 			</div>
 
-			<label class="cx-check cx-check-fb">
-				<input type="checkbox" v-model="filters.includeDefaultBookEntries" />
-				<span>Include Default FB Entries</span>
-			</label>
-
-			<div class="cx-toolbar-actions">
-				<button class="cx-btn cx-btn-primary" @click="fetchReport">Appliquer</button>
+			<!-- ── Error ────────────────────────────────────────────── -->
+			<div v-else-if="error" class="cx-pnl-feedback">
+				<CortexErrorState
+					:message="error"
+					consequence="Aucun rapport n'a été chargé."
+					@retry="fetchReport"
+				/>
 			</div>
-		</section>
 
-		<div v-if="loading" style="padding: var(--space-4) 0">
-			<CortexLoadingState :rows="6" :row-height="36" />
+			<!-- ── Empty ────────────────────────────────────────────── -->
+			<CortexEmptyState
+				v-else-if="!hasData"
+				message="Aucune donnée financière pour la période sélectionnée."
+				action-label="Ajuster les filtres"
+				@action="focusToolbar"
+			/>
+
+			<!-- ── Data ─────────────────────────────────────────────── -->
+			<template v-else>
+				<!-- KPI Strip — Image reference: flat 3-column, no sparklines -->
+				<div class="cx-kpi-strip">
+					<!-- Total Income -->
+					<div class="cx-kpi-cell">
+						<span class="cx-kpi-label">Total Income</span>
+						<span class="cx-kpi-value cx-text-mono">{{ formatCurrency(totalIncome) }}</span>
+					</div>
+
+					<!-- Minus operator -->
+					<div class="cx-kpi-op" aria-hidden="true">
+						<span class="cx-kpi-op-symbol">−</span>
+					</div>
+
+					<!-- Total Expense -->
+					<div class="cx-kpi-cell">
+						<span class="cx-kpi-label">Total Expense</span>
+						<span class="cx-kpi-value cx-text-mono">{{ formatCurrency(totalExpense) }}</span>
+					</div>
+
+					<!-- Equals operator -->
+					<div class="cx-kpi-op" aria-hidden="true">
+						<span class="cx-kpi-op-symbol">=</span>
+					</div>
+
+					<!-- Net Profit -->
+					<div class="cx-kpi-cell">
+						<span class="cx-kpi-label">Net Profit</span>
+						<span
+							class="cx-kpi-value cx-text-mono"
+							:class="netProfit >= 0 ? 'cx-kpi-profit' : 'cx-kpi-loss'"
+						>
+							{{ formatCurrency(netProfit) }}
+						</span>
+					</div>
+				</div>
+
+				<!-- Line Chart — 3 series: Income / Expense / Net Profit -->
+				<div class="cx-chart-panel">
+					<CortexFinancialChart
+						:periods="report.periods"
+						:currency="displayCurrency"
+						locale="en-CA"
+					/>
+				</div>
+
+				<!-- Hierarchical P&L Table with row numbers -->
+				<div class="cx-table-panel">
+					<CortexFinancialTable
+						:periods="report.periods"
+						:accounts="report.accounts"
+						:currency="displayCurrency"
+						:company="report.company"
+						:fiscal-year="filters.fiscalYear"
+						:from-date="filters.fromDate"
+						:to-date="filters.toDate"
+					/>
+				</div>
+			</template>
 		</div>
-
-		<div v-else-if="error" style="padding: var(--space-4) 0">
-			<CortexErrorState :message="error" consequence="Aucun rapport n'a été chargé." @retry="fetchReport" />
-		</div>
-
-		<CortexEmptyState
-			v-else-if="!hasData"
-			message="No financial data available for the selected period."
-			action-label="Adjust filters"
-			@action="focusToolbar"
-		/>
-
-		<template v-else>
-			<!-- Modern KPI Grid with Sparklines -->
-			<div class="cx-kpi-grid" style="margin-top: var(--space-4)">
-				<CortexKpiCard
-					title="Revenus Totaux"
-					:value="formatCurrency(report.totalIncome)"
-					:trend="8.4"
-					badge="Facturé"
-					:sparkline="[60, 68, 75, 72, 80, 84]"
-				/>
-				<CortexKpiCard
-					title="Charges & Dépenses"
-					:value="formatCurrency(report.totalExpense)"
-					:trend="-2.1"
-					badge="Exploitation"
-					:sparkline="[35, 34, 33, 31, 32, 32]"
-				/>
-				<CortexKpiCard
-					title="Marge Nette"
-					:value="formatCurrency(report.netProfit)"
-					:trend="12.5"
-					badge="EBITDA"
-					:sparkline="[25, 34, 42, 41, 48, 52]"
-				/>
-				<CortexKpiCard
-					title="Taux de Marge"
-					:value="marginPercentage + '%'"
-					:trend="4.2"
-					badge="Objectif 60%"
-					:sparkline="[42, 50, 56, 57, 60, 62]"
-				/>
-			</div>
-
-			<!-- AI Executive Summary Banner -->
-			<div class="cx-ai-summary-card cx-surface" style="margin-top: var(--space-4)">
-				<div class="cx-ai-summary-header">
-					<div class="cx-ai-summary-title-wrap">
-						<span class="cx-icon-sm cx-emerald" v-html="ICONS.sparkles"></span>
-						<h4 class="cx-ai-summary-title">Synthèse Financière &amp; Rentabilité Flotte (Onyx AI)</h4>
-					</div>
-					<span class="cx-badge cx-badge-success">Audit P&amp;L Automatisé</span>
-				</div>
-				<p class="cx-ai-summary-text">
-					Sur la période sélectionnée, le chiffre d'affaires locatif progresse de <strong>+8.4%</strong>, tiré par les packs caméras ARRI Alexa 35 et optiques Cooke S4/i. L'application de la règle tarifaire <strong>7 jours = 3 jours</strong> a permis d'accroître la durée moyenne d'engagement des productions (+42% de jours de tournage). Les charges d'entretien restent sous contrôle à <strong>38%</strong> des revenus, dégageant une marge nette d'exploitation solide de <strong>{{ marginPercentage }}%</strong>.
-				</p>
-			</div>
-
-			<!-- Dynamic Visual Analytics (Chart.js) -->
-			<div class="cx-charts-grid" style="margin-top: var(--space-4)">
-				<div class="cx-chart-card cx-surface">
-					<div class="cx-chart-header">
-						<div>
-							<h3 class="cx-chart-title">Dynamique Financière Mensuelle</h3>
-							<p class="cx-chart-subtitle">Revenus bruts vs Dépenses opérationnelles</p>
-						</div>
-						<span class="cx-badge cx-badge-info">Analytique</span>
-					</div>
-					<div class="cx-chart-container">
-						<CortexChart type="bar" :data="pnlBarChartData" :height="220" />
-					</div>
-				</div>
-
-				<div class="cx-chart-card cx-surface">
-					<div class="cx-chart-header">
-						<div>
-							<h3 class="cx-chart-title">Ventilation Marge vs Coûts</h3>
-							<p class="cx-chart-subtitle">Rentabilité d'exploitation réelle</p>
-						</div>
-						<span class="cx-badge cx-badge-success">Sain</span>
-					</div>
-					<div class="cx-donut-wrapper">
-						<div class="cx-donut-chart">
-							<CortexChart type="doughnut" :data="pnlMarginDonutData" :height="170" />
-						</div>
-						<div class="cx-donut-legend">
-							<div v-for="item in pnlDonutLegend" :key="item.label" class="cx-legend-item">
-								<span class="cx-legend-dot" :style="{ backgroundColor: item.color }"></span>
-								<span class="cx-legend-label">{{ item.label }}</span>
-								<span class="cx-legend-val">{{ item.value }}</span>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="cx-pnl-content-block" style="margin-top: var(--space-4)">
-				<CortexFinancialTable
-					:periods="report.periods"
-					:accounts="report.accounts"
-					:currency="displayCurrency"
-					:company="report.company"
-					:fiscal-year="filters.fiscalYear"
-					:from-date="filters.fromDate"
-					:to-date="filters.toDate"
-				/>
-			</div>
-		</template>
-	</div>
+	</CortexShell>
 </template>
 
 <style scoped>
-.cx-app {
-	padding: 0 var(--space-6) var(--space-8);
+/* ── Root layout ──────────────────────────────────────── */
+.cx-pnl-root {
+	flex: 1;
+	padding: var(--space-4) var(--space-6) var(--space-8);
+	background: var(--cortex-canvas);
+	min-width: 0;
 }
 
+/* ── Header actions ───────────────────────────────────── */
 .cx-select-statement {
-	height: 36px;
+	height: 34px;
+	padding: 0 var(--space-3);
 	border: 1px solid var(--cortex-border);
 	border-radius: var(--radius-md);
 	background: var(--cortex-surface);
 	color: var(--cortex-text);
-	padding: 0 var(--space-3);
 	font-size: 13px;
 	font-weight: 500;
 	cursor: pointer;
+	font-family: inherit;
 }
 
-.cx-export-dropdown-wrap {
+.cx-export-wrap {
 	position: relative;
 	display: inline-block;
 }
 
-.cx-export-dropdown-menu {
+.cx-export-menu {
 	position: absolute;
-	top: 100%;
+	top: calc(100% + 4px);
 	right: 0;
-	margin-top: 4px;
 	background: var(--cortex-surface);
 	border: 1px solid var(--cortex-border);
 	border-radius: var(--radius-md);
-	box-shadow: var(--shadow-popover, 0 8px 24px rgba(20, 27, 35, 0.12));
+	box-shadow: var(--shadow-lg);
 	min-width: 220px;
 	padding: var(--space-1) 0;
 	z-index: 50;
-	display: flex;
-	flex-direction: column;
 }
 
 .cx-export-item {
@@ -588,19 +565,12 @@ const pnlDonutLegend = computed(() => {
 	border: none;
 	text-align: left;
 	font-size: 13px;
+	font-family: inherit;
 	color: var(--cortex-text);
 	cursor: pointer;
 	transition: background var(--motion-fast);
 }
-
-.cx-export-item:hover:not(:disabled) {
-	background: var(--cortex-surface-hover);
-}
-
-.cx-export-item:disabled {
-	color: var(--cortex-text-disabled);
-	cursor: not-allowed;
-}
+.cx-export-item:hover { background: var(--cortex-surface-hover); }
 
 .cx-export-divider {
 	height: 1px;
@@ -608,267 +578,308 @@ const pnlDonutLegend = computed(() => {
 	margin: var(--space-1) 0;
 }
 
-.cx-toolbar {
-	padding: var(--space-4);
-	margin-top: var(--space-2);
-}
-.cx-toolbar-grid {
-	display: grid;
-	grid-template-columns: repeat(6, 1fr);
-	gap: var(--space-4);
-}
-.cx-field {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-1);
-}
-.cx-field-readonly {
-	height: 36px;
-	display: flex;
-	align-items: center;
+/* Generic btn */
+.cx-btn {
+	height: 34px;
 	padding: 0 var(--space-3);
+	border: 1px solid var(--cortex-border);
 	border-radius: var(--radius-md);
-	background: var(--cortex-surface-subtle);
-	color: var(--cortex-text);
-	font-size: 13px;
-	font-weight: 500;
-}
-.cx-field-checkbox {
-	justify-content: flex-end;
-}
-.cx-text-disabled {
-	color: var(--cortex-text-disabled);
-}
-
-.report-control {
-	height: 36px;
-	border: 1px solid transparent;
-	border-radius: var(--radius-md);
-	background: var(--cortex-surface-subtle);
+	background: var(--cortex-surface);
 	color: var(--cortex-text-secondary);
-	padding: 0 var(--space-3);
 	font-size: 13px;
 	font-family: inherit;
-}
-.report-control:not(:disabled):hover {
-	background: var(--cortex-surface-hover);
-}
-.report-control:focus-visible {
-	outline: none;
-	border-color: var(--cortex-primary-500);
-	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-.report-control:disabled {
-	color: var(--cortex-text-disabled);
-	cursor: not-allowed;
-}
-
-.cx-check {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-2);
-	font-size: 14px;
-	color: var(--cortex-text);
 	cursor: pointer;
-}
-.cx-check-fb {
-	margin-top: var(--space-4);
-}
-
-.cx-toolbar-actions {
-	display: flex;
-	justify-content: flex-end;
-	margin-top: var(--space-4);
-}
-
-@media (max-width: 1279px) {
-	.cx-toolbar-grid {
-		grid-template-columns: repeat(3, 1fr);
-	}
-}
-@media (max-width: 767px) {
-	.cx-toolbar-grid {
-		grid-template-columns: 1fr;
-	}
-	.cx-field-checkbox {
-		justify-content: flex-start;
-	}
-}
-
-@media print {
-	.cx-toolbar,
-	.cx-page-header-actions,
-	.cx-select-statement,
-	.cx-export-dropdown-wrap,
-	.cx-btn {
-		display: none !important;
-	}
-	.cx-app {
-		padding: 0 !important;
-	}
-	.cx-pnl-content-block {
-		page-break-inside: avoid;
-	}
-}
-
-/* Quick Financial Periods */
-.cx-pnl-quick-periods {
-	display: flex;
-	align-items: center;
-	gap: var(--space-2);
-	margin-bottom: var(--space-3);
-	flex-wrap: wrap;
-}
-.cx-quick-label {
+	transition: background var(--motion-fast);
 	display: inline-flex;
 	align-items: center;
-	gap: 4px;
-	font-size: 11.5px;
-	font-weight: 600;
-	color: var(--cortex-text-muted);
+	gap: var(--space-1);
+}
+.cx-btn:hover { background: var(--cortex-surface-hover); }
+
+.cx-btn-icon {
+	width: 34px;
+	padding: 0;
+	justify-content: center;
 }
 
-/* KPI & Chart Grids */
-.cx-kpi-grid {
+.cx-btn-primary {
+	background: var(--cortex-emerald-600);
+	border-color: var(--cortex-emerald-700);
+	color: #fff;
+	font-weight: 500;
+}
+.cx-btn-primary:hover { background: var(--cortex-emerald-700); }
+
+.cx-icon-sm {
+	display: inline-flex;
+	align-items: center;
+	width: 14px;
+	height: 14px;
+}
+
+/* ── Filter bar ───────────────────────────────────────── */
+/* Image ref: fields directly on page background, no card elevation */
+.cx-filter-bar {
+	background: var(--cortex-surface);
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-lg);
+	padding: var(--space-3) var(--space-4);
+	margin-bottom: var(--space-4);
+}
+
+.cx-filter-grid {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(6, 1fr);
 	gap: var(--space-3);
 }
 
-.cx-charts-grid {
-	display: grid;
-	grid-template-columns: 2fr 1fr;
-	gap: var(--space-4);
-}
-
-.cx-chart-card {
-	padding: var(--space-4);
-	border: 1px solid var(--cortex-border);
-	border-radius: var(--radius-lg);
-	background: var(--cortex-surface);
-}
-
-.cx-chart-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
-	margin-bottom: var(--space-3);
-}
-
-.cx-chart-title {
-	font-size: 13.5px;
-	font-weight: 600;
-	color: var(--cortex-text-primary);
-	margin: 0;
-}
-
-.cx-chart-subtitle {
-	font-size: 11px;
-	color: var(--cortex-text-muted);
-	margin: 2px 0 0 0;
-}
-
-.cx-chart-container {
-	position: relative;
-	min-height: 220px;
-}
-
-.cx-donut-wrapper {
-	display: flex;
-	align-items: center;
-	gap: var(--space-4);
-	padding: var(--space-2) 0;
-}
-
-.cx-donut-chart {
-	width: 140px;
-	height: 140px;
-	flex-shrink: 0;
-}
-
-.cx-donut-legend {
+.cx-field {
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-2);
-	flex: 1;
+	position: relative;
 }
 
-.cx-legend-item {
+.cx-field-labeled {
+	position: relative;
+}
+
+.cx-filter-label {
+	position: absolute;
+	top: 50%;
+	left: var(--space-3);
+	transform: translateY(-50%);
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--cortex-text-muted);
+	pointer-events: none;
+	z-index: 1;
+}
+
+.cx-filter-input {
+	height: 34px;
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-md);
+	background: var(--cortex-surface-subtle);
+	color: var(--cortex-text);
+	font-size: 13px;
+	font-family: inherit;
+	padding: 0 var(--space-3);
+	width: 100%;
+	transition: border-color var(--motion-fast), box-shadow var(--motion-fast);
+	appearance: none;
+	-webkit-appearance: none;
+}
+.cx-filter-input::placeholder {
+	color: var(--cortex-text-muted);
+	font-size: 12px;
+}
+.cx-filter-input:focus-visible {
+	outline: none;
+	border-color: var(--cortex-emerald-500);
+	box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+	background: var(--cortex-surface);
+}
+.cx-filter-input:disabled {
+	color: var(--cortex-text-disabled);
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+/* Fiscal Year — matches image: label floated left, value prominent */
+.cx-filter-input-highlight {
+	padding-left: 80px; /* room for inline label */
+	background: var(--cortex-emerald-50);
+	border-color: var(--cortex-emerald-200);
+	color: var(--cortex-text);
+	font-weight: 500;
+}
+
+.cx-field-readonly {
+	height: 34px;
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	font-size: 11px;
-}
-
-.cx-legend-dot {
-	width: 8px;
-	height: 8px;
-	border-radius: 2px;
-	flex-shrink: 0;
-}
-
-.cx-legend-label {
-	color: var(--cortex-text-muted);
-	flex: 1;
-}
-
-.cx-legend-val {
-	font-weight: 600;
-	font-family: var(--font-mono);
-	color: var(--cortex-text-primary);
-}
-
-@media (max-width: 1024px) {
-	.cx-kpi-grid {
-		grid-template-columns: repeat(2, 1fr);
-	}
-	.cx-charts-grid {
-		grid-template-columns: 1fr;
-	}
-}
-
-@media (max-width: 640px) {
-	.cx-kpi-grid {
-		grid-template-columns: 1fr;
-	}
-}
-
-/* AI Summary Banner */
-.cx-ai-summary-card {
+	padding: 0 var(--space-3);
+	border-radius: var(--radius-md);
+	background: var(--cortex-surface-subtle);
 	border: 1px solid var(--cortex-border);
-	border-left: 3px solid var(--cortex-primary-600);
-	border-radius: var(--radius-lg);
-	padding: var(--space-4);
+	color: var(--cortex-text);
+	font-size: 13px;
+	font-weight: 500;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
 }
 
-.cx-ai-summary-header {
+.cx-field-check-inline {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.cx-check-inline {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-size: 13px;
+	color: var(--cortex-text);
+	cursor: pointer;
+}
+.cx-check-inline input[type="checkbox"] {
+	accent-color: var(--cortex-emerald-600);
+	width: 14px;
+	height: 14px;
+}
+
+.cx-filter-footer {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: var(--space-2);
+	margin-top: var(--space-3);
+	padding-top: var(--space-3);
+	border-top: 1px solid var(--cortex-border);
 }
 
-.cx-ai-summary-title-wrap {
+/* ── Feedback (loading/error) ─────────────────────────── */
+.cx-pnl-feedback {
+	padding: var(--space-4) 0;
+}
+
+/* ── KPI Strip — Image ref: flat, 3 cols, operators ──── */
+.cx-kpi-strip {
 	display: flex;
 	align-items: center;
+	background: var(--cortex-surface);
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-lg);
+	overflow: hidden;
+	margin-bottom: var(--space-4);
+}
+
+.cx-kpi-cell {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: var(--space-6) var(--space-4);
+	text-align: center;
 	gap: var(--space-2);
+	border-right: 1px solid var(--cortex-border);
+}
+.cx-kpi-cell:last-of-type {
+	border-right: none;
 }
 
-.cx-ai-summary-title {
-	font-size: 13.5px;
+.cx-kpi-label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--cortex-text-muted);
+	letter-spacing: 0.01em;
+}
+
+.cx-kpi-value {
+	font-size: 26px;
 	font-weight: 600;
-	color: var(--cortex-text-primary);
-	margin: 0;
+	color: var(--cortex-text);
+	letter-spacing: -0.02em;
+	line-height: 1.1;
 }
 
-.cx-ai-summary-text {
-	font-size: 12.5px;
-	color: var(--cortex-text-primary);
-	line-height: 1.5;
-	margin: 0;
+.cx-kpi-profit {
+	color: var(--accounting-profit, #52b57c);
 }
 
-.cx-emerald {
-	color: var(--cortex-primary-600);
+.cx-kpi-loss {
+	color: var(--cortex-danger-600);
+}
+
+/* Operator circle — matches image: circle with symbol */
+.cx-kpi-op {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 var(--space-1);
+}
+
+.cx-kpi-op-symbol {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	border: 1.5px solid var(--cortex-border-strong);
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--cortex-text-muted);
+	background: var(--cortex-surface);
+	line-height: 1;
+}
+
+/* ── Chart panel ──────────────────────────────────────── */
+.cx-chart-panel {
+	background: var(--cortex-surface);
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-lg);
+	padding: var(--space-4) var(--space-4) var(--space-2);
+	margin-bottom: var(--space-4);
+}
+
+/* ── Table panel ──────────────────────────────────────── */
+.cx-table-panel {
+	background: var(--cortex-surface);
+	border: 1px solid var(--cortex-border);
+	border-radius: var(--radius-lg);
+	overflow: hidden;
+}
+
+/* Mono text for numbers */
+.cx-text-mono {
+	font-family: var(--font-mono);
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 1279px) {
+	.cx-filter-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+	.cx-kpi-value {
+		font-size: 22px;
+	}
+}
+
+@media (max-width: 767px) {
+	.cx-filter-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	.cx-kpi-strip {
+		flex-direction: column;
+	}
+	.cx-kpi-cell {
+		border-right: none;
+		border-bottom: 1px solid var(--cortex-border);
+		width: 100%;
+	}
+	.cx-kpi-op {
+		transform: rotate(90deg);
+		padding: var(--space-1) 0;
+	}
+	.cx-pnl-root {
+		padding: var(--space-3) var(--space-3) var(--space-6);
+	}
+}
+
+/* ── Print ────────────────────────────────────────────── */
+@media print {
+	.cx-filter-bar,
+	.cx-btn,
+	.cx-export-wrap,
+	.cx-select-statement {
+		display: none !important;
+	}
+	.cx-pnl-root {
+		padding: 0 !important;
+	}
 }
 </style>
