@@ -19,6 +19,9 @@ export default defineConfig({
       'tailwindcss/plugin': path.resolve(__dirname, './node_modules/tailwindcss/plugin.js')
     }
   },
+  optimizeDeps: {
+    exclude: ['frappe-ui']
+  },
   server: {
     port: 5173,
     host: true,
