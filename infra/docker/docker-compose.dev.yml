@@ -124,6 +124,28 @@ services:
       - internal
       - public
 
+  # --- 5b. Cortex Vue 3 / Frappe UI application (live development build) ---
+  frontend:
+    image: node:20-alpine
+    container_name: cortex_frontend_dev
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ../../apps/cortex_rental/cortex_rental/public/frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      FRAPPE_PROXY_TARGET: http://bench:8000
+      VITE_FRAPPE_BACKEND_URL: http://bench:8000
+      VITE_USE_MOCK_API: "false"
+    command: ["sh", "-c", "npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0"]
+    depends_on:
+      - bench
+    networks:
+      - internal
+      - public
+
   # --- 6. Façade Serveur MCP Python (FastMCP / Python 3.12) ---
   mcp:
     image: python:3.12-slim
@@ -163,4 +185,6 @@ volumes:
   minio_data:
     driver: local
   bench_sites:
+    driver: local
+  frontend_node_modules:
     driver: local

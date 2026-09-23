@@ -4,18 +4,19 @@ import { useNavigationStore } from '@/stores/navigation'
 
 describe('Navigation Store — Sidebar, Search & Breadcrumbs', () => {
   beforeEach(() => {
+    localStorage.removeItem('cortex_sidebar_collapsed')
     setActivePinia(createPinia())
   })
 
   it('N-TEST-1: Toggles and sets sidebar collapse state with persistence', () => {
     const navStore = useNavigationStore()
-    expect(navStore.sidebarCollapsed).toBe(false)
-
-    navStore.toggleSidebar()
     expect(navStore.sidebarCollapsed).toBe(true)
 
-    navStore.setSidebarCollapsed(false)
+    navStore.toggleSidebar()
     expect(navStore.sidebarCollapsed).toBe(false)
+
+    navStore.setSidebarCollapsed(true)
+    expect(navStore.sidebarCollapsed).toBe(true)
   })
 
   it('N-TEST-2: Manages universal search modal state', () => {

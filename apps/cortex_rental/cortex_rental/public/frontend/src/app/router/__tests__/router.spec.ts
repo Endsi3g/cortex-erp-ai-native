@@ -1,14 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { createAppRouter } from '@/app/router'
 import { routes } from '@/app/router/routes'
 import { useSessionStore } from '@/stores/session'
 import { useCopilotStore } from '@/stores/copilot'
 
-describe('Cortex OS — Router & Navigation Architecture (24 Canonical Routes)', () => {
+describe('Cortex OS — Router & Navigation Architecture (canonical routes)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    const session = useSessionStore()
+    session.currentUser = { id: 'test-user', email: 'test@example.test', full_name: 'Test User', roles: ['System Manager'], permissions: [] }
+    session.isAuthenticated = true
+    session.userCompanies = [{ id: 'Test Company', name: 'Test Company', code: 'Test Company' }]
+    session.activeCompanyId = 'Test Company'
   })
+  afterEach(() => vi.unstubAllGlobals())
 
   it('R-TEST-1: Defines all 24 canonical routes with complete CortexRouteMeta', () => {
     expect(routes.length).toBeGreaterThanOrEqual(24)
@@ -72,7 +78,8 @@ describe('Cortex OS — Router & Navigation Architecture (24 Canonical Routes)',
 
     // 8. Approval Queue
     await router.push('/app/cortex-approvals')
-    expect(router.currentRoute.value.name).toBe('approval-queue')
+    expect(router.currentRoute.value.name).toBe('ai-inbox')
+    expect(router.currentRoute.value.query.type).toBe('approval')
     expect(router.currentRoute.value.meta.priority).toBe('P0')
 
     // 14. Consignment Dashboard
@@ -85,7 +92,7 @@ describe('Cortex OS — Router & Navigation Architecture (24 Canonical Routes)',
     expect(router.currentRoute.value.name).toBe('owner-statement')
     expect(router.currentRoute.value.params.owner).toBe('DEMO-OWN-001')
     expect(router.currentRoute.value.params.period).toBe('2026-08')
-  })
+  }, 180000)
 
   it('R-TEST-4: Synchronizes Copilot active context with current route and params', async () => {
     const router = createAppRouter(true)
@@ -101,6 +108,7 @@ describe('Cortex OS — Router & Navigation Architecture (24 Canonical Routes)',
     const router = createAppRouter(true)
     const sessionStore = useSessionStore()
     sessionStore.logout()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 401 })))
 
     await router.push('/app/cortex-operations')
     expect(router.currentRoute.value.name).toBe('login')

@@ -10,9 +10,6 @@
           <span class="px-2 py-0.5 rounded-full bg-cortex-primary-100 text-cortex-primary-800 text-[11px] font-semibold">
             Assistant 3 Étapes
           </span>
-          <span class="px-2 py-0.5 rounded-full bg-cortex-surface-secondary border border-cortex-border text-cortex-text-muted text-[11px] font-mono">
-            DEMO
-          </span>
         </div>
         <p class="text-xs text-cortex-text-secondary mt-1">
           Création pas-à-pas d'un devis ou réservation avec application de la règle tarifaire 7j = 3j.
@@ -66,13 +63,13 @@
 
       <!-- Lateral Summary Drawer (1 Col) -->
       <div class="lg:col-span-1">
-        <ComposerSummaryDrawer
-          :customer-name="step1Data.customerName"
-          :starts-at="step1Data.startsAt"
-          :ends-at="step1Data.endsAt"
-          :total-items="totalEquipmentCount"
-          :subtotal="runningSubtotal"
-        />
+        <div class="sticky top-4 rounded-xl border border-cortex-border bg-cortex-surface p-4 text-xs space-y-2">
+          <h2 class="font-bold uppercase tracking-wider">Résumé</h2>
+          <p>Client : <strong>{{ step1Data.customerName || 'À sélectionner' }}</strong></p>
+          <p>Période : {{ step1Data.startsAt || '—' }} → {{ step1Data.endsAt || '—' }}</p>
+          <p>Articles : {{ totalEquipmentCount }}</p>
+          <p class="border-t pt-2 text-cortex-text-muted">Le montant confirmé est calculé par le serveur lors de la vérification.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -83,14 +80,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft } from 'lucide-vue-next'
-import { initialCatalog } from '@/api/mock/fixtures/catalog'
-import { initialCustomers } from '@/api/mock/fixtures/customers'
-import { calculateBillableDays } from '@/api/mock/MockCortexApiClient'
+import { getCortexApiClient } from '@/api'
 import ComposerStepper from '../components/composer/ComposerStepper.vue'
 import StepClientDates, { type ComposerStep1Data } from '../components/composer/StepClientDates.vue'
 import StepEquipmentPricing, { type ComposerLineItem } from '../components/composer/StepEquipmentPricing.vue'
 import StepReviewCreate from '../components/composer/StepReviewCreate.vue'
-import ComposerSummaryDrawer from '../components/composer/ComposerSummaryDrawer.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -98,28 +92,19 @@ const route = useRoute()
 const currentStep = ref<number>(1)
 
 const step1Data = ref<ComposerStep1Data>({
-  customerId: 'DEMO-CUST-001',
-  customerName: 'Production Nord Inc.',
-  customerEmail: 'production@nord-film.demo',
-  startsAt: '2026-09-10',
-  endsAt: '2026-09-17',
+  customerId: '',
+  customerName: '',
+  customerEmail: '',
+  startsAt: '',
+  endsAt: '',
   projectName: '',
   notes: ''
 })
 
-const equipmentLines = ref<ComposerLineItem[]>([
-  {
-    itemCode: 'DEMO-ITM-ALX35',
-    itemName: 'ARRI Alexa 35 Camera Package',
-    category: 'Cameras',
-    dailyRate: 1500,
-    quantity: 1,
-    assignedSerials: ['DEMO-SN-ALX-002']
-  }
-])
+const equipmentLines = ref<ComposerLineItem[]>([])
 
 // Pre-filling from route query (Flow 2 from Matrix)
-onMounted(() => {
+onMounted(async () => {
   const qStarts = route.query.starts_at
   const qEnds = route.query.ends_at
   const qItems = route.query.items
@@ -134,7 +119,8 @@ onMounted(() => {
     const itemCodes = qItems.split(',').map(s => s.trim()).filter(Boolean)
     const newLines: ComposerLineItem[] = []
     for (const code of itemCodes) {
-      const cat = initialCatalog.find(c => c.item_code === code)
+      let cat
+      try { cat = (await getCortexApiClient().searchRentalCatalog(code)).find(c => c.item_code === code) } catch { cat = undefined }
       if (cat) {
         newLines.push({
           itemCode: cat.item_code,
@@ -151,34 +137,10 @@ onMounted(() => {
     }
   }
 
-  // Ensure customer info is filled if customerId is selected
-  const cust = initialCustomers.find(c => c.id === step1Data.value.customerId)
-  if (cust) {
-    step1Data.value.customerName = cust.name
-    step1Data.value.customerEmail = cust.contact_email
-  }
 })
 
 const totalEquipmentCount = computed(() => {
   return equipmentLines.value.reduce((sum, line) => sum + line.quantity, 0)
 })
 
-const calendarDays = computed(() => {
-  if (!step1Data.value.startsAt || !step1Data.value.endsAt) return 7
-  const start = new Date(step1Data.value.startsAt)
-  const end = new Date(step1Data.value.endsAt)
-  const diffTime = Math.abs(end.getTime() - start.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  return diffDays > 0 ? diffDays : 1
-})
-
-const billableDays = computed(() => {
-  return calculateBillableDays(calendarDays.value)
-})
-
-const runningSubtotal = computed(() => {
-  return equipmentLines.value.reduce((acc, line) => {
-    return acc + line.dailyRate * line.quantity * billableDays.value
-  }, 0)
-})
 </script>

@@ -225,8 +225,23 @@ def lookup_scan_target(company: str, scan_code: str) -> Dict[str, Any]:
         txn_items = frappe.get_all(
             "Cortex Rental Transaction Item",
             filters={"serial_no": code},
-            fields=["name", "parent", "item_code", "item_name", "qty", "returned_qty"],
+            fields=["name", "parent", "item_code", "item_name", "qty", "returned_qty", "assigned_serials"],
         )
+        allocated_rows = frappe.get_all(
+            "Cortex Rental Transaction Item",
+            filters={"assigned_serials": ["is", "set"]},
+            fields=["name", "parent", "item_code", "item_name", "qty", "returned_qty", "assigned_serials"],
+        )
+        seen = {row.name for row in txn_items}
+        for row in allocated_rows:
+            if row.name in seen:
+                continue
+            try:
+                allocated = frappe.parse_json(row.assigned_serials or "[]")
+            except Exception:
+                allocated = []
+            if code in allocated:
+                txn_items.append(row)
         for ti in txn_items:
             parent_txn = frappe.db.get_value(
                 "Cortex Rental Transaction",
@@ -428,6 +443,7 @@ def process_checkin(
                 "damage_type": item.get("damage_type") or "None",
                 "estimated_repair_cost": float(item.get("estimated_repair_cost") or 0.0),
                 "notes": item.get("notes") or "",
+                "evidence_ids": frappe.as_json(item.get("evidence_ids") or []),
             },
         )
 

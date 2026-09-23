@@ -10,9 +10,17 @@ export class HttpClient {
   private getCsrfToken: () => string | null
 
   constructor(config: HttpClientConfig = {}) {
-    this.baseUrl = config.baseUrl || '/api/method/cortex_rental.api.v1'
-    this.getCompanyId = config.getCompanyId || (() => null)
-    this.getCsrfToken = config.getCsrfToken || (() => null)
+    this.baseUrl = config.baseUrl || '/api/method'
+    this.getCompanyId = config.getCompanyId || (() => typeof localStorage !== 'undefined' ? localStorage.getItem('cortex_active_company_id') : null)
+    this.getCsrfToken = config.getCsrfToken || (() => {
+      const frappeCsrf = typeof window !== 'undefined'
+        ? (window as Window & { frappe?: { boot?: { csrf_token?: string } } }).frappe?.boot?.csrf_token
+        : undefined
+      if (frappeCsrf) return frappeCsrf
+      if (typeof document === 'undefined') return null
+      const token = document.cookie.split('; ').find(cookie => cookie.startsWith('csrf_token='))?.split('=').slice(1).join('=')
+      return token ? decodeURIComponent(token) : null
+    })
   }
 
   public async get<T>(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<T> {

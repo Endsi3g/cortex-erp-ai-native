@@ -1,5 +1,7 @@
 # Instructions Générales du Projet — Cortex ERP AI-Native
 
+> **Contrat frontend canonique pour tous les agents :** [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md). Le lire avant tout travail d’interface ou d’intégration IA. Il remplace les anciennes consignes UI de `HANDOFF.md` et précise les limites réelles des fonctionnalités.
+
 Bienvenue sur le dépôt de **Cortex**, l'ERP cloud AI-native pour maisons de location audiovisuelle et événementielle, basé sur **Frappe Framework** et **ERPNext**.
 
 ---

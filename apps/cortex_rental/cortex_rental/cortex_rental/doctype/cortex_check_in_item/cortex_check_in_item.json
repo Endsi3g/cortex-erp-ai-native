@@ -84,6 +84,12 @@
       "fieldname": "notes",
       "fieldtype": "Small Text",
       "label": "Notes"
+    },
+    {
+      "fieldname": "evidence_ids",
+      "fieldtype": "Small Text",
+      "label": "Evidence Reference IDs",
+      "description": "JSON array of hashed Cortex Evidence Reference IDs associated with this physical inspection."
     }
   ]
 }

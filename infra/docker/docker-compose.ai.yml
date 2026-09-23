@@ -1,0 +1,19 @@
+# Optional private bridge between the Cortex backend/MCP and local Onyx.
+# Start the Onyx stack first so the external network exists.
+services:
+  bench:
+    networks:
+      - internal
+      - public
+      - cortex_ai_private
+
+  mcp:
+    networks:
+      - internal
+      - public
+      - cortex_ai_private
+
+networks:
+  cortex_ai_private:
+    name: cortex_ai_private
+    external: true

@@ -45,6 +45,7 @@ La documentation technique est structurée en 6 piliers :
 *Prompts standardisés pour les scénarios d'ingénierie, de refactorisation et d'arbitrage.*
 
 ### 7. Frontend & Design System
+- **[Contrat UI AI-native v2](frontend/CORTEX_UI_HANDOFF_V2.md)** : source de référence pour tous les agents, shell ERPNext, Inbox, Workspace, Audit, confiance, validations et intégration Onyx/Ollama.
 - **[Design System Global Cortex](design-system.md)** : Principes, tokens, typographie, élévation et composants réutilisables.
 - **[Contrats des Composants](design-system-component-contracts.md)** : Spécifications et APIs des composants partagés Vue 3.
 - **[Design System Accounting & P&L](design-system-accounting-pnl.md)** : Spécifications complètes de l'interface comptable, reporting financier, KPI, graphiques et hiérarchie de comptes.

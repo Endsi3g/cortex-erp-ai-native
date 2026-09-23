@@ -1,4 +1,5 @@
 from typing import Optional
+import json
 
 try:
     import frappe
@@ -36,6 +37,13 @@ class CortexRentalTransaction(Document):
         #    that reaches validate() must be checked, or a direct field
         #    update can silently skip agent gating, preconditions and audit.
         self._enforce_state_transition()
+
+        if self.is_new():
+            self.version = 1
+        elif any(self.has_value_changed(field) for field in (
+            "starts_at", "ends_at", "customer", "items", "notes", "project_name", "tax_rate"
+        )):
+            self.version = int(frappe.db.get_value(self.doctype, self.name, "version") or 1) + 1
 
         # 1. Compute duration and billable days
         if self.starts_at and self.ends_at:
@@ -168,5 +176,47 @@ class CortexRentalTransaction(Document):
                     frappe.ValidationError,
                 )
 
+            if new_state == "Reservation":
+                self._assign_serials_under_lock()
+
             self.rental_state = new_state
             self.save()
+
+    def _assign_serials_under_lock(self):
+        """Allocate real serials atomically when a quote becomes a reservation."""
+        for row in self.items or []:
+            profile = frappe.db.get_value(
+                "Cortex Rental Item Profile",
+                {"company": self.company, "item_code": row.item_code},
+                ["is_serialized"], as_dict=True,
+            )
+            if not profile or not profile.is_serialized:
+                row.assigned_serials = "[]"
+                continue
+            quantity = float(row.qty or 0)
+            if quantity <= 0 or not quantity.is_integer():
+                frappe.throw(f"Serialized equipment {row.item_code} requires a whole-number quantity.", frappe.ValidationError)
+            candidates = frappe.db.sql("""
+                SELECT sn.name
+                FROM `tabSerial No` sn
+                WHERE sn.item_code = %(item_code)s
+                  AND (sn.company = %(company)s OR IFNULL(sn.company, '') = '')
+                  AND IFNULL(sn.cortex_status, 'Active') = 'Active'
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM `tabCortex Rental Transaction Item` ti
+                    INNER JOIN `tabCortex Rental Transaction` tx ON tx.name = ti.parent
+                    WHERE (ti.serial_no = sn.name OR ti.assigned_serials LIKE CONCAT('%%"', sn.name, '"%%'))
+                      AND tx.name != %(transaction)s
+                      AND tx.rental_state IN ('Reservation', 'Contract', 'Checked Out')
+                  )
+                ORDER BY sn.name ASC
+                LIMIT %(quantity)s
+            """, {"item_code": row.item_code, "company": self.company,
+                  "transaction": self.name or "", "quantity": int(quantity)}, as_dict=False)
+            serials = [candidate[0] for candidate in candidates]
+            if len(serials) < int(quantity):
+                frappe.throw(f"Only {len(serials)} serialized units remain available for {row.item_code}.", frappe.ValidationError)
+            row.assigned_serials = frappe.as_json(serials)
+            if len(serials) == 1:
+                row.serial_no = serials[0]

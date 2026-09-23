@@ -28,6 +28,12 @@
       "in_standard_filter": 1
     },
     {
+      "fieldname": "project_name",
+      "fieldtype": "Data",
+      "label": "Project Name",
+      "in_list_view": 1
+    },
+    {
       "fieldname": "rental_state",
       "fieldtype": "Select",
       "label": "Rental State",
@@ -130,6 +136,15 @@
       "fieldname": "notes",
       "fieldtype": "Small Text",
       "label": "Internal Notes"
+    },
+    {
+      "fieldname": "version",
+      "fieldtype": "Int",
+      "label": "Version",
+      "default": "1",
+      "read_only": 1,
+      "no_copy": 1,
+      "hidden": 1
     }
   ],
   "permissions": [

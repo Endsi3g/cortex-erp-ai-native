@@ -1,5 +1,7 @@
 # Onyx — déploiement self-hosted
 
+> Déploiement local réellement installé et validé (Onyx Lite + Ollama `qwen3:8b`) : [`LOCAL_DEV.md`](LOCAL_DEV.md). Contrat produit/frontend commun : [`../../docs/frontend/CORTEX_UI_HANDOFF_V2.md`](../../docs/frontend/CORTEX_UI_HANDOFF_V2.md).
+
 **Décision (2026-08-30)** : Onyx est déployé **self-hosted**, en service
 séparé de Cortex — jamais dans le process Frappe/bench. C'est une
 exigence de leur propre architecture (backend + Postgres/OpenSearch/
@@ -55,27 +57,21 @@ API métier Frappe whitelisted (/api/method/cortex_rental.api.v1.*)
   privé/VPN, pas Internet public. Voir la topologie complète dans le
   system prompt racine (`docs/02-onyx-mcp-frappe-integration.md`).
 
-## 3. Configurer Gemini comme fournisseur LLM par défaut
+## 3. Fournisseur local Ollama
 
-Vérifié contre la doc Onyx réelle : la configuration des fournisseurs
-LLM se fait **dans le panneau d'administration Onyx**
-(Settings → LLM Providers → Add Provider), pas via une variable
-d'environnement documentée type `GEN_AI_API_KEY` — je n'ai pas trouvé
-de nom de variable fiable pour l'automatiser sans risquer d'inventer
-une config qui n'existe pas. Étapes manuelles :
+Le modèle local retenu est `qwen3:8b` : 8,2B paramètres, quantification
+Q4_K_M, environ 5,2 Go de poids, 40K de contexte annoncé et capacités outils.
+Le candidat vision `qwen3.5:9b` a été essayé puis retiré : l'appel d'outil
+court a pris 2 min 45 s sur le CPU seul visible dans cet environnement.
+Onyx Lite reste dans le budget Docker local; l'indexation complète et les
+connecteurs sont désactivés. Commence à 16K de contexte effectif pour
+préserver la mémoire pendant que Cortex et Onyx tournent ensemble.
 
-1. Ouvrir le panneau admin Onyx (une fois déployé) → Settings → LLM Providers.
-2. Add Provider → Google (Gemini) ou Google Vertex AI selon
-   l'authentification voulue (clé API directe vs. service account GCP).
-3. Renseigner la clé Gemini (**jamais** la même clé que celle utilisée
-   pour un test ponctuel côté Cortex — voir `HANDOFF.md` §4 sur la
-   rotation de clé).
-4. Marquer ce provider comme **par défaut** pour les agents Cortex
-   Intake / Availability / Reporting.
-
-Onyx route tous les appels LLM via LiteLLM en interne, donc Claude
-reste disponible en escalade (PRD §3.3/§4) sans reconfiguration
-supplémentaire une fois un second provider ajouté.
+L'ajout du fournisseur et le choix du modèle se font dans le panneau admin
+Onyx → **Configuration → Language Models**. Pour les détails vérifiés sur
+cette machine, les étapes initiales et les limites, voir [`LOCAL_DEV.md`](LOCAL_DEV.md).
+Ne configure pas une clé Ollama fictive et ne publie jamais le jeton Onyx
+dans le frontend.
 
 ## 4. Widget d'intégration visuelle dans Cortex
 

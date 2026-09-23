@@ -1,394 +1,75 @@
 <template>
   <div class="space-y-5" data-test="step-equipment-pricing">
-    <!-- Active 7d=3d Pricing Rule Banner -->
-    <div class="p-3.5 rounded-xl border border-cortex-primary-300 bg-cortex-primary-50/50 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2" data-test="pricing-rule-banner">
-      <div class="flex items-center gap-2">
-        <Sparkles class="w-4 h-4 text-cortex-primary-600 flex-shrink-0" />
-        <span class="font-bold text-cortex-primary-950">
-          {{ t('composer.pricing_rule_badge') }}
-        </span>
+    <div class="rounded-xl border border-cortex-border bg-cortex-surface p-4 space-y-3">
+      <label class="block text-xs font-bold uppercase tracking-wider">Catalogue locatif ERPNext</label>
+      <div class="flex gap-2"><input v-model="query" type="search" class="min-w-0 flex-1 rounded-lg border border-cortex-border px-3 py-2 text-xs" placeholder="Rechercher un équipement…" @input="searchCatalog" /><button type="button" class="cx-btn-secondary px-3 text-xs" :disabled="!selectedCode" @click="addItem">Ajouter</button></div>
+      <p v-if="catalogLoading" class="text-xs text-cortex-text-muted">Recherche dans le catalogue de l’entreprise…</p>
+      <div v-if="catalog.length" class="max-h-40 overflow-auto divide-y divide-cortex-border rounded-lg border border-cortex-border">
+        <button v-for="item in catalog" :key="item.item_code" type="button" class="flex w-full items-center justify-between px-3 py-2 text-left text-xs hover:bg-cortex-surface-secondary" :class="selectedCode === item.item_code ? 'bg-cortex-primary-50' : ''" @click="selectedCode = item.item_code"><span>{{ item.item_name }} <span class="text-cortex-text-muted">· {{ item.item_code }}</span></span><span>{{ money(item.daily_rate) }}/jour</span></button>
       </div>
-      <span class="px-2 py-0.5 rounded bg-cortex-primary-200 text-cortex-primary-900 font-mono text-[11px] font-bold">
-        {{ calendarDays }}j calendaires = {{ billableDays }}j facturés
-      </span>
+      <p v-else-if="!catalogLoading" class="text-xs text-cortex-text-muted">Aucun résultat. Le tarif affiché vient du profil locatif ERPNext.</p>
     </div>
 
-    <!-- Catalog Item Selector -->
-    <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-3">
-      <div class="flex items-center justify-between">
-        <label class="text-xs font-bold text-cortex-text-primary uppercase tracking-wider">
-          Ajouter un Équipement du Catalogue
-        </label>
-        <button
-          type="button"
-          class="text-xs text-cortex-primary-700 font-semibold hover:underline"
-          data-test="auto-assign-serials-btn"
-          @click="autoAssignSerials"
-        >
-          ⚡ {{ t('composer.auto_assign_serials') }}
-        </button>
+    <div class="rounded-xl border border-cortex-border bg-cortex-surface p-4 space-y-3">
+      <div class="flex justify-between text-xs font-bold uppercase"><span>Équipements sélectionnés</span><span>{{ lines.length }}</span></div>
+      <div v-for="(line, index) in lines" :key="line.itemCode" class="flex flex-wrap items-center justify-between gap-3 border-t border-cortex-border py-3" :data-test="`line-item-${line.itemCode}`">
+        <div><div class="text-xs font-semibold">{{ line.itemName }}</div><div class="text-[11px] text-cortex-text-muted">{{ line.itemCode }} · {{ money(line.dailyRate) }}/jour</div></div>
+        <div class="flex items-center gap-2"><label class="text-[11px]">Qté <input type="number" min="1" :value="line.quantity" class="w-16 rounded border px-2 py-1" @change="setQuantity(index, Number(($event.target as HTMLInputElement).value))" /></label><button type="button" class="text-xs text-red-700" aria-label="Retirer" @click="removeLine(index)">Retirer</button></div>
       </div>
-
-      <div class="flex gap-2">
-        <select
-          v-model="selectedCatalogCode"
-          class="flex-1 text-xs p-2.5 rounded-lg border border-cortex-border bg-cortex-surface text-cortex-text-primary focus:ring-1 focus:ring-cortex-primary-500"
-          data-test="catalog-select"
-        >
-          <option value="" disabled>Sélectionner un équipement...</option>
-          <option
-            v-for="item in catalog"
-            :key="item.item_code"
-            :value="item.item_code"
-          >
-            {{ item.item_name }} ({{ formatCurrency(item.daily_rate) }}/j) — Dispo: {{ item.available_quantity }}
-          </option>
-        </select>
-
-        <button
-          type="button"
-          class="cx-btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5"
-          :disabled="!selectedCatalogCode"
-          data-test="add-equipment-btn"
-          @click="addItem"
-        >
-          <Plus class="w-3.5 h-3.5" />
-          <span>Ajouter</span>
-        </button>
-      </div>
+      <p v-if="!lines.length" class="py-3 text-xs text-cortex-text-muted">Ajoutez des articles réels du catalogue avant de continuer.</p>
     </div>
 
-    <!-- Selected Line Items Table -->
-    <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-3">
-      <div class="flex items-center justify-between border-b border-cortex-border pb-2.5">
-        <h3 class="text-xs font-bold text-cortex-text-primary uppercase tracking-wider">
-          Équipements Sélectionnés ({{ lines.length }})
-        </h3>
-        <!-- Availability Check Status Chip -->
-        <div class="flex items-center gap-1.5">
-          <span
-            v-if="isCheckingAvailability"
-            class="text-[11px] text-cortex-text-muted flex items-center gap-1 font-medium"
-          >
-            <RefreshCw class="w-3 h-3 animate-spin" />
-            Contrôle disponibilité...
-          </span>
-          <span
-            v-else-if="allAvailable"
-            class="px-2 py-0.5 rounded-full bg-cortex-primary-100 text-cortex-primary-800 text-[10px] font-bold"
-            data-test="availability-chip-success"
-          >
-            ✓ Stock Disponible
-          </span>
-          <span
-            v-else
-            class="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-bold"
-            data-test="availability-chip-conflict"
-          >
-            ⚠ Stock Insuffisant
-          </span>
-        </div>
-      </div>
-
-      <div class="divide-y divide-cortex-border">
-        <div
-          v-for="(line, index) in lines"
-          :key="line.itemCode"
-          class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-          :data-test="`line-item-${line.itemCode}`"
-        >
-          <div class="min-w-0">
-            <span class="text-xs font-semibold text-cortex-text-primary block truncate">
-              {{ line.itemName }}
-            </span>
-            <div class="flex flex-wrap items-center gap-2 mt-0.5">
-              <span class="text-[10px] font-mono text-cortex-primary-700 bg-cortex-primary-50 px-1 rounded">
-                {{ line.itemCode }}
-              </span>
-              <span class="text-[11px] text-cortex-text-muted">
-                {{ formatCurrency(line.dailyRate) }} / jour × {{ billableDays }} jours facturés
-              </span>
-            </div>
-
-            <!-- Assigned Serials Chips -->
-            <div v-if="line.assignedSerials.length > 0" class="mt-1.5 flex flex-wrap items-center gap-1">
-              <span class="text-[10px] text-cortex-text-muted">Séries :</span>
-              <span
-                v-for="sn in line.assignedSerials"
-                :key="sn"
-                class="px-1.5 py-0.2 rounded bg-cortex-surface-secondary text-[10px] font-mono text-cortex-text-primary border border-cortex-border"
-              >
-                {{ sn }}
-              </span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <div class="flex items-center gap-1.5">
-              <label class="text-[11px] text-cortex-text-muted">Qté :</label>
-              <input
-                type="number"
-                min="1"
-                :value="line.quantity"
-                class="w-14 text-xs p-1 rounded border border-cortex-border text-center font-mono"
-                @input="updateLineQuantity(index, Number(($event.target as HTMLInputElement).value))"
-              />
-            </div>
-
-            <span class="font-mono font-bold text-xs text-cortex-text-primary min-w-[80px] text-right">
-              {{ formatCurrency(line.dailyRate * line.quantity * billableDays) }}
-            </span>
-
-            <button
-              type="button"
-              class="p-1 rounded text-cortex-text-muted hover:text-red-600 hover:bg-red-50"
-              title="Supprimer"
-              @click="removeLine(index)"
-            >
-              <Trash2 class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <div v-if="lines.length === 0" class="py-6 text-center text-xs text-cortex-text-muted">
-          Aucun équipement ajouté pour le moment.
-        </div>
-      </div>
+    <div class="rounded-xl border p-3 text-xs" :class="availability?.all_available ? 'border-emerald-300 bg-emerald-50' : 'border-amber-300 bg-amber-50'">
+      <span v-if="checking">Vérification de disponibilité auprès de Frappe…</span>
+      <span v-else-if="availability">{{ availability.all_available ? 'Disponible selon les réservations actuelles' : 'Conflit détecté — vérifiez les quantités avant de continuer' }}</span>
+      <span v-else>La disponibilité sera vérifiée pour les dates sélectionnées.</span>
+      <div v-if="availability && !availability.all_available" class="mt-1">{{ availability.items.filter(i => !i.is_available).map(i => `${i.item_code}: ${i.available_quantity}/${i.requested_quantity} disponibles`).join(' · ') }}</div>
+      <div v-if="availabilityError" class="mt-1 text-red-800">{{ availabilityError }}</div>
     </div>
 
-    <!-- Accessory Suggestions Banner -->
-    <div
-      v-if="suggestedAccessories.length > 0"
-      class="p-3.5 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-2"
-      data-test="accessories-suggestion-banner"
-    >
-      <div class="flex items-center gap-1.5 text-xs font-bold text-cortex-text-primary">
-        <PackageCheck class="w-4 h-4 text-cortex-primary-600" />
-        <span>{{ t('composer.accessories_banner') }}</span>
-      </div>
-      <div class="flex flex-wrap gap-1.5 pt-1">
-        <span
-          v-for="acc in suggestedAccessories"
-          :key="acc.name"
-          class="px-2 py-0.5 rounded-full text-[11px] font-medium border"
-          :class="acc.required ? 'bg-amber-50 border-amber-300 text-amber-900 font-semibold' : 'bg-cortex-surface-secondary border-cortex-border text-cortex-text-secondary'"
-        >
-          {{ acc.required ? '[Requis]' : '[Optionnel]' }} {{ acc.name }}
-        </span>
-      </div>
+    <div class="rounded-xl border border-cortex-border bg-cortex-surface-secondary p-4 text-xs space-y-2">
+      <div class="flex justify-between"><span>Estimation hors taxes (tarifs ERPNext)</span><span>{{ pricing ? money(pricing.subtotal) : '—' }}</span></div>
+      <div class="flex justify-between"><span>Taxes</span><span>{{ pricing ? (pricing.tax_amount ? money(pricing.tax_amount) : 'calculées lors de la création du devis ERPNext') : '—' }}</span></div>
+      <div v-if="pricing" class="border-t pt-2 flex justify-between font-bold"><span>Estimation actuelle</span><span>{{ money(pricing.grand_total) }}</span></div>
+      <p v-if="pricingError" class="text-amber-800">{{ pricingError }}</p>
+      <p v-else class="text-[11px] text-cortex-text-muted">Montant indicatif calculé par Cortex. Les taxes officielles viennent du modèle de taxes ERPNext associé.</p>
     </div>
 
-    <!-- Financial Breakdown Card -->
-    <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface-secondary space-y-2 text-xs">
-      <div class="flex items-center justify-between text-cortex-text-secondary">
-        <span>Sous-total HT ({{ billableDays }} jours facturés sur {{ calendarDays }} calendaires) :</span>
-        <span class="font-mono font-semibold">{{ formatCurrency(subtotal) }}</span>
-      </div>
-      <div class="flex items-center justify-between text-cortex-text-secondary">
-        <span>Taxes applicables (TPS 5% + TVQ 9.975% = 14.975%) :</span>
-        <span class="font-mono font-semibold">{{ formatCurrency(taxAmount) }}</span>
-      </div>
-      <div class="flex items-center justify-between text-sm font-bold text-cortex-text-primary pt-2 border-t border-cortex-border">
-        <span>Total TTC (CAD) :</span>
-        <span class="font-mono text-base text-cortex-primary-800" data-test="composer-grand-total">
-          {{ formatCurrency(grandTotal) }}
-        </span>
-      </div>
-    </div>
-
-    <!-- Step Navigation Buttons -->
-    <div class="pt-3 border-t border-cortex-border flex items-center justify-between">
-      <button
-        type="button"
-        class="cx-btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5"
-        @click="emit('prev')"
-      >
-        <ArrowLeft class="w-3.5 h-3.5" />
-        <span>Précédent : Client & Dates</span>
-      </button>
-
-      <button
-        type="button"
-        class="cx-btn-primary text-xs px-4 py-2 flex items-center gap-1.5"
-        :disabled="lines.length === 0"
-        data-test="step2-next-btn"
-        @click="emit('next')"
-      >
-        <span>Suivant : Vérifier & Créer</span>
-        <ArrowRight class="w-3.5 h-3.5" />
-      </button>
-    </div>
+    <div class="flex justify-between border-t border-cortex-border pt-3"><button type="button" class="cx-btn-secondary px-3 py-2 text-xs" @click="emit('prev')">Précédent</button><button type="button" class="cx-btn-primary px-4 py-2 text-xs" :disabled="!lines.length || !pricing || checking" data-test="step2-next-btn" @click="emit('next')">Vérifier le devis</button></div>
   </div>
 </template>
-
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Sparkles, Plus, Trash2, ArrowRight, ArrowLeft, RefreshCw, PackageCheck } from 'lucide-vue-next'
-import { initialCatalog } from '@/api/mock/fixtures/catalog'
-import { initialSerials } from '@/api/mock/fixtures/serials'
-import { calculateBillableDays } from '@/api/mock/MockCortexApiClient'
+import { ref, watch } from 'vue'
 import { getCortexApiClient } from '@/api'
-
-const { t } = useI18n()
-
-export interface ComposerLineItem {
-  itemCode: string
-  itemName: string
-  category: string
-  dailyRate: number
-  quantity: number
-  assignedSerials: string[]
-}
-
-const props = defineProps<{
-  lines: ComposerLineItem[]
-  startsAt: string
-  endsAt: string
-}>()
-
-const emit = defineEmits<{
-  (e: 'update:lines', val: ComposerLineItem[]): void
-  (e: 'prev'): void
-  (e: 'next'): void
-}>()
-
-const catalog = initialCatalog
-const selectedCatalogCode = ref<string>('')
-const isCheckingAvailability = ref<boolean>(false)
-const allAvailable = ref<boolean>(true)
-
-const calendarDays = computed(() => {
-  if (!props.startsAt || !props.endsAt) return 7
-  const start = new Date(props.startsAt)
-  const end = new Date(props.endsAt)
-  const diffTime = Math.abs(end.getTime() - start.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  return diffDays > 0 ? diffDays : 1
-})
-
-const billableDays = computed(() => {
-  return calculateBillableDays(calendarDays.value)
-})
-
-const subtotal = computed(() => {
-  return props.lines.reduce((acc, line) => {
-    return acc + line.dailyRate * line.quantity * billableDays.value
-  }, 0)
-})
-
-const taxAmount = computed(() => {
-  return Math.round(subtotal.value * 0.14975 * 100) / 100
-})
-
-const grandTotal = computed(() => {
-  return subtotal.value + taxAmount.value
-})
-
-const suggestedAccessories = computed(() => {
-  const accList: Array<{ name: string; required: boolean }> = []
-  for (const line of props.lines) {
-    const catItem = catalog.find(c => c.item_code === line.itemCode)
-    if (catItem) {
-      if (catItem.required_accessories) {
-        catItem.required_accessories.forEach(acc => accList.push({ name: acc, required: true }))
-      }
-      if (catItem.optional_accessories) {
-        catItem.optional_accessories.forEach(acc => accList.push({ name: acc, required: false }))
-      }
-    }
-  }
-  return accList
-})
-
-const addItem = () => {
-  if (!selectedCatalogCode.value) return
-  const item = catalog.find(c => c.item_code === selectedCatalogCode.value)
-  if (!item) return
-
-  const existingIndex = props.lines.findIndex(l => l.itemCode === item.item_code)
-  if (existingIndex >= 0) {
-    const updated = [...props.lines]
-    const cur = updated[existingIndex]
-    if (cur) {
-      cur.quantity += 1
-    }
-    emit('update:lines', updated)
-  } else {
-    emit('update:lines', [
-      ...props.lines,
-      {
-        itemCode: item.item_code,
-        itemName: item.item_name,
-        category: item.category,
-        dailyRate: item.daily_rate,
-        quantity: 1,
-        assignedSerials: []
-      }
+import type { RentalCatalogOption, PreviewPricingResponse } from '@/api/contracts/rentals'
+import type { AvailabilityCheckResponse } from '@/api/contracts/availability'
+export interface ComposerLineItem { itemCode: string; itemName: string; category: string; dailyRate: number; quantity: number; assignedSerials: string[] }
+const props = defineProps<{ lines: ComposerLineItem[]; startsAt: string; endsAt: string }>()
+const emit = defineEmits<{ (e: 'update:lines', value: ComposerLineItem[]): void; (e: 'prev'): void; (e: 'next'): void }>()
+const api = getCortexApiClient(); const query = ref(''); const catalog = ref<RentalCatalogOption[]>([]); const selectedCode = ref(''); const catalogLoading = ref(false)
+const pricing = ref<PreviewPricingResponse | null>(null); const pricingError = ref(''); const availability = ref<AvailabilityCheckResponse | null>(null); const availabilityError = ref(''); const checking = ref(false)
+let searchTimer: ReturnType<typeof setTimeout> | undefined; let refreshTimer: ReturnType<typeof setTimeout> | undefined; let sequence = 0
+function searchCatalog() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(async () => { catalogLoading.value = true; try { catalog.value = await api.searchRentalCatalog(query.value.trim()) } catch { catalog.value = []; } finally { catalogLoading.value = false } }, 250) }
+async function addItem() { const item = catalog.value.find(i => i.item_code === selectedCode.value); if (!item) return; const existing = props.lines.find(l => l.itemCode === item.item_code); const next = existing ? props.lines.map(l => l.itemCode === item.item_code ? { ...l, quantity: l.quantity + 1 } : l) : [...props.lines, { itemCode: item.item_code, itemName: item.item_name, category: item.category, dailyRate: item.daily_rate, quantity: 1, assignedSerials: [] }]; emit('update:lines', next); selectedCode.value = '' }
+function setQuantity(index: number, quantity: number) { emit('update:lines', props.lines.map((l, i) => i === index ? { ...l, quantity: Math.max(1, quantity) } : l)) }
+function removeLine(index: number) { emit('update:lines', props.lines.filter((_, i) => i !== index)) }
+function dateTime(day: string, end = false) { return `${day}T${end ? '18:00:00' : '08:00:00'}` }
+function money(value: number) { return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(value) }
+watch(() => [props.lines, props.startsAt, props.endsAt] as const, () => { if (refreshTimer) clearTimeout(refreshTimer); refreshTimer = setTimeout(async () => {
+  pricing.value = null; availability.value = null; pricingError.value = ''; availabilityError.value = ''
+  if (!props.lines.length || !props.startsAt || !props.endsAt) return
+  const current = ++sequence; checking.value = true
+  try {
+    const [price, stock] = await Promise.all([
+      api.previewPricing({ starts_at: dateTime(props.startsAt), ends_at: dateTime(props.endsAt, true), items: props.lines.map(l => ({ item_code: l.itemCode, quantity: l.quantity })) }),
+      api.checkInventoryAvailability({ starts_at: dateTime(props.startsAt), ends_at: dateTime(props.endsAt, true), items: props.lines.map(l => ({ item_code: l.itemCode, quantity: l.quantity })) })
     ])
-  }
-  selectedCatalogCode.value = ''
-}
-
-const updateLineQuantity = (index: number, quantity: number) => {
-  const updated = [...props.lines]
-  const cur = updated[index]
-  if (cur) {
-    cur.quantity = Math.max(1, quantity)
-  }
-  emit('update:lines', updated)
-}
-
-const removeLine = (index: number) => {
-  const updated = props.lines.filter((_, i) => i !== index)
-  emit('update:lines', updated)
-}
-
-const autoAssignSerials = () => {
-  const updated = props.lines.map(line => {
-    const available = initialSerials
-      .filter(s => s.item_code === line.itemCode && s.status === 'Available')
-      .slice(0, line.quantity)
-      .map(s => s.serial_number)
-    return {
-      ...line,
-      assignedSerials: available
+    if (current === sequence) {
+      pricing.value = price; availability.value = stock
+      const repriced = props.lines.map(line => ({ ...line, dailyRate: price.lines.find(p => p.item_code === line.itemCode)?.daily_rate ?? line.dailyRate }))
+      if (repriced.some((line, index) => line.dailyRate !== props.lines[index]?.dailyRate)) emit('update:lines', repriced)
     }
-  })
-  emit('update:lines', updated)
-}
-
-// Debounce 400ms availability check
-let availTimer: ReturnType<typeof setTimeout> | null = null
-watch(
-  () => props.lines,
-  () => {
-    if (props.lines.length === 0) {
-      allAvailable.value = true
-      return
-    }
-    if (availTimer) clearTimeout(availTimer)
-    isCheckingAvailability.value = true
-    availTimer = setTimeout(async () => {
-      try {
-        const client = getCortexApiClient()
-        const res = await client.checkInventoryAvailability({
-          items: props.lines.map(l => ({ item_code: l.itemCode, quantity: l.quantity })),
-          starts_at: props.startsAt || '2026-09-10T08:00:00Z',
-          ends_at: props.endsAt || '2026-09-17T18:00:00Z'
-        })
-        allAvailable.value = res.all_available
-      } catch {
-        allAvailable.value = true
-      } finally {
-        isCheckingAvailability.value = false
-      }
-    }, 400)
-  },
-  { deep: true }
-)
-
-const formatCurrency = (amt: number) => {
-  return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(amt)
-}
+  } catch (error) { if (current === sequence) { pricingError.value = error instanceof Error ? error.message : 'Prix ERPNext indisponibles'; availabilityError.value = 'Vérification impossible. Ne considérez pas cet équipement comme réservé.' } }
+  finally { if (current === sequence) checking.value = false }
+}, 300) }, { deep: true, immediate: true })
 </script>

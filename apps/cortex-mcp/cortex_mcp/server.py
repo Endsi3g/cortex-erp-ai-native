@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+import os
 
 try:
     from mcp.server.fastmcp import FastMCP
@@ -295,6 +296,11 @@ async def record_structured_extraction(
 
 if __name__ == "__main__":
     if hasattr(mcp, "run"):
-        mcp.run()
+        # This service is a long-lived HTTP server in Docker. FastMCP's
+        # default stdio transport exits when the container has no stdin,
+        # which caused Docker's restart policy to loop forever.
+        mcp.settings.host = "0.0.0.0"
+        mcp.settings.port = int(os.environ.get("PORT", "3100"))
+        mcp.run(transport="streamable-http")
     else:
         print("Cortex FastMCP Server initialized with tools:", list(mcp.tools.keys()))

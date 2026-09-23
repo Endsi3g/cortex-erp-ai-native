@@ -47,7 +47,7 @@ export const AddDamageEvidenceInputSchema = z.object({
   rental_id: z.string(),
   serial_number: z.string(),
   description: z.string(),
-  photo_upload_id: z.string(),
+  photo_upload_id: z.string().optional(),
   severity: z.enum(['minor', 'major', 'unusable'])
 })
 
@@ -55,10 +55,23 @@ export type AddDamageEvidenceInput = z.infer<typeof AddDamageEvidenceInputSchema
 
 export const CompletePartialReturnInputSchema = z.object({
   rental_id: z.string(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  finalize_mode: z.enum(['auto', 'partial', 'full', 'settle_with_loss']).default('auto'),
+  items: z.array(z.object({
+    transaction_item: z.string(),
+    item_code: z.string(),
+    serial_no: z.string().optional(),
+    expected_qty: z.number(),
+    returned_qty: z.number(),
+    condition: z.enum(['Good', 'Damaged', 'Missing_Accessory', 'Needs_Clean']).default('Good'),
+    disposition: z.enum(['Return to Stock', 'Quarantine', 'Repair', 'Missing', 'Write-off']).default('Return to Stock'),
+    damage_severity: z.enum(['None', 'Cosmetic', 'Functional', 'Blocking']).default('None'),
+    notes: z.string().optional(),
+    file_name: z.string().optional()
+  })).optional()
 })
 
-export type CompletePartialReturnInput = z.infer<typeof CompletePartialReturnInputSchema>
+export type CompletePartialReturnInput = z.input<typeof CompletePartialReturnInputSchema>
 
 export const LookupScanInputSchema = z.object({
   barcode: z.string()

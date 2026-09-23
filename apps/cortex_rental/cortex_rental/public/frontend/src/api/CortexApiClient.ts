@@ -9,6 +9,8 @@ import type {
   ListRentalsResponse,
   GetRentalInput,
   GetRentalResponse,
+  RentalCustomerOption,
+  RentalCatalogOption,
   PreviewPricingInput,
   PreviewPricingResponse,
   CreateQuoteDraftInput,
@@ -89,6 +91,8 @@ export interface CortexApiClient {
   // 2. Rentals Lifecycle & Composer
   listRentals(input: ListRentalsInput): Promise<ListRentalsResponse>
   getRental(input: GetRentalInput): Promise<GetRentalResponse>
+  searchRentalCustomers(query: string): Promise<RentalCustomerOption[]>
+  searchRentalCatalog(query: string): Promise<RentalCatalogOption[]>
   previewPricing(input: PreviewPricingInput): Promise<PreviewPricingResponse>
   createQuoteDraft(input: CreateQuoteDraftInput): Promise<MutationResponse>
   updateQuoteDraft(input: UpdateQuoteDraftInput): Promise<MutationResponse>

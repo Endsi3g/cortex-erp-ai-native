@@ -13,6 +13,7 @@ from cortex_rental.services.checkin import (
     lookup_scan_target,
 )
 from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
+from cortex_rental.services.evidence import register_evidence
 
 # NOTE: Human-staff-only endpoints (require_human_staff_role). Physical
 # check-in and receiving require an authorized operator at the counter/warehouse.
@@ -43,6 +44,18 @@ def submit_checkin_handler(payload: Dict[str, Any], company: str, actor_id: str)
 
     if not items:
         raise ValueError("items array is required.")
+
+    for item in items:
+        file_name = item.pop("file_name", None)
+        if file_name:
+            attached = frappe.db.get_value("File", file_name, ["attached_to_doctype", "attached_to_name"], as_dict=True)
+            if not attached or attached.attached_to_doctype != "Cortex Rental Transaction" or attached.attached_to_name != transaction_id:
+                frappe.throw("Evidence file is not attached to this rental transaction.", frappe.PermissionError)
+            evidence = register_evidence(
+                company=company, source_channel="other", actor_id=actor_id,
+                file_name=file_name,
+            )
+            item["evidence_ids"] = list(item.get("evidence_ids") or []) + [evidence["id"]]
 
     finalize_mode = payload.get("finalize_mode", "auto")
     notes = payload.get("notes", "")

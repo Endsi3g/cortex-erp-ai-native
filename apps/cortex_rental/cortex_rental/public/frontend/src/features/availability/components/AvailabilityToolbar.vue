@@ -34,33 +34,29 @@
       </div>
 
       <!-- Category Filter -->
-      <select
-        :value="category"
-        class="text-xs px-2.5 py-1.5 rounded-lg border border-cortex-border bg-cortex-surface text-cortex-text-primary focus:outline-none focus:ring-1 focus:ring-cortex-primary-500"
+      <Select
+        :model-value="category"
+        class="min-w-40"
+        size="sm"
+        variant="outline"
         data-test="category-filter"
-        @change="emit('update:category', ($event.target as HTMLSelectElement).value)"
-      >
-        <option value="all">Toutes les catégories</option>
-        <option value="Cameras">Caméras</option>
-        <option value="Lenses">Optiques</option>
-        <option value="Lighting">Éclairage</option>
-        <option value="Grip">Machinerie & Grip</option>
-        <option value="Audio">Son & HF</option>
-        <option value="Monitoring">Monitoring</option>
-        <option value="Power & Batteries">Énergie</option>
-      </select>
+        aria-label="Filtrer par catégorie"
+        :options="categoryOptions"
+        @update:model-value="emit('update:category', String($event || 'all'))"
+      />
 
       <!-- Search Input -->
-      <div class="relative min-w-[180px]">
-        <input
-          type="text"
-          :value="search"
+      <div class="min-w-[180px]">
+        <TextInput
+          :model-value="search"
+          type="search"
+          size="sm"
+          variant="outline"
           placeholder="Filtrer équipement..."
-          class="w-full text-xs pl-7 pr-2.5 py-1.5 rounded-lg border border-cortex-border bg-cortex-surface text-cortex-text-primary placeholder:text-cortex-text-muted focus:outline-none focus:ring-1 focus:ring-cortex-primary-500"
+          aria-label="Rechercher un équipement"
           data-test="equipment-search-input"
-          @input="emit('update:search', ($event.target as HTMLInputElement).value)"
+          @update:model-value="emit('update:search', $event)"
         />
-        <Search class="w-3.5 h-3.5 absolute left-2 top-2 text-cortex-text-muted pointer-events-none" />
       </div>
     </div>
 
@@ -68,61 +64,41 @@
     <div class="flex items-center gap-2 justify-between lg:justify-end">
       <!-- Date Navigation -->
       <div class="flex items-center gap-1">
-        <button
-          type="button"
-          class="p-1 rounded-md border border-cortex-border hover:bg-cortex-surface-secondary text-cortex-text-muted hover:text-cortex-text-primary"
-          title="Précédent"
-          @click="emit('navigate', 'prev')"
-        >
-          <ChevronLeft class="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          class="px-2.5 py-1 text-xs rounded-md border border-cortex-border font-medium hover:bg-cortex-surface-secondary text-cortex-text-primary"
-          @click="emit('navigate', 'today')"
-        >
-          Aujourd'hui
-        </button>
-        <button
-          type="button"
-          class="p-1 rounded-md border border-cortex-border hover:bg-cortex-surface-secondary text-cortex-text-muted hover:text-cortex-text-primary"
-          title="Suivant"
-          @click="emit('navigate', 'next')"
-        >
-          <ChevronRight class="w-4 h-4" />
-        </button>
+        <Button size="sm" variant="outline" icon="chevron-left" aria-label="Période précédente" @click="emit('navigate', 'prev')" />
+        <Button size="sm" variant="outline" @click="emit('navigate', 'today')">Aujourd’hui</Button>
+        <Button size="sm" variant="outline" icon="chevron-right" aria-label="Période suivante" @click="emit('navigate', 'next')" />
         <span class="text-xs font-semibold text-cortex-text-primary ml-1.5">
           {{ dateLabel }}
         </span>
       </div>
 
       <!-- Create Quote Button (Flow 2) -->
-      <button
+      <Button
         type="button"
-        class="cx-btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 whitespace-nowrap"
+        size="sm"
+        theme="green"
+        variant="solid"
         :disabled="selectedEquipmentCodes.length === 0"
         data-test="create-quote-btn"
         @click="emit('create-quote')"
       >
-        <PlusCircle class="w-3.5 h-3.5" />
-        <span>{{ t('availability.create_quote') }}</span>
-        <span
-          v-if="selectedEquipmentCodes.length > 0"
-          class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-bold"
-          data-test="selected-count-badge"
-        >
-          {{ selectedEquipmentCodes.length }}
-        </span>
-      </button>
+        {{ t('availability.create_quote') }}<Badge v-if="selectedEquipmentCodes.length > 0" class="ml-1" theme="green" variant="subtle" data-test="selected-count-badge">{{ selectedEquipmentCodes.length }}</Badge>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { Search, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-vue-next'
+import { Badge, Button, Select, TextInput } from 'frappe-ui'
 
 const { t } = useI18n()
+const categoryOptions = [
+  { label: 'Toutes les catégories', value: 'all' }, { label: 'Caméras', value: 'Cameras' },
+  { label: 'Optiques', value: 'Lenses' }, { label: 'Éclairage', value: 'Lighting' },
+  { label: 'Machinerie & Grip', value: 'Grip' }, { label: 'Son & HF', value: 'Audio' },
+  { label: 'Monitoring', value: 'Monitoring' }, { label: 'Énergie', value: 'Power & Batteries' }
+]
 
 withDefaults(
   defineProps<{

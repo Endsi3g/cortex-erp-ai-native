@@ -24,7 +24,11 @@ from cortex_rental.schemas.chat_schemas import SendMessageResponseData
 from cortex_rental.services.agent_router import AgentRouter
 from cortex_rental.services.tool_policy import ToolPolicyResolver
 from cortex_rental.services.chat_context import ChatContextResolver, ChatContextPermissionError
-from cortex_rental.services.onyx_chat_client import OnyxChatClient, MockOnyxChatClient
+from cortex_rental.services.onyx_chat_client import (
+    HttpOnyxChatClient,
+    OnyxChatClient,
+    MockOnyxChatClient,
+)
 from cortex_rental.services.chat_response_transformer import ChatResponseTransformer
 from cortex_rental.services.chat_telemetry import ChatAuditTelemetryService
 
@@ -38,6 +42,14 @@ class ChatRateLimitError(Exception):
 
 class ChatSessionNotFoundError(Exception):
     pass
+
+
+def _mask_sensitive_text(value: str) -> str:
+    """Persist conversational text with common direct identifiers masked."""
+    import re
+
+    value = re.sub(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", "[courriel masqué]", value, flags=re.IGNORECASE)
+    return re.sub(r"(?<!\w)(?:\+?1[-. ]?)?\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}(?!\w)", "[téléphone masqué]", value)
 
 
 def _new_id(prefix: str) -> str:
@@ -67,9 +79,19 @@ def _check_rate_limit(user: str) -> None:
 
 class ChatSessionService:
     def __init__(self, onyx_client: Optional[OnyxChatClient] = None):
-        # Defaults to the mock — see HANDOFF.md for why no real Onyx
-        # client is wired in this pass. Tests inject their own fake.
-        self.onyx_client = onyx_client or MockOnyxChatClient()
+        if onyx_client is not None:
+            self.onyx_client = onyx_client
+        elif not frappe:
+            # The deterministic mock remains available only to unit tests and
+            # the local no-Frappe contract path.
+            self.onyx_client = MockOnyxChatClient()
+        else:
+            conf = getattr(frappe, "conf", {})
+            provider = str(conf.get("cortex_chat_provider", "onyx")).lower()
+            if provider == "mock" and conf.get("developer_mode"):
+                self.onyx_client = MockOnyxChatClient()
+            else:
+                self.onyx_client = HttpOnyxChatClient.from_site_config()
 
     # -----------------------------------------------------------------
     def create_session(self, user: str, company: str, page: str, locale: str = "fr-CA") -> Dict[str, Any]:
@@ -179,13 +201,35 @@ class ChatSessionService:
         self._write_context_snapshot(session_name, company, page, resolved_context, context_hash)
         self._write_message(session_name, company, "Human", user, message, [], request_id)
 
-        result = self.onyx_client.send_message(
-            message=message,
-            chat_session_id=session_name,
-            persona_id=agent_profile,
-            allowed_tool_ids=allowed_tool_ids,
-            context=resolved_context,
-        )
+        upstream_session_id = None
+        if frappe:
+            upstream_session_id = frappe.db.get_value(
+                "Cortex Chat Session", session_name, "onyx_chat_session_id"
+            )
+
+        try:
+            result = self.onyx_client.send_message(
+                message=message,
+                chat_session_id=upstream_session_id,
+                persona_id=agent_profile,
+                allowed_tool_ids=allowed_tool_ids,
+                context=resolved_context,
+            )
+        except Exception as exc:
+            ChatAuditTelemetryService.record_chat_turn(
+                company=company,
+                agent_profile=agent_profile,
+                request_id=request_id,
+                status="Failed",
+                started_at=started_at,
+                duration_ms=int((time.monotonic() - start) * 1000),
+                error_message=type(exc).__name__,
+            )
+            raise
+        if frappe and result.onyx_session_id and result.onyx_session_id != upstream_session_id:
+            frappe.db.set_value(
+                "Cortex Chat Session", session_name, "onyx_chat_session_id", result.onyx_session_id
+            )
         blocks = ChatResponseTransformer.transform(result)
 
         message_doc_name = self._write_message(
@@ -286,6 +330,8 @@ class ChatSessionService:
 
         import hashlib
 
+        safe_content = _mask_sensitive_text(content)
+
         doc = frappe.get_doc(
             {
                 "doctype": "Cortex Chat Message",
@@ -293,8 +339,8 @@ class ChatSessionService:
                 "company": company,
                 "sender_type": sender_type,
                 "sender_id": sender_id,
-                "content_sanitized": content,
-                "content_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                "content_sanitized": safe_content,
+                "content_hash": hashlib.sha256(safe_content.encode("utf-8")).hexdigest(),
                 "ui_blocks_json": frappe.as_json(blocks),
                 "model_provider": model_provider,
                 "model_name": model_name,

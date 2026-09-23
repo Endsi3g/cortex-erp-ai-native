@@ -252,7 +252,7 @@ import CortexErrorBanner from '@/design-system/components/states/CortexErrorBann
 const { t } = useI18n()
 const route = useRoute()
 
-const rentalId = computed(() => String(route.params.rental || 'DEMO-TRX-2026-006'))
+const rentalId = computed(() => String(route.params.rental || ''))
 
 const rental = ref<RentalTransaction | null>(null)
 const isLoading = ref<boolean>(false)
@@ -326,22 +326,29 @@ const handleBarcodeScan = async (payload: { raw: string; trimmed: string }) => {
     return
   }
 
-  // 3. Valid Scan -> Mutate local & call API
-  ScannerFeedback.playSuccess()
-  scannerFeedbackStatus.value = 'success'
-  scannerStatusMessage.value = `Numéro de série ${barcode} validé !`
-  scannedSerials.value.push(barcode)
-
+  // A scan only becomes successful after the server confirms the mutation.
   try {
     const client = getCortexApiClient()
     if (rental.value) {
-      await client.scanCheckoutSerial({
+      const result = await client.scanCheckoutSerial({
         rental_id: rental.value.id,
         serial_number: barcode
       })
+      if (result.status !== 'completed') {
+        ScannerFeedback.playError()
+        scannerFeedbackStatus.value = 'error'
+        scannerStatusMessage.value = result.errors?.[0]?.message || 'Le serveur a refusé le scan.'
+        return
+      }
+      scannedSerials.value.push(barcode)
+      ScannerFeedback.playSuccess()
+      scannerFeedbackStatus.value = 'success'
+      scannerStatusMessage.value = `Numéro de série ${barcode} validé par le serveur.`
     }
-  } catch {
-    // Graceful offline/demo mock fallback
+  } catch (err: unknown) {
+    ScannerFeedback.playError()
+    scannerFeedbackStatus.value = 'error'
+    scannerStatusMessage.value = err instanceof Error ? err.message : 'Impossible d’enregistrer ce scan.'
   }
 }
 

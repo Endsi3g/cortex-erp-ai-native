@@ -17,7 +17,7 @@ export interface RecentRoute {
 export const useNavigationStore = defineStore('navigation', () => {
   // Sidebar state persisted in localStorage
   const sidebarCollapsed = ref<boolean>(
-    (typeof localStorage !== 'undefined' && localStorage.getItem('cortex_sidebar_collapsed') === 'true') || false
+    typeof localStorage === 'undefined' || localStorage.getItem('cortex_sidebar_collapsed') !== 'false'
   )
 
   // Mobile bottom navigation active tab

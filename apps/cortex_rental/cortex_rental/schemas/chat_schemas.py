@@ -70,6 +70,14 @@ class VerifiedFactBlock(BaseModel):
     checked_at: str
 
 
+class AssistantTextBlock(BaseModel):
+    """Natural-language assistant output; never an ERP-verified fact."""
+
+    type: Literal["assistant_text"] = "assistant_text"
+    text: str
+    source_ids: List[str] = Field(default_factory=list)
+
+
 class ExtractedField(BaseModel):
     label: str
     value: str
@@ -137,6 +145,7 @@ class ErrorBlock(BaseModel):
 ChatBlock = Annotated[
     Union[
         VerifiedFactBlock,
+        AssistantTextBlock,
         ExtractedDataBlock,
         ProposalBlock,
         ApprovalRequiredBlock,

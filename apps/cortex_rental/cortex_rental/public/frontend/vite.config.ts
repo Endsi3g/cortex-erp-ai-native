@@ -20,12 +20,20 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
+    // frappe-ui imports Feather Icons as CommonJS from its source .vue files;
+    // the dev toolchain also imports debug's CommonJS browser entry directly.
+    // Prebundle both so Vite supplies the default interop exports they expect.
+    include: ['feather-icons', 'debug', 'debug/src/browser.js'],
     exclude: ['frappe-ui']
   },
   server: {
     port: 5173,
     host: true,
-    strictPort: true
+    strictPort: true,
+    proxy: {
+      '/api': { target: process.env.FRAPPE_PROXY_TARGET || 'http://localhost:8000', changeOrigin: true },
+      '/assets': { target: process.env.FRAPPE_PROXY_TARGET || 'http://localhost:8000', changeOrigin: true }
+    }
   },
   build: {
     outDir: 'dist',
@@ -35,6 +43,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'happy-dom',
-    include: ['src/**/*.test.ts', 'src/**/*.spec.ts']
+    include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
+    server: { deps: { inline: ['frappe-ui'] } },
+    testTimeout: 60000
   }
 })

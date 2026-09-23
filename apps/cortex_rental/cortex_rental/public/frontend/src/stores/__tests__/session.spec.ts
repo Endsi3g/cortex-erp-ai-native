@@ -1,56 +1,62 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useSessionStore } from '@/stores/session'
 
-describe('Session Store — Multi-Tenant & RBAC', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
+const context = { message: { data: {
+  user: { id: 'operator@example.test', email: 'operator@example.test', full_name: 'Operator', roles: ['Warehouse Operator'] },
+  companies: [{ id: 'Company A', name: 'Company A', code: 'Company A', is_default: true, currency: 'CAD' }, { id: 'Company B', name: 'Company B', code: 'Company B', currency: 'CAD' }],
+  active_company_id: 'Company A', permissions: { 'cortex:checkout:perform': true, 'cortex:checkin:perform': true, 'cortex:approvals:decide': false }
+} } }
+
+describe('Session Store — Frappe authentication and RBAC', () => {
+  beforeEach(() => { setActivePinia(createPinia()); vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(context), { status: 200 }))) })
+  it('starts unauthenticated, then loads the live Frappe session context', async () => {
+    const session = useSessionStore()
+    expect(session.isAuthenticated).toBe(false)
+    expect(await session.initializeSession()).toBe(true)
+    expect(session.currentUser?.id).toBe('operator@example.test')
+    expect(session.activeCompanyId).toBe('Company A')
+    expect(session.userCompanies).toHaveLength(2)
   })
-
-  it('S-TEST-1: Initializes with default synthetic multi-company session', () => {
-    const sessionStore = useSessionStore()
-    expect(sessionStore.isAuthenticated).toBe(true)
-    expect(sessionStore.activeCompanyId).toBe('DEMO-COMP-001')
-    expect(sessionStore.userCompanies.length).toBe(2)
-    expect(sessionStore.hasMultipleCompanies).toBe(true)
+  it('shares one in-flight Frappe request between concurrent session guards', async () => {
+    let resolveFetch!: (response: Response) => void
+    const fetchMock = vi.fn(() => new Promise<Response>(resolve => { resolveFetch = resolve }))
+    vi.stubGlobal('fetch', fetchMock)
+    const session = useSessionStore()
+    const first = session.initializeSession()
+    const second = session.initializeSession()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    resolveFetch(new Response(JSON.stringify(context), { status: 200 }))
+    await expect(Promise.all([first, second])).resolves.toEqual([true, true])
   })
-
-  it('S-TEST-2: Switches active company with authorization check', async () => {
-    const sessionStore = useSessionStore()
-
-    const switchSuccess = await sessionStore.switchCompany('DEMO-COMP-002')
-    expect(switchSuccess).toBe(true)
-    expect(sessionStore.activeCompanyId).toBe('DEMO-COMP-002')
-    expect(sessionStore.activeCompany?.name).toBe('Cortex Broadcast Montréal')
-
-    // Reject unauthorized company
-    const unauthorizedSuccess = await sessionStore.switchCompany('COMP-UNAUTHORIZED-999')
-    expect(unauthorizedSuccess).toBe(false)
-    expect(sessionStore.activeCompanyId).toBe('DEMO-COMP-002')
+  it('leaves the router able to show login when Frappe never responds', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn((_input: RequestInfo | URL, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+    })))
+    try {
+      const session = useSessionStore()
+      const pending = session.initializeSession()
+      await vi.advanceTimersByTimeAsync(8000)
+      await expect(pending).resolves.toBe(false)
+      expect(session.isLoadingSession).toBe(false)
+      expect(session.isAuthenticated).toBe(false)
+    } finally { vi.useRealTimers() }
   })
-
-  it('S-TEST-3: Correctly validates RBAC permissions and system roles', () => {
-    const sessionStore = useSessionStore()
-
-    expect(sessionStore.hasPermission('cortex:operations:view')).toBe(true)
-    expect(sessionStore.hasPermission('cortex:approvals:decide')).toBe(true)
-
-    // Revoke system manager and restrict
-    if (sessionStore.currentUser) {
-      sessionStore.currentUser.roles = ['Warehouse Operator']
-      sessionStore.currentUser.permissions = ['cortex:checkout:perform', 'cortex:checkin:perform']
-    }
-
-    expect(sessionStore.hasPermission('cortex:checkout:perform')).toBe(true)
-    expect(sessionStore.hasPermission('cortex:approvals:decide')).toBe(false)
+  it('only permits switching to a company returned by Frappe', async () => {
+    const session = useSessionStore(); await session.initializeSession()
+    expect(await session.switchCompany('Company B')).toBe(true)
+    expect(session.activeCompany?.name).toBe('Company B')
+    expect(await session.switchCompany('unauthorized')).toBe(false)
+    expect(session.activeCompanyId).toBe('Company B')
   })
-
-  it('S-TEST-4: Updates locale between fr-CA and en-CA', () => {
-    const sessionStore = useSessionStore()
-    sessionStore.setLocale('en-CA')
-    expect(sessionStore.locale).toBe('en-CA')
-
-    sessionStore.setLocale('fr-CA')
-    expect(sessionStore.locale).toBe('fr-CA')
+  it('uses role and permission data returned by Frappe for authorization', async () => {
+    const session = useSessionStore(); await session.initializeSession()
+    expect(session.hasPermission('cortex:checkout:perform')).toBe(true)
+    expect(session.hasPermission('cortex:approvals:decide')).toBe(false)
+  })
+  it('updates locale between fr-CA and en-CA', () => {
+    const session = useSessionStore(); session.setLocale('en-CA'); expect(session.locale).toBe('en-CA')
+    session.setLocale('fr-CA'); expect(session.locale).toBe('fr-CA')
   })
 })

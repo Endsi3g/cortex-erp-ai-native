@@ -29,12 +29,12 @@
       <!-- Multi-Tenant Company Selector -->
       <CompanySelector />
 
-      <!-- Approvals Badge Counter -->
+      <!-- AI Inbox badge includes pending human reviews -->
       <RouterLink
-        to="/app/cortex-approvals"
+        to="/app/cortex-ai-inbox"
         class="relative p-1.5 rounded-lg text-cortex-text-muted hover:text-cortex-text-primary hover:bg-cortex-surface-subtle transition-colors focus:outline-none focus:ring-2 focus:ring-cortex-primary-500"
-        :title="t('routes.approvals')"
-        :aria-label="t('routes.approvals')"
+        :title="t('routes.ai_inbox')"
+        :aria-label="t('routes.ai_inbox')"
       >
         <ShieldCheck class="w-4 h-4" />
         <span

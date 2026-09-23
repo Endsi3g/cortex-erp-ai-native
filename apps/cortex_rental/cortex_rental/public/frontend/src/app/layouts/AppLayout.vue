@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen w-screen overflow-hidden bg-cortex-bg text-cortex-text-primary font-sans antialiased">
+  <div class="flex h-screen w-screen overflow-hidden bg-[#f7f8f8] text-cortex-text-primary font-sans antialiased">
     <!-- Desktop Collapsible Sidebar -->
     <AppSidebar class="hidden md:flex" />
 
@@ -10,7 +10,7 @@
 
       <!-- Main Scrollable Feature Canvas -->
       <main
-        class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 bg-cortex-bg focus:outline-none"
+        class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 bg-[#f7f8f8] focus:outline-none"
         tabindex="-1"
         id="main-content"
       >

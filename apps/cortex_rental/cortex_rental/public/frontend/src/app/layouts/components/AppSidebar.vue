@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="flex flex-col bg-cortex-surface border-r border-cortex-border h-full transition-all duration-200 ease-in-out select-none flex-shrink-0 z-20 font-sans"
+    class="flex flex-col bg-white border-r border-cortex-border h-full transition-all duration-200 ease-in-out select-none flex-shrink-0 z-20 font-sans"
     :class="navigationStore.sidebarCollapsed ? 'w-18' : 'w-62'"
     aria-label="Navigation Principale"
   >
@@ -9,7 +9,7 @@
       class="h-14 flex items-center border-b border-cortex-border px-3"
       :class="navigationStore.sidebarCollapsed ? 'justify-center' : 'justify-between'"
     >
-      <CortexLogo :collapsed="navigationStore.sidebarCollapsed" />
+            <CortexLogo :collapsed="navigationStore.sidebarCollapsed" />
     </div>
 
     <!-- Navigation Groups Scroll Area -->
@@ -117,13 +117,11 @@ import {
   PlusCircle,
   LogOut,
   LogIn,
-  ShieldCheck,
   Percent,
   Users,
   Inbox,
   Sparkles,
   Activity,
-  MessageSquareCode,
   Package,
   Barcode,
   Layers,
@@ -180,7 +178,6 @@ const navGroups: NavGroup[] = [
     id: 'supervision',
     titleKey: 'common.navigation_groups.supervision',
     items: [
-      { name: 'approval-queue', to: '/app/cortex-approvals', titleKey: 'routes.approval_queue', icon: ShieldCheck, badgeCount: 4 },
       { name: 'consignment-dashboard', to: '/app/cortex-consignment', titleKey: 'routes.consignment_dashboard', icon: Percent },
       { name: 'consignment-owners', to: '/app/cortex-consignment-owner', titleKey: 'routes.consignment_owners', icon: Users }
     ]
@@ -190,10 +187,9 @@ const navGroups: NavGroup[] = [
     id: 'intelligence',
     titleKey: 'common.navigation_groups.intelligence',
     items: [
-      { name: 'incoming-requests', to: '/app/cortex-incoming', titleKey: 'routes.incoming_requests', icon: Inbox, badgeCount: 3 },
-      { name: 'ai-drafts', to: '/app/cortex-ai-drafts', titleKey: 'routes.ai_drafts', icon: Sparkles },
-      { name: 'agent-activity', to: '/app/cortex-agent-activity', titleKey: 'routes.agent_activity', icon: Activity },
-      { name: 'assistant-full', to: '/app/cortex-assistant', titleKey: 'routes.assistant_full', icon: MessageSquareCode }
+      { name: 'ai-inbox', to: '/app/cortex-ai-inbox', titleKey: 'routes.ai_inbox', icon: Inbox, badgeCount: 3 },
+      { name: 'ai-workspace', to: '/app/cortex-ai-workspace', titleKey: 'routes.ai_workspace', icon: Sparkles },
+      { name: 'ai-audit', to: '/app/cortex-ai-audit', titleKey: 'routes.ai_audit', icon: Activity }
     ]
   },
   // 5. Catalog & Fleet

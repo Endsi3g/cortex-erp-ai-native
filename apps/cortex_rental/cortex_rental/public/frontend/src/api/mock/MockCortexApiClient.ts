@@ -10,6 +10,8 @@ import type {
   ListRentalsResponse,
   GetRentalInput,
   GetRentalResponse,
+  RentalCustomerOption,
+  RentalCatalogOption,
   PreviewPricingInput,
   PreviewPricingResponse,
   CreateQuoteDraftInput,
@@ -400,6 +402,31 @@ export class MockCortexApiClient implements CortexApiClient {
       throw new Error(`Location introuvable: ${input.id}`)
     }
     return { ...rental, provenance: 'mock', last_synced_at: new Date().toISOString() }
+  }
+
+  async searchRentalCustomers(query: string): Promise<RentalCustomerOption[]> {
+    const needle = query.trim().toLowerCase()
+    return this.store.customers
+      .filter(customer => !needle || customer.name.toLowerCase().includes(needle) || customer.id.toLowerCase().includes(needle))
+      .map(customer => ({
+        id: customer.id,
+        name: customer.name,
+        insurance_valid: customer.insurance_valid_until >= new Date().toISOString().slice(0, 10)
+      }))
+  }
+
+  async searchRentalCatalog(query: string): Promise<RentalCatalogOption[]> {
+    const needle = query.trim().toLowerCase()
+    return this.store.catalog
+      .filter(item => !needle || item.item_name.toLowerCase().includes(needle) || item.item_code.toLowerCase().includes(needle))
+      .map(item => ({
+        item_code: item.item_code,
+        item_name: item.item_name,
+        category: item.category,
+        daily_rate: item.daily_rate,
+        is_serialized: item.is_serialized,
+        required_accessories: item.required_accessories || []
+      }))
   }
 
   async previewPricing(input: PreviewPricingInput): Promise<PreviewPricingResponse> {

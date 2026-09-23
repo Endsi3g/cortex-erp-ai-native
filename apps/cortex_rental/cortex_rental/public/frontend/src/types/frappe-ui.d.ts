@@ -4,6 +4,8 @@ declare module 'frappe-ui' {
   export const FrappeUIProvider: DefineComponent<{}, {}, any>
   export const Button: DefineComponent<any, any, any>
   export const TextInput: DefineComponent<any, any, any>
+  export const Input: DefineComponent<any, any, any>
+  export const Textarea: DefineComponent<any, any, any>
   export const Select: DefineComponent<any, any, any>
   export const Badge: DefineComponent<any, any, any>
   export const Avatar: DefineComponent<any, any, any>

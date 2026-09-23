@@ -128,22 +128,12 @@ export const routes: RouteRecordRaw[] = [
     }
   },
 
-  // 8. Approval Queue SAS [Screen 8 - P0]
+  // Approval Queue now lives as a filtered view in AI Inbox.
   {
     path: '/app/cortex-approvals',
     name: 'approval-queue',
-    component: () => import('@/features/approvals/views/ApprovalQueueView.vue'),
-    meta: {
-      screenId: 8,
-      titleKey: 'routes.approval_queue',
-      priority: 'P0',
-      layout: 'app',
-      requiresAuth: true,
-      requiredPermission: 'cortex:approvals:decide',
-      category: 'supervision',
-      iconName: 'ShieldCheck',
-      badgeCount: 4
-    }
+    redirect: { name: 'ai-inbox', query: { type: 'approval' } },
+    meta: { screenId: 8, titleKey: 'routes.approval_queue', priority: 'P0', layout: 'app', requiresAuth: true, requiredPermission: 'cortex:approvals:decide', hideInSidebar: true }
   },
 
   // 9. Equipment List [Screen 9 - P1]
@@ -275,52 +265,43 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/app/cortex-incoming',
     name: 'incoming-requests',
-    component: () => import('@/features/intelligence/views/IncomingRequestsView.vue'),
-    meta: {
-      screenId: 16,
-      titleKey: 'routes.incoming_requests',
-      priority: 'P1',
-      layout: 'app',
-      requiresAuth: true,
-      requiredPermission: 'cortex:intake:view',
-      category: 'intelligence',
-      iconName: 'Inbox',
-      badgeCount: 3
-    }
+    redirect: { name: 'ai-inbox', query: { type: 'inbound' } },
+    meta: { screenId: 16, titleKey: 'routes.incoming_requests', priority: 'P1', layout: 'app', requiresAuth: true, requiredPermission: 'cortex:intake:view', hideInSidebar: true }
   },
 
   // 17. AI Drafts [Screen 17 - P1]
   {
     path: '/app/cortex-ai-drafts',
     name: 'ai-drafts',
-    component: () => import('@/features/intelligence/views/AiDraftsView.vue'),
-    meta: {
-      screenId: 17,
-      titleKey: 'routes.ai_drafts',
-      priority: 'P1',
-      layout: 'app',
-      requiresAuth: true,
-      requiredPermission: 'cortex:drafts:review',
-      category: 'intelligence',
-      iconName: 'Sparkles'
-    }
+    redirect: { name: 'ai-inbox', query: { type: 'draft' } },
+    meta: { screenId: 17, titleKey: 'routes.ai_drafts', priority: 'P1', layout: 'app', requiresAuth: true, requiredPermission: 'cortex:drafts:review', hideInSidebar: true }
   },
 
   // 18. Agent Activity & Telemetry [Screen 18 - P1]
   {
     path: '/app/cortex-agent-activity',
     name: 'agent-activity',
-    component: () => import('@/features/intelligence/views/AgentActivityView.vue'),
-    meta: {
-      screenId: 18,
-      titleKey: 'routes.agent_activity',
-      priority: 'P1',
-      layout: 'app',
-      requiresAuth: true,
-      requiredPermission: 'cortex:telemetry:admin',
-      category: 'intelligence',
-      iconName: 'Activity'
-    }
+    redirect: { name: 'ai-audit' },
+    meta: { screenId: 18, titleKey: 'routes.agent_activity', priority: 'P1', layout: 'app', requiresAuth: true, requiredPermission: 'cortex:telemetry:admin', hideInSidebar: true }
+  },
+
+  {
+    path: '/app/cortex-ai-inbox',
+    name: 'ai-inbox',
+    component: () => import('@/features/intelligence/views/AiInboxView.vue'),
+    meta: { screenId: 25, titleKey: 'routes.ai_inbox', priority: 'P0', layout: 'app', requiresAuth: true, requiredPermission: 'cortex:copilot:access', category: 'intelligence', iconName: 'Inbox' }
+  },
+  {
+    path: '/app/cortex-ai-workspace/:itemId?',
+    name: 'ai-workspace',
+    component: () => import('@/features/intelligence/views/AiWorkspaceView.vue'),
+    meta: { screenId: 26, titleKey: 'routes.ai_workspace', priority: 'P0', layout: 'app', requiresAuth: true, requiredPermission: 'cortex:copilot:access', category: 'intelligence', iconName: 'Sparkles' }
+  },
+  {
+    path: '/app/cortex-ai-audit',
+    name: 'ai-audit',
+    component: () => import('@/features/intelligence/views/AiAuditView.vue'),
+    meta: { screenId: 27, titleKey: 'routes.ai_audit', priority: 'P1', layout: 'app', requiresAuth: true, requiredPermission: 'cortex:audit:view', category: 'intelligence', iconName: 'Activity' }
   },
 
   // 19. Copilot Sidebar (Screen 19 - P0) — alias / dedicated route

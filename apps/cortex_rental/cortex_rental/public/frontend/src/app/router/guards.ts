@@ -9,7 +9,8 @@ export function setupRouterGuards(router: Router) {
   router.beforeEach(async (to, _from, next) => {
     const sessionStore = useSessionStore()
 
-    if (to.meta.requiresAuth && !sessionStore.isAuthenticated) {
+    if (to.name === 'login') return next()
+    if (to.meta.requiresAuth && !sessionStore.isAuthenticated && !(await sessionStore.initializeSession())) {
       return next({
         name: 'login',
         query: { redirect: to.fullPath }
@@ -19,19 +20,18 @@ export function setupRouterGuards(router: Router) {
   })
 
   // 2. Multi-Tenant Company Guard
-  router.beforeEach(async (to, _from, next) => {
-    const sessionStore = useSessionStore()
-
-    if (to.meta.requiresAuth && !sessionStore.activeCompanyId) {
-      await sessionStore.initializeSession()
-    }
-    next()
-  })
-
   // 3. RBAC Permission Guard
   router.beforeEach(async (to, _from, next) => {
     const sessionStore = useSessionStore()
-    const requiredPermission = to.meta.requiredPermission as string | undefined
+    const inboxPermissionByView: Record<string, string> = {
+      inbound: 'cortex:intake:view',
+      draft: 'cortex:drafts:review',
+      approval: 'cortex:approvals:decide'
+    }
+    const inboxPermission = to.name === 'ai-inbox' && typeof to.query.type === 'string'
+      ? inboxPermissionByView[to.query.type]
+      : undefined
+    const requiredPermission = inboxPermission || to.meta.requiredPermission as string | undefined
 
     if (requiredPermission && !sessionStore.hasPermission(requiredPermission)) {
       return next({

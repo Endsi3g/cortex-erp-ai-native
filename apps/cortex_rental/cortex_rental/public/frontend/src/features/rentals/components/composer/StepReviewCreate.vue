@@ -1,305 +1,53 @@
 <template>
   <div class="space-y-5" data-test="step-review-create">
-    <!-- Readiness Assessment Box -->
-    <div
-      class="p-4 rounded-xl border bg-cortex-surface shadow-2xs space-y-3"
-      :class="isReadyForContract ? 'border-cortex-border' : 'border-amber-300 bg-amber-50/20'"
-    >
-      <div class="flex items-center justify-between">
-        <h3 class="text-xs font-bold text-cortex-text-primary uppercase tracking-wider">
-          Évaluation Préalable de Readiness
-        </h3>
-        <span
-          class="px-2 py-0.5 rounded text-[10px] font-bold"
-          :class="isReadyForContract ? 'bg-cortex-primary-100 text-cortex-primary-800' : 'bg-amber-100 text-amber-900'"
-        >
-          {{ isReadyForContract ? '✓ Prêt pour Contrat' : '⚠ Approbation requise pour Contrat' }}
-        </span>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-        <div class="p-2.5 rounded-lg border border-cortex-border bg-cortex-surface-secondary flex items-center justify-between">
-          <span>Compte Client :</span>
-          <span class="font-bold text-cortex-primary-700">Validé</span>
-        </div>
-        <div class="p-2.5 rounded-lg border border-cortex-border bg-cortex-surface-secondary flex items-center justify-between">
-          <span>Assurance :</span>
-          <span class="font-bold" :class="isInsuranceExpired ? 'text-red-600' : 'text-cortex-primary-700'">
-            {{ isInsuranceExpired ? 'Expirée' : 'Conforme' }}
-          </span>
-        </div>
-        <div class="p-2.5 rounded-lg border border-cortex-border bg-cortex-surface-secondary flex items-center justify-between">
-          <span>Dépôt / Solvabilité :</span>
-          <span class="font-bold text-cortex-primary-700">Validé</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Review Summary Card -->
-    <div class="p-5 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-4">
-      <h3 class="text-sm font-bold text-cortex-text-primary border-b border-cortex-border pb-2">
-        Récapitulatif de la Transaction
-      </h3>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-        <div>
-          <span class="text-cortex-text-muted block text-[10px] uppercase font-semibold">Client</span>
-          <span class="font-bold text-cortex-text-primary">{{ step1.customerName }}</span>
-          <span class="text-cortex-text-muted block text-[11px]">{{ step1.customerEmail }}</span>
-        </div>
-
-        <div>
-          <span class="text-cortex-text-muted block text-[10px] uppercase font-semibold">Période & Projet</span>
-          <span class="font-mono text-cortex-text-primary">{{ step1.startsAt }} → {{ step1.endsAt }}</span>
-          <span class="text-cortex-text-secondary block text-[11px]">{{ step1.projectName || 'Projet sans nom' }}</span>
-        </div>
-      </div>
-
-      <!-- Line items summary -->
-      <div class="border-t border-cortex-border pt-3 space-y-2">
-        <span class="text-cortex-text-muted block text-[10px] uppercase font-semibold">
-          Équipements & Séries assignées ({{ lines.length }})
-        </span>
-        <div
-          v-for="line in lines"
-          :key="line.itemCode"
-          class="flex items-center justify-between text-xs py-1 border-b border-cortex-border/50 last:border-b-0"
-        >
-          <div>
-            <span class="font-semibold text-cortex-text-primary">{{ line.quantity }}× {{ line.itemName }}</span>
-            <div v-if="line.assignedSerials.length > 0" class="flex items-center gap-1 mt-0.5">
-              <span class="text-[10px] text-cortex-text-muted font-mono">
-                Séries: {{ line.assignedSerials.join(', ') }}
-              </span>
-            </div>
-          </div>
-          <span class="font-mono font-semibold text-cortex-text-primary">
-            {{ formatCurrency(line.dailyRate * line.quantity * billableDays) }}
-          </span>
-        </div>
-      </div>
-
-      <!-- Financial Totals -->
-      <div class="border-t border-cortex-border pt-3 space-y-1.5 text-xs">
-        <div class="flex items-center justify-between text-cortex-text-secondary">
-          <span>Sous-total HT ({{ billableDays }}j facturés) :</span>
-          <span class="font-mono font-semibold">{{ formatCurrency(subtotal) }}</span>
-        </div>
-        <div class="flex items-center justify-between text-cortex-text-secondary">
-          <span>Taxes (14.975%) :</span>
-          <span class="font-mono font-semibold">{{ formatCurrency(taxAmount) }}</span>
-        </div>
-        <div class="flex items-center justify-between text-base font-bold text-cortex-text-primary pt-1 border-t border-cortex-border">
-          <span>Total TTC (CAD) :</span>
-          <span class="font-mono text-cortex-primary-800 text-lg" data-test="review-grand-total">
-            {{ formatCurrency(grandTotal) }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Error Banner -->
-    <div
-      v-if="errorMessage"
-      class="p-3 rounded-lg border border-red-300 bg-red-50 text-xs text-red-900"
-    >
-      {{ errorMessage }}
-    </div>
-
-    <!-- Actions Bar -->
-    <div class="pt-3 border-t border-cortex-border flex flex-col sm:flex-row items-center justify-between gap-3">
-      <button
-        type="button"
-        class="cx-btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5 w-full sm:w-auto justify-center"
-        :disabled="isSubmitting"
-        @click="emit('prev')"
-      >
-        <ArrowLeft class="w-3.5 h-3.5" />
-        <span>Précédent : Équipements</span>
-      </button>
-
-      <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-        <!-- Quote Button (Non-blocking) -->
-        <button
-          type="button"
-          class="cx-btn-secondary text-xs px-4 py-2 border-cortex-primary-600 text-cortex-primary-800 hover:bg-cortex-primary-50 font-semibold"
-          :disabled="isSubmitting"
-          data-test="create-quote-action-btn"
-          @click="openConfirmation('Quote')"
-        >
-          <span>{{ t('composer.create_quote_btn') }}</span>
-        </button>
-
-        <!-- Reservation Button (Blocks inventory) -->
-        <button
-          type="button"
-          class="cx-btn-primary text-xs px-4 py-2 font-semibold"
-          :disabled="isSubmitting"
-          data-test="confirm-reservation-action-btn"
-          @click="openConfirmation('Reservation')"
-        >
-          <span>{{ t('composer.confirm_reservation_btn') }}</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Confirmation Modal with Anti Double-Click Protection -->
-    <CortexModal
-      :model-value="showConfirmModal"
-      :title="t('composer.confirm_modal_title')"
-      size="sm"
-      @close="showConfirmModal = false"
-    >
-      <div class="space-y-3 text-xs text-cortex-text-secondary" data-test="composer-confirm-modal">
-        <p>
-          Vous allez enregistrer cette location au statut
-          <strong class="text-cortex-text-primary">{{ pendingActionState === 'Quote' ? 'Soumission (Quote)' : 'Réservation' }}</strong>
-          pour <strong>{{ step1.customerName }}</strong>.
-        </p>
-        <div v-if="pendingActionState === 'Reservation'" class="p-2.5 rounded bg-amber-50 border border-amber-200 text-amber-900">
-          Cette action bloquera l'inventaire sélectionné pour la période demandée.
-        </div>
-        <div class="p-2 rounded bg-cortex-surface-secondary font-mono text-[11px] text-cortex-text-muted flex justify-between">
-          <span>Idempotency-Key :</span>
-          <span class="truncate max-w-[180px]">{{ idempotencyKey }}</span>
-        </div>
-      </div>
-
-      <template #footer>
-        <div class="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            class="cx-btn-secondary text-xs px-3 py-1.5"
-            :disabled="isSubmitting"
-            @click="showConfirmModal = false"
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            class="cx-btn-primary text-xs px-4 py-1.5"
-            :disabled="isSubmitting"
-            data-test="confirm-modal-submit-btn"
-            @click="executeCreation"
-          >
-            <span v-if="isSubmitting">Enregistrement...</span>
-            <span v-else>Confirmer & Enregistrer</span>
-          </button>
-        </div>
-      </template>
-    </CortexModal>
+    <section class="rounded-xl border border-cortex-border bg-white p-4 space-y-3">
+      <div class="flex items-center justify-between"><h2 class="text-sm font-bold">Vérification du devis</h2><span class="rounded bg-cortex-primary-50 px-2 py-1 text-[11px]">Calcul serveur</span></div>
+      <p class="text-xs">Client ERPNext : <strong>{{ step1.customerName }}</strong> · Assurance : vérification nécessaire selon le dossier client.</p>
+      <p class="text-xs">Période : {{ step1.startsAt }} → {{ step1.endsAt }} · {{ step1.projectName || 'Projet sans nom' }}</p>
+      <div class="divide-y divide-cortex-border border-y"> <div v-for="line in lines" :key="line.itemCode" class="flex justify-between py-2 text-xs"><span>{{ line.quantity }} × {{ line.itemName }} ({{ line.itemCode }})</span><span>{{ money(line.dailyRate) }}/jour</span></div></div>
+      <div v-if="loading" class="text-xs text-cortex-text-muted">Recalcul des tarifs et règles locatives…</div>
+      <div v-else-if="pricing" class="space-y-2 text-xs"><div class="flex justify-between"><span>Sous-total</span><strong>{{ money(pricing.subtotal) }}</strong></div><div class="flex justify-between"><span>Taxes ERPNext</span><span>{{ pricing.tax_amount ? money(pricing.tax_amount) : 'À calculer via le modèle de taxes ERPNext' }}</span></div><div class="flex justify-between border-t pt-2 text-sm font-bold"><span>Estimation</span><span>{{ money(pricing.grand_total) }}</span></div><p class="text-[11px] text-cortex-text-muted">Règle appliquée : {{ pricing.pricing_rule_applied }}. Le devis ERPNext reste la référence fiscale.</p></div>
+      <p v-if="errorMessage" class="rounded border border-red-200 bg-red-50 p-3 text-xs text-red-800">{{ errorMessage }}</p>
+    </section>
+    <div class="flex flex-wrap justify-between gap-2 border-t pt-3"><button type="button" class="cx-btn-secondary px-3 py-2 text-xs" :disabled="isSubmitting" @click="emit('prev')">Précédent</button><div class="flex gap-2"><button type="button" class="cx-btn-secondary px-4 py-2 text-xs" :disabled="!pricing || isSubmitting" data-test="create-quote-action-btn" @click="create('Quote')">{{ isSubmitting && action === 'Quote' ? 'Enregistrement…' : 'Créer un devis' }}</button><button type="button" class="cx-btn-primary px-4 py-2 text-xs" :disabled="!pricing || isSubmitting || !available" data-test="confirm-reservation-action-btn" @click="create('Reservation')">{{ isSubmitting && action === 'Reservation' ? 'Enregistrement…' : 'Demander la réservation' }}</button></div></div>
+    <p v-if="availability && !available" class="text-xs text-amber-800">Un conflit bloque la réservation. Créez un devis ou revenez modifier les équipements.</p>
   </div>
 </template>
-
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { ArrowLeft } from 'lucide-vue-next'
-import { generateIdempotencyKey } from '@/utils/idempotency'
 import { getCortexApiClient } from '@/api'
-import { calculateBillableDays } from '@/api/mock/MockCortexApiClient'
-import CortexModal from '@/design-system/components/base/CortexModal.vue'
+import type { PreviewPricingResponse } from '@/api/contracts/rentals'
+import type { AvailabilityCheckResponse } from '@/api/contracts/availability'
 import type { ComposerStep1Data } from './StepClientDates.vue'
 import type { ComposerLineItem } from './StepEquipmentPricing.vue'
-
-const { t } = useI18n()
-const router = useRouter()
-
-const props = defineProps<{
-  step1: ComposerStep1Data
-  lines: ComposerLineItem[]
-}>()
-
-const emit = defineEmits<{
-  (e: 'prev'): void
-}>()
-
-const isSubmitting = ref<boolean>(false)
-const errorMessage = ref<string | null>(null)
-const showConfirmModal = ref<boolean>(false)
-const pendingActionState = ref<'Quote' | 'Reservation'>('Quote')
-const idempotencyKey = ref<string>('')
-
-const calendarDays = computed(() => {
-  if (!props.step1.startsAt || !props.step1.endsAt) return 7
-  const start = new Date(props.step1.startsAt)
-  const end = new Date(props.step1.endsAt)
-  const diffTime = Math.abs(end.getTime() - start.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  return diffDays > 0 ? diffDays : 1
-})
-
-const billableDays = computed(() => {
-  return calculateBillableDays(calendarDays.value)
-})
-
-const subtotal = computed(() => {
-  return props.lines.reduce((acc, line) => {
-    return acc + line.dailyRate * line.quantity * billableDays.value
-  }, 0)
-})
-
-const taxAmount = computed(() => {
-  return Math.round(subtotal.value * 0.14975 * 100) / 100
-})
-
-const grandTotal = computed(() => {
-  return subtotal.value + taxAmount.value
-})
-
-const isInsuranceExpired = computed(() => {
-  return props.step1.customerId === 'DEMO-CUST-003'
-})
-
-const isReadyForContract = computed(() => {
-  return !isInsuranceExpired.value
-})
-
-const openConfirmation = (state: 'Quote' | 'Reservation') => {
-  pendingActionState.value = state
-  idempotencyKey.value = generateIdempotencyKey()
-  showConfirmModal.value = true
-}
-
-const executeCreation = async () => {
-  if (isSubmitting.value) return // Anti double-click protection
-  isSubmitting.value = true
-  errorMessage.value = null
-
+const props = defineProps<{ step1: ComposerStep1Data; lines: ComposerLineItem[] }>()
+const emit = defineEmits<{ (e: 'prev'): void }>()
+const api = getCortexApiClient(); const router = useRouter(); const pricing = ref<PreviewPricingResponse | null>(null); const availability = ref<AvailabilityCheckResponse | null>(null); const loading = ref(false); const isSubmitting = ref(false); const errorMessage = ref(''); const action = ref<'Quote' | 'Reservation'>('Quote')
+const available = computed(() => availability.value?.all_available === true)
+function money(value: number) { return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(value) }
+watch(() => [props.step1, props.lines] as const, async () => {
+  pricing.value = null; availability.value = null; errorMessage.value = ''
+  if (!props.step1.customerId || !props.step1.startsAt || !props.step1.endsAt || !props.lines.length) return
+  loading.value = true
+  const input = { starts_at: `${props.step1.startsAt}T08:00:00`, ends_at: `${props.step1.endsAt}T18:00:00`, items: props.lines.map(line => ({ item_code: line.itemCode, quantity: line.quantity })) }
+  try { [pricing.value, availability.value] = await Promise.all([api.previewPricing({ ...input, customer_id: props.step1.customerId }), api.checkInventoryAvailability(input)]) }
+  catch (error) { errorMessage.value = error instanceof Error ? error.message : 'Le serveur n’a pas pu vérifier les tarifs.' }
+  finally { loading.value = false }
+}, { immediate: true, deep: true })
+async function create(kind: 'Quote' | 'Reservation') {
+  if (isSubmitting.value || !pricing.value) return
+  action.value = kind; isSubmitting.value = true; errorMessage.value = ''
   try {
-    const client = getCortexApiClient()
-    const draftRes = await client.createQuoteDraft({
-      customer_id: props.step1.customerId,
-      starts_at: `${props.step1.startsAt}T08:00:00Z`,
-      ends_at: `${props.step1.endsAt}T18:00:00Z`,
-      project_name: props.step1.projectName || undefined,
-      notes: props.step1.notes || undefined,
-      items: props.lines.map(l => ({
-        item_code: l.itemCode,
-        quantity: l.quantity
-      }))
-    })
-
-    const createdId = draftRes.entity_id || 'DEMO-TRX-2026-006'
-
-    if (pendingActionState.value === 'Reservation') {
-      await client.requestReservation({
-        rental_id: createdId,
-        version: 1
-      })
+    const draft = await api.createQuoteDraft({ customer_id: props.step1.customerId, starts_at: `${props.step1.startsAt}T08:00:00`, ends_at: `${props.step1.endsAt}T18:00:00`, project_name: props.step1.projectName || undefined, notes: props.step1.notes || undefined, items: props.lines.map(line => ({ item_code: line.itemCode, quantity: line.quantity })) })
+    if (!draft.entity_id || draft.status !== 'completed') throw new Error(draft.errors?.[0]?.message || 'Le serveur n’a pas confirmé la création du devis.')
+    let targetId = draft.entity_id
+    if (kind === 'Reservation') {
+      const result = await api.requestReservation({ rental_id: targetId, version: 1 })
+      if (result.status !== 'completed' || !result.mutation_performed) throw new Error(result.errors?.[0]?.message || 'La réservation n’a pas été confirmée; le devis reste enregistré.')
     }
-
-    showConfirmModal.value = false
-    router.push(`/app/cortex-rental/${createdId}`)
-  } catch (err: unknown) {
-    errorMessage.value = err instanceof Error ? err.message : 'Erreur lors de la création de la transaction'
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-const formatCurrency = (amt: number) => {
-  return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(amt)
+    await router.push(`/app/cortex-rental/${targetId}`)
+  } catch (error) { errorMessage.value = error instanceof Error ? error.message : 'Erreur inattendue lors de l’enregistrement.' }
+  finally { isSubmitting.value = false }
 }
 </script>

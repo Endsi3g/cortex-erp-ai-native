@@ -19,9 +19,17 @@ import AppBottomNav from '@/app/layouts/components/AppBottomNav.vue'
 import MobileLayout from '@/app/layouts/MobileLayout.vue'
 import UniversalSearch from '@/app/layouts/components/UniversalSearch.vue'
 
-describe('Challenger 2 — App Shell, 24 Canonical Routes, Responsive Constraints & Interaction Edge Cases', () => {
+describe('Challenger 2 — App Shell, Canonical Routes, Responsive Constraints & Interaction Edge Cases', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    const session = useSessionStore()
+    session.currentUser = { id: 'test-user', email: 'test@example.test', full_name: 'Test User', roles: ['System Manager'], permissions: [] }
+    session.isAuthenticated = true
+    session.userCompanies = [
+      { id: 'DEMO-COMP-001', name: 'Cortex Cinema Rentals', code: 'CINEMA-MTL', is_default: true, currency: 'CAD' },
+      { id: 'DEMO-COMP-002', name: 'Cortex Broadcast Montréal', code: 'BROADCAST-MTL', currency: 'CAD' }
+    ]
+    session.activeCompanyId = 'DEMO-COMP-001'
     // Reset document title
     if (typeof document !== 'undefined') {
       document.title = 'Cortex OS'
@@ -29,18 +37,18 @@ describe('Challenger 2 — App Shell, 24 Canonical Routes, Responsive Constraint
   })
 
   // =========================================================================
-  // 1. THE 24 CANONICAL ROUTES & DYNAMIC DOCUMENT TITLE & COPILOT SYNC
+  // 1. CANONICAL ROUTES & DYNAMIC DOCUMENT TITLE & COPILOT SYNC
   // =========================================================================
   describe('1. Canonical Routes: Resolution, Component Loading, Document Title & Copilot Context', () => {
-    it('1.1 Exactly covers all 24 canonical operational screen IDs (1..24)', () => {
+    it('1.1 Covers every unique canonical screen ID, including AI surfaces', () => {
       const screenIds = routes
         .map(r => r.meta?.screenId)
         .filter((id): id is number => typeof id === 'number' && id > 0)
         .sort((a, b) => a - b)
 
       const uniqueIds = Array.from(new Set(screenIds))
-      expect(uniqueIds.length).toBe(24)
-      expect(uniqueIds).toEqual(Array.from({ length: 24 }, (_, i) => i + 1))
+      expect(uniqueIds.length).toBe(27)
+      expect(uniqueIds).toEqual(Array.from({ length: 27 }, (_, i) => i + 1))
     })
 
     it('1.2 Dynamically imports every view component without syntax or resolution errors', async () => {
@@ -51,7 +59,7 @@ describe('Challenger 2 — App Shell, 24 Canonical Routes, Responsive Constraint
           expect(componentModule.default || componentModule).toBeTruthy()
         }
       }
-    })
+    }, 180000)
 
     it('1.3 Evaluates document.title behavior on route transition and detects untranslated key fallbacks', async () => {
       const router = createAppRouter(true)

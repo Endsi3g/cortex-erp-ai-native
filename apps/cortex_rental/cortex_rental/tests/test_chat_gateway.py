@@ -122,7 +122,107 @@ class TestMockOnyxChatClient(unittest.TestCase):
         self.assertEqual(result.blocks[0]["type"], "missing_information")
 
 
+class TestHttpOnyxChatClient(unittest.TestCase):
+    def test_sends_only_mapped_server_allowed_tool_ids_and_normalizes_response(self):
+        import json
+        from unittest.mock import patch
+
+        from cortex_rental.services.onyx_chat_client import HttpOnyxChatClient
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return json.dumps(
+                    {
+                        "answer": "Réponse du modèle.",
+                        "answer_citationless": "Réponse du modèle.",
+                        "message_id": 42,
+                        "chat_session_id": "onyx-session-1",
+                        "citation_info": [{"document_id": "source-1"}],
+                        "tool_calls": [{"tool_name": "check_inventory_availability"}],
+                    }
+                ).encode()
+
+        config = {
+            "persona_ids": {"cortex-availability": 17},
+            "tool_id_map": {"check_inventory_availability": 208},
+            "model_name": "qwen3:8b",
+        }
+        with patch.object(HttpOnyxChatClient, "_config", return_value=config), patch(
+            "cortex_rental.services.onyx_chat_client.urllib.request.urlopen", return_value=FakeResponse()
+        ) as urlopen:
+            result = HttpOnyxChatClient("http://onyx.local", "server-secret").send_message(
+                message="Explique cette disponibilité",
+                chat_session_id=None,
+                persona_id="cortex-availability",
+                allowed_tool_ids=["check_inventory_availability", "unknown_tool"],
+                context={"company": "Resolved server-side"},
+            )
+
+        request = urlopen.call_args.args[0]
+        payload = json.loads(request.data)
+        self.assertEqual(payload["allowed_tool_ids"], [208])
+        self.assertEqual(payload["chat_session_info"], {"persona_id": 17})
+        self.assertEqual(request.get_header("Authorization"), "Bearer server-secret")
+        self.assertEqual(result.onyx_session_id, "onyx-session-1")
+        self.assertEqual(result.model_name, "qwen3:8b")
+        self.assertEqual(result.blocks[0]["type"], "assistant_text")
+        self.assertEqual(result.blocks[0]["source_ids"], ["source-1"])
+
+    def test_unmapped_tools_fail_closed(self):
+        import json
+        from unittest.mock import patch
+
+        from cortex_rental.services.onyx_chat_client import HttpOnyxChatClient
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return json.dumps({"answer": "Texte", "answer_citationless": "Texte", "message_id": 4}).encode()
+
+        with patch.object(HttpOnyxChatClient, "_config", return_value={}), patch(
+            "cortex_rental.services.onyx_chat_client.urllib.request.urlopen", return_value=FakeResponse()
+        ) as urlopen:
+            HttpOnyxChatClient("http://onyx.local", "secret").send_message(
+                "Question", None, "cortex-operations", ["not-mapped"], {}
+            )
+        self.assertEqual(json.loads(urlopen.call_args.args[0].data)["allowed_tool_ids"], [])
+
+
+class TestChatPersistenceRedaction(unittest.TestCase):
+    def test_masks_email_and_phone_before_content_is_persisted(self):
+        from cortex_rental.services.chat_session import _mask_sensitive_text
+
+        safe = _mask_sensitive_text("Écris à personne@example.ca ou appelle le 514-555-0199")
+        self.assertNotIn("personne@example.ca", safe)
+        self.assertNotIn("514-555-0199", safe)
+        self.assertIn("[courriel masqué]", safe)
+        self.assertIn("[téléphone masqué]", safe)
+
+
 class TestChatResponseTransformer(unittest.TestCase):
+    def test_assistant_prose_is_not_mislabeled_as_verified_business_fact(self):
+        from cortex_rental.services.onyx_chat_client import OnyxChatResult
+
+        blocks = ChatResponseTransformer.transform(
+            OnyxChatResult(
+                onyx_message_id="message-1",
+                text="Suggestion à réviser.",
+                blocks=[{"type": "assistant_text", "text": "Suggestion à réviser.", "source_ids": []}],
+            )
+        )
+        self.assertEqual(blocks[0]["type"], "assistant_text")
+
     def test_malformed_block_becomes_an_error_block_not_a_crash(self):
         from cortex_rental.services.onyx_chat_client import OnyxChatResult
 

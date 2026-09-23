@@ -1,6 +1,23 @@
 import { z } from 'zod'
 import { ProvenanceMetaSchema } from './common'
 
+export const RentalCustomerOptionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  insurance_valid: z.boolean().nullable(),
+})
+export type RentalCustomerOption = z.infer<typeof RentalCustomerOptionSchema>
+
+export const RentalCatalogOptionSchema = z.object({
+  item_code: z.string(),
+  item_name: z.string(),
+  category: z.string(),
+  daily_rate: z.number(),
+  is_serialized: z.boolean(),
+  required_accessories: z.array(z.string()).default([]),
+})
+export type RentalCatalogOption = z.infer<typeof RentalCatalogOptionSchema>
+
 export const RentalStateSchema = z.enum([
   'Draft',
   'Quote',

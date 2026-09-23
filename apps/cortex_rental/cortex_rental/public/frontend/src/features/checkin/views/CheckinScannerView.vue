@@ -36,9 +36,7 @@
           class="px-3 py-2 text-xs font-mono font-semibold rounded-xl border border-cortex-border bg-cortex-surface text-cortex-text-primary focus:ring-2 focus:ring-cortex-primary/30 min-h-[44px]"
           @change="handleSwitchRental"
         >
-          <option value="DEMO-TRX-2026-001">DEMO-TRX-2026-001 (Sortie — Studio Lumière)</option>
-          <option value="DEMO-TRX-2026-004">DEMO-TRX-2026-004 (Retour Partiel — Minerva)</option>
-          <option value="DEMO-TRX-2026-006">DEMO-TRX-2026-006 (Contrat Actif)</option>
+          <option v-for="option in eligibleRentals" :key="option.id" :value="option.id">{{ option.id }} · {{ option.customer_name }}</option>
         </select>
       </div>
     </div>
@@ -76,14 +74,15 @@
           <span>Statut actuel : {{ rental.rental_state }}</span>
         </div>
         <p class="text-xs text-amber-800">
-          Ce contrat n'est pas actuellement hors-location. Pour tester le flux de retour Check-in, veuillez sélectionner un dossier en statut « Checked Out » (ex: DEMO-TRX-2026-001).
+          Ce dossier n'est pas en statut Checked Out. Choisissez une location sortie ou demandez a un gestionnaire de verifier son statut.
         </p>
         <button
           type="button"
           class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors min-h-[44px]"
-          @click="selectRental('DEMO-TRX-2026-001')"
+          v-if="eligibleRentals.length"
+          @click="selectRental(eligibleRentals[0]!.id)"
         >
-          Basculer sur DEMO-TRX-2026-001 (Checked Out)
+          Ouvrir une location sortie
         </button>
       </div>
 
@@ -378,8 +377,9 @@ import ReturnDiffSummary from '../components/ReturnDiffSummary.vue'
 const route = useRoute()
 const router = useRouter()
 
-const routeRentalId = computed(() => (route.params.rental as string) || 'DEMO-TRX-2026-001')
+const routeRentalId = computed(() => (route.params.rental as string) || '')
 const selectedRentalId = ref(routeRentalId.value)
+const eligibleRentals = ref<Array<{ id: string; customer_name: string }>>([])
 
 const rental = ref<RentalTransaction | null>(null)
 const isLoading = ref(true)
@@ -392,7 +392,7 @@ const scannerInputRef = ref<InstanceType<typeof CortexScannerInput> | null>(null
 // Tracking local return states
 const returnedSerials = ref<string[]>([])
 const missingSerials = ref<string[]>([])
-const damagedSerials = ref<Record<string, { severity: string; description: string }>>({})
+const damagedSerials = ref<Record<string, { severity: string; description: string; fileName?: string }>>({})
 
 // Modals
 const showDamageModal = ref(false)
@@ -582,10 +582,11 @@ function openDamageModal(sn: string, itemName: string) {
   showDamageModal.value = true
 }
 
-function handleDamageSubmitted(data: { serialNumber: string; severity: string; description: string }) {
+function handleDamageSubmitted(data: { serialNumber: string; severity: string; description: string; photoUploadId?: string }) {
   damagedSerials.value[data.serialNumber] = {
     severity: data.severity,
-    description: data.description
+    description: data.description,
+    ...(data.photoUploadId ? { fileName: data.photoUploadId } : {})
   }
   if (!returnedSerials.value.includes(data.serialNumber)) {
     returnedSerials.value.push(data.serialNumber)
@@ -594,60 +595,55 @@ function handleDamageSubmitted(data: { serialNumber: string; severity: string; d
   ScannerFeedback.playSuccess()
 }
 
+function makeCheckinItems(includeMissing: boolean) {
+  if (!rental.value) return []
+  const returned = new Set(returnedSerials.value)
+  const missing = new Set(missingSerials.value)
+  return rental.value.items.flatMap(line => line.assigned_serials.flatMap(serial => {
+    const damage = damagedSerials.value[serial]
+    const isMissing = missing.has(serial)
+    if (!returned.has(serial) && !(includeMissing && isMissing)) return []
+    const severity = damage?.severity
+    const disposition: 'Missing' | 'Quarantine' | 'Repair' | 'Return to Stock' = isMissing ? 'Missing' : severity === 'unusable' ? 'Quarantine' : severity === 'major' ? 'Repair' : damage ? 'Quarantine' : 'Return to Stock'
+    const damageSeverity: 'Blocking' | 'Functional' | 'Cosmetic' | 'None' = severity === 'unusable' ? 'Blocking' : severity === 'major' ? 'Functional' : damage ? 'Cosmetic' : 'None'
+    return [{ transaction_item: line.id, item_code: line.item_code, serial_no: serial,
+      expected_qty: 1, returned_qty: isMissing ? 0 : 1,
+      condition: damage ? 'Damaged' as const : 'Good' as const, disposition, damage_severity: damageSeverity,
+      notes: damage?.description || (isMissing ? 'Declare manquant au retour' : ''),
+      ...(damage?.fileName ? { file_name: damage.fileName } : {}) }]
+  }))
+}
+
 async function handlePartialReturn() {
   if (!rental.value) return
   isSubmittingAction.value = true
-
   try {
-    const client = getCortexApiClient()
-    const res = await client.completePartialReturn({
-      rental_id: rental.value.id,
-      notes: 'Retour partiel validé au scanner'
-    })
-
-    if (res.status === 'completed') {
-      returnCompletedState.value = 'Partially Returned'
-      returnSuccess.value = true
-      await loadRentalData(rental.value.id)
-    }
-  } catch (err) {
-    scanFeedback.value = {
-      type: 'error',
-      message: err instanceof Error ? err.message : 'Erreur lors du retour partiel.'
-    }
-  } finally {
-    isSubmittingAction.value = false
-  }
+    const res = await getCortexApiClient().completePartialReturn({ rental_id: rental.value.id,
+      notes: 'Retour partiel valide au scanner', finalize_mode: 'partial', items: makeCheckinItems(false) })
+    if (res.status !== 'completed' || !res.mutation_performed) throw new Error(res.errors?.[0]?.message || "Le serveur n'a pas confirme ce retour.")
+    returnCompletedState.value = 'Partially Returned'; returnSuccess.value = true
+    await loadRentalData(rental.value.id)
+  } catch (err) { scanFeedback.value = { type: 'error', message: err instanceof Error ? err.message : 'Erreur lors du retour partiel.' } }
+  finally { isSubmittingAction.value = false }
 }
 
 async function handleConfirmCloseReturn() {
   if (!rental.value) return
   isSubmittingAction.value = true
-
   try {
-    const client = getCortexApiClient()
-    const res = await client.completePartialReturn({
-      rental_id: rental.value.id,
-      notes: `Clôture définitive du retour (${returnedSerials.value.length} conformes, ${missingSerials.value.length} manquants, ${Object.keys(damagedSerials.value).length} bris)`
-    })
-
-    if (res.status === 'completed') {
-      showDiffModal.value = false
-      returnCompletedState.value = 'Returned'
-      returnSuccess.value = true
-      await loadRentalData(rental.value.id)
-    }
-  } catch (err) {
-    scanFeedback.value = {
-      type: 'error',
-      message: err instanceof Error ? err.message : 'Erreur lors de la clôture.'
-    }
-  } finally {
-    isSubmittingAction.value = false
-  }
+    const mode = missingSerials.value.length ? 'settle_with_loss' : 'full'
+    const res = await getCortexApiClient().completePartialReturn({ rental_id: rental.value.id,
+      notes: `Cloture: ${returnedSerials.value.length} recus, ${missingSerials.value.length} manquants, ${Object.keys(damagedSerials.value).length} dommages`,
+      finalize_mode: mode, items: makeCheckinItems(true) })
+    if (res.status !== 'completed' || !res.mutation_performed) throw new Error(res.errors?.[0]?.message || "Le serveur n'a pas confirme la cloture.")
+    showDiffModal.value = false; returnCompletedState.value = 'Returned'; returnSuccess.value = true
+    await loadRentalData(rental.value.id)
+  } catch (err) { scanFeedback.value = { type: 'error', message: err instanceof Error ? err.message : 'Erreur lors de la cl?ture.' } }
+  finally { isSubmittingAction.value = false }
 }
 
 onMounted(() => {
-  loadRentalData(routeRentalId.value)
+  void getCortexApiClient().listRentals({ page: 1, page_size: 100, state: 'Checked Out' }).then(result => { eligibleRentals.value = result.items.map(item => ({ id: item.id, customer_name: item.customer_name })) }).catch(() => { eligibleRentals.value = [] })
+  if (routeRentalId.value) loadRentalData(routeRentalId.value)
 })
 </script>

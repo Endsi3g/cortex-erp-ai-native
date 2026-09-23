@@ -1,5 +1,7 @@
 # Handoff — Cortex ERP AI-Native
 
+> **Mise à jour 2026-09-23 :** pour la direction UX, les écrans AI-native, les seuils de confiance, les règles de validation et le contrat d’intégration Onyx/Ollama, le document canonique est [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md). Les sections frontend historiques ci-dessous peuvent être obsolètes; vérifier chaque état dans le code avant de s’y fier.
+
 **Date** : 2026-08-31
 **Repo** : https://github.com/Endsi3g/cortex-erp-ai-native
 **Branches** : [PR #1](https://github.com/Endsi3g/cortex-erp-ai-native/pull/1) (remédiation sécurité + décision Onyx) fusionné dans `main` — `main` est désormais la branche à jour. Travail en cours sur le frontend (cinquième vague, voir `CHANGELOG.md`) fait directement sur `main`.

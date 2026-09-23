@@ -68,6 +68,18 @@
       "options": "Serial No"
     },
     {
+      "fieldname": "assigned_serials",
+      "fieldtype": "Small Text",
+      "label": "Assigned Serial Numbers",
+      "description": "JSON list of individual serials allocated under the reservation lock."
+    },
+    {
+      "fieldname": "scanned_checkout_serials",
+      "fieldtype": "Small Text",
+      "label": "Scanned Checkout Serial Numbers",
+      "description": "JSON list of serials physically verified by warehouse staff before checkout."
+    },
+    {
       "fieldname": "returned_qty",
       "fieldtype": "Float",
       "label": "Returned Quantity",

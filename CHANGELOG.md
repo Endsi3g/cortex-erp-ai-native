@@ -1,5 +1,22 @@
 # Changelog — Cortex Security & Correctness Remediation
 
+## v0.5.0 — 2026-09-23
+
+This release establishes the ERPNext-first, AI-native Cortex workspace and documents the implementation contract for future product and AI agents in `docs/frontend/CORTEX_UI_HANDOFF_V2.md`.
+
+- Adds the Cortex AI Inbox, Workspace, and Audit views, with human review boundaries and server-owned decision rules.
+- Connects rental composition, availability, approvals, check-in/check-out, and evidence workflows to Frappe domain APIs; pricing and inventory decisions remain server-side.
+- Adds the Onyx/Ollama chat gateway and local deployment guidance. The local Qwen3 8B setup is configured, while complete browser-to-model workflow and tool execution still require end-to-end validation.
+- Fixes session initialization and router loading so concurrent session checks are shared and a stalled Frappe session request times out instead of leaving the app loading indefinitely.
+- Fixes Vite dependency interop for Feather Icons and `debug` in the frontend development build.
+- Updates the ERPNext-inspired shell and responsive operational screens. Pixel-perfect parity with the supplied reference has not yet been confirmed by screenshot review.
+
+Release validation: frontend production build, targeted session/router/API tests, Python compilation, and local service checks passed. The full frontend suite had one dynamic-import timeout under load (250 tests passed); that isolated route-import test passes when run alone, so the complete suite is not represented as fully green.
+
+Known limitations: contract/invoice workflows, outbound customer messaging, full document-ingestion lifecycle, team assignment, and accounting integrations need further API/permission validation. Onyx chat and tool execution require end-to-end verification. See the canonical handoff for current scope and evidence.
+
+---
+
 Scope of this pass: a Claude security/design review of the Gemini-generated
 `cortex_rental` Frappe app, `cortex-mcp` FastMCP facade, and supporting
 infra found several BLOCKER/HIGH-severity gaps against the Cortex PRD

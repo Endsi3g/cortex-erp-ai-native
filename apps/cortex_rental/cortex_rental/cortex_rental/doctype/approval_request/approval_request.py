@@ -29,6 +29,9 @@ class ApprovalRequest(Document):
             if "Agent Service Account" in user_roles or getattr(frappe.flags, "in_agent_context", False):
                 frappe.throw("Agents are strictly forbidden from approving requests.", frappe.PermissionError)
 
+            if self.requested_by_type == "Human" and self.requested_by_id == current_user:
+                frappe.throw("La personne qui soumet une demande ne peut pas l’approuver elle-même.", frappe.PermissionError)
+
             if self.status != "Pending":
                 frappe.throw(f"Cannot approve an approval request in status [{self.status}].", frappe.ValidationError)
 
