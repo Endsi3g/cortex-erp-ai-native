@@ -20,6 +20,11 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional
 
+try:
+    import frappe
+except ImportError:
+    frappe = None
+
 
 @dataclass
 class OnyxChatResult:

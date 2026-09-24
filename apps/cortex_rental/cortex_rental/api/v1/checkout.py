@@ -8,7 +8,6 @@ except ImportError:
     frappe = None
 
 from cortex_rental.permissions.agent_scopes import get_company_context, require_human_staff_role
-from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
 
 
 def _transaction(name, company):

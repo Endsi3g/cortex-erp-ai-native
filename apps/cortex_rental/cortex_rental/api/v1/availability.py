@@ -8,7 +8,6 @@ except ImportError:
 from cortex_rental.permissions.agent_scopes import (
     require_agent_scope,
     require_human_staff_role,
-    require_human_staff_role,
     get_company_context,
 )
 from cortex_rental.services.availability import AvailabilityService

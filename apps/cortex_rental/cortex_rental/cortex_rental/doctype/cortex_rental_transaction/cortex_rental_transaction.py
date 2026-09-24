@@ -1,5 +1,4 @@
 from typing import Optional
-import json
 
 try:
     import frappe

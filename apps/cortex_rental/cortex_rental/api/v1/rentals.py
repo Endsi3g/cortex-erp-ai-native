@@ -1,6 +1,6 @@
 """Human-facing, tenant-scoped APIs for the rental composer and lifecycle."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 try:
     import frappe
