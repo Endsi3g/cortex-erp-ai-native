@@ -214,9 +214,7 @@ def transform_pnl_report(columns: List[Dict[str, Any]], data: List[Dict[str, Any
     ]
 
     total_income = float((total_income_row or {}).get("total") or 0.0) or (periods[-1]["income"] if periods else 0.0)
-    total_expense = float((total_expense_row or {}).get("total") or 0.0) or (
-        periods[-1]["expense"] if periods else 0.0
-    )
+    total_expense = float((total_expense_row or {}).get("total") or 0.0) or (periods[-1]["expense"] if periods else 0.0)
     net_profit = float((net_profit_row or {}).get("total") or 0.0) or (total_income - total_expense)
 
     return {
