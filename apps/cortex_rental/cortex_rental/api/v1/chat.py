@@ -17,7 +17,10 @@ except ImportError:
 
 from pydantic import ValidationError
 
-from cortex_rental.permissions.agent_scopes import require_human_staff_role, get_company_context
+from cortex_rental.permissions.agent_scopes import (
+    require_human_staff_role,
+    get_company_context,
+)
 from cortex_rental.schemas.chat_schemas import SendMessageRequest
 from cortex_rental.services.chat_session import (
     ChatSessionService,
@@ -40,6 +43,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
             cleaned["context"] = frappe.parse_json(cleaned["context"])
         else:
             import json
+
             cleaned["context"] = json.loads(cleaned["context"])
     try:
         request = SendMessageRequest.model_validate(cleaned)
@@ -116,7 +120,10 @@ if frappe:
         session_name = payload.get("chat_session_id")
         context_snapshot_name = payload.get("context_snapshot_id")
         if not session_name or not context_snapshot_name:
-            frappe.throw("chat_session_id and context_snapshot_id are required.", frappe.ValidationError)
+            frappe.throw(
+                "chat_session_id and context_snapshot_id are required.",
+                frappe.ValidationError,
+            )
         ChatSessionService().pin_context(session_name, context_snapshot_name, user=frappe.session.user)
         return {"data": {"pinned": True}}
 

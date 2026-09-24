@@ -27,13 +27,22 @@ class ApprovalRequest(Document):
 
             # Strict Agent Gate: Agents can never approve
             if "Agent Service Account" in user_roles or getattr(frappe.flags, "in_agent_context", False):
-                frappe.throw("Agents are strictly forbidden from approving requests.", frappe.PermissionError)
+                frappe.throw(
+                    "Agents are strictly forbidden from approving requests.",
+                    frappe.PermissionError,
+                )
 
             if self.requested_by_type == "Human" and self.requested_by_id == current_user:
-                frappe.throw("La personne qui soumet une demande ne peut pas l’approuver elle-même.", frappe.PermissionError)
+                frappe.throw(
+                    "La personne qui soumet une demande ne peut pas l’approuver elle-même.",
+                    frappe.PermissionError,
+                )
 
             if self.status != "Pending":
-                frappe.throw(f"Cannot approve an approval request in status [{self.status}].", frappe.ValidationError)
+                frappe.throw(
+                    f"Cannot approve an approval request in status [{self.status}].",
+                    frappe.ValidationError,
+                )
 
             self.status = "Approved"
             self.decided_by = current_user

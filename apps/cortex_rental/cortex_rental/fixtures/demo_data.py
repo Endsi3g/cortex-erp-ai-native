@@ -92,11 +92,13 @@ def _ensure_customer() -> str:
                 cust_group = "Commercial"
                 if frappe.db.table_exists("Customer Group") and not frappe.db.exists("Customer Group", cust_group):
                     try:
-                        cg = frappe.get_doc({
-                            "doctype": "Customer Group",
-                            "customer_group_name": cust_group,
-                            "is_group": 0,
-                        })
+                        cg = frappe.get_doc(
+                            {
+                                "doctype": "Customer Group",
+                                "customer_group_name": cust_group,
+                                "is_group": 0,
+                            }
+                        )
                         cg.flags.ignore_mandatory = True
                         cg.insert(ignore_permissions=True)
                     except Exception:
@@ -105,11 +107,13 @@ def _ensure_customer() -> str:
                 territory = "All Territories"
                 if frappe.db.table_exists("Territory") and not frappe.db.exists("Territory", territory):
                     try:
-                        t = frappe.get_doc({
-                            "doctype": "Territory",
-                            "territory_name": territory,
-                            "is_group": 0,
-                        })
+                        t = frappe.get_doc(
+                            {
+                                "doctype": "Territory",
+                                "territory_name": territory,
+                                "is_group": 0,
+                            }
+                        )
                         t.flags.ignore_mandatory = True
                         t.insert(ignore_permissions=True)
                     except Exception:

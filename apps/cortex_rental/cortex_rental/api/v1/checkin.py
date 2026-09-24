@@ -5,14 +5,20 @@ try:
 except ImportError:
     frappe = None
 
-from cortex_rental.permissions.agent_scopes import require_human_staff_role, get_company_context
+from cortex_rental.permissions.agent_scopes import (
+    require_human_staff_role,
+    get_company_context,
+)
 from cortex_rental.services.checkin import (
     complete_checkin,
     process_checkin,
     search_active_transactions,
     lookup_scan_target,
 )
-from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
+from cortex_rental.services.idempotency import (
+    get_idempotency_key_header,
+    with_idempotency,
+)
 from cortex_rental.services.evidence import register_evidence
 
 # NOTE: Human-staff-only endpoints (require_human_staff_role). Physical
@@ -38,6 +44,7 @@ def submit_checkin_handler(payload: Dict[str, Any], company: str, actor_id: str)
             items = frappe.parse_json(items_raw)
         else:
             import json
+
             items = json.loads(items_raw)
     else:
         items = items_raw or []
@@ -48,11 +55,25 @@ def submit_checkin_handler(payload: Dict[str, Any], company: str, actor_id: str)
     for item in items:
         file_name = item.pop("file_name", None)
         if file_name:
-            attached = frappe.db.get_value("File", file_name, ["attached_to_doctype", "attached_to_name"], as_dict=True)
-            if not attached or attached.attached_to_doctype != "Cortex Rental Transaction" or attached.attached_to_name != transaction_id:
-                frappe.throw("Evidence file is not attached to this rental transaction.", frappe.PermissionError)
+            attached = frappe.db.get_value(
+                "File",
+                file_name,
+                ["attached_to_doctype", "attached_to_name"],
+                as_dict=True,
+            )
+            if (
+                not attached
+                or attached.attached_to_doctype != "Cortex Rental Transaction"
+                or attached.attached_to_name != transaction_id
+            ):
+                frappe.throw(
+                    "Evidence file is not attached to this rental transaction.",
+                    frappe.PermissionError,
+                )
             evidence = register_evidence(
-                company=company, source_channel="other", actor_id=actor_id,
+                company=company,
+                source_channel="other",
+                actor_id=actor_id,
                 file_name=file_name,
             )
             item["evidence_ids"] = list(item.get("evidence_ids") or []) + [evidence["id"]]

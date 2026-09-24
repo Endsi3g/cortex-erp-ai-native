@@ -16,13 +16,28 @@ from cortex_rental.api.v1.accounting import _build_pnl_filters, transform_pnl_re
 
 COLUMNS = [
     {"fieldname": "account", "label": "Account", "fieldtype": "Link"},
-    {"fieldname": "oct_2024_dec_2024", "label": "Oct 2024 - Dec 2024", "fieldtype": "Currency"},
-    {"fieldname": "jan_2025_mar_2025", "label": "Jan 2025 - Mar 2025", "fieldtype": "Currency"},
+    {
+        "fieldname": "oct_2024_dec_2024",
+        "label": "Oct 2024 - Dec 2024",
+        "fieldtype": "Currency",
+    },
+    {
+        "fieldname": "jan_2025_mar_2025",
+        "label": "Jan 2025 - Mar 2025",
+        "fieldtype": "Currency",
+    },
     {"fieldname": "currency", "label": "Currency", "fieldtype": "Link"},
 ]
 
 DATA = [
-    {"account": "Income", "account_name": "Income", "indent": 0, "has_value": False, "oct_2024_dec_2024": 0, "jan_2025_mar_2025": 0},
+    {
+        "account": "Income",
+        "account_name": "Income",
+        "indent": 0,
+        "has_value": False,
+        "oct_2024_dec_2024": 0,
+        "jan_2025_mar_2025": 0,
+    },
     {
         "account": "Sales",
         "account_name": "Sales",
@@ -48,7 +63,14 @@ DATA = [
         "jan_2025_mar_2025": 1000000,
         "total": 2000000,
     },
-    {"account": "Expense", "account_name": "Expense", "indent": 0, "has_value": False, "oct_2024_dec_2024": 0, "jan_2025_mar_2025": 0},
+    {
+        "account": "Expense",
+        "account_name": "Expense",
+        "indent": 0,
+        "has_value": False,
+        "oct_2024_dec_2024": 0,
+        "jan_2025_mar_2025": 0,
+    },
     {
         "account": "Payroll",
         "account_name": "Payroll",
@@ -110,7 +132,14 @@ class TestTransformPnlReport(unittest.TestCase):
     def test_falls_back_to_last_period_when_total_row_missing_total_field(self):
         columns = COLUMNS
         data = [row for row in DATA if row.get("account_name") != "Total Income"]
-        data.append({"account_name": "Total Income", "indent": 0, "oct_2024_dec_2024": 900000, "jan_2025_mar_2025": 950000})
+        data.append(
+            {
+                "account_name": "Total Income",
+                "indent": 0,
+                "oct_2024_dec_2024": 900000,
+                "jan_2025_mar_2025": 950000,
+            }
+        )
         report = transform_pnl_report(columns, data)
         self.assertEqual(report["totalIncome"], 950000)
 
@@ -135,7 +164,8 @@ class TestBuildPnlFilters(unittest.TestCase):
 
     def test_date_range_filter_mode_takes_priority_when_both_given(self):
         filters = _build_pnl_filters(
-            {"fiscal_year": "2025", "from_date": "2025-01-01", "to_date": "2025-03-31"}, "Cortex Test Co A"
+            {"fiscal_year": "2025", "from_date": "2025-01-01", "to_date": "2025-03-31"},
+            "Cortex Test Co A",
         )
         self.assertEqual(filters["filter_based_on"], "Date Range")
         self.assertEqual(filters["period_start_date"], "2025-01-01")
@@ -151,9 +181,15 @@ class TestBuildPnlFilters(unittest.TestCase):
         self.assertNotIn("project", filters)
         self.assertNotIn("finance_book", filters)
 
-    def test_accumulated_values_and_include_default_book_entries_are_coerced_to_int(self):
+    def test_accumulated_values_and_include_default_book_entries_are_coerced_to_int(
+        self,
+    ):
         filters = _build_pnl_filters(
-            {"fiscal_year": "2025", "accumulated_values": "1", "include_default_book_entries": "true"},
+            {
+                "fiscal_year": "2025",
+                "accumulated_values": "1",
+                "include_default_book_entries": "true",
+            },
             "Cortex Test Co A",
         )
         self.assertEqual(filters["accumulated_values"], 1)

@@ -97,7 +97,11 @@ def search_active_transactions(company: str, query: Optional[str] = None) -> Lis
     customer_name_map = {}
     if cust_ids:
         try:
-            for c in frappe.get_all("Customer", filters={"name": ("in", cust_ids)}, fields=["name", "customer_name"]):
+            for c in frappe.get_all(
+                "Customer",
+                filters={"name": ("in", cust_ids)},
+                fields=["name", "customer_name"],
+            ):
                 customer_name_map[c["name"]] = c.get("customer_name") or c["name"]
         except Exception:
             pass
@@ -206,11 +210,20 @@ def lookup_scan_target(company: str, scan_code: str) -> Dict[str, Any]:
         as_dict=True,
     )
     if txn_match:
-        txn_match["customer_name"] = frappe.db.get_value("Customer", txn_match["customer"], "customer_name") or txn_match["customer"]
+        txn_match["customer_name"] = (
+            frappe.db.get_value("Customer", txn_match["customer"], "customer_name") or txn_match["customer"]
+        )
         items = frappe.get_all(
             "Cortex Rental Transaction Item",
             filters={"parent": txn_match["name"]},
-            fields=["name", "item_code", "item_name", "serial_no", "qty", "returned_qty"],
+            fields=[
+                "name",
+                "item_code",
+                "item_name",
+                "serial_no",
+                "qty",
+                "returned_qty",
+            ],
         )
         return {
             "type": "transaction",
@@ -225,12 +238,28 @@ def lookup_scan_target(company: str, scan_code: str) -> Dict[str, Any]:
         txn_items = frappe.get_all(
             "Cortex Rental Transaction Item",
             filters={"serial_no": code},
-            fields=["name", "parent", "item_code", "item_name", "qty", "returned_qty", "assigned_serials"],
+            fields=[
+                "name",
+                "parent",
+                "item_code",
+                "item_name",
+                "qty",
+                "returned_qty",
+                "assigned_serials",
+            ],
         )
         allocated_rows = frappe.get_all(
             "Cortex Rental Transaction Item",
             filters={"assigned_serials": ["is", "set"]},
-            fields=["name", "parent", "item_code", "item_name", "qty", "returned_qty", "assigned_serials"],
+            fields=[
+                "name",
+                "parent",
+                "item_code",
+                "item_name",
+                "qty",
+                "returned_qty",
+                "assigned_serials",
+            ],
         )
         seen = {row.name for row in txn_items}
         for row in allocated_rows:
@@ -245,12 +274,18 @@ def lookup_scan_target(company: str, scan_code: str) -> Dict[str, Any]:
         for ti in txn_items:
             parent_txn = frappe.db.get_value(
                 "Cortex Rental Transaction",
-                {"name": ti["parent"], "company": company, "rental_state": "Checked Out"},
+                {
+                    "name": ti["parent"],
+                    "company": company,
+                    "rental_state": "Checked Out",
+                },
                 ["name", "customer", "starts_at", "ends_at"],
                 as_dict=True,
             )
             if parent_txn:
-                parent_txn["customer_name"] = frappe.db.get_value("Customer", parent_txn["customer"], "customer_name") or parent_txn["customer"]
+                parent_txn["customer_name"] = (
+                    frappe.db.get_value("Customer", parent_txn["customer"], "customer_name") or parent_txn["customer"]
+                )
                 return {
                     "type": "serial",
                     "scan_code": code,
@@ -267,19 +302,33 @@ def lookup_scan_target(company: str, scan_code: str) -> Dict[str, Any]:
         matching_items = frappe.get_all(
             "Cortex Rental Transaction Item",
             filters={"item_code": code},
-            fields=["name", "parent", "item_code", "item_name", "serial_no", "qty", "returned_qty"],
+            fields=[
+                "name",
+                "parent",
+                "item_code",
+                "item_name",
+                "serial_no",
+                "qty",
+                "returned_qty",
+            ],
         )
         active_txns = []
         for mi in matching_items:
             if float(mi.get("returned_qty") or 0) < float(mi.get("qty") or 0):
                 ptxn = frappe.db.get_value(
                     "Cortex Rental Transaction",
-                    {"name": mi["parent"], "company": company, "rental_state": "Checked Out"},
+                    {
+                        "name": mi["parent"],
+                        "company": company,
+                        "rental_state": "Checked Out",
+                    },
                     ["name", "customer", "starts_at", "ends_at"],
                     as_dict=True,
                 )
                 if ptxn and ptxn not in active_txns:
-                    ptxn["customer_name"] = frappe.db.get_value("Customer", ptxn["customer"], "customer_name") or ptxn["customer"]
+                    ptxn["customer_name"] = (
+                        frappe.db.get_value("Customer", ptxn["customer"], "customer_name") or ptxn["customer"]
+                    )
                     active_txns.append(ptxn)
 
         return {
@@ -297,7 +346,11 @@ def complete_checkin(checkin_name: str, actor_id: str, finalize_mode: str = "aut
     Completes an existing Cortex Check-In document.
     """
     if not frappe:
-        return {"id": checkin_name, "status": "Completed", "transaction_fully_returned": True}
+        return {
+            "id": checkin_name,
+            "status": "Completed",
+            "transaction_fully_returned": True,
+        }
 
     from cortex_rental.services.audit import AuditService
 

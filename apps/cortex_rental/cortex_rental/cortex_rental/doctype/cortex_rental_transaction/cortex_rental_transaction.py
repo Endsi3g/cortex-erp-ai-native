@@ -39,9 +39,18 @@ class CortexRentalTransaction(Document):
 
         if self.is_new():
             self.version = 1
-        elif any(self.has_value_changed(field) for field in (
-            "starts_at", "ends_at", "customer", "items", "notes", "project_name", "tax_rate"
-        )):
+        elif any(
+            self.has_value_changed(field)
+            for field in (
+                "starts_at",
+                "ends_at",
+                "customer",
+                "items",
+                "notes",
+                "project_name",
+                "tax_rate",
+            )
+        ):
             self.version = int(frappe.db.get_value(self.doctype, self.name, "version") or 1) + 1
 
         # 1. Compute duration and billable days
@@ -114,7 +123,10 @@ class CortexRentalTransaction(Document):
         is_agent = self._current_actor_is_agent()
 
         allowed, error_msg = TransactionStateService.can_transition(
-            current_state=self.rental_state, target_state=new_state, transaction_doc=self, is_agent=is_agent
+            current_state=self.rental_state,
+            target_state=new_state,
+            transaction_doc=self,
+            is_agent=is_agent,
         )
 
         if not allowed:
@@ -187,15 +199,20 @@ class CortexRentalTransaction(Document):
             profile = frappe.db.get_value(
                 "Cortex Rental Item Profile",
                 {"company": self.company, "item_code": row.item_code},
-                ["is_serialized"], as_dict=True,
+                ["is_serialized"],
+                as_dict=True,
             )
             if not profile or not profile.is_serialized:
                 row.assigned_serials = "[]"
                 continue
             quantity = float(row.qty or 0)
             if quantity <= 0 or not quantity.is_integer():
-                frappe.throw(f"Serialized equipment {row.item_code} requires a whole-number quantity.", frappe.ValidationError)
-            candidates = frappe.db.sql("""
+                frappe.throw(
+                    f"Serialized equipment {row.item_code} requires a whole-number quantity.",
+                    frappe.ValidationError,
+                )
+            candidates = frappe.db.sql(
+                """
                 SELECT sn.name
                 FROM `tabSerial No` sn
                 WHERE sn.item_code = %(item_code)s
@@ -211,11 +228,21 @@ class CortexRentalTransaction(Document):
                   )
                 ORDER BY sn.name ASC
                 LIMIT %(quantity)s
-            """, {"item_code": row.item_code, "company": self.company,
-                  "transaction": self.name or "", "quantity": int(quantity)}, as_dict=False)
+            """,
+                {
+                    "item_code": row.item_code,
+                    "company": self.company,
+                    "transaction": self.name or "",
+                    "quantity": int(quantity),
+                },
+                as_dict=False,
+            )
             serials = [candidate[0] for candidate in candidates]
             if len(serials) < int(quantity):
-                frappe.throw(f"Only {len(serials)} serialized units remain available for {row.item_code}.", frappe.ValidationError)
+                frappe.throw(
+                    f"Only {len(serials)} serialized units remain available for {row.item_code}.",
+                    frappe.ValidationError,
+                )
             row.assigned_serials = frappe.as_json(serials)
             if len(serials) == 1:
                 row.serial_no = serials[0]

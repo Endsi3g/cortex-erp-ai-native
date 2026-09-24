@@ -11,7 +11,10 @@ from cortex_rental.permissions.agent_scopes import get_company_context
 def _require_approver():
     roles = set(frappe.get_roles(frappe.session.user))
     if not roles.intersection({"System Manager", "Administrator", "Rental Manager", "Cortex Account Reviewer"}):
-        frappe.throw("Votre rôle ne permet pas de décider une approbation.", frappe.PermissionError)
+        frappe.throw(
+            "Votre rôle ne permet pas de décider une approbation.",
+            frappe.PermissionError,
+        )
 
 
 def _json(value):
@@ -57,6 +60,7 @@ def _serialize(doc):
 
 
 if frappe:
+
     @frappe.whitelist(methods=["GET"])
     def list_approval_requests(status="pending", page=1, page_size=20):
         _require_approver()
@@ -66,12 +70,23 @@ if frappe:
         if status and status != "all":
             filters["status"] = status.title()
         total = frappe.db.count("Approval Request", filters=filters)
-        rows = frappe.get_all("Approval Request", filters=filters, fields=["name"],
-            order_by="creation desc", start=(page - 1) * page_size, page_length=page_size)
+        rows = frappe.get_all(
+            "Approval Request",
+            filters=filters,
+            fields=["name"],
+            order_by="creation desc",
+            start=(page - 1) * page_size,
+            page_length=page_size,
+        )
         items = [_serialize(frappe.get_doc("Approval Request", row.name)) for row in rows]
-        return {"data": {"provenance": "api",
-            "last_synced_at": frappe.utils.now_datetime().isoformat(),
-            "items": items, "total_count": total}}
+        return {
+            "data": {
+                "provenance": "api",
+                "last_synced_at": frappe.utils.now_datetime().isoformat(),
+                "items": items,
+                "total_count": total,
+            }
+        }
 
     @frappe.whitelist(methods=["GET"])
     def get_approval_request(name: str):
@@ -92,9 +107,17 @@ if frappe:
             doc.approve(reason=reason)
         elif decision == "reject":
             if not reason or len(reason.strip()) < 3:
-                frappe.throw("Un motif de refus d’au moins trois caractères est obligatoire.", frappe.ValidationError)
+                frappe.throw(
+                    "Un motif de refus d’au moins trois caractères est obligatoire.",
+                    frappe.ValidationError,
+                )
             doc.reject(reason=reason)
         else:
             frappe.throw("Decision must be approve or reject.", frappe.ValidationError)
-        return {"request_id": frappe.generate_hash(length=16), "entity_id": name,
-            "status": "completed", "approval_required": False, "mutation_performed": True}
+        return {
+            "request_id": frappe.generate_hash(length=16),
+            "entity_id": name,
+            "status": "completed",
+            "approval_required": False,
+            "mutation_performed": True,
+        }

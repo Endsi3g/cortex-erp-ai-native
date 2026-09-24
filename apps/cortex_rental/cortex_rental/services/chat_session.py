@@ -23,7 +23,10 @@ except ImportError:
 from cortex_rental.schemas.chat_schemas import SendMessageResponseData
 from cortex_rental.services.agent_router import AgentRouter
 from cortex_rental.services.tool_policy import ToolPolicyResolver
-from cortex_rental.services.chat_context import ChatContextResolver, ChatContextPermissionError
+from cortex_rental.services.chat_context import (
+    ChatContextResolver,
+    ChatContextPermissionError,
+)
 from cortex_rental.services.onyx_chat_client import (
     HttpOnyxChatClient,
     OnyxChatClient,
@@ -48,8 +51,17 @@ def _mask_sensitive_text(value: str) -> str:
     """Persist conversational text with common direct identifiers masked."""
     import re
 
-    value = re.sub(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", "[courriel masqué]", value, flags=re.IGNORECASE)
-    return re.sub(r"(?<!\w)(?:\+?1[-. ]?)?\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}(?!\w)", "[téléphone masqué]", value)
+    value = re.sub(
+        r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}",
+        "[courriel masqué]",
+        value,
+        flags=re.IGNORECASE,
+    )
+    return re.sub(
+        r"(?<!\w)(?:\+?1[-. ]?)?\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}(?!\w)",
+        "[téléphone masqué]",
+        value,
+    )
 
 
 def _new_id(prefix: str) -> str:
@@ -130,7 +142,10 @@ class ChatSessionService:
 
         session = frappe.get_doc("Cortex Chat Session", name)
         if session.user != user and "System Manager" not in frappe.get_roles(user):
-            frappe.throw("Unauthorized: this chat session belongs to a different user.", frappe.PermissionError)
+            frappe.throw(
+                "Unauthorized: this chat session belongs to a different user.",
+                frappe.PermissionError,
+            )
         return session.as_dict()
 
     # -----------------------------------------------------------------
@@ -152,7 +167,10 @@ class ChatSessionService:
             return
         session = frappe.get_doc("Cortex Chat Session", session_name)
         if session.user != user:
-            frappe.throw("Unauthorized: this chat session belongs to a different user.", frappe.PermissionError)
+            frappe.throw(
+                "Unauthorized: this chat session belongs to a different user.",
+                frappe.PermissionError,
+            )
         session.pinned_context = context_snapshot_name
         session.save()
 
@@ -161,13 +179,21 @@ class ChatSessionService:
             return
         session = frappe.get_doc("Cortex Chat Session", session_name)
         if session.user != user:
-            frappe.throw("Unauthorized: this chat session belongs to a different user.", frappe.PermissionError)
+            frappe.throw(
+                "Unauthorized: this chat session belongs to a different user.",
+                frappe.PermissionError,
+            )
         session.pinned_context = None
         session.save()
 
     # -----------------------------------------------------------------
     def send_message(
-        self, user: str, company: str, message: str, context: Dict[str, Any], chat_session_id: Optional[str]
+        self,
+        user: str,
+        company: str,
+        message: str,
+        context: Dict[str, Any],
+        chat_session_id: Optional[str],
     ) -> SendMessageResponseData:
         _check_rate_limit(user)
 
@@ -194,7 +220,11 @@ class ChatSessionService:
             raise
 
         session_name = self._resolve_session(
-            chat_session_id, user, company, agent_profile, context.get("locale", "fr-CA")
+            chat_session_id,
+            user,
+            company,
+            agent_profile,
+            context.get("locale", "fr-CA"),
         )
 
         context_hash = ChatContextResolver.hash_context(resolved_context)
@@ -203,9 +233,7 @@ class ChatSessionService:
 
         upstream_session_id = None
         if frappe:
-            upstream_session_id = frappe.db.get_value(
-                "Cortex Chat Session", session_name, "onyx_chat_session_id"
-            )
+            upstream_session_id = frappe.db.get_value("Cortex Chat Session", session_name, "onyx_chat_session_id")
 
         try:
             result = self.onyx_client.send_message(
@@ -228,7 +256,10 @@ class ChatSessionService:
             raise
         if frappe and result.onyx_session_id and result.onyx_session_id != upstream_session_id:
             frappe.db.set_value(
-                "Cortex Chat Session", session_name, "onyx_chat_session_id", result.onyx_session_id
+                "Cortex Chat Session",
+                session_name,
+                "onyx_chat_session_id",
+                result.onyx_session_id,
             )
         blocks = ChatResponseTransformer.transform(result)
 
@@ -267,7 +298,12 @@ class ChatSessionService:
 
     # -----------------------------------------------------------------
     def _resolve_session(
-        self, chat_session_id: Optional[str], user: str, company: str, agent_profile: str, locale: str
+        self,
+        chat_session_id: Optional[str],
+        user: str,
+        company: str,
+        agent_profile: str,
+        locale: str,
     ) -> str:
         if chat_session_id:
             if not frappe:
@@ -275,7 +311,10 @@ class ChatSessionService:
             if frappe.db.exists("Cortex Chat Session", chat_session_id):
                 owner = frappe.db.get_value("Cortex Chat Session", chat_session_id, "user")
                 if owner != user:
-                    frappe.throw("Unauthorized: this chat session belongs to a different user.", frappe.PermissionError)
+                    frappe.throw(
+                        "Unauthorized: this chat session belongs to a different user.",
+                        frappe.PermissionError,
+                    )
                 return chat_session_id
             # Client sent an id for a session that doesn't exist (e.g.
             # a stale id from a cleared cache) — start a fresh one
@@ -285,7 +324,12 @@ class ChatSessionService:
         return created["name"]
 
     def _write_context_snapshot(
-        self, session_name: str, company: str, page: str, resolved_context: Dict[str, Any], context_hash: str
+        self,
+        session_name: str,
+        company: str,
+        page: str,
+        resolved_context: Dict[str, Any],
+        context_hash: str,
     ) -> None:
         if not frappe:
             return
@@ -358,4 +402,9 @@ class ChatSessionService:
     def _touch_session(self, session_name: str) -> None:
         if not frappe:
             return
-        frappe.db.set_value("Cortex Chat Session", session_name, "last_message_at", frappe.utils.now_datetime())
+        frappe.db.set_value(
+            "Cortex Chat Session",
+            session_name,
+            "last_message_at",
+            frappe.utils.now_datetime(),
+        )

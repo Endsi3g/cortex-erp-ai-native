@@ -58,9 +58,24 @@ def ensure_prerequisites() -> None:
         _ensure_doctype_stub(
             doctype_name="Company",
             fields=[
-                {"fieldname": "company_name", "label": "Company Name", "fieldtype": "Data", "reqd": 1},
-                {"fieldname": "default_currency", "label": "Default Currency", "fieldtype": "Data", "default": "CAD"},
-                {"fieldname": "country", "label": "Country", "fieldtype": "Data", "default": "Canada"},
+                {
+                    "fieldname": "company_name",
+                    "label": "Company Name",
+                    "fieldtype": "Data",
+                    "reqd": 1,
+                },
+                {
+                    "fieldname": "default_currency",
+                    "label": "Default Currency",
+                    "fieldtype": "Data",
+                    "default": "CAD",
+                },
+                {
+                    "fieldname": "country",
+                    "label": "Country",
+                    "fieldtype": "Data",
+                    "default": "Canada",
+                },
             ],
         )
 
@@ -85,8 +100,18 @@ def ensure_prerequisites() -> None:
         _ensure_doctype_stub(
             doctype_name="Customer",
             fields=[
-                {"fieldname": "customer_name", "label": "Customer Name", "fieldtype": "Data", "reqd": 1},
-                {"fieldname": "cortex_company", "label": "Company", "fieldtype": "Link", "options": "Company"},
+                {
+                    "fieldname": "customer_name",
+                    "label": "Customer Name",
+                    "fieldtype": "Data",
+                    "reqd": 1,
+                },
+                {
+                    "fieldname": "cortex_company",
+                    "label": "Company",
+                    "fieldtype": "Link",
+                    "options": "Company",
+                },
             ],
         )
 
@@ -95,7 +120,12 @@ def ensure_prerequisites() -> None:
         _ensure_doctype_stub(
             doctype_name="Item",
             fields=[
-                {"fieldname": "item_code", "label": "Item Code", "fieldtype": "Data", "reqd": 1},
+                {
+                    "fieldname": "item_code",
+                    "label": "Item Code",
+                    "fieldtype": "Data",
+                    "reqd": 1,
+                },
                 {"fieldname": "item_name", "label": "Item Name", "fieldtype": "Data"},
                 {"fieldname": "item_group", "label": "Item Group", "fieldtype": "Data"},
             ],
@@ -106,9 +136,24 @@ def ensure_prerequisites() -> None:
         _ensure_doctype_stub(
             doctype_name="Serial No",
             fields=[
-                {"fieldname": "serial_no", "label": "Serial No", "fieldtype": "Data", "reqd": 1},
-                {"fieldname": "item_code", "label": "Item Code", "fieldtype": "Link", "options": "Item"},
-                {"fieldname": "company", "label": "Company", "fieldtype": "Link", "options": "Company"},
+                {
+                    "fieldname": "serial_no",
+                    "label": "Serial No",
+                    "fieldtype": "Data",
+                    "reqd": 1,
+                },
+                {
+                    "fieldname": "item_code",
+                    "label": "Item Code",
+                    "fieldtype": "Link",
+                    "options": "Item",
+                },
+                {
+                    "fieldname": "company",
+                    "label": "Company",
+                    "fieldtype": "Link",
+                    "options": "Company",
+                },
                 {
                     "fieldname": "cortex_status",
                     "label": "Cortex Rental Status",
@@ -116,7 +161,13 @@ def ensure_prerequisites() -> None:
                     "options": "Active\nQuarantine\nUnder Repair\nMissing\nDecommissioned",
                     "default": "Active",
                 },
-                {"fieldname": "cortex_ownership", "label": "Ownership", "fieldtype": "Select", "options": "Owned\nConsignment", "default": "Owned"},
+                {
+                    "fieldname": "cortex_ownership",
+                    "label": "Ownership",
+                    "fieldtype": "Select",
+                    "options": "Owned\nConsignment",
+                    "default": "Owned",
+                },
             ],
         )
 
@@ -173,9 +224,9 @@ def boot_session(bootinfo: Any = None) -> None:
         # Keep only the dedicated Cortex workspaces; CORTEX_WORKSPACE_ORDER is the
         # single source of truth — match on both name and title for robustness.
         bootinfo["allowed_workspaces"] = [
-            ws for ws in bootinfo["allowed_workspaces"]
-            if ws.get("name") in CORTEX_WORKSPACE_ORDER
-            or ws.get("title") in CORTEX_WORKSPACE_ORDER
+            ws
+            for ws in bootinfo["allowed_workspaces"]
+            if ws.get("name") in CORTEX_WORKSPACE_ORDER or ws.get("title") in CORTEX_WORKSPACE_ORDER
         ]
 
 
@@ -194,6 +245,7 @@ CORTEX_WORKSPACE_ORDER = [
 
 
 if frappe:
+
     @frappe.whitelist()
     def get_cortex_workspace_sidebar_items() -> Dict[str, Any]:
         """
@@ -206,12 +258,13 @@ if frappe:
         """
         try:
             from frappe.desk.desktop import get_workspace_sidebar_items as _original
+
             sidebar = _original()
             if isinstance(sidebar, dict) and "pages" in sidebar:
                 filtered = [
-                    p for p in sidebar["pages"]
-                    if p.get("name") in CORTEX_WORKSPACE_ORDER
-                    or p.get("title") in CORTEX_WORKSPACE_ORDER
+                    p
+                    for p in sidebar["pages"]
+                    if p.get("name") in CORTEX_WORKSPACE_ORDER or p.get("title") in CORTEX_WORKSPACE_ORDER
                 ]
 
                 def _sort_key(p: Dict[str, Any]) -> int:
@@ -226,11 +279,19 @@ if frappe:
             pages = frappe.get_all(
                 "Workspace",
                 filters={"name": ["in", CORTEX_WORKSPACE_ORDER], "is_hidden": 0},
-                fields=["name", "title", "for_user", "parent_page", "content", "public"],
+                fields=[
+                    "name",
+                    "title",
+                    "for_user",
+                    "parent_page",
+                    "content",
+                    "public",
+                ],
                 order_by="sequence_id asc",
             )
             return {"pages": pages}
 else:
+
     def get_cortex_workspace_sidebar_items() -> Dict[str, Any]:  # type: ignore[misc]
         """No-op stub when Frappe is not installed (e.g. unit-test environments)."""
         return {"pages": []}

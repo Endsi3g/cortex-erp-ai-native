@@ -38,7 +38,11 @@ class TestClientCannotEscalate(unittest.TestCase):
 
     def test_rejects_client_supplied_company(self):
         with self.assertRaises(ValueError):
-            send_message_handler(self._payload(company="Someone Else's Company"), user="u@test.com", company="C1")
+            send_message_handler(
+                self._payload(company="Someone Else's Company"),
+                user="u@test.com",
+                company="C1",
+            )
 
     def test_rejects_client_supplied_model(self):
         with self.assertRaises(ValueError):
@@ -46,7 +50,11 @@ class TestClientCannotEscalate(unittest.TestCase):
 
     def test_rejects_client_supplied_allowed_tool_ids(self):
         with self.assertRaises(ValueError):
-            send_message_handler(self._payload(allowed_tool_ids=["activate_contract"]), user="u@test.com", company="C1")
+            send_message_handler(
+                self._payload(allowed_tool_ids=["activate_contract"]),
+                user="u@test.com",
+                company="C1",
+            )
 
     def test_rejects_client_supplied_agent_inside_context(self):
         payload = self._payload()
@@ -74,11 +82,19 @@ class TestAgentRoutingAndToolPolicy(unittest.TestCase):
         list today, but this test makes that an explicit, visible fact
         rather than a surprise."""
         for page, agent in PAGE_TO_AGENT.items():
-            self.assertIn(agent, AGENT_TOOL_MAP, f"page={page} routes to {agent}, which has no tool policy entry")
+            self.assertIn(
+                agent,
+                AGENT_TOOL_MAP,
+                f"page={page} routes to {agent}, which has no tool policy entry",
+            )
 
     def test_availability_agent_has_no_write_tools(self):
         tools = ToolPolicyResolver.resolve_tools("cortex-availability")
-        write_tools = {"create_quote_draft", "create_customer_draft", "submit_approval_request"}
+        write_tools = {
+            "create_quote_draft",
+            "create_customer_draft",
+            "submit_approval_request",
+        }
         self.assertFalse(set(tools) & write_tools)
 
     def test_intake_agent_only_drafts_never_confirms(self):
@@ -153,9 +169,13 @@ class TestHttpOnyxChatClient(unittest.TestCase):
             "tool_id_map": {"check_inventory_availability": 208},
             "model_name": "qwen3:8b",
         }
-        with patch.object(HttpOnyxChatClient, "_config", return_value=config), patch(
-            "cortex_rental.services.onyx_chat_client.urllib.request.urlopen", return_value=FakeResponse()
-        ) as urlopen:
+        with (
+            patch.object(HttpOnyxChatClient, "_config", return_value=config),
+            patch(
+                "cortex_rental.services.onyx_chat_client.urllib.request.urlopen",
+                return_value=FakeResponse(),
+            ) as urlopen,
+        ):
             result = HttpOnyxChatClient("http://onyx.local", "server-secret").send_message(
                 message="Explique cette disponibilité",
                 chat_session_id=None,
@@ -190,9 +210,13 @@ class TestHttpOnyxChatClient(unittest.TestCase):
             def read(self):
                 return json.dumps({"answer": "Texte", "answer_citationless": "Texte", "message_id": 4}).encode()
 
-        with patch.object(HttpOnyxChatClient, "_config", return_value={}), patch(
-            "cortex_rental.services.onyx_chat_client.urllib.request.urlopen", return_value=FakeResponse()
-        ) as urlopen:
+        with (
+            patch.object(HttpOnyxChatClient, "_config", return_value={}),
+            patch(
+                "cortex_rental.services.onyx_chat_client.urllib.request.urlopen",
+                return_value=FakeResponse(),
+            ) as urlopen,
+        ):
             HttpOnyxChatClient("http://onyx.local", "secret").send_message(
                 "Question", None, "cortex-operations", ["not-mapped"], {}
             )
@@ -218,7 +242,13 @@ class TestChatResponseTransformer(unittest.TestCase):
             OnyxChatResult(
                 onyx_message_id="message-1",
                 text="Suggestion à réviser.",
-                blocks=[{"type": "assistant_text", "text": "Suggestion à réviser.", "source_ids": []}],
+                blocks=[
+                    {
+                        "type": "assistant_text",
+                        "text": "Suggestion à réviser.",
+                        "source_ids": [],
+                    }
+                ],
             )
         )
         self.assertEqual(blocks[0]["type"], "assistant_text")
@@ -266,7 +296,10 @@ class TestSendMessageEndToEndNoFrappe(unittest.TestCase):
         response = send_message_handler(
             {
                 "message": "Résumé du jour",
-                "context": {"page": "some-future-page-not-yet-routed", "locale": "fr-CA"},
+                "context": {
+                    "page": "some-future-page-not-yet-routed",
+                    "locale": "fr-CA",
+                },
             },
             user="camille@cinerental.test",
             company="CineRental Montreal",

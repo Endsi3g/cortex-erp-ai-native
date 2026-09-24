@@ -27,7 +27,12 @@ def check_availability_handler(payload: Dict[str, Any], company: str) -> List[Di
     item_requests = payload.get("items") or payload.get("item_requests") or []
 
     svc = AvailabilityService()
-    results = svc.check(company=company, starts_at=starts_at, ends_at=ends_at, item_requests=item_requests)
+    results = svc.check(
+        company=company,
+        starts_at=starts_at,
+        ends_at=ends_at,
+        item_requests=item_requests,
+    )
     return results
 
 
@@ -43,38 +48,71 @@ if frappe:
         if not payload.get("starts_at") or not payload.get("ends_at"):
             frappe.throw("Rental start and end dates are required.", frappe.ValidationError)
         results = check_availability_handler(payload, company)
-        return {"provenance": "api", "last_synced_at": frappe.utils.now_datetime().isoformat(),
-            "all_available": all(row["is_available"] for row in results), "items": [{
-            "item_code": row["item_id"], "requested_quantity": row["requested_quantity"],
-            "available_quantity": row["available_quantity"], "is_available": row["is_available"],
-            "conflicting_rentals": [],
-        } for row in results]}
+        return {
+            "provenance": "api",
+            "last_synced_at": frappe.utils.now_datetime().isoformat(),
+            "all_available": all(row["is_available"] for row in results),
+            "items": [
+                {
+                    "item_code": row["item_id"],
+                    "requested_quantity": row["requested_quantity"],
+                    "available_quantity": row["available_quantity"],
+                    "is_available": row["is_available"],
+                    "conflicting_rentals": [],
+                }
+                for row in results
+            ],
+        }
 
     @frappe.whitelist(methods=["GET"])
     def get_alternatives(item_code: str, starts_at: str, ends_at: str):
         require_human_staff_role()
         company = get_company_context()
-        source = frappe.db.get_value("Cortex Rental Item Profile", {
-            "company": company, "item_code": item_code,
-        }, ["category"], as_dict=True)
+        source = frappe.db.get_value(
+            "Cortex Rental Item Profile",
+            {
+                "company": company,
+                "item_code": item_code,
+            },
+            ["category"],
+            as_dict=True,
+        )
         if not source:
             frappe.throw("Item is unavailable for this company.", frappe.PermissionError)
-        alternatives = frappe.get_all("Cortex Rental Item Profile", filters={
-            "company": company, "category": source.category, "item_code": ["!=", item_code],
-        }, fields=["item_code", "item_name", "daily_rate"], limit_page_length=100)
+        alternatives = frappe.get_all(
+            "Cortex Rental Item Profile",
+            filters={
+                "company": company,
+                "category": source.category,
+                "item_code": ["!=", item_code],
+            },
+            fields=["item_code", "item_name", "daily_rate"],
+            limit_page_length=100,
+        )
         checks = AvailabilityService().check(
-            company=company, starts_at=starts_at, ends_at=ends_at,
+            company=company,
+            starts_at=starts_at,
+            ends_at=ends_at,
             item_requests=[{"item_code": row.item_code, "quantity": 1} for row in alternatives],
         )
         by_code = {row["item_id"]: row for row in checks}
-        return {"provenance": "api", "last_synced_at": frappe.utils.now_datetime().isoformat(),
-            "item_code": item_code, "alternatives": [{
-            "item_code": row.item_code, "item_name": row.item_name or row.item_code,
-            "daily_rate": float(row.daily_rate or 0),
-            "available_quantity": float(by_code[row.item_code]["available_quantity"]),
-            "match_score": 1.0,
-            "specification_diff": "Même catégorie; valider les caractéristiques techniques avant substitution.",
-        } for row in alternatives if by_code[row.item_code]["is_available"]]}
+        return {
+            "provenance": "api",
+            "last_synced_at": frappe.utils.now_datetime().isoformat(),
+            "item_code": item_code,
+            "alternatives": [
+                {
+                    "item_code": row.item_code,
+                    "item_name": row.item_name or row.item_code,
+                    "daily_rate": float(row.daily_rate or 0),
+                    "available_quantity": float(by_code[row.item_code]["available_quantity"]),
+                    "match_score": 1.0,
+                    "specification_diff": "Même catégorie; valider les caractéristiques techniques avant substitution.",
+                }
+                for row in alternatives
+                if by_code[row.item_code]["is_available"]
+            ],
+        }
 
     @frappe.whitelist(methods=["POST"])
     @log_tool_call("check_inventory_availability", scope="agent:availability:read")
@@ -84,7 +122,9 @@ if frappe:
         payload = frappe.local.form_dict
         results = check_availability_handler(payload=payload, company=company)
         AuditService.record_read(
-            action="cortex.availability.checked", metadata={"item_count": len(results)}, company=company
+            action="cortex.availability.checked",
+            metadata={"item_count": len(results)},
+            company=company,
         )
         return {"data": results, "meta": {"company": company}}
 
@@ -121,7 +161,13 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     profiles = frappe.get_all(
         "Cortex Rental Item Profile",
         filters=item_filters,
-        fields=["item_code", "item_name", "category", "is_serialized", "total_quantity"],
+        fields=[
+            "item_code",
+            "item_name",
+            "category",
+            "is_serialized",
+            "total_quantity",
+        ],
         order_by="item_name asc",
         limit_page_length=200,
     )
