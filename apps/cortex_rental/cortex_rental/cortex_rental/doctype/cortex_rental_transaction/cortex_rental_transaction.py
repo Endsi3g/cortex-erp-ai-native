@@ -143,8 +143,13 @@ class CortexRentalTransaction(Document):
             self.rental_state = new_state
             self.save()
 
-        # Synchronize with ERPNext documents
-        TransactionStateService.sync_with_erpnext(self)
+        # ERPNext documents: the Sales Order (and the requested advance) is
+        # created when the rental is confirmed. Failures surface to the
+        # caller and roll the request back; they are never swallowed.
+        if frappe and new_state == "Reservation":
+            from cortex_rental.services.billing import create_sales_order
+
+            create_sales_order(self)
 
         # Append-only audit record
         AuditService.record_mutation(

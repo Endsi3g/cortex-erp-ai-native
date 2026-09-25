@@ -33,8 +33,24 @@ export function formatCurrencyCAD(amount: number, locale: LocaleType = 'fr-CA'):
  * fr-CA: 8 sept. 2026, 09:00
  * en-CA: Sep 8, 2026, 9:00 AM
  */
+/**
+ * Frappe sends dates as "YYYY-MM-DD" and datetimes as "YYYY-MM-DD HH:MM:SS"
+ * in the site's time zone. `new Date("YYYY-MM-DD")` would read them as UTC
+ * midnight and show the previous day west of Greenwich, so both forms are
+ * read as local calendar values here.
+ */
+export function parseFrappeDate(value: string | Date): Date {
+  if (value instanceof Date) return value
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(value.trim().replace(/\.\d+$/, ''))
+  if (match) {
+    const [, y, m, d, hh = '0', mm = '0', ss = '0'] = match
+    return new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm), Number(ss))
+  }
+  return new Date(value)
+}
+
 export function formatDateTime(dateInput: string | Date, locale: LocaleType = 'fr-CA'): string {
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
+  const date = parseFrappeDate(dateInput)
   if (isNaN(date.getTime())) return '—'
 
   return new Intl.DateTimeFormat(locale, {
@@ -51,7 +67,7 @@ export function formatDateTime(dateInput: string | Date, locale: LocaleType = 'f
  * Localized Date-only Formatter.
  */
 export function formatDate(dateInput: string | Date, locale: LocaleType = 'fr-CA'): string {
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
+  const date = parseFrappeDate(dateInput)
   if (isNaN(date.getTime())) return '—'
 
   return new Intl.DateTimeFormat(locale, {

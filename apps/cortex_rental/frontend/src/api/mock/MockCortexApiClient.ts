@@ -84,6 +84,9 @@ import type {
 } from '../contracts'
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
 import { demoPnlFilterOptions, demoProfitAndLoss } from './fixtures/finance'
+import type { InvoiceRow, PaymentRow, PagedResult, ListInvoicesInput, ListPaymentsInput, RentalBilling, PaymentMode, RecordAdvanceInput, RecordAdvanceResult } from '../contracts'
+import { demoInvoices, demoPayments } from './fixtures/billing'
+
 import { MockStateStore } from './MockStateStore'
 import { LatencySimulator } from './LatencySimulator'
 import { ErrorInjector } from './ErrorInjector'
@@ -1607,5 +1610,55 @@ export class MockCortexApiClient implements CortexApiClient {
       .slice(0, 5)
       .map(rental => ({ type: 'rental' as const, id: rental.id, title: rental.id, subtitle: `${rental.customer_name} · ${rental.rental_state}` }))
     return { query, results: rentals }
+  }
+
+  // 12. Billing (DEMO data, explicit mock mode only)
+  private pageOf<T>(rows: T[], page: number, pageSize: number): PagedResult<T> {
+    return { provenance: 'mock', items: rows.slice((page - 1) * pageSize, page * pageSize), total_count: rows.length, page, page_size: pageSize }
+  }
+
+  async listInvoices(input: ListInvoicesInput): Promise<PagedResult<InvoiceRow>> {
+    await LatencySimulator.inject('fast')
+    const needle = (input.search ?? '').toLowerCase()
+    const rows = demoInvoices.filter(row =>
+      (!input.status || row.status === input.status) &&
+      (!needle || [row.name, row.customer_name, row.cortex_rental_transaction].some(value => value.toLowerCase().includes(needle)))
+    )
+    return this.pageOf(rows, input.page, input.page_size)
+  }
+
+  async listPayments(input: ListPaymentsInput): Promise<PagedResult<PaymentRow>> {
+    await LatencySimulator.inject('fast')
+    const needle = (input.search ?? '').toLowerCase()
+    const rows = demoPayments.filter(row => !needle || [row.name, row.party_name, row.cortex_rental_transaction].some(value => value.toLowerCase().includes(needle)))
+    return this.pageOf(rows, input.page, input.page_size)
+  }
+
+  async getRentalBilling(rentalId: string): Promise<RentalBilling> {
+    await LatencySimulator.inject('fast')
+    const payments = demoPayments.filter(row => row.cortex_rental_transaction === rentalId)
+    const received = payments.filter(row => row.docstatus === 1).reduce((sum, row) => sum + row.paid_amount, 0)
+    const invoice = demoInvoices.find(row => row.cortex_rental_transaction === rentalId)
+    return {
+      currency: 'CAD',
+      sales_order: { name: `DEMO-SO-${rentalId.slice(-3)}`, status: 'To Deliver and Bill', docstatus: 1, grand_total: 5173.88, advance_paid: received, per_billed: invoice ? 100 : 0 },
+      advance: { percentage_amount: 1552.16, guarantee_amount: 500, requested: 2052.16, received, covered: received >= 2052.16 },
+      payments: payments.map(row => ({ name: row.name, docstatus: row.docstatus, posting_date: row.posting_date, paid_amount: row.paid_amount, mode_of_payment: row.mode_of_payment, reference_no: row.reference_no })),
+      final_invoice: invoice ? { name: invoice.name, status: invoice.status, docstatus: invoice.docstatus, grand_total: invoice.grand_total, total_advance: invoice.total_advance, outstanding_amount: invoice.outstanding_amount } : null
+    }
+  }
+
+  async getPaymentModes(): Promise<PaymentMode[]> {
+    return [{ name: 'Carte de crédit', has_account: true }, { name: 'Virement', has_account: true }, { name: 'Espèces', has_account: false }]
+  }
+
+  async recordAdvancePayment(input: RecordAdvanceInput): Promise<RecordAdvanceResult> {
+    await LatencySimulator.inject('mutation')
+    return { payment_entry: `DEMO-PE-${Date.now()}`, amount: input.amount, submitted: true }
+  }
+
+  async createFinalInvoice(rentalId: string): Promise<{ sales_invoice: string }> {
+    await LatencySimulator.inject('mutation')
+    return { sales_invoice: demoInvoices.find(row => row.cortex_rental_transaction === rentalId)?.name ?? `DEMO-SINV-${Date.now()}` }
   }
 }

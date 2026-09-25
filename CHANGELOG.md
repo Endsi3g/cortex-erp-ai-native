@@ -19,7 +19,17 @@
 - Compte de résultat (`/cortex/finance/profit-and-loss`): ERPNext filter bar (company, finance book, fiscal years or date range, periodicity, currency, cost center, accounting dimensions, project, report view, accumulated values, default FB entries), KPI summary, chart, tree table with row filters, General Ledger drill-down, CSV export with formula-injection guard, print.
 - `get_profit_and_loss` now recognises ERPNext v14/v15 labels (`'Total Income (Credit)'`, `'Profit for the year'`, spacer rows) and returns `available: false` with a reason instead of a zeroed statement when the report fails. New `get_pnl_filter_options`.
 
-**Quality**
+### Lot 2 — Finance: advance + balance billing on ERPNext documents
+
+- Reservation now creates and submits the ERPNext **Sales Order** with the server-priced period lines (billable days, discounts) and the company's sales tax template (TPS/TVQ). The previous sync created orders at the *daily* rate, lost the link after save and swallowed every error; ERPNext failures now fail the reservation with ERPNext's message.
+- Requested **advance** = share of the order's grand total (new DocType **Cortex Company Settings**, 30% by default) + equipment guarantee (`deposit_required` × qty). Recorded as a native ERPNext **Payment Entry** against the order (submitted for accounting roles, draft otherwise); `payment_ready` follows the order's `advance_paid`.
+- After return, a **draft balance Sales Invoice** is mapped from the order with advances allocated and damage / loss lines from completed check-ins; it refuses (instead of dropping charges) when the damage/loss items are not configured. A person submits it in ERPNext.
+- Traceability custom field `cortex_rental_transaction` on Sales Order, Sales Invoice and Payment Entry.
+- **Factures et paiements** screen (`/cortex/finance/invoices`) on the shared ERPNext-style `DataTable`.
+- Fixed a date bug across the app: Frappe `YYYY-MM-DD` values were read as UTC and shown one day early in Québec.
+- To check on the tower after `bench migrate`: create a Cortex Company Settings record (tax template, damage and loss items), confirm a reservation creates a submitted Sales Order with taxes, record an advance, then prepare a balance invoice after a return.
+
+**Quality (lot 1)**
 - `tests/fake_frappe.py`: runs the `if frappe:` paths in pytest and validates every insert against the DocType JSON (unknown / missing mandatory fields).
 - CI now typechecks, tests and builds the frontend.
 - Not verified on a live bench in this lot; see HANDOFF for what to check on the tower.

@@ -83,6 +83,7 @@ import type {
   RegisterEvidenceInput,
   MutationResponse
 } from '../contracts'
+import type { InvoiceRow, PaymentRow, PagedResult, ListInvoicesInput, ListPaymentsInput, RentalBilling, PaymentMode, RecordAdvanceInput, RecordAdvanceResult } from '../contracts'
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
 import { HttpClient } from './httpClient'
 import { generateIdempotencyKey } from '@/utils/idempotency'
@@ -423,6 +424,31 @@ export class HttpCortexApiClient implements CortexApiClient {
     return unwrapFrappe(await this.http.get<FrappeResult<PnlReport>>(
       '/cortex_rental.api.v1.accounting.get_profit_and_loss', params
     ))
+  }
+
+  // 12. Billing
+  async listInvoices(input: ListInvoicesInput): Promise<PagedResult<InvoiceRow>> {
+    return unwrapFrappe(await this.http.get<FrappeResult<PagedResult<InvoiceRow>>>('/cortex_rental.api.v1.billing.list_invoices', { ...input }))
+  }
+
+  async listPayments(input: ListPaymentsInput): Promise<PagedResult<PaymentRow>> {
+    return unwrapFrappe(await this.http.get<FrappeResult<PagedResult<PaymentRow>>>('/cortex_rental.api.v1.billing.list_payments', { ...input }))
+  }
+
+  async getRentalBilling(rentalId: string): Promise<RentalBilling> {
+    return unwrapFrappe(await this.http.get<FrappeResult<RentalBilling>>('/cortex_rental.api.v1.billing.get_rental_billing', { rental_id: rentalId }))
+  }
+
+  async getPaymentModes(): Promise<PaymentMode[]> {
+    return unwrapFrappe(await this.http.get<FrappeResult<PaymentMode[]>>('/cortex_rental.api.v1.billing.get_payment_modes'))
+  }
+
+  async recordAdvancePayment(input: RecordAdvanceInput): Promise<RecordAdvanceResult> {
+    return unwrapFrappe(await this.http.post<FrappeResult<RecordAdvanceResult>>('/cortex_rental.api.v1.billing.record_advance_payment', input, makeIdempotencyKey()))
+  }
+
+  async createFinalInvoice(rentalId: string): Promise<{ sales_invoice: string }> {
+    return unwrapFrappe(await this.http.post<FrappeResult<{ sales_invoice: string }>>('/cortex_rental.api.v1.billing.create_final_invoice', { rental_id: rentalId }, makeIdempotencyKey()))
   }
 
   // 11. Global search

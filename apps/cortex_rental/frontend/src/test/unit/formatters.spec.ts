@@ -46,3 +46,18 @@ describe('Formatters Unit Tests (fr-CA & en-CA)', () => {
     })
   })
 })
+
+describe('Frappe date parsing', () => {
+  it('keeps date-only values on their calendar day in every time zone', async () => {
+    const { formatDate, parseFrappeDate } = await import('@/app/i18n/formatters')
+    const date = parseFrappeDate('2026-09-18')
+    expect([date.getFullYear(), date.getMonth(), date.getDate()]).toEqual([2026, 8, 18])
+    expect(formatDate('2026-09-18', 'fr-CA')).toContain('18')
+  })
+
+  it('reads Frappe datetimes as local wall-clock time', async () => {
+    const { parseFrappeDate } = await import('@/app/i18n/formatters')
+    const date = parseFrappeDate('2026-09-18 09:30:00.000000')
+    expect([date.getHours(), date.getMinutes()]).toEqual([9, 30])
+  })
+})

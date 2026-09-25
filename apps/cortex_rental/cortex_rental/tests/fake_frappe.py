@@ -147,6 +147,13 @@ class FakeDoc(_Dict):
         self._frappe.inserted.append(dict(self))
         return self
 
+    def db_set(self, fieldname: Any, value: Any = None):
+        updates = fieldname if isinstance(fieldname, dict) else {fieldname: value}
+        self.update(updates)
+        for row in self._frappe.tables.get(self.get("doctype"), []):
+            if row.get("name") == self.get("name"):
+                row.update(updates)
+
     def save(self, ignore_permissions: bool = False):
         self._frappe.validate_against_schema(self)
         return self

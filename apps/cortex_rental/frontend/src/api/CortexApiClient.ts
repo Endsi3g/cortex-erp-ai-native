@@ -1,4 +1,13 @@
 import type {
+  InvoiceRow,
+  PaymentRow,
+  PagedResult,
+  ListInvoicesInput,
+  ListPaymentsInput,
+  RentalBilling,
+  PaymentMode,
+  RecordAdvanceInput,
+  RecordAdvanceResult,
   PnlFilterOptions,
   PnlFilters,
   PnlReport,
@@ -161,4 +170,12 @@ export interface CortexApiClient {
 
   // 11. Global search (⌘K)
   globalSearch(query: string): Promise<GlobalSearchResponse>
+
+  // 12. Billing (ERPNext Sales Order / Payment Entry / Sales Invoice)
+  listInvoices(input: ListInvoicesInput): Promise<PagedResult<InvoiceRow>>
+  listPayments(input: ListPaymentsInput): Promise<PagedResult<PaymentRow>>
+  getRentalBilling(rentalId: string): Promise<RentalBilling>
+  getPaymentModes(): Promise<PaymentMode[]>
+  recordAdvancePayment(input: RecordAdvanceInput): Promise<RecordAdvanceResult>
+  createFinalInvoice(rentalId: string): Promise<{ sales_invoice: string }>
 }

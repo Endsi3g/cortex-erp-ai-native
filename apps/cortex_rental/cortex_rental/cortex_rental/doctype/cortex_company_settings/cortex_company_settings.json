@@ -1,0 +1,115 @@
+{
+  "actions": [],
+  "autoname": "field:company",
+  "creation": "2026-09-25 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "billing_section",
+    "advance_percentage",
+    "include_equipment_guarantee",
+    "accounting_section",
+    "taxes_and_charges",
+    "damage_item",
+    "loss_item"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "billing_section",
+      "fieldtype": "Section Break",
+      "label": "Acompte"
+    },
+    {
+      "default": "30",
+      "fieldname": "advance_percentage",
+      "fieldtype": "Percent",
+      "label": "Acompte (% du total TTC)",
+      "in_list_view": 1,
+      "description": "Part du total de la commande demandée à la réservation."
+    },
+    {
+      "default": "1",
+      "fieldname": "include_equipment_guarantee",
+      "fieldtype": "Check",
+      "label": "Ajouter le dépôt de garantie des équipements",
+      "description": "Somme des dépôts requis (profil d’équipement × quantité), demandée avec l’acompte et remboursable au retour."
+    },
+    {
+      "fieldname": "accounting_section",
+      "fieldtype": "Section Break",
+      "label": "Comptabilité"
+    },
+    {
+      "fieldname": "taxes_and_charges",
+      "fieldtype": "Link",
+      "label": "Modèle de taxes de vente",
+      "options": "Sales Taxes and Charges Template",
+      "description": "Laissé vide : le modèle par défaut de la société dans ERPNext."
+    },
+    {
+      "fieldname": "damage_item",
+      "fieldtype": "Link",
+      "label": "Article « Frais de dommages »",
+      "options": "Item"
+    },
+    {
+      "fieldname": "loss_item",
+      "fieldtype": "Link",
+      "label": "Article « Équipement perdu »",
+      "options": "Item"
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex Company Settings",
+  "owner": "Administrator",
+  "modified": "2026-09-25 00:00:00.000000",
+  "permissions": [
+    {
+      "create": 1,
+      "read": 1,
+      "write": 1,
+      "role": "System Manager"
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "write": 1,
+      "role": "Cortex System Manager"
+    },
+    {
+      "create": 1,
+      "read": 1,
+      "write": 1,
+      "role": "Cortex Finance Manager"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Operations Manager"
+    },
+    {
+      "read": 1,
+      "role": "Rental Manager"
+    },
+    {
+      "read": 1,
+      "role": "Rental Operator"
+    },
+    {
+      "read": 1,
+      "role": "Cortex Counter Staff"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

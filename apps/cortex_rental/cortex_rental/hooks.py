@@ -61,6 +61,7 @@ permission_query_conditions = {
     "Cortex Chat Session": "cortex_rental.permissions.cortex_chat_session_query_conditions",
     "Cortex Chat Message": "cortex_rental.permissions.cortex_chat_message_query_conditions",
     "Cortex Chat Context Snapshot": "cortex_rental.permissions.cortex_chat_context_snapshot_query_conditions",
+    "Cortex Company Settings": "cortex_rental.permissions.cortex_company_settings_query_conditions",
 }
 
 # Fixtures exported/synced on `bench migrate` — provisions the granular
@@ -97,7 +98,19 @@ fixtures = [
     },
     {
         "dt": "Custom Field",
-        "filters": [["name", "in", ["Customer-cortex_company", "Serial No-cortex_status"]]],
+        "filters": [
+            [
+                "name",
+                "in",
+                [
+                    "Customer-cortex_company",
+                    "Serial No-cortex_status",
+                    "Sales Order-cortex_rental_transaction",
+                    "Sales Invoice-cortex_rental_transaction",
+                    "Payment Entry-cortex_rental_transaction",
+                ],
+            ]
+        ],
     },
 ]
 

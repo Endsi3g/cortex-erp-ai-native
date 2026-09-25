@@ -1,3 +1,4 @@
+import { parseFrappeDate } from '@/app/i18n/formatters'
 import type { SupportedLocale } from './types'
 
 export function formatCurrencyCAD(amount: number, locale: SupportedLocale = 'fr-CA'): string {
@@ -23,7 +24,7 @@ export function formatCurrencyCAD(amount: number, locale: SupportedLocale = 'fr-
 }
 
 export function formatLocalizedDate(dateInput: string | Date, locale: SupportedLocale = 'fr-CA', includeTime = true): string {
-  const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
+  const d = parseFrappeDate(dateInput)
   if (isNaN(d.getTime())) return ''
 
   if (locale === 'fr-CA') {
