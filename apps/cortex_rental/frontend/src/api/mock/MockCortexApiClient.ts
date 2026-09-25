@@ -84,8 +84,10 @@ import type {
 } from '../contracts'
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
 import { demoPnlFilterOptions, demoProfitAndLoss } from './fixtures/finance'
+import type { RentalSummary, ListRentalSummariesInput, ReadinessField, OperationsOverview } from '../contracts'
 import type { InvoiceRow, PaymentRow, PagedResult, ListInvoicesInput, ListPaymentsInput, RentalBilling, PaymentMode, RecordAdvanceInput, RecordAdvanceResult } from '../contracts'
 import { demoInvoices, demoPayments } from './fixtures/billing'
+import { demoActions } from './fixtures/rentals'
 
 import { MockStateStore } from './MockStateStore'
 import { LatencySimulator } from './LatencySimulator'
@@ -462,7 +464,12 @@ export class MockCortexApiClient implements CortexApiClient {
     })
 
     const netSubtotal = subtotal - totalDiscount
-    const taxAmount = Number((netSubtotal * 0.14975).toFixed(2))
+    // DEMO template: TPS 5 % + TVQ 9,975 % (the real template comes from ERPNext).
+    const taxLines = [
+      { description: 'TPS (DEMO)', rate: 5, amount: Number((netSubtotal * 0.05).toFixed(2)) },
+      { description: 'TVQ (DEMO)', rate: 9.975, amount: Number((netSubtotal * 0.09975).toFixed(2)) }
+    ]
+    const taxAmount = Number(taxLines.reduce((sum, line) => sum + line.amount, 0).toFixed(2))
     const grandTotal = Number((netSubtotal + taxAmount).toFixed(2))
 
     return {
@@ -473,6 +480,9 @@ export class MockCortexApiClient implements CortexApiClient {
       subtotal,
       discount_amount: totalDiscount,
       tax_amount: taxAmount,
+      tax_lines: taxLines,
+      tax_template: 'DEMO TPS/TVQ',
+      tax_estimate_complete: true,
       grand_total: grandTotal,
       pricing_rule_applied: diffDays % 7 === 0 ? 'Règle standard 7 jours = 3 jours facturés' : 'Tarification dégressive standard',
       lines
@@ -518,6 +528,7 @@ export class MockCortexApiClient implements CortexApiClient {
 
     const subtotal = lines.reduce((acc, l) => acc + l.subtotal, 0)
     const newRental: RentalTransaction = {
+      available_actions: demoActions('Quote'),
       provenance: 'demo',
       last_synced_at: new Date().toISOString(),
       version: 1,
@@ -653,7 +664,7 @@ export class MockCortexApiClient implements CortexApiClient {
       }
     }
 
-    if (rental.rental_state !== 'Quote' && rental.rental_state !== 'Draft') {
+    if (rental.rental_state !== 'Quote') {
       return {
         request_id: reqId,
         status: 'policy_denied',
@@ -947,7 +958,7 @@ export class MockCortexApiClient implements CortexApiClient {
         errors: [{ code: 'NOT_FOUND', message: `Location ${input.rental_id} introuvable.` }]
       }
     }
-    if (rental.rental_state !== 'Checked Out' && rental.rental_state !== 'Partially Returned') {
+    if (rental.rental_state !== 'Checked Out') {
       return {
         request_id: `req-chkin-start-${Date.now()}`,
         status: 'policy_denied',
@@ -1072,7 +1083,7 @@ export class MockCortexApiClient implements CortexApiClient {
         errors: [{ code: 'NOT_FOUND', message: `Location ${input.rental_id} introuvable.` }]
       }
     }
-    if (rental.rental_state !== 'Checked Out' && rental.rental_state !== 'Partially Returned') {
+    if (rental.rental_state !== 'Checked Out') {
       return {
         request_id: `req-partial-${Date.now()}`,
         status: 'policy_denied',
@@ -1080,12 +1091,13 @@ export class MockCortexApiClient implements CortexApiClient {
         mutation_performed: false,
         policy_result: {
           policy_name: 'cortex.checkin.status_required',
-          explanation: `Le retour partiel exige l'état Checked Out ou Partially Returned. État actuel: ${rental.rental_state}`
+          explanation: `Le retour partiel exige l'état Checked Out. État actuel: ${rental.rental_state}`
         },
         errors: [{ code: 'INVALID_STATE', message: `Retour partiel interdit pour l'état '${rental.rental_state}'.` }]
       }
     }
-    rental.rental_state = 'Partially Returned'
+    // A partial return keeps the rental Checked Out (same as the server).
+    rental.rental_state = 'Checked Out'
     rental.version += 1
     rental.updated_at = new Date().toISOString()
 
@@ -1660,5 +1672,60 @@ export class MockCortexApiClient implements CortexApiClient {
   async createFinalInvoice(rentalId: string): Promise<{ sales_invoice: string }> {
     await LatencySimulator.inject('mutation')
     return { sales_invoice: demoInvoices.find(row => row.cortex_rental_transaction === rentalId)?.name ?? `DEMO-SINV-${Date.now()}` }
+  }
+
+  // 13. Operations & rental lifecycle (DEMO data, explicit mock mode only)
+  async listRentalSummaries(input: ListRentalSummariesInput): Promise<PagedResult<RentalSummary>> {
+    await LatencySimulator.inject('fast')
+    const needle = (input.search ?? '').toLowerCase()
+    const rows = this.store.rentals
+      .filter(r => (!input.state || r.rental_state === input.state) && (!needle || [r.id, r.customer_name, r.project_name ?? ''].some(v => v.toLowerCase().includes(needle))))
+      .map(r => ({
+        name: r.id, customer: r.customer_id, customer_name: r.customer_name, project_name: r.project_name ?? '', rental_state: r.rental_state,
+        starts_at: r.starts_at, ends_at: r.ends_at, billable_days: r.billable_days, grand_total: r.grand_total, currency: r.currency ?? 'CAD', ready: r.readiness.overall_ready
+      }))
+    return this.pageOf(rows, input.page, input.page_size)
+  }
+
+  async getOperationsOverview(day?: string): Promise<OperationsOverview> {
+    await LatencySimulator.inject('fast')
+    const toRow = (r: RentalTransaction) => ({
+      name: r.id, customer: r.customer_id, customer_name: r.customer_name, project_name: r.project_name ?? '', rental_state: r.rental_state,
+      starts_at: r.starts_at, ends_at: r.ends_at,
+      missing_requirements: (['customer_account_ready', 'insurance_ready', 'payment_ready'] as const).filter(k => !r.readiness[k])
+    })
+    const departures = this.store.rentals.filter(r => ['Reservation', 'Contract'].includes(r.rental_state)).map(toRow)
+    const returns = this.store.rentals.filter(r => r.rental_state === 'Checked Out').map(toRow)
+    return {
+      provenance: 'mock', day: day ?? new Date().toISOString().slice(0, 10), generated_at: new Date().toISOString(),
+      kpis: { departures: departures.length, returns: returns.length, overdue: 1, exceptions: 1, approvals_pending: this.store.approvals.filter(a => a.status === 'pending').length, inbound_pending: 2 },
+      departures, returns, overdue: returns.slice(0, 1), exceptions: [],
+      at_risk: departures.filter(r => r.missing_requirements.length),
+      serials_out_of_service: [{ serial_no: 'DEMO-SN-ALX-004', item_code: 'DEMO-ITM-ALX35', status: 'Quarantine' }]
+    }
+  }
+
+  private demoRentalUpdate(rentalId: string, update: (r: RentalTransaction) => void): GetRentalResponse {
+    const rental = this.store.rentals.find(r => r.id === rentalId)
+    if (!rental) throw new Error(`Location ${rentalId} introuvable.`)
+    update(rental)
+    rental.readiness.overall_ready = rental.readiness.customer_account_ready && rental.readiness.insurance_ready && rental.readiness.payment_ready
+    rental.available_actions = demoActions(rental.rental_state, rental.final_invoice)
+    return structuredClone(rental)
+  }
+
+  async setReadiness(rentalId: string, field: ReadinessField, value: boolean): Promise<GetRentalResponse> {
+    await LatencySimulator.inject('mutation')
+    return this.demoRentalUpdate(rentalId, r => { r.readiness[field] = value })
+  }
+
+  async cancelRental(rentalId: string): Promise<GetRentalResponse> {
+    await LatencySimulator.inject('mutation')
+    return this.demoRentalUpdate(rentalId, r => { r.rental_state = 'Cancelled' })
+  }
+
+  async closeRental(rentalId: string): Promise<GetRentalResponse> {
+    await LatencySimulator.inject('mutation')
+    return this.demoRentalUpdate(rentalId, r => { r.rental_state = 'Closed' })
   }
 }

@@ -66,7 +66,7 @@
     <template v-else-if="rental">
       <!-- State Warning if not Checked Out or Partially Returned -->
       <div
-        v-if="rental.rental_state !== 'Checked Out' && rental.rental_state !== 'Partially Returned'"
+        v-if="rental.rental_state !== 'Checked Out'"
         class="p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 space-y-2"
       >
         <div class="flex items-center gap-2 text-sm font-bold">

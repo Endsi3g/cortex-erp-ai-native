@@ -29,6 +29,16 @@
 - Fixed a date bug across the app: Frappe `YYYY-MM-DD` values were read as UTC and shown one day early in Québec.
 - To check on the tower after `bench migrate`: create a Cortex Company Settings record (tax template, damage and loss items), confirm a reservation creates a submitted Sales Order with taxes, record an advance, then prepare a balance invoice after a return.
 
+### Lot 3 — Operations: overview, availability, rentals, composer, rental record
+
+- **Availability grid rewritten**: blocks were positioned by rental *state* with hard-coded offsets, not by their dates. They are now placed on their real period, with overlapping rentals in separate lanes, conflicts outlined in red and a "now" line.
+- **Operations overview** on a new tenant-scoped endpoint (`api/v1/operations.get_operations_overview`): departures/returns of the day, overdue returns, exceptions, rentals starting within 48 h with missing requirements, out-of-service serials, pending approvals and inbound requests. Removed the hard-coded DEMO timeline, alerts and incoming widgets.
+- **Rentals list** on `list_rental_summaries` (one query per page instead of ~6 per row).
+- **Composer** rebuilt as a single ERPNext-style form (create and edit): server pricing and per-line availability, same-category alternatives when a line conflicts, tax estimate from the company's ERPNext template (the official amounts stay ERPNext's).
+- **Rental record** rebuilt: next action driven by `available_actions` computed on the server, requirement verification with audited reason (bug: contracts were impossible from Cortex because nothing could set these flags), billing tab (advance, payments, balance invoice), equipment & serials, audit; cancel with mandatory reason (closes the ERPNext order) and close (requires the balance invoice to be submitted).
+- Fixed: the rental controller recomputed taxes from `tax_rate = 0` on every save, which would have wiped ERPNext taxes after reservation; the customer search read a non-existent `custom_insurance_valid_until` column (new custom field `cortex_insurance_valid_until`).
+- Frontend state types now mirror the server state machine (removed `Draft`, `Partially Returned`, `Invoiced`; added `Closed`, `Disputed`, `Quarantine`); currency is the company's, not a hard-coded CAD.
+
 **Quality (lot 1)**
 - `tests/fake_frappe.py`: runs the `if frappe:` paths in pytest and validates every insert against the DocType JSON (unknown / missing mandatory fields).
 - CI now typechecks, tests and builds the frontend.

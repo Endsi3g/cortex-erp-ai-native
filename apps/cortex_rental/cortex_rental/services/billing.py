@@ -358,3 +358,49 @@ def billing_summary(doc) -> Dict[str, Any]:
         "payments": payments,
         "final_invoice": invoice,
     }
+
+
+def estimate_taxes(company: str, net_total: float) -> Dict[str, Any]:
+    """
+    Preview-only estimate from the company's sales tax template ("On Net
+    Total" rows, e.g. TPS 5% + TVQ 9.975%). The authoritative amounts are
+    the ones ERPNext computes on the Sales Order. Other charge types are
+    not estimated; `complete` tells the UI so it can say so.
+    """
+    template = get_settings(company)["taxes_and_charges"]
+    if not template:
+        return {"template": None, "lines": [], "total": 0.0, "complete": False}
+    rows = frappe.get_all(
+        "Sales Taxes and Charges",
+        filters={"parent": template, "parenttype": "Sales Taxes and Charges Template"},
+        fields=["charge_type", "rate", "description", "included_in_print_rate"],
+        order_by="idx asc",
+    )
+    lines, complete = [], True
+    for row in rows:
+        if row.charge_type != "On Net Total" or row.included_in_print_rate:
+            complete = False
+            continue
+        amount = round(float(net_total or 0) * float(row.rate or 0) / 100.0, 2)
+        lines.append({"description": row.description, "rate": float(row.rate or 0), "amount": amount})
+    return {
+        "template": template,
+        "lines": lines,
+        "total": round(sum(line["amount"] for line in lines), 2),
+        "complete": complete,
+    }
+
+
+def close_sales_order(doc) -> None:
+    """A cancelled rental closes its Sales Order; any advance stays as customer credit (refund in ERPNext)."""
+    from erpnext.selling.doctype.sales_order.sales_order import update_status
+
+    if frappe.db.get_value("Sales Order", doc.erpnext_sales_order, "docstatus") == 1:
+        update_status("Closed", doc.erpnext_sales_order)
+        AuditService.record_mutation(
+            company=doc.company,
+            action="cortex.billing.sales_order_closed",
+            entity_type="Cortex Rental Transaction",
+            entity_id=doc.name,
+            after_state={"sales_order": doc.erpnext_sales_order, "status": "Closed"},
+        )

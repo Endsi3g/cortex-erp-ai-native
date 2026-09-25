@@ -1,4 +1,8 @@
 import type {
+  RentalSummary,
+  ListRentalSummariesInput,
+  ReadinessField,
+  OperationsOverview,
   InvoiceRow,
   PaymentRow,
   PagedResult,
@@ -178,4 +182,11 @@ export interface CortexApiClient {
   getPaymentModes(): Promise<PaymentMode[]>
   recordAdvancePayment(input: RecordAdvanceInput): Promise<RecordAdvanceResult>
   createFinalInvoice(rentalId: string): Promise<{ sales_invoice: string }>
+
+  // 13. Operations & rental lifecycle
+  listRentalSummaries(input: ListRentalSummariesInput): Promise<PagedResult<RentalSummary>>
+  getOperationsOverview(day?: string): Promise<OperationsOverview>
+  setReadiness(rentalId: string, field: ReadinessField, value: boolean, note?: string): Promise<GetRentalResponse>
+  cancelRental(rentalId: string, reason: string): Promise<GetRentalResponse>
+  closeRental(rentalId: string): Promise<GetRentalResponse>
 }

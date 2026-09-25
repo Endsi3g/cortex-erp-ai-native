@@ -66,5 +66,16 @@
     "in_standard_filter": 1,
     "no_copy": 1,
     "description": "Rental this ERPNext document was generated for by Cortex (traceability; set by the server, never by hand)."
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Customer-cortex_insurance_valid_until",
+    "dt": "Customer",
+    "fieldname": "cortex_insurance_valid_until",
+    "label": "Assurance valide jusqu’au (Cortex)",
+    "fieldtype": "Date",
+    "insert_after": "cortex_company",
+    "in_standard_filter": 1,
+    "description": "Date d’expiration du certificat d’assurance (COI) vérifié. Cortex s’en sert pour signaler une assurance manquante ou expirée avant un contrat."
   }
 ]

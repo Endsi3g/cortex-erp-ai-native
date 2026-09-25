@@ -83,6 +83,7 @@ import type {
   RegisterEvidenceInput,
   MutationResponse
 } from '../contracts'
+import type { RentalSummary, ListRentalSummariesInput, ReadinessField, OperationsOverview } from '../contracts'
 import type { InvoiceRow, PaymentRow, PagedResult, ListInvoicesInput, ListPaymentsInput, RentalBilling, PaymentMode, RecordAdvanceInput, RecordAdvanceResult } from '../contracts'
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
 import { HttpClient } from './httpClient'
@@ -449,6 +450,27 @@ export class HttpCortexApiClient implements CortexApiClient {
 
   async createFinalInvoice(rentalId: string): Promise<{ sales_invoice: string }> {
     return unwrapFrappe(await this.http.post<FrappeResult<{ sales_invoice: string }>>('/cortex_rental.api.v1.billing.create_final_invoice', { rental_id: rentalId }, makeIdempotencyKey()))
+  }
+
+  // 13. Operations & rental lifecycle
+  async listRentalSummaries(input: ListRentalSummariesInput): Promise<PagedResult<RentalSummary>> {
+    return unwrapFrappe(await this.http.get<FrappeResult<PagedResult<RentalSummary>>>('/cortex_rental.api.v1.rentals.list_rental_summaries', { ...input }))
+  }
+
+  async getOperationsOverview(day?: string): Promise<OperationsOverview> {
+    return unwrapFrappe(await this.http.get<FrappeResult<OperationsOverview>>('/cortex_rental.api.v1.operations.get_operations_overview', { day }))
+  }
+
+  async setReadiness(rentalId: string, field: ReadinessField, value: boolean, note?: string): Promise<GetRentalResponse> {
+    return unwrapFrappe(await this.http.post<FrappeResult<GetRentalResponse>>('/cortex_rental.api.v1.rentals.set_readiness', { name: rentalId, field, value: value ? 1 : 0, note }))
+  }
+
+  async cancelRental(rentalId: string, reason: string): Promise<GetRentalResponse> {
+    return unwrapFrappe(await this.http.post<FrappeResult<GetRentalResponse>>('/cortex_rental.api.v1.rentals.cancel_rental', { name: rentalId, reason }, makeIdempotencyKey()))
+  }
+
+  async closeRental(rentalId: string): Promise<GetRentalResponse> {
+    return unwrapFrappe(await this.http.post<FrappeResult<GetRentalResponse>>('/cortex_rental.api.v1.rentals.close_rental', { name: rentalId }, makeIdempotencyKey()))
   }
 
   // 11. Global search

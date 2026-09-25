@@ -18,17 +18,25 @@ export const RentalCatalogOptionSchema = z.object({
 })
 export type RentalCatalogOption = z.infer<typeof RentalCatalogOptionSchema>
 
+/** Mirrors TransactionStateService.VALID_TRANSITIONS on the server. */
 export const RentalStateSchema = z.enum([
-  'Draft',
   'Quote',
   'Reservation',
   'Contract',
   'Checked Out',
-  'Partially Returned',
   'Returned',
-  'Invoiced',
-  'Cancelled'
+  'Closed',
+  'Cancelled',
+  'Disputed',
+  'Quarantine'
 ])
+export type RentalStateValue = z.infer<typeof RentalStateSchema>
+
+export const RentalActionSchema = z.enum([
+  'edit_quote', 'confirm_reservation', 'request_contract', 'record_advance', 'checkout', 'checkin',
+  'prepare_final_invoice', 'close', 'cancel', 'verify_readiness'
+])
+export type RentalAction = z.infer<typeof RentalActionSchema>
 
 export const RentalLineItemSchema = z.object({
   id: z.string(),
@@ -75,10 +83,14 @@ export const RentalTransactionSchema = ProvenanceMetaSchema.extend({
   tax_rate: z.number(),
   tax_amount: z.number(),
   grand_total: z.number(),
-  currency: z.literal('CAD'),
+  currency: z.string().nullable(),
   readiness: RentalReadinessSchema,
   items: z.array(RentalLineItemSchema),
   notes: z.string().optional(),
+  erpnext_sales_order: z.string().nullable().optional(),
+  final_invoice: z.string().nullable().optional(),
+  advance_amount: z.number().optional(),
+  available_actions: z.array(RentalActionSchema).default([]),
   created_at: z.string(),
   updated_at: z.string(),
   version: z.number()
@@ -137,6 +149,9 @@ export const PreviewPricingResponseSchema = ProvenanceMetaSchema.extend({
   subtotal: z.number(),
   discount_amount: z.number(),
   tax_amount: z.number(),
+  tax_lines: z.array(z.object({ description: z.string(), rate: z.number(), amount: z.number() })).default([]),
+  tax_template: z.string().nullable().optional(),
+  tax_estimate_complete: z.boolean().optional(),
   grand_total: z.number(),
   pricing_rule_applied: z.string(),
   lines: z.array(z.object({
@@ -216,3 +231,53 @@ export const GetRentalAuditResponseSchema = ProvenanceMetaSchema.extend({
 })
 
 export type GetRentalAuditResponse = z.infer<typeof GetRentalAuditResponseSchema>
+
+/** Lightweight list row (cortex_rental.api.v1.rentals.list_rental_summaries). */
+export interface RentalSummary extends Record<string, unknown> {
+  name: string
+  customer: string
+  customer_name: string
+  project_name: string
+  rental_state: RentalStateValue
+  starts_at: string
+  ends_at: string
+  billable_days: number
+  grand_total: number
+  currency: string | null
+  ready: boolean
+}
+
+export interface ListRentalSummariesInput {
+  page: number
+  page_size: number
+  state?: RentalStateValue
+  search?: string
+  starts_from?: string
+  starts_to?: string
+}
+
+export type ReadinessField = 'customer_account_ready' | 'insurance_ready'
+
+export interface OperationsRow {
+  name: string
+  customer: string
+  customer_name: string
+  project_name: string
+  rental_state: RentalStateValue
+  starts_at: string
+  ends_at: string
+  missing_requirements: Array<'customer_account_ready' | 'insurance_ready' | 'payment_ready'>
+}
+
+export interface OperationsOverview {
+  provenance?: 'api' | 'mock'
+  day: string
+  generated_at: string
+  kpis: { departures: number; returns: number; overdue: number; exceptions: number; approvals_pending: number; inbound_pending: number }
+  departures: OperationsRow[]
+  returns: OperationsRow[]
+  overdue: OperationsRow[]
+  exceptions: OperationsRow[]
+  at_risk: OperationsRow[]
+  serials_out_of_service: Array<{ serial_no: string; item_code: string; status: string }>
+}

@@ -1,6 +1,19 @@
-import type { RentalTransaction } from '@/types/rental'
+import type { RentalTransaction, RentalState } from '@/types/rental'
+import type { RentalAction } from '@/api/contracts/rentals'
 
-export const initialRentals: RentalTransaction[] = [
+/** Same mapping as rentals.available_actions() on the server (demo user = verifier). */
+export function demoActions(state: RentalState, finalInvoice?: string | null): RentalAction[] {
+  const byState: Partial<Record<RentalState, RentalAction[]>> = {
+    Quote: ['edit_quote', 'confirm_reservation', 'cancel', 'verify_readiness'],
+    Reservation: ['request_contract', 'record_advance', 'cancel', 'verify_readiness'],
+    Contract: ['checkout', 'record_advance', 'cancel', 'verify_readiness'],
+    'Checked Out': ['checkin', 'record_advance']
+  }
+  if (['Returned', 'Quarantine', 'Disputed'].includes(state)) return finalInvoice ? ['close'] : ['prepare_final_invoice', 'close']
+  return byState[state] ?? []
+}
+
+const rentals: Array<Omit<RentalTransaction, 'available_actions'>> = [
   {
     provenance: 'demo',
     last_synced_at: '2026-09-02T16:00:00Z',
@@ -181,7 +194,7 @@ export const initialRentals: RentalTransaction[] = [
     customer_id: 'DEMO-CUST-001',
     customer_name: 'Production Nord Inc.',
     project_name: 'Commercial Teaser',
-    rental_state: 'Partially Returned',
+    rental_state: 'Checked Out',
     starts_at: '2026-08-28T08:00:00Z',
     ends_at: '2026-09-01T18:00:00Z',
     calendar_days: 4,
@@ -230,7 +243,7 @@ export const initialRentals: RentalTransaction[] = [
     customer_id: 'DEMO-CUST-002',
     customer_name: 'Studio Lumière Montréal',
     project_name: 'Music Video — MTL Beats',
-    rental_state: 'Invoiced',
+    rental_state: 'Closed',
     starts_at: '2026-08-15T08:00:00Z',
     ends_at: '2026-08-22T18:00:00Z',
     calendar_days: 7,
@@ -334,3 +347,8 @@ export const initialRentals: RentalTransaction[] = [
     updated_at: '2026-09-08T07:30:00Z'
   }
 ]
+
+export const initialRentals: RentalTransaction[] = rentals.map(rental => ({
+  ...rental,
+  available_actions: demoActions(rental.rental_state, rental.final_invoice)
+}))

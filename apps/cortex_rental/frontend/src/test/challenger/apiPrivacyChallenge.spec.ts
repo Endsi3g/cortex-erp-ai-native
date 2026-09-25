@@ -22,7 +22,7 @@ describe('Gate 1 Challenger Suite — API, State Transitions, Pricing Curve & Pr
   // 1. STATE TRANSITIONS & LIFECYCLE STRESS TESTS
   // =========================================================================
   describe('1. MockCortexApiClient State Transitions & Lifecycle Invariants', () => {
-    it('1.1 Happy Path progression: Quote -> Reservation -> Contract -> Checked Out -> Partially Returned', async () => {
+    it('1.1 Happy Path progression: Quote -> Reservation -> Contract -> Checked Out -> partial return (stays Checked Out)', async () => {
       // Create quote
       const quoteRes = await client.createQuoteDraft({
         customer_id: 'DEMO-CUST-001',
@@ -60,7 +60,7 @@ describe('Gate 1 Challenger Suite — API, State Transitions, Pricing Curve & Pr
       const returnRes = await client.completePartialReturn({ rental_id: rentalId, notes: 'Camera returned' })
       expect(returnRes.status).toBe('completed')
       rental = await client.getRental({ id: rentalId })
-      expect(rental.rental_state).toBe('Partially Returned')
+      expect(rental.rental_state).toBe('Checked Out')
     })
 
     it('1.2 VULNERABILITY: Missing transitions for "Returned" (full return) and "Invoiced"', () => {

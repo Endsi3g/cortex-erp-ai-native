@@ -104,6 +104,7 @@ fixtures = [
                 "in",
                 [
                     "Customer-cortex_company",
+                    "Customer-cortex_insurance_valid_until",
                     "Serial No-cortex_status",
                     "Sales Order-cortex_rental_transaction",
                     "Sales Invoice-cortex_rental_transaction",

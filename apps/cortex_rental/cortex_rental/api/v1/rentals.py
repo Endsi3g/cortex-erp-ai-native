@@ -1,6 +1,6 @@
 """Human-facing, tenant-scoped APIs for the rental composer and lifecycle."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 try:
     import frappe
@@ -16,6 +16,7 @@ from cortex_rental.services.idempotency import (
     get_idempotency_key_header,
     with_idempotency,
 )
+from cortex_rental.services.billing import estimate_taxes
 from cortex_rental.services.pricing import PricingService
 
 
@@ -84,15 +85,19 @@ def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
                 "is_serialized": bool(profile.is_serialized),
             }
         )
-    # Tax is supplied only by an ERPNext tax template configured for the
-    # company. No client-side Quebec tax constant is treated as canonical.
+    # Taxes: estimate from the company's ERPNext tax template; the official
+    # amounts are computed by ERPNext on the Sales Order at reservation.
+    taxes = estimate_taxes(company, subtotal)
     return {
         "calendar_days": calendar_days,
         "billable_days": billable_days,
         "subtotal": round(subtotal, 2),
         "discount_amount": round(discount_amount, 2),
-        "tax_amount": 0.0,
-        "grand_total": round(subtotal, 2),
+        "tax_amount": taxes["total"],
+        "tax_lines": taxes["lines"],
+        "tax_template": taxes["template"],
+        "tax_estimate_complete": taxes["complete"],
+        "grand_total": round(subtotal + taxes["total"], 2),
         "pricing_rule_applied": "Rental Pricing Rule / Cortex Rental Item Profile",
         "lines": lines,
     }
@@ -181,7 +186,7 @@ def _serialize(doc) -> Dict[str, Any]:
         "tax_rate": float(doc.tax_rate or 0),
         "tax_amount": float(doc.tax_amount or 0),
         "grand_total": float(doc.grand_total or 0),
-        "currency": frappe.db.get_value("Company", doc.company, "default_currency") or "CAD",
+        "currency": frappe.db.get_value("Company", doc.company, "default_currency"),
         "readiness": {
             "customer_account_ready": bool(doc.customer_account_ready),
             "insurance_ready": bool(doc.insurance_ready),
@@ -199,6 +204,10 @@ def _serialize(doc) -> Dict[str, Any]:
         },
         "items": items,
         "notes": doc.notes or "",
+        "erpnext_sales_order": doc.erpnext_sales_order or None,
+        "final_invoice": getattr(doc, "final_invoice", None) or None,
+        "advance_amount": float(getattr(doc, "advance_amount", 0) or 0),
+        "available_actions": available_actions(doc),
         "created_at": str(doc.creation),
         "updated_at": str(doc.modified),
         "version": int(doc.version or 1),
@@ -215,16 +224,56 @@ def _owned_transaction(name: str, company: str):
     return doc
 
 
+VERIFIER_ROLES = {
+    "System Manager",
+    "Cortex System Manager",
+    "Rental Manager",
+    "Cortex Operations Manager",
+    "Cortex Account Reviewer",
+}
+READINESS_FIELDS = {"customer_account_ready", "insurance_ready"}
+
+
+def available_actions(doc) -> List[str]:
+    """
+    What the current person can do next on this rental, derived from the
+    state machine and preconditions on the server (the UI only displays it).
+    """
+    state = doc.rental_state
+    actions: List[str] = []
+    if state == "Quote":
+        actions += ["edit_quote", "confirm_reservation", "cancel"]
+    elif state == "Reservation":
+        actions += ["request_contract", "record_advance", "cancel"]
+    elif state == "Contract":
+        actions += ["checkout", "record_advance", "cancel"]
+    elif state == "Checked Out":
+        actions += ["checkin", "record_advance"]
+    elif state in ("Returned", "Quarantine", "Disputed"):
+        if not getattr(doc, "final_invoice", None):
+            actions.append("prepare_final_invoice")
+        actions.append("close")
+    if (
+        state in ("Quote", "Reservation", "Contract")
+        and frappe
+        and (set(frappe.get_roles(frappe.session.user)) & VERIFIER_ROLES)
+    ):
+        actions.append("verify_readiness")
+    return actions
+
+
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
     def search_rental_customers(query: str = ""):
         require_human_staff_role()
         company = get_company_context()
+        insurance_field = "cortex_insurance_valid_until"
+        has_insurance = frappe.db.has_column("Customer", insurance_field)
         rows = frappe.get_all(
             "Customer",
             filters={"cortex_company": company, "disabled": 0},
-            fields=["name", "customer_name", "custom_insurance_valid_until"],
+            fields=["name", "customer_name"] + ([insurance_field] if has_insurance else []),
             order_by="customer_name asc",
             limit_page_length=100,
         )
@@ -235,7 +284,7 @@ if frappe:
             display_name = row.customer_name or row.name
             if needle and needle not in display_name.casefold() and needle not in row.name.casefold():
                 continue
-            expires = row.custom_insurance_valid_until
+            expires = row.get(insurance_field) if has_insurance else None
             items.append(
                 {
                     "id": row.name,
@@ -637,3 +686,133 @@ if frappe:
                 for row in rows
             ],
         }
+
+    @frappe.whitelist(methods=["GET"])
+    def list_rental_summaries(
+        page: int = 1,
+        page_size: int = 20,
+        state: str = None,
+        search: str = None,
+        starts_from: str = None,
+        starts_to: str = None,
+    ):
+        """Lightweight list rows (one query per page, no per-row document loads)."""
+        require_human_staff_role()
+        company = get_company_context()
+        page, page_size = max(1, int(page)), min(500, max(1, int(page_size)))
+        filters: Dict[str, Any] = {"company": company}
+        if state:
+            filters["rental_state"] = state
+        if starts_from or starts_to:
+            filters["starts_at"] = ["between", [starts_from or "1900-01-01", starts_to or "2999-12-31 23:59:59"]]
+        or_filters = None
+        if search:
+            token = f"%{search.strip()}%"
+            or_filters = [["name", "like", token], ["customer", "like", token], ["project_name", "like", token]]
+        rows = frappe.get_list(
+            "Cortex Rental Transaction",
+            filters=filters,
+            or_filters=or_filters,
+            fields=[
+                "name",
+                "customer",
+                "project_name",
+                "rental_state",
+                "starts_at",
+                "ends_at",
+                "billable_days",
+                "grand_total",
+                "customer_account_ready",
+                "insurance_ready",
+                "payment_ready",
+                "modified",
+            ],
+            order_by="starts_at desc, name desc",
+            start=(page - 1) * page_size,
+            page_length=page_size,
+        )
+        total = len(frappe.get_list("Cortex Rental Transaction", filters=filters, or_filters=or_filters, pluck="name"))
+        names = {row.customer for row in rows}
+        customer_names = (
+            dict(
+                frappe.get_all(
+                    "Customer", filters={"name": ["in", list(names)]}, fields=["name", "customer_name"], as_list=True
+                )
+            )
+            if names
+            else {}
+        )
+        currency = frappe.db.get_value("Company", company, "default_currency")
+        return {
+            "data": {
+                "items": [
+                    {
+                        "name": row.name,
+                        "customer": row.customer,
+                        "customer_name": customer_names.get(row.customer) or row.customer,
+                        "project_name": row.project_name or "",
+                        "rental_state": row.rental_state,
+                        "starts_at": str(row.starts_at),
+                        "ends_at": str(row.ends_at),
+                        "billable_days": float(row.billable_days or 0),
+                        "grand_total": float(row.grand_total or 0),
+                        "currency": currency,
+                        "ready": bool(row.customer_account_ready and row.insurance_ready and row.payment_ready),
+                    }
+                    for row in rows
+                ],
+                "total_count": total,
+                "page": page,
+                "page_size": page_size,
+            }
+        }
+
+    @frappe.whitelist(methods=["POST"])
+    def set_readiness(name: str, field: str, value: int = 1, note: str = None):
+        """
+        Human verification of the customer account or the insurance
+        certificate. `payment_ready` is not settable here: it follows the
+        advance recorded in ERPNext (services.billing).
+        """
+        require_human_staff_role()
+        if not set(frappe.get_roles(frappe.session.user)) & VERIFIER_ROLES:
+            frappe.throw("Votre rôle ne permet pas de valider ce prérequis.", frappe.PermissionError)
+        if field not in READINESS_FIELDS:
+            frappe.throw("Prérequis inconnu.", frappe.ValidationError)
+        doc = _owned_transaction(name, get_company_context())
+        if doc.rental_state not in ("Quote", "Reservation", "Contract"):
+            frappe.throw("Les prérequis ne se modifient plus après la sortie du matériel.", frappe.ValidationError)
+        new_value = 1 if str(value) in ("1", "true", "True") else 0
+        before = int(getattr(doc, field) or 0)
+        doc.db_set(field, new_value)
+        AuditService.record_mutation(
+            company=doc.company,
+            action=f"cortex.rental_transaction.{field}_{'verified' if new_value else 'revoked'}",
+            entity_type="Cortex Rental Transaction",
+            entity_id=doc.name,
+            before_state={field: before},
+            after_state={field: new_value, "note": (note or "")[:500]},
+        )
+        return {"data": _serialize(frappe.get_doc("Cortex Rental Transaction", doc.name))}
+
+    @frappe.whitelist(methods=["POST"])
+    def cancel_rental(name: str, reason: str):
+        require_human_staff_role()
+        if not reason or len(reason.strip()) < 3:
+            frappe.throw("Un motif d’annulation d’au moins trois caractères est obligatoire.", frappe.ValidationError)
+        doc = _owned_transaction(name, get_company_context())
+        doc.transition_to("Cancelled", reason=reason.strip()[:500])
+        return {"data": _serialize(frappe.get_doc("Cortex Rental Transaction", doc.name))}
+
+    @frappe.whitelist(methods=["POST"])
+    def close_rental(name: str):
+        require_human_staff_role()
+        doc = _owned_transaction(name, get_company_context())
+        invoice = getattr(doc, "final_invoice", None)
+        if invoice and frappe.db.get_value("Sales Invoice", invoice, "docstatus") != 1:
+            frappe.throw(
+                "La facture de solde doit être soumise dans ERPNext avant de clôturer la location.",
+                frappe.ValidationError,
+            )
+        doc.transition_to("Closed", reason="Closed by authorized staff")
+        return {"data": _serialize(frappe.get_doc("Cortex Rental Transaction", doc.name))}

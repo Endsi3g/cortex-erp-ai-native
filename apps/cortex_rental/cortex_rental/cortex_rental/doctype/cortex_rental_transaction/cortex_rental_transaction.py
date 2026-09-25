@@ -74,8 +74,17 @@ class CortexRentalTransaction(Document):
                 subtotal += item.amount
 
         self.subtotal = round(subtotal, 2)
-        tax_rate = float(self.tax_rate or 0.0)
-        self.tax_amount = round(self.subtotal * (tax_rate / 100.0), 2)
+        if getattr(self, "erpnext_sales_order", None):
+            # Once the ERPNext Sales Order exists, its taxes and grand total
+            # are authoritative (written by services.billing); never
+            # recompute them here.
+            return
+        if frappe and self.company:
+            from cortex_rental.services.billing import estimate_taxes
+
+            self.tax_amount = estimate_taxes(self.company, self.subtotal)["total"]
+        else:
+            self.tax_amount = round(self.subtotal * (float(self.tax_rate or 0.0) / 100.0), 2)
         self.grand_total = round(self.subtotal + self.tax_amount, 2)
 
     @staticmethod
@@ -150,6 +159,10 @@ class CortexRentalTransaction(Document):
             from cortex_rental.services.billing import create_sales_order
 
             create_sales_order(self)
+        elif frappe and new_state == "Cancelled" and getattr(self, "erpnext_sales_order", None):
+            from cortex_rental.services.billing import close_sales_order
+
+            close_sales_order(self)
 
         # Append-only audit record
         AuditService.record_mutation(

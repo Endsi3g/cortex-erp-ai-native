@@ -200,6 +200,8 @@ class FakeFrappe(types.ModuleType):
             rows = rows[:limit_page_length]
         if pluck:
             return [r.get(pluck) for r in rows]
+        if _.get("as_list") and fields:
+            return [tuple(r.get(f) for f in fields) for r in rows]
         return [_Dict(r) for r in rows]
 
     get_list = get_all

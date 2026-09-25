@@ -195,14 +195,14 @@ describe('MockCortexApiClient Comprehensive 32-Method Test Suite', () => {
     expect(serial.status).toBe('Repair')
   })
 
-  it('19. completePartialReturn marks rental Partially Returned', async () => {
+  it('19. completePartialReturn keeps the rental Checked Out (server semantics)', async () => {
     const res = await client.completePartialReturn({
       rental_id: 'DEMO-TRX-2026-001',
       notes: 'Lenses returned, camera kept for 2 more days'
     })
     expect(res.status).toBe('completed')
     const updated = await client.getRental({ id: 'DEMO-TRX-2026-001' })
-    expect(updated.rental_state).toBe('Partially Returned')
+    expect(updated.rental_state).toBe('Checked Out')
   })
 
   it('20. lookupScan identifies serials and items by barcode', async () => {

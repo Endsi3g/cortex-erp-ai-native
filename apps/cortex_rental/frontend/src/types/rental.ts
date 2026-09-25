@@ -1,15 +1,9 @@
 import type { ProvenanceMeta } from './common'
 
-export type RentalState =
-  | 'Draft'
-  | 'Quote'
-  | 'Reservation'
-  | 'Contract'
-  | 'Checked Out'
-  | 'Partially Returned'
-  | 'Returned'
-  | 'Invoiced'
-  | 'Cancelled'
+import type { RentalAction, RentalStateValue } from '@/api/contracts/rentals'
+
+/** Single source of truth: the server state machine (see api/contracts/rentals.ts). */
+export type RentalState = RentalStateValue
 
 export interface RentalReadiness {
   customer_account_ready: boolean
@@ -54,10 +48,14 @@ export interface RentalTransaction extends ProvenanceMeta {
   tax_rate: number
   tax_amount: number
   grand_total: number
-  currency: 'CAD'
+  currency: string | null
   readiness: RentalReadiness
   items: RentalLineItem[]
   notes?: string
+  erpnext_sales_order?: string | null
+  final_invoice?: string | null
+  advance_amount?: number
+  available_actions: RentalAction[]
   created_at: string
   updated_at: string
   version: number
