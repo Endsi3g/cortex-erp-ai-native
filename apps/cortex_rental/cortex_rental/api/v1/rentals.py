@@ -63,7 +63,8 @@ def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
                 frappe.ValidationError,
             )
         if discount and not roles.intersection({"System Manager", "Administrator", "Rental Manager"}):
-            frappe.throw("Only a Rental Manager can apply a discount.", frappe.PermissionError)
+            if not _is_kit_discount(company, requested.get("kit"), code, discount):
+                frappe.throw("Only a Rental Manager can apply a discount.", frappe.PermissionError)
         profile = _profile(code, company)
         # The browser's daily_rate is deliberately ignored. The company-scoped
         # Rental Item Profile is the sole price authority.
@@ -83,6 +84,7 @@ def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
                 "billable_days": billable_days,
                 "line_subtotal": line_total,
                 "is_serialized": bool(profile.is_serialized),
+                "kit": requested.get("kit") or None,
             }
         )
     # Taxes: estimate from the company's ERPNext tax template; the official
@@ -101,6 +103,19 @@ def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
         "pricing_rule_applied": "Rental Pricing Rule / Cortex Rental Item Profile",
         "lines": lines,
     }
+
+
+def _is_kit_discount(company: str, kit: Any, item_code: str, discount: float) -> bool:
+    """A line discount is policy (not ad hoc) when it is exactly the discount of an
+    active kit of this company that contains the item."""
+    if not kit:
+        return False
+    row = frappe.db.get_value(
+        "Cortex Rental Kit", {"name": kit, "company": company, "is_active": 1}, "discount_percentage"
+    )
+    if row is None or abs(float(row) - float(discount)) > 0.0001:
+        return False
+    return bool(frappe.db.exists("Cortex Rental Kit Item", {"parent": kit, "item_code": item_code}))
 
 
 def _customer_in_company(customer: str, company: str) -> None:
@@ -150,6 +165,7 @@ def _serialize(doc) -> Dict[str, Any]:
                 "quantity": float(row.qty or 0),
                 "daily_rate": float(row.rate or 0),
                 "discount_percentage": float(row.discount_percentage or 0),
+                "kit": getattr(row, "kit", None) or None,
                 "billable_days": float(row.billable_days or doc.billable_days or 0),
                 "subtotal": float(row.amount or 0),
                 "assigned_serials": serials,
@@ -434,6 +450,7 @@ if frappe:
                             "qty": line["quantity"],
                             "rate": line["daily_rate"],
                             "discount_percentage": line["discount_percentage"],
+                            "kit": line["kit"],
                         }
                         for line in priced["lines"]
                     ],
@@ -600,6 +617,7 @@ if frappe:
                     "item_code": row.item_code,
                     "quantity": row.qty,
                     "discount_percentage": row.discount_percentage,
+                    "kit": getattr(row, "kit", None),
                 }
                 for row in doc.items
             ],
@@ -622,6 +640,7 @@ if frappe:
                     "qty": line["quantity"],
                     "rate": line["daily_rate"],
                     "discount_percentage": line["discount_percentage"],
+                    "kit": line["kit"],
                 },
             )
         doc.save()

@@ -23,6 +23,15 @@ from cortex_rental.services.locking import reservation_lock
 BLOCKING_STATES = {"Reservation", "Contract"}
 
 
+def aggregate_item_requests(rows) -> list:
+    """One availability request per item with the summed quantity (several lines may share an item)."""
+    totals: dict = {}
+    for row in rows:
+        if row.item_code:
+            totals[row.item_code] = totals.get(row.item_code, 0.0) + float(row.qty or 0)
+    return [{"item_id": code, "quantity": qty} for code, qty in totals.items()]
+
+
 class CortexRentalTransaction(Document):
     """
     Primary Transaction Hub for Cortex Rental Operations.
@@ -189,7 +198,7 @@ class CortexRentalTransaction(Document):
             for code in item_codes:
                 locks.enter_context(reservation_lock(self.company, code))
 
-            item_requests = [{"item_id": item.item_code, "quantity": item.qty} for item in (self.items or [])]
+            item_requests = aggregate_item_requests(self.items or [])
             checks = AvailabilityService().check(
                 company=self.company,
                 starts_at=str(self.starts_at),
@@ -213,6 +222,9 @@ class CortexRentalTransaction(Document):
 
     def _assign_serials_under_lock(self):
         """Allocate real serials atomically when a quote becomes a reservation."""
+        # Serials already given to an earlier line of this same rental (the
+        # SQL below only excludes other rentals).
+        taken: set = set()
         for row in self.items or []:
             profile = frappe.db.get_value(
                 "Cortex Rental Item Profile",
@@ -251,11 +263,12 @@ class CortexRentalTransaction(Document):
                     "item_code": row.item_code,
                     "company": self.company,
                     "transaction": self.name or "",
-                    "quantity": int(quantity),
+                    "quantity": int(quantity) + len(taken),
                 },
                 as_dict=False,
             )
-            serials = [candidate[0] for candidate in candidates]
+            serials = [candidate[0] for candidate in candidates if candidate[0] not in taken][: int(quantity)]
+            taken.update(serials)
             if len(serials) < int(quantity):
                 frappe.throw(
                     f"Only {len(serials)} serialized units remain available for {row.item_code}.",

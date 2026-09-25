@@ -62,6 +62,7 @@ permission_query_conditions = {
     "Cortex Chat Message": "cortex_rental.permissions.cortex_chat_message_query_conditions",
     "Cortex Chat Context Snapshot": "cortex_rental.permissions.cortex_chat_context_snapshot_query_conditions",
     "Cortex Company Settings": "cortex_rental.permissions.cortex_company_settings_query_conditions",
+    "Cortex Rental Kit": "cortex_rental.permissions.cortex_rental_kit_query_conditions",
 }
 
 # Fixtures exported/synced on `bench migrate` — provisions the granular

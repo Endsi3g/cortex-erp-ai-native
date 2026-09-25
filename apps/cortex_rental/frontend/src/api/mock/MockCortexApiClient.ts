@@ -69,6 +69,9 @@ import type {
   GetSerialResponse,
   ListKitsInput,
   ListKitsResponse,
+  EquipmentProfileChanges,
+  SerialStatus,
+  RentalKit,
   ListRentalPoliciesInput,
   ListRentalPoliciesResponse,
   GetTeamRolesInput,
@@ -1449,50 +1452,87 @@ export class MockCortexApiClient implements CortexApiClient {
   }
 
   // 8. Catalog, Fleet, Policies, Audit & Migration
+  // Catalog: DEMO data mapped to the server shapes (explicit mock mode only).
+  private demoSerialStatus(status: string): SerialStatus {
+    return ({ Repair: 'Under Repair', 'Under Repair': 'Under Repair', Missing: 'Missing', Quarantine: 'Quarantine', Decommissioned: 'Decommissioned' } as Record<string, SerialStatus>)[status] ?? 'Active'
+  }
+
   async listEquipment(input: ListEquipmentInput): Promise<ListEquipmentResponse> {
-    await LatencySimulator.inject('standard')
-    let list = [...this.store.catalog]
-    if (input.category) {
-      list = list.filter((e) => e.category === input.category)
-    }
-    if (input.search) {
-      const q = input.search.toLowerCase()
-      list = list.filter((e) => e.item_name.toLowerCase().includes(q) || e.item_code.toLowerCase().includes(q))
-    }
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      items: list,
-      total_count: list.length
-    }
+    await LatencySimulator.inject('fast')
+    const q = (input.search ?? '').toLowerCase()
+    const rows = this.store.catalog
+      .filter(e => (!input.category || e.category === input.category) && (!q || e.item_name.toLowerCase().includes(q) || e.item_code.toLowerCase().includes(q)))
+      .map(e => ({
+        item_code: e.item_code, item_name: e.item_name, category: e.category, daily_rate: e.daily_rate, replacement_value: e.daily_rate * 40,
+        is_serialized: e.is_serialized, currency: 'CAD', fleet_total: e.total_fleet_quantity, fleet_active: e.available_quantity,
+        fleet_out: e.rented_quantity, fleet_unavailable: e.maintenance_quantity
+      }))
+    return this.pageOf(rows, input.page, input.page_size)
   }
 
   async getEquipment(input: GetEquipmentInput): Promise<GetEquipmentResponse> {
-    await LatencySimulator.inject('standard')
-    const item = this.store.catalog.find((c) => c.item_code === input.item_code)
-    if (!item) {
-      throw new Error(`Équipement introuvable: ${input.item_code}`)
+    await LatencySimulator.inject('fast')
+    const item = this.store.catalog.find(c => c.item_code === input.item_code)
+    if (!item) throw new Error(`Équipement introuvable: ${input.item_code}`)
+    const serials = this.store.serials.filter(s => s.item_code === item.item_code)
+    const curveDays = [1, 2, 3, 4, 5, 7, 10, 14, 21, 30]
+    const billable = (d: number) => (d === 1 ? 1 : d === 2 ? 1.5 : d === 3 ? 2 : d === 4 ? 2.5 : d <= 7 ? 3 : d <= 14 ? 6 : d <= 30 ? 10 : d * 0.4)
+    return {
+      provenance: 'mock', item_code: item.item_code, item_name: item.item_name, description: '', image: null, item_group: item.category, brand: item.brand ?? null,
+      category: item.category, daily_rate: item.daily_rate, replacement_value: item.daily_rate * 40, deposit_required: item.daily_rate * 2, prep_hours: 2,
+      is_serialized: item.is_serialized, total_quantity: item.total_fleet_quantity, is_consignment_allowed: serials.some(s => s.is_consigned),
+      required_accessories: item.required_accessories ?? [], currency: 'CAD',
+      fleet: { total: item.total_fleet_quantity, active: item.available_quantity, out: item.rented_quantity, unavailable: item.maintenance_quantity },
+      serials: serials.map(s => ({ serial_no: s.serial_number, status: this.demoSerialStatus(s.status), current_rental: s.status === 'Checked Out' ? 'DEMO-TRX-2026-001' : null, warranty_expiry_date: null })),
+      pricing_curve: curveDays.map(d => ({ calendar_days: d, billable_days: billable(d), price: billable(d) * item.daily_rate })),
+      can_edit: true
     }
-    return { ...item, provenance: 'mock', last_synced_at: new Date().toISOString() }
   }
 
   async getSerial(input: GetSerialInput): Promise<GetSerialResponse> {
-    await LatencySimulator.inject('standard')
-    const serial = this.store.serials.find((s) => s.serial_number === input.serial_number)
-    if (!serial) {
-      throw new Error(`Numéro de série introuvable: ${input.serial_number}`)
+    await LatencySimulator.inject('fast')
+    const serial = this.store.serials.find(s => s.serial_number === input.serial_number)
+    if (!serial) throw new Error(`Numéro de série introuvable: ${input.serial_number}`)
+    return {
+      provenance: 'mock', serial_no: serial.serial_number, item_code: serial.item_code, item_name: serial.item_name, erpnext_status: 'Active',
+      status: this.demoSerialStatus(serial.status), warranty_expiry_date: null, current_rental: serial.status === 'Checked Out' ? 'DEMO-TRX-2026-001' : null,
+      rentals: this.store.rentals.filter(r => r.items.some(i => i.assigned_serials.includes(serial.serial_number))).map(r => ({ name: r.id, customer: r.customer_name, rental_state: r.rental_state, starts_at: r.starts_at, ends_at: r.ends_at })),
+      returns: [], status_history: [], can_change_status: true
     }
-    return { ...serial, provenance: 'mock', last_synced_at: new Date().toISOString() }
   }
 
-  async listKits(_input: ListKitsInput): Promise<ListKitsResponse> {
-    await LatencySimulator.inject('standard')
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      kits: this.store.kits,
-      total_count: this.store.kits.length
-    }
+  async listKits(input: ListKitsInput): Promise<ListKitsResponse> {
+    await LatencySimulator.inject('fast')
+    return this.demoKits.filter(kit => input.include_inactive || kit.is_active).map(kit => structuredClone(kit))
+  }
+
+  private demoKits: RentalKit[] = [
+    { name: 'DEMO-KIT-00001', kit_name: 'Kit caméra A (DEMO)', is_active: true, discount_percentage: 10, description: 'Alexa 35 + série Cooke S4/i',
+      items: [
+        { item_code: 'DEMO-ITM-ALX35', item_name: 'ARRI Alexa 35 Camera Package', qty: 1, is_optional: false, daily_rate: 1500 },
+        { item_code: 'DEMO-ITM-CKE-S4', item_name: 'Cooke S4/i Prime Lens Set', qty: 1, is_optional: false, daily_rate: 950 }
+      ] }
+  ]
+
+  async updateEquipmentProfile(itemCode: string, changes: EquipmentProfileChanges): Promise<GetEquipmentResponse> {
+    await LatencySimulator.inject('mutation')
+    const item = this.store.catalog.find(c => c.item_code === itemCode)
+    if (item && changes.daily_rate !== undefined) item.daily_rate = changes.daily_rate
+    return this.getEquipment({ item_code: itemCode })
+  }
+
+  async setSerialStatus(serialNo: string, status: SerialStatus): Promise<GetSerialResponse> {
+    await LatencySimulator.inject('mutation')
+    const serial = this.store.serials.find(s => s.serial_number === serialNo)
+    if (serial) serial.status = (status === 'Active' ? 'Available' : status === 'Under Repair' ? 'Repair' : status) as typeof serial.status
+    return this.getSerial({ serial_number: serialNo })
+  }
+
+  async saveKit(kit: RentalKit): Promise<RentalKit> {
+    await LatencySimulator.inject('mutation')
+    const saved = { ...structuredClone(kit), name: kit.name ?? `DEMO-KIT-${String(this.demoKits.length + 1).padStart(5, '0')}` }
+    this.demoKits = [...this.demoKits.filter(k => k.name !== saved.name), saved]
+    return saved
   }
 
   async listRentalPolicies(_input: ListRentalPoliciesInput): Promise<ListRentalPoliciesResponse> {

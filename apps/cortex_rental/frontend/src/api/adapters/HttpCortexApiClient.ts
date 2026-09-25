@@ -70,6 +70,9 @@ import type {
   GetSerialResponse,
   ListKitsInput,
   ListKitsResponse,
+  EquipmentProfileChanges,
+  SerialStatus,
+  RentalKit,
   ListRentalPoliciesInput,
   ListRentalPoliciesResponse,
   GetTeamRolesInput,
@@ -368,19 +371,31 @@ export class HttpCortexApiClient implements CortexApiClient {
 
   // 8. Catalog, Fleet, Policies, Audit & Migration
   async listEquipment(input: ListEquipmentInput): Promise<ListEquipmentResponse> {
-    return this.http.get<ListEquipmentResponse>('/catalog/equipment', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ListEquipmentResponse>>('/cortex_rental.api.v1.catalog.list_equipment', { ...input }))
   }
 
   async getEquipment(input: GetEquipmentInput): Promise<GetEquipmentResponse> {
-    return this.http.get<GetEquipmentResponse>(`/catalog/equipment/${input.item_code}`)
+    return unwrapFrappe(await this.http.get<FrappeResult<GetEquipmentResponse>>('/cortex_rental.api.v1.catalog.get_equipment', { item_code: input.item_code }))
   }
 
   async getSerial(input: GetSerialInput): Promise<GetSerialResponse> {
-    return this.http.get<GetSerialResponse>(`/catalog/serial/${input.serial_number}`)
+    return unwrapFrappe(await this.http.get<FrappeResult<GetSerialResponse>>('/cortex_rental.api.v1.catalog.get_serial', { serial_no: input.serial_number }))
   }
 
   async listKits(input: ListKitsInput): Promise<ListKitsResponse> {
-    return this.http.get<ListKitsResponse>('/catalog/kits', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ListKitsResponse>>('/cortex_rental.api.v1.catalog.list_kits', { include_inactive: input.include_inactive ? 1 : 0 }))
+  }
+
+  async updateEquipmentProfile(itemCode: string, changes: EquipmentProfileChanges): Promise<GetEquipmentResponse> {
+    return unwrapFrappe(await this.http.post<FrappeResult<GetEquipmentResponse>>('/cortex_rental.api.v1.catalog.update_equipment_profile', { item_code: itemCode, changes: JSON.stringify(changes) }))
+  }
+
+  async setSerialStatus(serialNo: string, status: SerialStatus, reason: string): Promise<GetSerialResponse> {
+    return unwrapFrappe(await this.http.post<FrappeResult<GetSerialResponse>>('/cortex_rental.api.v1.catalog.set_serial_status', { serial_no: serialNo, status, reason }))
+  }
+
+  async saveKit(kit: RentalKit): Promise<RentalKit> {
+    return unwrapFrappe(await this.http.post<FrappeResult<RentalKit>>('/cortex_rental.api.v1.catalog.save_kit', { kit: JSON.stringify(kit) }))
   }
 
   async listRentalPolicies(input: ListRentalPoliciesInput): Promise<ListRentalPoliciesResponse> {

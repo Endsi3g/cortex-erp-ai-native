@@ -45,6 +45,12 @@
 - Check-in: per-unit condition and disposition, damage severity/type/repair cost, photo evidence uploaded as a private Frappe File attached to the rental (hashed and linked server-side), bulk quantities, and explicit finalisation (automatic, partial, settle with loss).
 - Fixed: a unit returned with quantity 0 was recorded as 1 returned (`float(0 or 1.0)`), so lost equipment was never billed; the frontend offered check-in conditions the DocType rejects (`Missing_Accessory`, `Needs_Clean`); the check-in response was typed as a mutation envelope it never was.
 
+### Lot 5 — Catalog: equipment, serial numbers, kits
+
+- New `api/v1/catalog.py` (the old client called non-existent REST routes): equipment list with real fleet status, equipment record (ERPNext Item + rental profile + serials + pricing curve from the real PricingService), audited profile edits (catalog managers), serial record with rental / return / status history, status changes (quarantine, repair, release, missing, write-off) with mandatory reason.
+- Kits are a Cortex model (**Cortex Rental Kit**, per company): required/optional components and a kit discount. Added to a rental they expand into real lines, each priced, availability-checked and reserved; the kit discount is accepted without the manager role only when it matches an active kit containing the item (kit reference stored on the line).
+- Fixed two double-booking paths: confirmation re-checked availability line by line (two lines of the same item could exceed the fleet), and serial allocation could give the same serial to two lines of one rental. Staff availability checks now sum quantities per item too.
+
 **Quality (lot 1)**
 - `tests/fake_frappe.py`: runs the `if frappe:` paths in pytest and validates every insert against the DocType JSON (unknown / missing mandatory fields).
 - CI now typechecks, tests and builds the frontend.

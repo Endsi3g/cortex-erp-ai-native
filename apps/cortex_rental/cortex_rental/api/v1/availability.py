@@ -24,7 +24,13 @@ ALL_MATRIX_STATES = ("Quote",) + BLOCKING_MATRIX_STATES
 def check_availability_handler(payload: Dict[str, Any], company: str) -> List[Dict[str, Any]]:
     starts_at = payload.get("starts_at")
     ends_at = payload.get("ends_at")
-    item_requests = payload.get("items") or payload.get("item_requests") or []
+    raw_requests = payload.get("items") or payload.get("item_requests") or []
+    # Sum quantities per item: two lines of the same item must be checked together.
+    totals: Dict[str, float] = {}
+    for request in raw_requests:
+        code = request.get("item_code") or request.get("item_id")
+        totals[code] = totals.get(code, 0.0) + float(request.get("quantity") or 1.0)
+    item_requests = [{"item_code": code, "quantity": qty} for code, qty in totals.items()]
 
     svc = AvailabilityService()
     results = svc.check(

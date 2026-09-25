@@ -46,6 +46,7 @@ export const RentalLineItemSchema = z.object({
   quantity: z.number(),
   daily_rate: z.number(),
   discount_percentage: z.number().default(0),
+  kit: z.string().nullable().optional(),
   billable_days: z.number(),
   subtotal: z.number(),
   assigned_serials: z.array(z.string()).default([]),
@@ -134,7 +135,8 @@ export const PreviewPricingInputSchema = z.object({
     item_code: z.string(),
     quantity: z.number(),
     daily_rate: z.number().optional(),
-    discount_percentage: z.number().optional()
+    discount_percentage: z.number().optional(),
+    kit: z.string().optional()
   })),
   starts_at: z.string(),
   ends_at: z.string(),
@@ -173,7 +175,8 @@ export const CreateQuoteDraftInputSchema = z.object({
   items: z.array(z.object({
     item_code: z.string(),
     quantity: z.number(),
-    discount_percentage: z.number().optional()
+    discount_percentage: z.number().optional(),
+    kit: z.string().optional()
   }))
 })
 
@@ -188,7 +191,8 @@ export const UpdateQuoteDraftInputSchema = z.object({
   items: z.array(z.object({
     item_code: z.string(),
     quantity: z.number(),
-    discount_percentage: z.number().optional()
+    discount_percentage: z.number().optional(),
+    kit: z.string().optional()
   })).optional(),
   version: z.number()
 })

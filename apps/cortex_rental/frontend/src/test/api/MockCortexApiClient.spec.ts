@@ -192,7 +192,7 @@ describe('MockCortexApiClient Comprehensive 32-Method Test Suite', () => {
     })
     expect(res.status).toBe('completed')
     const serial = await client.getSerial({ serial_number: 'DEMO-SN-ALX-003' })
-    expect(serial.status).toBe('Repair')
+    expect(serial.status).toBe('Under Repair')
   })
 
   it('19. completePartialReturn keeps the rental Checked Out (server semantics)', async () => {

@@ -85,6 +85,9 @@ import type {
   GetSerialResponse,
   ListKitsInput,
   ListKitsResponse,
+  EquipmentProfileChanges,
+  SerialStatus,
+  RentalKit,
   ListRentalPoliciesInput,
   ListRentalPoliciesResponse,
   GetTeamRolesInput,
@@ -192,4 +195,9 @@ export interface CortexApiClient {
 
   // 14. Evidence files (private Frappe File attached to the rental)
   uploadRentalEvidence(rentalId: string, file: File): Promise<{ file_name: string; file_url: string }>
+
+  // 15. Catalog mutations (catalog managers, audited)
+  updateEquipmentProfile(itemCode: string, changes: EquipmentProfileChanges): Promise<GetEquipmentResponse>
+  setSerialStatus(serialNo: string, status: SerialStatus, reason: string): Promise<GetSerialResponse>
+  saveKit(kit: RentalKit): Promise<RentalKit>
 }

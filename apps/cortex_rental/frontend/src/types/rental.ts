@@ -21,6 +21,7 @@ export interface RentalLineItem {
   quantity: number
   daily_rate: number
   discount_percentage: number
+  kit?: string | null
   billable_days: number
   subtotal: number
   assigned_serials: string[]

@@ -1,102 +1,111 @@
-import { z } from 'zod'
-import { ProvenanceMetaSchema } from './common'
+/**
+ * Catalog contracts — cortex_rental.api.v1.catalog (rental profiles over
+ * ERPNext Items, ERPNext Serial Nos with the Cortex status, Cortex kits).
+ */
+import type { PagedResult } from './billing'
 
-export const EquipmentItemSchema = ProvenanceMetaSchema.extend({
-  item_code: z.string(),
-  item_name: z.string(),
-  category: z.string(),
-  brand: z.string(),
-  daily_rate: z.number(),
-  weekly_rate: z.number(),
-  monthly_rate: z.number(),
-  currency: z.literal('CAD'),
-  is_serialized: z.boolean(),
-  total_fleet_quantity: z.number(),
-  available_quantity: z.number(),
-  maintenance_quantity: z.number(),
-  rented_quantity: z.number(),
-  required_accessories: z.array(z.string()),
-  optional_accessories: z.array(z.string()),
-  image_url: z.string().optional()
-})
+export type SerialStatus = 'Active' | 'Quarantine' | 'Under Repair' | 'Missing' | 'Decommissioned'
 
-export type EquipmentItem = z.infer<typeof EquipmentItemSchema>
+export interface EquipmentRow extends Record<string, unknown> {
+  item_code: string
+  item_name: string
+  category: string
+  daily_rate: number
+  replacement_value: number
+  is_serialized: boolean
+  currency: string | null
+  fleet_total: number
+  fleet_active: number
+  fleet_out: number
+  fleet_unavailable: number
+}
 
-export const SerialNumberItemSchema = ProvenanceMetaSchema.extend({
-  serial_number: z.string(),
-  item_code: z.string(),
-  item_name: z.string(),
-  status: z.enum(['Available', 'Reserved', 'Checked Out', 'Quarantine', 'Repair', 'Missing', 'Decommissioned']),
-  current_location: z.string(),
-  warehouse: z.string(),
-  is_consigned: z.boolean(),
-  owner_id: z.string().optional(),
-  owner_name: z.string().optional(),
-  consignment_rate: z.number().optional(),
-  last_maintenance_date: z.string().optional(),
-  next_maintenance_date: z.string().optional()
-})
+export interface ListEquipmentInput {
+  search?: string
+  category?: string
+  page: number
+  page_size: number
+}
+export type ListEquipmentResponse = PagedResult<EquipmentRow>
 
-export type SerialNumberItem = z.infer<typeof SerialNumberItemSchema>
+export interface GetEquipmentInput {
+  item_code: string
+}
 
-export const KitPackageSchema = ProvenanceMetaSchema.extend({
-  kit_code: z.string(),
-  kit_name: z.string(),
-  category: z.string(),
-  bundle_daily_rate: z.number(),
-  components: z.array(z.object({
-    item_code: z.string(),
-    item_name: z.string(),
-    quantity: z.number(),
-    is_mandatory: z.boolean()
-  }))
-})
+export interface EquipmentSerial extends Record<string, unknown> {
+  serial_no: string
+  status: SerialStatus
+  current_rental: string | null
+  warranty_expiry_date: string | null
+}
 
-export type KitPackage = z.infer<typeof KitPackageSchema>
+export interface EquipmentRecord {
+  provenance?: 'api' | 'mock'
+  item_code: string
+  item_name: string
+  description: string
+  image: string | null
+  item_group: string | null
+  brand: string | null
+  category: string
+  daily_rate: number
+  replacement_value: number
+  deposit_required: number
+  prep_hours: number
+  is_serialized: boolean
+  total_quantity: number
+  is_consignment_allowed: boolean
+  required_accessories: string[]
+  currency: string | null
+  fleet: { total: number; active: number; out: number; unavailable: number; by_status?: Record<string, number> }
+  serials: EquipmentSerial[]
+  pricing_curve: Array<{ calendar_days: number; billable_days: number; price: number }>
+  can_edit: boolean
+}
+export type GetEquipmentResponse = EquipmentRecord
 
-export const ListEquipmentInputSchema = z.object({
-  category: z.string().optional(),
-  search: z.string().optional(),
-  page: z.number().optional().default(1),
-  page_size: z.number().optional().default(20)
-})
+export type EquipmentProfileChanges = Partial<Pick<EquipmentRecord, 'daily_rate' | 'replacement_value' | 'deposit_required' | 'prep_hours' | 'total_quantity' | 'category'>> & {
+  required_accessories?: string
+}
 
-export type ListEquipmentInput = z.infer<typeof ListEquipmentInputSchema>
+export interface GetSerialInput {
+  serial_number: string
+}
 
-export const ListEquipmentResponseSchema = ProvenanceMetaSchema.extend({
-  items: z.array(EquipmentItemSchema),
-  total_count: z.number()
-})
+export interface SerialRecord {
+  provenance?: 'api' | 'mock'
+  serial_no: string
+  item_code: string
+  item_name: string
+  erpnext_status: string | null
+  status: SerialStatus
+  warranty_expiry_date: string | null
+  current_rental: string | null
+  rentals: Array<{ name: string; customer: string; rental_state: string; starts_at: string; ends_at: string }>
+  returns: Array<{ checkin: string; transaction: string; checked_in_at: string; condition: string; disposition: string; damage_severity: string; damage_type: string; estimated_repair_cost: number; notes: string }>
+  status_history: Array<{ id: string; timestamp: string; actor: string; action: string; detail: string }>
+  can_change_status: boolean
+}
+export type GetSerialResponse = SerialRecord
 
-export type ListEquipmentResponse = z.infer<typeof ListEquipmentResponseSchema>
+export interface RentalKitItem {
+  item_code: string
+  item_name: string
+  qty: number
+  is_optional: boolean
+  daily_rate: number
+}
 
-export const GetEquipmentInputSchema = z.object({
-  item_code: z.string()
-})
+export interface RentalKit {
+  name?: string
+  kit_name: string
+  is_active: boolean
+  discount_percentage: number
+  description: string
+  items: RentalKitItem[]
+}
 
-export type GetEquipmentInput = z.infer<typeof GetEquipmentInputSchema>
-
-export const GetEquipmentResponseSchema = EquipmentItemSchema
-export type GetEquipmentResponse = z.infer<typeof GetEquipmentResponseSchema>
-
-export const GetSerialInputSchema = z.object({
-  serial_number: z.string()
-})
-
-export type GetSerialInput = z.infer<typeof GetSerialInputSchema>
-
-export const GetSerialResponseSchema = SerialNumberItemSchema
-export type GetSerialResponse = z.infer<typeof GetSerialResponseSchema>
-
-export const ListKitsInputSchema = z.object({
-  category: z.string().optional()
-})
-
-export type ListKitsInput = z.infer<typeof ListKitsInputSchema>
-
-export const ListKitsResponseSchema = ProvenanceMetaSchema.extend({
-  kits: z.array(KitPackageSchema),
-  total_count: z.number()
-})
-
-export type ListKitsResponse = z.infer<typeof ListKitsResponseSchema>
+export interface ListKitsInput {
+  include_inactive?: boolean
+}
+export type ListKitsResponse = RentalKit[]

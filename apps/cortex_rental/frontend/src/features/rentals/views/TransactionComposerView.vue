@@ -67,7 +67,11 @@
     <section class="py-5" :aria-labelledby="`${uid}-items`">
       <div class="mb-3 flex flex-wrap items-center justify-between gap-3 px-6">
         <h2 :id="`${uid}-items`" class="text-base font-semibold text-ink-gray-9">{{ t('composer.section_items') }}</h2>
-        <div class="relative w-full max-w-md">
+        <div class="flex w-full max-w-xl items-center gap-2">
+        <Dropdown v-if="kits.length" :options="kits.map(kit => ({ label: `${kit.kit_name}${kit.discount_percentage ? ` (−${kit.discount_percentage} %)` : ''}`, onClick: () => addKit(kit) }))" align="end">
+          <Button size="sm" variant="subtle">{{ t('composer.add_kit') }}</Button>
+        </Dropdown>
+        <div class="relative w-full">
           <TextInput
             v-model="catalogQuery"
             type="search"
@@ -87,6 +91,7 @@
               </button>
             </li>
           </ul>
+        </div>
         </div>
       </div>
 
@@ -112,16 +117,19 @@
             <template v-for="(line, index) in lines" :key="line.itemCode">
               <tr class="h-[33px] border-b border-outline-gray-1">
                 <td class="border-r border-outline-gray-1 text-center tabular-nums">{{ index + 1 }}</td>
-                <td class="border-r border-outline-gray-1 px-[7.5px]">{{ line.itemName }} <span class="text-ink-gray-5">· {{ line.itemCode }}</span></td>
+                <td class="border-r border-outline-gray-1 px-[7.5px]">
+                  {{ line.itemName }} <span class="text-ink-gray-5">· {{ line.itemCode }}</span>
+                  <Badge v-if="line.kit" theme="gray" variant="subtle" class="ml-1">{{ kitName(line.kit) }}</Badge>
+                </td>
                 <td class="border-r border-outline-gray-1 px-1">
                   <input v-model.number="line.quantity" type="number" min="1" step="1" class="h-6 w-full rounded border-0 bg-surface-gray-2 px-1.5 text-right text-base tabular-nums focus:ring-1 focus:ring-outline-gray-3" :aria-label="t('composer.qty_for', { item: line.itemName })" />
                 </td>
-                <td class="border-r border-outline-gray-1 px-[7.5px] text-right tabular-nums">{{ priced(line.itemCode) ? money(priced(line.itemCode)!.daily_rate) : '—' }}</td>
+                <td class="border-r border-outline-gray-1 px-[7.5px] text-right tabular-nums">{{ pricedAt(index) ? money(pricedAt(index)!.daily_rate) : '—' }}</td>
                 <td class="border-r border-outline-gray-1 px-1">
-                  <input v-model.number="line.discount" type="number" min="0" max="100" step="0.5" class="h-6 w-full rounded border-0 bg-surface-gray-2 px-1.5 text-right text-base tabular-nums focus:ring-1 focus:ring-outline-gray-3" :aria-label="t('composer.discount_for', { item: line.itemName })" />
+                  <input v-model.number="line.discount" :disabled="Boolean(line.kit)" type="number" min="0" max="100" step="0.5" class="h-6 w-full rounded border-0 bg-surface-gray-2 px-1.5 text-right text-base tabular-nums focus:ring-1 focus:ring-outline-gray-3" :aria-label="t('composer.discount_for', { item: line.itemName })" />
                 </td>
                 <td class="border-r border-outline-gray-1 px-[7.5px] text-right tabular-nums">{{ pricing ? pricing.billable_days : '—' }}</td>
-                <td class="border-r border-outline-gray-1 px-[7.5px] text-right tabular-nums">{{ priced(line.itemCode) ? money(priced(line.itemCode)!.line_subtotal) : '—' }}</td>
+                <td class="border-r border-outline-gray-1 px-[7.5px] text-right tabular-nums">{{ pricedAt(index) ? money(pricedAt(index)!.line_subtotal) : '—' }}</td>
                 <td class="border-r border-outline-gray-1 px-[7.5px]">
                   <template v-if="stock(line.itemCode)">
                     <span v-if="stock(line.itemCode)!.is_available" class="text-ink-green-3">{{ t('composer.available', { qty: stock(line.itemCode)!.available_quantity }) }}</span>
@@ -183,7 +191,7 @@
 import { computed, onMounted, reactive, ref, useId, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Badge, Button, TextInput, toast } from 'frappe-ui'
+import { Badge, Button, Dropdown, TextInput, toast } from 'frappe-ui'
 import { X } from 'lucide-vue-next'
 import PageHeader from '@/design-system/components/page/PageHeader.vue'
 import { getCortexApiClient } from '@/api'
@@ -193,13 +201,14 @@ import type {
   GetRentalResponse,
   PreviewPricingResponse,
   RentalCatalogOption,
-  RentalCustomerOption
+  RentalCustomerOption,
+  RentalKit
 } from '@/api/contracts'
 import { formatMoney } from '@/app/i18n/formatters'
 import type { LocaleType } from '@/app/i18n'
 import { useSessionStore } from '@/stores/session'
 
-interface Line { itemCode: string; itemName: string; quantity: number; discount: number }
+interface Line { itemCode: string; itemName: string; quantity: number; discount: number; kit?: string }
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -216,6 +225,18 @@ const customerQuery = ref('')
 const customers = ref<RentalCustomerOption[]>([])
 const customerOpen = ref(false)
 const selectedCustomer = ref<RentalCustomerOption | null>(null)
+
+const kits = ref<RentalKit[]>([])
+const kitName = (name: string) => kits.value.find(kit => kit.name === name)?.kit_name ?? name
+
+/** A kit expands into ordinary lines (required components only); each is priced and reserved on its own. */
+function addKit(kit: RentalKit) {
+  for (const component of kit.items.filter(item => !item.is_optional)) {
+    const existing = lines.value.find(line => line.itemCode === component.item_code && line.kit === kit.name)
+    if (existing) existing.quantity += component.qty
+    else lines.value.push({ itemCode: component.item_code, itemName: component.item_name, quantity: component.qty, discount: kit.discount_percentage, kit: kit.name })
+  }
+}
 
 const catalogQuery = ref('')
 const catalog = ref<RentalCatalogOption[]>([])
@@ -240,7 +261,8 @@ const canSave = computed(() =>
   Boolean(form.customerId && form.startsAt && form.endsAt && !periodError.value && lines.value.length && pricing.value && allAvailable.value && !checking.value && !saving.value)
 )
 
-const priced = (code: string) => pricing.value?.lines.find(line => line.item_code === code)
+// The server returns one priced line per requested line, in order.
+const pricedAt = (index: number) => pricing.value?.lines[index]
 const stock = (code: string) => availability.value?.items.find(item => item.item_code === code)
 
 // ---- customer & catalog search -------------------------------------------------
@@ -317,11 +339,13 @@ async function refresh() {
   if (!lines.value.length || !form.startsAt || !form.endsAt || periodError.value) return
   const current = ++sequence
   checking.value = true
-  const items = lines.value.map(line => ({ item_code: line.itemCode, quantity: Math.max(1, Math.round(line.quantity || 1)), discount_percentage: line.discount || 0 }))
+  const items = lines.value.map(line => ({ item_code: line.itemCode, quantity: Math.max(1, Math.round(line.quantity || 1)), discount_percentage: line.discount || 0, kit: line.kit }))
   try {
     const [price, stockResult] = await Promise.all([
       api.previewPricing({ starts_at: iso(form.startsAt), ends_at: iso(form.endsAt), items }),
-      api.checkInventoryAvailability({ starts_at: iso(form.startsAt), ends_at: iso(form.endsAt), items: items.map(({ item_code, quantity }) => ({ item_code, quantity })) })
+      // Availability is checked on the total quantity per item (a kit and a
+      // standalone line of the same item must not each pass on their own).
+      api.checkInventoryAvailability({ starts_at: iso(form.startsAt), ends_at: iso(form.endsAt), items: Object.entries(items.reduce<Record<string, number>>((acc, item) => ({ ...acc, [item.item_code]: (acc[item.item_code] ?? 0) + item.quantity }), {})).map(([item_code, quantity]) => ({ item_code, quantity })) })
     ])
     if (current !== sequence) return
     pricing.value = price
@@ -337,7 +361,7 @@ async function refresh() {
 async function save() {
   saving.value = true
   saveError.value = ''
-  const items = lines.value.map(line => ({ item_code: line.itemCode, quantity: Math.round(line.quantity), discount_percentage: line.discount || 0 }))
+  const items = lines.value.map(line => ({ item_code: line.itemCode, quantity: Math.round(line.quantity), discount_percentage: line.discount || 0, kit: line.kit }))
   try {
     const result = editing.value
       ? await api.updateQuoteDraft({ rental_id: editing.value.id, version: editing.value.version, starts_at: iso(form.startsAt), ends_at: iso(form.endsAt), project_name: form.projectName, notes: form.notes, items })
@@ -365,6 +389,7 @@ function defaultPeriod() {
 }
 
 onMounted(async () => {
+  try { kits.value = await api.listKits({}) } catch { kits.value = [] }
   const rentalId = typeof route.query.rental === 'string' ? route.query.rental : ''
   if (rentalId) {
     try {
@@ -377,7 +402,7 @@ onMounted(async () => {
       form.startsAt = localInput(rental.starts_at)
       form.endsAt = localInput(rental.ends_at)
       form.notes = rental.notes ?? ''
-      lines.value = rental.items.map(item => ({ itemCode: item.item_code, itemName: item.item_name, quantity: item.quantity, discount: item.discount_percentage }))
+      lines.value = rental.items.map(item => ({ itemCode: item.item_code, itemName: item.item_name, quantity: item.quantity, discount: item.discount_percentage, kit: item.kit ?? undefined }))
     } catch (error) {
       saveError.value = error instanceof Error ? error.message : String(error)
     }
