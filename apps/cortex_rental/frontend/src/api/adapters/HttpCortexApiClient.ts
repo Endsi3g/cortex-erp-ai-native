@@ -259,12 +259,20 @@ export class HttpCortexApiClient implements CortexApiClient {
   }
 
   async completePartialReturn(input: CompletePartialReturnInput): Promise<MutationResponse> {
-    return unwrapFrappe(await this.http.post<FrappeResult<MutationResponse>>('/cortex_rental.api.v1.checkin.submit_checkin', {
+    // submit_checkin answers with the completed Cortex Check-In, not a mutation envelope.
+    const checkin = unwrapFrappe(await this.http.post<FrappeResult<{ id: string; status: string; transaction_fully_returned?: boolean }>>('/cortex_rental.api.v1.checkin.submit_checkin', {
       transaction_id: input.rental_id,
       items: input.items || [],
       notes: input.notes || '',
       finalize_mode: input.finalize_mode || 'auto'
     }, makeIdempotencyKey()))
+    return {
+      request_id: checkin.id,
+      entity_id: input.rental_id,
+      status: checkin.status === 'Completed' ? 'completed' : 'failed',
+      approval_required: false,
+      mutation_performed: checkin.status === 'Completed'
+    }
   }
 
   async lookupScan(input: LookupScanInput): Promise<LookupScanResponse> {
@@ -471,6 +479,18 @@ export class HttpCortexApiClient implements CortexApiClient {
 
   async closeRental(rentalId: string): Promise<GetRentalResponse> {
     return unwrapFrappe(await this.http.post<FrappeResult<GetRentalResponse>>('/cortex_rental.api.v1.rentals.close_rental', { name: rentalId }, makeIdempotencyKey()))
+  }
+
+  // 14. Evidence files
+  async uploadRentalEvidence(rentalId: string, file: File): Promise<{ file_name: string; file_url: string }> {
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('is_private', '1')
+    form.append('doctype', 'Cortex Rental Transaction')
+    form.append('docname', rentalId)
+    form.append('folder', 'Home/Attachments')
+    const result = unwrapFrappe(await this.http.upload<FrappeResult<{ name: string; file_url: string }>>('/upload_file', form))
+    return { file_name: result.name, file_url: result.file_url }
   }
 
   // 11. Global search

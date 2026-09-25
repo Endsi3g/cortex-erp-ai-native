@@ -63,9 +63,12 @@ export const CompletePartialReturnInputSchema = z.object({
     serial_no: z.string().optional(),
     expected_qty: z.number(),
     returned_qty: z.number(),
-    condition: z.enum(['Good', 'Damaged', 'Missing_Accessory', 'Needs_Clean']).default('Good'),
+    // Mirrors the Select options of Cortex Check-In Item (DocType JSON).
+    condition: z.enum(['Good', 'Damaged', 'Missing']).default('Good'),
     disposition: z.enum(['Return to Stock', 'Quarantine', 'Repair', 'Missing', 'Write-off']).default('Return to Stock'),
     damage_severity: z.enum(['None', 'Cosmetic', 'Functional', 'Blocking']).default('None'),
+    damage_type: z.enum(['None', 'Physical / Impact', 'Optical Scratch', 'Electronic Failure', 'Liquid / Moisture', 'Cable / Connector', 'Missing Parts', 'Other']).default('None'),
+    estimated_repair_cost: z.number().optional(),
     notes: z.string().optional(),
     file_name: z.string().optional()
   })).optional()

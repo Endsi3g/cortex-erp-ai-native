@@ -189,4 +189,7 @@ export interface CortexApiClient {
   setReadiness(rentalId: string, field: ReadinessField, value: boolean, note?: string): Promise<GetRentalResponse>
   cancelRental(rentalId: string, reason: string): Promise<GetRentalResponse>
   closeRental(rentalId: string): Promise<GetRentalResponse>
+
+  // 14. Evidence files (private Frappe File attached to the rental)
+  uploadRentalEvidence(rentalId: string, file: File): Promise<{ file_name: string; file_url: string }>
 }

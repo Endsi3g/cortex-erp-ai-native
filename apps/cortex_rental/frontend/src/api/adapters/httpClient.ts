@@ -105,4 +105,16 @@ export class HttpClient {
     if (!response.ok) throw await toApiError(response)
     return response.json()
   }
+
+  /** multipart upload to Frappe's upload_file (private file attached to a document). */
+  public async upload<T>(path: string, form: FormData): Promise<T> {
+    const headers: Record<string, string> = { Accept: 'application/json' }
+    const csrfToken = this.getCsrfToken()
+    if (csrfToken) headers['X-Frappe-CSRF-Token'] = csrfToken
+    const companyId = this.getCompanyId()
+    if (companyId) headers['X-Company-ID'] = companyId
+    const response = await fetch(`${this.baseUrl}${path}`, { method: 'POST', headers, credentials: 'include', body: form })
+    if (!response.ok) throw await toApiError(response)
+    return response.json()
+  }
 }

@@ -1728,4 +1728,9 @@ export class MockCortexApiClient implements CortexApiClient {
     await LatencySimulator.inject('mutation')
     return this.demoRentalUpdate(rentalId, r => { r.rental_state = 'Closed' })
   }
+
+  async uploadRentalEvidence(rentalId: string, file: File): Promise<{ file_name: string; file_url: string }> {
+    await LatencySimulator.inject('mutation')
+    return { file_name: `DEMO-FILE-${rentalId}-${file.name}`, file_url: '' }
+  }
 }

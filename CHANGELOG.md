@@ -39,6 +39,12 @@
 - Fixed: the rental controller recomputed taxes from `tax_rate = 0` on every save, which would have wiped ERPNext taxes after reservation; the customer search read a non-existent `custom_insurance_valid_until` column (new custom field `cortex_insurance_valid_until`).
 - Frontend state types now mirror the server state machine (removed `Draft`, `Partially Returned`, `Invoiced`; added `Closed`, `Disputed`, `Quarantine`); currency is the company's, not a hard-coded CAD.
 
+### Lot 4 — Warehouse: check-out and check-in
+
+- Check-out and check-in rebuilt on the shared ERPNext layout with a 52px scan field (audio/visual feedback, focus kept between scans) and a rental picker when no rental is given (replaces the DEMO links of the old menu).
+- Check-in: per-unit condition and disposition, damage severity/type/repair cost, photo evidence uploaded as a private Frappe File attached to the rental (hashed and linked server-side), bulk quantities, and explicit finalisation (automatic, partial, settle with loss).
+- Fixed: a unit returned with quantity 0 was recorded as 1 returned (`float(0 or 1.0)`), so lost equipment was never billed; the frontend offered check-in conditions the DocType rejects (`Missing_Accessory`, `Needs_Clean`); the check-in response was typed as a mutation envelope it never was.
+
 **Quality (lot 1)**
 - `tests/fake_frappe.py`: runs the `if frappe:` paths in pytest and validates every insert against the DocType JSON (unknown / missing mandatory fields).
 - CI now typechecks, tests and builds the frontend.

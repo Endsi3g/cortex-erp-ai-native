@@ -1,649 +1,316 @@
 <template>
-  <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-    <!-- Top Navigation / Breadcrumbs -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <router-link
-          to="/rentals"
-          class="p-2 rounded-xl border border-cortex-border bg-cortex-surface hover:bg-cortex-surface-muted text-cortex-text-secondary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-          aria-label="Retour aux locations"
-        >
-          <ArrowLeft class="w-5 h-5" />
-        </router-link>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-xl font-bold text-cortex-text-primary">
-              {{ $t('checkin.title', 'Check-in — Retour Matériel & Diagnostic') }}
-            </h1>
-            <span class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-purple-100 text-purple-800">
-              F11
-            </span>
-          </div>
-          <p class="text-xs text-cortex-text-muted mt-0.5">
-            {{ $t('checkin.subtitle', 'Contrôle retour item par item, retours partiels et anomalies 1-clic') }}
-          </p>
-        </div>
+  <RentalPicker
+    v-if="!rentalId"
+    :title="t('routes.checkin_scanner')"
+    :hint="t('warehouse.checkin_pick_hint')"
+    :empty-text="t('warehouse.checkin_pick_empty')"
+    state="Checked Out"
+    date-key="ends_at"
+    @pick="name => router.push({ name: 'checkin-scanner', params: { rental: name } })"
+  />
+
+  <div v-else class="flex min-h-full flex-col bg-surface-white">
+    <PageHeader :title="t('warehouse.checkin_title', { name: rentalId })">
+      <template #title-suffix>
+        <RentalStateBadge v-if="rental" :state="rental.rental_state" size="md" />
+      </template>
+      <template #actions>
+        <Button size="sm" variant="subtle" :route="{ name: 'rental-detail', params: { name: rentalId } }">{{ t('warehouse.open_rental') }}</Button>
+        <Button size="sm" variant="solid" :disabled="!canSubmit" :loading="submitting" @click="submit">{{ t('warehouse.submit_checkin') }}</Button>
+      </template>
+    </PageHeader>
+
+    <p v-if="loadError" class="mx-6 mt-4 rounded border border-outline-red-1 bg-surface-red-1 px-4 py-2 text-p-sm text-ink-red-4" role="alert">{{ loadError }}</p>
+
+    <template v-if="rental">
+      <div v-if="rental.rental_state !== 'Checked Out'" class="mx-6 mt-4 rounded border border-outline-amber-1 bg-surface-amber-1 px-4 py-3 text-p-sm text-ink-amber-3" role="alert">
+        {{ t('warehouse.checkin_wrong_state', { state: t(`rental_states.${rental.rental_state}`) }) }}
       </div>
 
-      <!-- Quick Switch Rental Dropdown -->
-      <div class="flex items-center gap-2">
-        <label for="rental-picker" class="text-xs font-medium text-cortex-text-muted hidden sm:inline">
-          Dossier :
-        </label>
-        <select
-          id="rental-picker"
-          v-model="selectedRentalId"
-          class="px-3 py-2 text-xs font-mono font-semibold rounded-xl border border-cortex-border bg-cortex-surface text-cortex-text-primary focus:ring-2 focus:ring-cortex-primary/30 min-h-[44px]"
-          @change="handleSwitchRental"
-        >
-          <option v-for="option in eligibleRentals" :key="option.id" :value="option.id">{{ option.id }} · {{ option.customer_name }}</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="isLoading" class="p-12 text-center text-cortex-text-muted bg-cortex-surface rounded-2xl border border-cortex-border">
-      <Loader2 class="w-8 h-8 animate-spin mx-auto text-cortex-primary mb-2" />
-      <span class="text-xs font-semibold">Chargement du dossier de retour...</span>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="loadError" class="p-6 rounded-2xl border border-red-200 bg-red-50 text-red-900 space-y-3">
-      <div class="flex items-center gap-2 font-bold text-sm">
-        <AlertTriangle class="w-5 h-5 text-red-600" />
-        <span>Erreur de chargement du dossier {{ routeRentalId }}</span>
-      </div>
-      <p class="text-xs text-red-800">{{ loadError }}</p>
-      <button
-        type="button"
-        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold min-h-[44px]"
-        @click="loadRentalData(routeRentalId)"
-      >
-        Réessayer
-      </button>
-    </div>
-
-    <template v-else-if="rental">
-      <!-- State Warning if not Checked Out or Partially Returned -->
-      <div
-        v-if="rental.rental_state !== 'Checked Out'"
-        class="p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 space-y-2"
-      >
-        <div class="flex items-center gap-2 text-sm font-bold">
-          <AlertTriangle class="w-5 h-5 text-amber-600" />
-          <span>Statut actuel : {{ rental.rental_state }}</span>
-        </div>
-        <p class="text-xs text-amber-800">
-          Ce dossier n'est pas en statut Checked Out. Choisissez une location sortie ou demandez a un gestionnaire de verifier son statut.
-        </p>
-        <button
-          type="button"
-          class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors min-h-[44px]"
-          v-if="eligibleRentals.length"
-          @click="selectRental(eligibleRentals[0]!.id)"
-        >
-          Ouvrir une location sortie
-        </button>
-      </div>
-
-      <!-- Success Return Banner (Flow 3 complete) -->
-      <div
-        v-if="returnSuccess"
-        class="p-5 rounded-2xl border border-emerald-300 bg-emerald-50 text-emerald-950 space-y-3 animate-in fade-in"
-      >
-        <div class="flex items-center gap-2.5">
-          <span class="p-2 rounded-xl bg-emerald-100 text-emerald-700">
-            <CheckCircle2 class="w-6 h-6" />
-          </span>
-          <div>
-            <h2 class="text-base font-bold">
-              {{ returnCompletedState === 'Returned' ? 'Retour clôturé avec succès !' : 'Retour partiel enregistré !' }}
-            </h2>
-            <p class="text-xs text-emerald-800 mt-0.5">
-              Équipements réintégrés au stock et journal d'audit append-only mis à jour.
-            </p>
-          </div>
-        </div>
-        <div class="flex items-center gap-3 pt-2">
-          <router-link
-            :to="`/rentals/${rental.id}`"
-            class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-colors min-h-[44px] flex items-center gap-2"
-          >
-            <span>Consulter la fiche 360°</span>
-            <ArrowRight class="w-4 h-4" />
-          </router-link>
-          <button
-            type="button"
-            class="px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-100/60 hover:bg-emerald-100 text-emerald-900 text-xs font-semibold transition-colors min-h-[44px]"
-            @click="returnSuccess = false"
-          >
-            Poursuivre sur cette page
-          </button>
-        </div>
-      </div>
-
-      <!-- Rental Header Card -->
-      <div class="p-5 rounded-2xl border border-cortex-border bg-cortex-surface space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="text-lg font-bold font-mono text-cortex-text-primary">{{ rental.id }}</span>
-              <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800">
-                {{ rental.rental_state }}
-              </span>
-            </div>
-            <div class="text-xs text-cortex-text-secondary mt-1">
-              Client : <strong>{{ rental.customer_name }}</strong>
-              <span v-if="rental.project_name" class="ml-2 text-cortex-text-muted">| Projet : {{ rental.project_name }}</span>
-            </div>
-          </div>
-
-          <!-- Counters / Progress -->
-          <div class="flex items-center gap-3">
-            <div class="text-right">
-              <div class="text-xs text-cortex-text-muted font-medium">Progression du retour</div>
-              <div class="text-base font-mono font-bold text-cortex-text-primary">
-                {{ totalReturnedOrProcessedCount }} / {{ totalExpectedCount }} items
-              </div>
-            </div>
-            <div class="w-24 bg-cortex-surface-muted rounded-full h-3 overflow-hidden border border-cortex-border">
-              <div
-                class="h-full transition-all duration-300"
-                :class="progressPercentage === 100 ? 'bg-emerald-500' : 'bg-cortex-primary'"
-                :style="{ width: `${progressPercentage}%` }"
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 52px Scanner Input (Persistent Autofocus & Cadence) -->
-      <div class="p-5 rounded-2xl border-2 border-cortex-primary/30 bg-cortex-surface shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
-          <label for="checkin-scanner" class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cortex-text-primary">
-            <ScanLine class="w-4 h-4 text-cortex-primary" />
-            <span>Scanner Haute Cadence — Retour Inventaire</span>
-          </label>
-          <span class="text-[11px] text-cortex-text-muted font-mono">
-            Autofocus actif • 52px tactile
-          </span>
-        </div>
-
-        <CortexScannerInput
-          id="checkin-scanner"
-          ref="scannerInputRef"
-          v-model="scanBuffer"
-          :disabled="isScanning"
-          placeholder="Scanner le code-barres / numéro de série de retour..."
-          @scan="handleBarcodeScan"
+      <section class="border-b border-outline-gray-1 px-6 py-5">
+        <p class="mb-2 text-base text-ink-gray-6">{{ rental.customer_name }} · {{ t('warehouse.due') }} {{ dateTime(rental.ends_at) }}</p>
+        <ScanField
+          :label="t('warehouse.scan_label')"
+          :placeholder="t('warehouse.scan_checkin_placeholder')"
+          :submit-label="t('warehouse.scan_submit')"
+          :disabled="rental.rental_state !== 'Checked Out'"
+          :on-scan="scan"
         />
-
-        <!-- Scan Notification Feedback -->
-        <div
-          v-if="scanFeedback"
-          class="p-3 rounded-xl text-xs flex items-center justify-between animate-in fade-in"
-          :class="scanFeedback.type === 'success' ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : 'bg-red-50 text-red-900 border border-red-200'"
-        >
-          <span class="flex items-center gap-2">
-            <CheckCircle2 v-if="scanFeedback.type === 'success'" class="w-4 h-4 text-emerald-600" />
-            <AlertTriangle v-else class="w-4 h-4 text-red-600" />
-            <span>{{ scanFeedback.message }}</span>
-          </span>
-          <button
-            type="button"
-            class="text-[10px] uppercase font-bold tracking-wider hover:underline"
-            @click="scanFeedback = null"
-          >
-            Fermer
-          </button>
-        </div>
-      </div>
-
-      <!-- Equipment Return Checklist & 1-Click Anomaly Bar -->
-      <div class="p-5 rounded-2xl border border-cortex-border bg-cortex-surface space-y-4">
-        <div class="flex items-center justify-between border-b border-cortex-border pb-3">
-          <h2 class="text-sm font-bold text-cortex-text-primary uppercase tracking-wider">
-            Équipements à réceptionner ({{ rental.items.length }} lignes)
-          </h2>
-          <span class="text-xs text-cortex-text-muted">
-            1-Clic pour déclarer les anomalies
-          </span>
-        </div>
-
-        <div class="space-y-4">
-          <div
-            v-for="item in rental.items"
-            :key="item.id"
-            class="p-4 rounded-xl border border-cortex-border bg-cortex-surface-muted/50 space-y-3"
-          >
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <div class="text-sm font-bold text-cortex-text-primary">{{ item.item_name }}</div>
-                <div class="text-xs font-mono text-cortex-text-muted mt-0.5">
-                  Code : {{ item.item_code }} | Quantité totale : {{ item.quantity }}
-                </div>
-              </div>
-              <div class="text-xs font-mono font-bold">
-                <span class="px-2.5 py-1 rounded-lg bg-cortex-surface border border-cortex-border">
-                  {{ getItemScannedCount(item) }} / {{ item.quantity }} retournés
-                </span>
-              </div>
-            </div>
-
-            <!-- Serials List with Status & 1-Click Triggers -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
-              <div
-                v-for="sn in item.assigned_serials"
-                :key="sn"
-                class="p-3 rounded-xl border bg-cortex-surface flex flex-wrap items-center justify-between gap-2 transition-all"
-                :class="getSerialCardClass(sn)"
-              >
-                <div>
-                  <div class="font-mono text-xs font-bold text-cortex-text-primary flex items-center gap-1.5">
-                    <span>{{ sn }}</span>
-                    <span
-                      class="px-2 py-0.5 rounded text-[10px] font-bold"
-                      :class="getSerialBadgeClass(sn)"
-                    >
-                      {{ getSerialStatusText(sn) }}
-                    </span>
-                  </div>
-                  <div v-if="damagedSerials[sn]" class="text-[11px] text-red-700 mt-0.5 font-medium">
-                    Dommage : {{ damagedSerials[sn].severity }} ({{ damagedSerials[sn].description }})
-                  </div>
-                  <div v-if="missingSerials.includes(sn)" class="text-[11px] text-amber-700 mt-0.5 font-medium">
-                    Signalé manquant
-                  </div>
-                </div>
-
-                <!-- 1-Click Anomaly Action Buttons -->
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <!-- Quick checkin button if pending -->
-                  <button
-                    v-if="!isSerialProcessed(sn)"
-                    type="button"
-                    class="px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold transition-colors min-h-[36px]"
-                    title="Valider le retour direct"
-                    @click="handleManualCheckin(sn)"
-                  >
-                    ✓ Retourner
-                  </button>
-
-                  <!-- 1-Click Missing -->
-                  <button
-                    type="button"
-                    class="px-2 py-1.5 rounded-lg border text-xs font-semibold transition-colors min-h-[36px]"
-                    :class="missingSerials.includes(sn) ? 'border-amber-400 bg-amber-200 text-amber-900' : 'border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800'"
-                    :title="missingSerials.includes(sn) ? 'Annuler manquant' : 'Marquer comme manquant'"
-                    @click="handleToggleMissing(sn)"
-                  >
-                    📦 Manquant
-                  </button>
-
-                  <!-- 1-Click Damage -->
-                  <button
-                    type="button"
-                    class="px-2 py-1.5 rounded-lg border text-xs font-semibold transition-colors min-h-[36px]"
-                    :class="damagedSerials[sn] ? 'border-red-400 bg-red-200 text-red-900' : 'border-red-200 bg-red-50 hover:bg-red-100 text-red-800'"
-                    title="Déclarer un bris ou dommage"
-                    @click="openDamageModal(sn, item.item_name)"
-                  >
-                    📷 Casse
-                  </button>
-                </div>
-              </div>
-            </div>
+        <div class="mt-3 flex items-center gap-3">
+          <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-gray-2" role="progressbar" :aria-valuenow="receivedCount" :aria-valuemax="serials.length" :aria-label="t('warehouse.progress')">
+            <div class="h-full rounded-full bg-surface-gray-7 transition-[width]" :style="{ width: `${serials.length ? (receivedCount / serials.length) * 100 : 0}%` }" />
           </div>
+          <span class="text-base tabular-nums text-ink-gray-7">{{ t('warehouse.progress_value', { done: receivedCount, total: serials.length }) }}</span>
         </div>
+        <p v-if="lastError" class="mt-2 text-p-sm text-ink-red-4" role="alert">{{ lastError }}</p>
+      </section>
+
+      <!-- Serialized units -->
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-max border-collapse text-base text-ink-gray-8" :aria-label="t('warehouse.units')">
+          <thead>
+            <tr class="h-[35px] border-b border-outline-gray-1 bg-surface-gray-2 text-ink-gray-6">
+              <th class="w-[37px] border-r border-outline-gray-1 font-normal"><span class="sr-only">#</span></th>
+              <th class="border-r border-outline-gray-1 px-[7.5px] text-left font-normal">{{ t('rental_detail.item') }}</th>
+              <th class="w-[180px] border-r border-outline-gray-1 px-[7.5px] text-left font-normal">{{ t('rental_detail.serial') }}</th>
+              <th class="w-[130px] border-r border-outline-gray-1 px-[7.5px] text-left font-normal">{{ t('warehouse.reception') }}</th>
+              <th class="w-[170px] border-r border-outline-gray-1 px-[7.5px] text-left font-normal">{{ t('warehouse.condition') }}</th>
+              <th class="w-[190px] px-[7.5px] text-left font-normal">{{ t('warehouse.disposition') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!serials.length" class="h-[33px]"><td colspan="6" class="px-4 py-6 text-center text-ink-gray-5">{{ t('warehouse.no_serials') }}</td></tr>
+            <template v-for="(unit, index) in serials" :key="unit.serial">
+              <tr class="h-[33px] border-b border-outline-gray-1" :class="unit.alreadyReturned ? 'text-ink-gray-5' : ''">
+                <td class="border-r border-outline-gray-1 text-center tabular-nums">{{ index + 1 }}</td>
+                <td class="border-r border-outline-gray-1 px-[7.5px]">{{ unit.itemName }}</td>
+                <td class="border-r border-outline-gray-1 px-[7.5px]">{{ unit.serial }}</td>
+                <td class="border-r border-outline-gray-1 px-[7.5px]">
+                  <Badge v-if="unit.alreadyReturned" theme="gray" variant="subtle">{{ t('warehouse.already_returned') }}</Badge>
+                  <Badge v-else-if="unit.received" theme="green" variant="subtle">{{ t('warehouse.received') }}</Badge>
+                  <Badge v-else-if="unit.condition === 'Missing'" theme="red" variant="subtle">{{ t('warehouse.missing') }}</Badge>
+                  <Badge v-else theme="gray" variant="subtle">{{ t('warehouse.pending') }}</Badge>
+                </td>
+                <td class="border-r border-outline-gray-1 px-1">
+                  <select v-if="!unit.alreadyReturned" v-model="unit.condition" class="h-6 w-full rounded border-0 bg-surface-gray-2 py-0 pl-1.5 text-base focus:ring-1 focus:ring-outline-gray-3" :aria-label="t('warehouse.condition_for', { serial: unit.serial })" @change="onConditionChange(unit)">
+                    <option v-for="value in CONDITIONS" :key="value" :value="value">{{ t(`warehouse.condition_${value}`) }}</option>
+                  </select>
+                </td>
+                <td class="px-1">
+                  <select v-if="!unit.alreadyReturned" v-model="unit.disposition" class="h-6 w-full rounded border-0 bg-surface-gray-2 py-0 pl-1.5 text-base focus:ring-1 focus:ring-outline-gray-3" :aria-label="t('warehouse.disposition_for', { serial: unit.serial })">
+                    <option v-for="value in DISPOSITIONS" :key="value" :value="value">{{ t(`warehouse.disposition_${value.replace(/[ -]/g, '_')}`) }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="unit.condition === 'Damaged' && !unit.alreadyReturned" class="border-b border-outline-gray-1 bg-surface-gray-1">
+                <td />
+                <td colspan="5" class="px-[7.5px] py-3">
+                  <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <FormControl v-model="unit.severity" type="select" size="sm" variant="subtle" :label="t('warehouse.severity')" :options="SEVERITIES.map(value => ({ label: t(`warehouse.severity_${value}`), value }))" />
+                    <FormControl v-model="unit.damageType" type="select" size="sm" variant="subtle" :label="t('warehouse.damage_type')" :options="DAMAGE_TYPES.map(value => ({ label: t(`warehouse.damage_${value.replace(/[^A-Za-z]/g, '')}`), value }))" />
+                    <FormControl v-model="unit.repairCost" type="number" size="sm" variant="subtle" :label="t('warehouse.repair_cost')" />
+                    <div>
+                      <p class="mb-1.5 text-sm text-ink-gray-5">{{ t('warehouse.evidence') }}</p>
+                      <label class="inline-flex h-7 cursor-pointer items-center gap-2 rounded bg-surface-gray-2 px-2 text-base hover:bg-surface-gray-3">
+                        <Camera class="size-4" :stroke-width="1.5" aria-hidden="true" />
+                        <span class="truncate">{{ unit.fileLabel || t('warehouse.add_photo') }}</span>
+                        <input type="file" accept="image/*" capture="environment" class="sr-only" @change="event => attachPhoto(unit, event)" />
+                      </label>
+                    </div>
+                  </div>
+                  <FormControl v-model="unit.notes" type="textarea" size="sm" variant="subtle" class="mt-3" :label="t('warehouse.damage_notes')" />
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Action Footer: Partial Return / Close Return -->
-      <div class="p-5 rounded-2xl border border-cortex-border bg-cortex-surface flex flex-wrap items-center justify-between gap-4">
+      <!-- Bulk (non-serialized) lines -->
+      <section v-if="bulk.length" class="px-6 py-5">
+        <h2 class="mb-3 text-base font-semibold text-ink-gray-9">{{ t('warehouse.bulk_title') }}</h2>
+        <div v-for="line in bulk" :key="line.id" class="flex items-center gap-4 border-b border-outline-gray-1 py-2 text-base">
+          <span class="min-w-0 flex-1 truncate">{{ line.itemName }}</span>
+          <span class="text-ink-gray-5">{{ t('warehouse.expected', { qty: line.expected }) }}</span>
+          <FormControl v-model="line.returned" type="number" size="sm" variant="subtle" class="w-24" :aria-label="t('warehouse.returned_for', { item: line.itemName })" />
+        </div>
+      </section>
+
+      <!-- Finalisation -->
+      <section class="grid grid-cols-1 gap-6 border-t border-outline-gray-1 px-6 py-5 lg:grid-cols-2">
+        <fieldset>
+          <legend class="mb-2 text-base font-semibold text-ink-gray-9">{{ t('warehouse.finalize') }}</legend>
+          <label v-for="mode in MODES" :key="mode" class="flex cursor-pointer items-start gap-2 py-1 text-base">
+            <input v-model="finalizeMode" type="radio" name="finalize" :value="mode" class="mt-1 text-ink-gray-9 focus:ring-outline-gray-3" />
+            <span><span class="text-ink-gray-8">{{ t(`warehouse.mode_${mode}`) }}</span><span class="block text-sm text-ink-gray-5">{{ t(`warehouse.mode_${mode}_hint`) }}</span></span>
+          </label>
+        </fieldset>
         <div>
-          <span class="text-xs font-bold text-cortex-text-secondary block">
-            Actions d'achèvement de session
-          </span>
-          <span class="text-[11px] text-cortex-text-muted">
-            Enregistrer le reliquat partiel ou valider le contrôle de fin de location
-          </span>
+          <FormControl v-model="notes" type="textarea" size="sm" variant="subtle" :label="t('warehouse.checkin_notes')" />
+          <p class="mt-3 text-p-sm text-ink-gray-5">{{ summary }}</p>
         </div>
-
-        <div class="flex items-center gap-3">
-          <button
-            type="button"
-            class="px-4 py-2.5 rounded-xl border border-cortex-border bg-cortex-surface hover:bg-cortex-surface-muted text-xs font-semibold text-cortex-text-secondary transition-colors min-h-[44px]"
-            :disabled="isSubmittingAction"
-            @click="handlePartialReturn"
-          >
-            <Loader2 v-if="isSubmittingAction" class="w-4 h-4 animate-spin inline mr-1" />
-            <span>{{ $t('checkin.partial_return_btn', 'Enregistrer Retour Partiel') }}</span>
-          </button>
-
-          <button
-            type="button"
-            class="px-5 py-2.5 rounded-xl bg-cortex-primary hover:bg-cortex-primary-hover text-white text-xs font-bold shadow-sm transition-colors min-h-[44px] flex items-center gap-2"
-            :disabled="isSubmittingAction"
-            @click="showDiffModal = true"
-          >
-            <span>{{ $t('checkin.close_return_btn', 'Clôturer le Retour...') }}</span>
-            <ArrowRight class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      </section>
     </template>
-
-    <!-- Modals -->
-    <DamageEvidenceModal
-      :is-open="showDamageModal"
-      :rental-id="rental?.id || ''"
-      :serial-number="activeDamageSerial"
-      :item-name="activeDamageItemName"
-      @close="showDamageModal = false"
-      @submitted="handleDamageSubmitted"
-    />
-
-    <ReturnDiffSummary
-      v-if="rental"
-      :rental="rental"
-      :missing-serials="missingSerials"
-      :damaged-serials="Object.keys(damagedSerials)"
-      :returned-serials="returnedSerials"
-      :is-open="showDiffModal"
-      :is-submitting="isSubmittingAction"
-      @close="showDiffModal = false"
-      @confirm="handleConfirmCloseReturn"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  Loader2,
-  ScanLine
-} from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import { Badge, Button, FormControl, toast } from 'frappe-ui'
+import { Camera } from 'lucide-vue-next'
+import PageHeader from '@/design-system/components/page/PageHeader.vue'
 import { getCortexApiClient } from '@/api'
-import type { RentalTransaction, RentalLineItem } from '@/api/contracts'
-import { ScannerFeedback, sanitizeBarcodeInput } from '@/utils/scanner'
-import CortexScannerInput from '@/design-system/components/base/CortexScannerInput.vue'
-import DamageEvidenceModal from '../components/DamageEvidenceModal.vue'
-import ReturnDiffSummary from '../components/ReturnDiffSummary.vue'
+import type { CompletePartialReturnInput, GetRentalResponse } from '@/api/contracts'
+import { formatDateTime } from '@/app/i18n/formatters'
+import type { LocaleType } from '@/app/i18n'
+import RentalStateBadge from '@/features/rentals/components/RentalStateBadge.vue'
+import RentalPicker from '@/features/warehouse/components/RentalPicker.vue'
+import ScanField from '@/features/warehouse/components/ScanField.vue'
 
+type Item = NonNullable<CompletePartialReturnInput['items']>[number]
+const CONDITIONS = ['Good', 'Damaged', 'Missing'] as const
+const DISPOSITIONS = ['Return to Stock', 'Quarantine', 'Repair', 'Missing', 'Write-off'] as const
+const SEVERITIES = ['Cosmetic', 'Functional', 'Blocking'] as const
+const DAMAGE_TYPES = ['Physical / Impact', 'Optical Scratch', 'Electronic Failure', 'Liquid / Moisture', 'Cable / Connector', 'Missing Parts', 'Other'] as const
+const MODES = ['auto', 'partial', 'settle_with_loss'] as const
+
+interface Unit {
+  lineId: string
+  itemCode: string
+  itemName: string
+  serial: string
+  alreadyReturned: boolean
+  received: boolean
+  condition: (typeof CONDITIONS)[number]
+  disposition: (typeof DISPOSITIONS)[number]
+  severity: string
+  damageType: string
+  repairCost: string
+  notes: string
+  fileName?: string
+  fileLabel?: string
+}
+interface BulkLine { id: string; itemCode: string; itemName: string; expected: number; returned: string }
+
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
-const routeRentalId = computed(() => (route.params.rental as string) || '')
-const selectedRentalId = ref(routeRentalId.value)
-const eligibleRentals = ref<Array<{ id: string; customer_name: string }>>([])
-
-const rental = ref<RentalTransaction | null>(null)
-const isLoading = ref(true)
+const rentalId = computed(() => (typeof route.params.rental === 'string' ? route.params.rental : ''))
+const rental = ref<GetRentalResponse | null>(null)
+const serials = ref<Unit[]>([])
+const bulk = ref<BulkLine[]>([])
+const finalizeMode = ref<(typeof MODES)[number]>('auto')
+const notes = ref('')
 const loadError = ref('')
+const lastError = ref('')
+const submitting = ref(false)
 
-const scanBuffer = ref('')
-const isScanning = ref(false)
-const scannerInputRef = ref<InstanceType<typeof CortexScannerInput> | null>(null)
+const dateTime = (value: string) => formatDateTime(value, locale.value as LocaleType)
+const receivedCount = computed(() => serials.value.filter(unit => unit.received || unit.alreadyReturned).length)
 
-// Tracking local return states
-const returnedSerials = ref<string[]>([])
-const missingSerials = ref<string[]>([])
-const damagedSerials = ref<Record<string, { severity: string; description: string; fileName?: string }>>({})
+function reset(value: GetRentalResponse) {
+  serials.value = value.items.flatMap(line =>
+    line.assigned_serials.map(serial => reactive<Unit>({
+      lineId: line.id, itemCode: line.item_code, itemName: line.item_name, serial,
+      alreadyReturned: line.scanned_checkin_serials.includes(serial), received: false,
+      condition: 'Good', disposition: 'Return to Stock', severity: 'Cosmetic', damageType: 'Physical / Impact', repairCost: '', notes: ''
+    }))
+  )
+  bulk.value = value.items
+    .filter(line => !line.assigned_serials.length)
+    .map(line => reactive({ id: line.id, itemCode: line.item_code, itemName: line.item_name, expected: line.quantity, returned: String(line.quantity) }))
+}
 
-// Modals
-const showDamageModal = ref(false)
-const activeDamageSerial = ref('')
-const activeDamageItemName = ref('')
-const showDiffModal = ref(false)
-const isSubmittingAction = ref(false)
-const returnSuccess = ref(false)
-const returnCompletedState = ref<'Returned' | 'Partially Returned'>('Returned')
-
-// Feedback toast
-const scanFeedback = ref<{ type: 'success' | 'error'; message: string } | null>(null)
-
-const totalExpectedCount = computed(() => {
-  if (!rental.value) return 0
-  return rental.value.items.reduce((sum, item) => sum + item.quantity, 0)
-})
-
-const totalReturnedOrProcessedCount = computed(() => {
-  return returnedSerials.value.length + missingSerials.value.length
-})
-
-const progressPercentage = computed(() => {
-  if (totalExpectedCount.value === 0) return 0
-  return Math.min(100, Math.round((totalReturnedOrProcessedCount.value / totalExpectedCount.value) * 100))
-})
-
-async function loadRentalData(id: string) {
-  isLoading.value = true
+async function load() {
+  if (!rentalId.value) return
   loadError.value = ''
   try {
-    const client = getCortexApiClient()
-    const data = await client.getRental({ id })
-    rental.value = data
-    selectedRentalId.value = id
-
-    // Populate already scanned items if present
-    const alreadyReturned: string[] = []
-    for (const item of data.items) {
-      if (item.scanned_checkin_serials) {
-        alreadyReturned.push(...item.scanned_checkin_serials)
-      }
-    }
-    returnedSerials.value = Array.from(new Set(alreadyReturned))
-  } catch (err) {
-    loadError.value = err instanceof Error ? err.message : 'Impossible de récupérer la transaction.'
-  } finally {
-    isLoading.value = false
+    rental.value = await getCortexApiClient().getRental({ id: rentalId.value })
+    reset(rental.value)
+  } catch (error) {
+    loadError.value = error instanceof Error ? error.message : String(error)
   }
 }
 
-function handleSwitchRental() {
-  selectRental(selectedRentalId.value)
-}
-
-function selectRental(id: string) {
-  router.push(`/checkin/${id}`)
-  loadRentalData(id)
-}
-
-function isSerialProcessed(sn: string): boolean {
-  return returnedSerials.value.includes(sn) || missingSerials.value.includes(sn)
-}
-
-function getItemScannedCount(item: RentalLineItem): number {
-  return (item.assigned_serials || []).filter((sn: string) => returnedSerials.value.includes(sn)).length
-}
-
-function getSerialStatusText(sn: string): string {
-  if (damagedSerials.value[sn]) return 'Endommagé'
-  if (missingSerials.value.includes(sn)) return 'Manquant'
-  if (returnedSerials.value.includes(sn)) return 'Retourné'
-  return 'En attente'
-}
-
-function getSerialBadgeClass(sn: string): string {
-  if (damagedSerials.value[sn]) return 'bg-red-100 text-red-800'
-  if (missingSerials.value.includes(sn)) return 'bg-amber-100 text-amber-800'
-  if (returnedSerials.value.includes(sn)) return 'bg-emerald-100 text-emerald-800'
-  return 'bg-slate-100 text-slate-700'
-}
-
-function getSerialCardClass(sn: string): string {
-  if (damagedSerials.value[sn]) return 'border-red-300 bg-red-50/40'
-  if (missingSerials.value.includes(sn)) return 'border-amber-300 bg-amber-50/40'
-  if (returnedSerials.value.includes(sn)) return 'border-emerald-300 bg-emerald-50/40'
-  return 'border-cortex-border'
-}
-
-async function handleBarcodeScan(input: { raw: string; trimmed: string } | string) {
-  const rawBarcode = typeof input === 'string' ? input : input.trimmed
-  const barcode = sanitizeBarcodeInput(rawBarcode)
-  if (!barcode || !rental.value) return
-
-  // Check duplicate
-  if (returnedSerials.value.includes(barcode)) {
-    ScannerFeedback.playError()
-    scanFeedback.value = {
-      type: 'error',
-      message: `Attention : Le numéro de série ${barcode} a déjà été scanné pour ce retour.`
-    }
-    return
-  }
-
-  // Find if this serial belongs to this rental
-  const matchingItem = rental.value.items.find(it => it.assigned_serials.includes(barcode))
-  if (!matchingItem) {
-    ScannerFeedback.playError()
-    scanFeedback.value = {
-      type: 'error',
-      message: `Équipement ${barcode} non associé à ce contrat (${rental.value.id}).`
-    }
-    return
-  }
-
-  // Valid scan
-  isScanning.value = true
+async function scan(code: string): Promise<string | null> {
+  lastError.value = ''
+  const unit = serials.value.find(candidate => candidate.serial === code)
+  if (unit?.alreadyReturned) return (lastError.value = t('warehouse.already_returned_error', { serial: code }))
   try {
-    const client = getCortexApiClient()
-    const res = await client.scanCheckinSerial({
-      rental_id: rental.value.id,
-      serial_number: barcode,
-      condition: 'Good'
+    await getCortexApiClient().scanCheckinSerial({ rental_id: rentalId.value, serial_number: code, condition: 'Good' })
+    if (!unit) return (lastError.value = t('warehouse.not_on_rental', { serial: code }))
+    unit.received = true
+    if (unit.condition === 'Missing') unit.condition = 'Good'
+    return null
+  } catch (error) {
+    lastError.value = error instanceof Error ? error.message : String(error)
+    return lastError.value
+  }
+}
+
+function onConditionChange(unit: Unit) {
+  if (unit.condition === 'Missing') {
+    unit.received = false
+    unit.disposition = 'Missing'
+  } else if (unit.condition === 'Damaged') {
+    unit.disposition = 'Quarantine'
+  } else if (unit.disposition === 'Missing' || unit.disposition === 'Quarantine') {
+    unit.disposition = 'Return to Stock'
+  }
+}
+
+async function attachPhoto(unit: Unit, event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  unit.fileLabel = t('warehouse.uploading')
+  try {
+    const uploaded = await getCortexApiClient().uploadRentalEvidence(rentalId.value, file)
+    unit.fileName = uploaded.file_name
+    unit.fileLabel = file.name
+  } catch (error) {
+    unit.fileLabel = undefined
+    lastError.value = error instanceof Error ? error.message : String(error)
+  }
+}
+
+/** What will be sent: received units, explicitly missing ones, and (settle with loss) every unit still out. */
+const payload = computed<Item[]>(() => {
+  const units = serials.value.filter(unit => !unit.alreadyReturned)
+  const items: Item[] = []
+  for (const unit of units) {
+    const missing = unit.condition === 'Missing' || (!unit.received && finalizeMode.value === 'settle_with_loss')
+    if (!unit.received && !missing) continue
+    items.push({
+      transaction_item: unit.lineId,
+      item_code: unit.itemCode,
+      serial_no: unit.serial,
+      expected_qty: 1,
+      returned_qty: missing ? 0 : 1,
+      condition: missing ? 'Missing' : unit.condition,
+      disposition: missing ? (unit.disposition === 'Write-off' ? 'Write-off' : 'Missing') : unit.disposition,
+      damage_severity: unit.condition === 'Damaged' ? (unit.severity as Item['damage_severity']) : 'None',
+      damage_type: unit.condition === 'Damaged' ? (unit.damageType as Item['damage_type']) : 'None',
+      estimated_repair_cost: unit.condition === 'Damaged' && unit.repairCost ? Number(unit.repairCost) : undefined,
+      notes: unit.notes || undefined,
+      file_name: unit.fileName
     })
-
-    if (res.status === 'completed') {
-      ScannerFeedback.playSuccess()
-      if (!returnedSerials.value.includes(barcode)) {
-        returnedSerials.value.push(barcode)
-      }
-      // If was previously marked missing, unmark
-      missingSerials.value = missingSerials.value.filter(s => s !== barcode)
-
-      scanFeedback.value = {
-        type: 'success',
-        message: `✓ Numéro de série ${barcode} (${matchingItem.item_name}) enregistré avec succès.`
-      }
-    } else {
-      ScannerFeedback.playError()
-      scanFeedback.value = {
-        type: 'error',
-        message: res.errors?.[0]?.message || 'Erreur lors du scan de retour.'
-      }
-    }
-  } catch (err) {
-    ScannerFeedback.playError()
-    scanFeedback.value = {
-      type: 'error',
-      message: err instanceof Error ? err.message : 'Erreur de communication API.'
-    }
-  } finally {
-    isScanning.value = false
-    scanBuffer.value = ''
   }
-}
-
-async function handleManualCheckin(sn: string) {
-  await handleBarcodeScan(sn)
-}
-
-async function handleToggleMissing(sn: string) {
-  if (!rental.value) return
-
-  if (missingSerials.value.includes(sn)) {
-    missingSerials.value = missingSerials.value.filter(s => s !== sn)
-  } else {
-    // Call markSerialMissing
-    try {
-      const client = getCortexApiClient()
-      await client.markSerialMissing({
-        rental_id: rental.value.id,
-        serial_number: sn,
-        reason: 'Déclaré manquant au retour'
-      })
-      missingSerials.value.push(sn)
-      returnedSerials.value = returnedSerials.value.filter(s => s !== sn)
-      ScannerFeedback.playSuccess()
-    } catch {
-      ScannerFeedback.playError()
-    }
+  for (const line of bulk.value) {
+    const returned = Math.max(0, Math.min(line.expected, Number(line.returned) || 0))
+    items.push({ transaction_item: line.id, item_code: line.itemCode, expected_qty: line.expected, returned_qty: returned, condition: returned < line.expected ? 'Missing' : 'Good', disposition: returned < line.expected ? 'Missing' : 'Return to Stock', damage_severity: 'None', damage_type: 'None' })
   }
-}
-
-function openDamageModal(sn: string, itemName: string) {
-  activeDamageSerial.value = sn
-  activeDamageItemName.value = itemName
-  showDamageModal.value = true
-}
-
-function handleDamageSubmitted(data: { serialNumber: string; severity: string; description: string; photoUploadId?: string }) {
-  damagedSerials.value[data.serialNumber] = {
-    severity: data.severity,
-    description: data.description,
-    ...(data.photoUploadId ? { fileName: data.photoUploadId } : {})
-  }
-  if (!returnedSerials.value.includes(data.serialNumber)) {
-    returnedSerials.value.push(data.serialNumber)
-  }
-  missingSerials.value = missingSerials.value.filter(s => s !== data.serialNumber)
-  ScannerFeedback.playSuccess()
-}
-
-function makeCheckinItems(includeMissing: boolean) {
-  if (!rental.value) return []
-  const returned = new Set(returnedSerials.value)
-  const missing = new Set(missingSerials.value)
-  return rental.value.items.flatMap(line => line.assigned_serials.flatMap(serial => {
-    const damage = damagedSerials.value[serial]
-    const isMissing = missing.has(serial)
-    if (!returned.has(serial) && !(includeMissing && isMissing)) return []
-    const severity = damage?.severity
-    const disposition: 'Missing' | 'Quarantine' | 'Repair' | 'Return to Stock' = isMissing ? 'Missing' : severity === 'unusable' ? 'Quarantine' : severity === 'major' ? 'Repair' : damage ? 'Quarantine' : 'Return to Stock'
-    const damageSeverity: 'Blocking' | 'Functional' | 'Cosmetic' | 'None' = severity === 'unusable' ? 'Blocking' : severity === 'major' ? 'Functional' : damage ? 'Cosmetic' : 'None'
-    return [{ transaction_item: line.id, item_code: line.item_code, serial_no: serial,
-      expected_qty: 1, returned_qty: isMissing ? 0 : 1,
-      condition: damage ? 'Damaged' as const : 'Good' as const, disposition, damage_severity: damageSeverity,
-      notes: damage?.description || (isMissing ? 'Declare manquant au retour' : ''),
-      ...(damage?.fileName ? { file_name: damage.fileName } : {}) }]
-  }))
-}
-
-async function handlePartialReturn() {
-  if (!rental.value) return
-  isSubmittingAction.value = true
-  try {
-    const res = await getCortexApiClient().completePartialReturn({ rental_id: rental.value.id,
-      notes: 'Retour partiel valide au scanner', finalize_mode: 'partial', items: makeCheckinItems(false) })
-    if (res.status !== 'completed' || !res.mutation_performed) throw new Error(res.errors?.[0]?.message || "Le serveur n'a pas confirme ce retour.")
-    returnCompletedState.value = 'Partially Returned'; returnSuccess.value = true
-    await loadRentalData(rental.value.id)
-  } catch (err) { scanFeedback.value = { type: 'error', message: err instanceof Error ? err.message : 'Erreur lors du retour partiel.' } }
-  finally { isSubmittingAction.value = false }
-}
-
-async function handleConfirmCloseReturn() {
-  if (!rental.value) return
-  isSubmittingAction.value = true
-  try {
-    const mode = missingSerials.value.length ? 'settle_with_loss' : 'full'
-    const res = await getCortexApiClient().completePartialReturn({ rental_id: rental.value.id,
-      notes: `Cloture: ${returnedSerials.value.length} recus, ${missingSerials.value.length} manquants, ${Object.keys(damagedSerials.value).length} dommages`,
-      finalize_mode: mode, items: makeCheckinItems(true) })
-    if (res.status !== 'completed' || !res.mutation_performed) throw new Error(res.errors?.[0]?.message || "Le serveur n'a pas confirme la cloture.")
-    showDiffModal.value = false; returnCompletedState.value = 'Returned'; returnSuccess.value = true
-    await loadRentalData(rental.value.id)
-  } catch (err) { scanFeedback.value = { type: 'error', message: err instanceof Error ? err.message : 'Erreur lors de la cl?ture.' } }
-  finally { isSubmittingAction.value = false }
-}
-
-onMounted(() => {
-  void getCortexApiClient().listRentals({ page: 1, page_size: 100, state: 'Checked Out' }).then(result => { eligibleRentals.value = result.items.map(item => ({ id: item.id, customer_name: item.customer_name })) }).catch(() => { eligibleRentals.value = [] })
-  if (routeRentalId.value) loadRentalData(routeRentalId.value)
+  return items
 })
+
+const pendingCount = computed(() => serials.value.filter(unit => !unit.alreadyReturned && !unit.received && unit.condition !== 'Missing').length)
+const summary = computed(() => {
+  if (finalizeMode.value === 'settle_with_loss' && pendingCount.value) return t('warehouse.summary_loss', { count: pendingCount.value })
+  if (pendingCount.value) return t('warehouse.summary_partial', { count: pendingCount.value })
+  return t('warehouse.summary_full')
+})
+
+const canSubmit = computed(() => rental.value?.rental_state === 'Checked Out' && payload.value.length > 0 && !submitting.value)
+
+async function submit() {
+  submitting.value = true
+  lastError.value = ''
+  try {
+    const result = await getCortexApiClient().completePartialReturn({ rental_id: rentalId.value, items: payload.value, notes: notes.value || undefined, finalize_mode: finalizeMode.value })
+    if (result.status !== 'completed') throw new Error(result.errors?.[0]?.message ?? t('warehouse.scan_refused'))
+    toast.create({ message: t('warehouse.checkin_done', { name: rentalId.value }), type: 'success' })
+    await router.push({ name: 'rental-detail', params: { name: rentalId.value }, query: { tab: 'billing' } })
+  } catch (error) {
+    lastError.value = error instanceof Error ? error.message : String(error)
+  } finally {
+    submitting.value = false
+  }
+}
+
+watch(rentalId, () => {
+  rental.value = null
+  void load()
+}, { immediate: true })
 </script>
