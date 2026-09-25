@@ -196,5 +196,104 @@ class TestBuildPnlFilters(unittest.TestCase):
         self.assertEqual(filters["include_default_book_entries"], 1)
 
 
+# Shape emitted by ERPNext v14/v15 financial_statements.py: total rows are
+# wrapped in single quotes, the result row is "'Profit for the year'", and
+# empty dicts separate the sections.
+V15_COLUMNS = [
+    {"fieldname": "account", "label": "Account", "fieldtype": "Link"},
+    {"fieldname": "jun_2024", "label": "Apr 24-Jun 24", "fieldtype": "Currency"},
+    {"fieldname": "sep_2024", "label": "Jul 24-Sep 24", "fieldtype": "Currency"},
+    {"fieldname": "total", "label": "Total", "fieldtype": "Currency"},
+]
+
+V15_DATA = [
+    {
+        "account": "Income - SI",
+        "account_name": "Income",
+        "indent": 0,
+        "jun_2024": 0.0,
+        "sep_2024": 100.0,
+        "total": 100.0,
+    },
+    {"account": "Sales - SI", "account_name": "Sales", "indent": 1, "jun_2024": 0.0, "sep_2024": 100.0, "total": 100.0},
+    {
+        "account_name": "'Total Income (Credit)'",
+        "account": "'Total Income (Credit)'",
+        "jun_2024": 0.0,
+        "sep_2024": 100.0,
+        "total": 100.0,
+    },
+    {},
+    {
+        "account": "Expenses - SI",
+        "account_name": "Expenses",
+        "indent": 0,
+        "jun_2024": 0.0,
+        "sep_2024": 60.0,
+        "total": 60.0,
+    },
+    {
+        "account_name": "'Total Expense (Debit)'",
+        "account": "'Total Expense (Debit)'",
+        "jun_2024": 0.0,
+        "sep_2024": 60.0,
+        "total": 60.0,
+    },
+    {},
+    {
+        "account_name": "'Profit for the year'",
+        "account": "'Profit for the year'",
+        "jun_2024": 0.0,
+        "sep_2024": 40.0,
+        "total": 40.0,
+    },
+]
+
+
+class TestErpnextV15Shape(unittest.TestCase):
+    def setUp(self):
+        self.report = transform_pnl_report(V15_COLUMNS, V15_DATA)
+
+    def test_quoted_total_rows_feed_the_kpis(self):
+        self.assertEqual(self.report["totalIncome"], 100.0)
+        self.assertEqual(self.report["totalExpense"], 60.0)
+        self.assertEqual(self.report["netProfit"], 40.0)
+
+    def test_profit_for_the_year_and_spacers_stay_out_of_the_tree(self):
+        self.assertEqual([node["name"] for node in self.report["accounts"]], ["Income", "Expenses"])
+
+    def test_total_column_is_not_a_period(self):
+        self.assertEqual([p["key"] for p in self.report["periods"]], ["jun_2024", "sep_2024"])
+        self.assertEqual(self.report["periods"][1]["profitLoss"], 40.0)
+
+    def test_account_ids_keep_the_erpnext_account_name(self):
+        self.assertEqual(self.report["accounts"][0]["id"], "Income - SI")
+
+
+class TestFilterExtensions(unittest.TestCase):
+    def test_from_and_to_fiscal_year_can_differ(self):
+        filters = _build_pnl_filters({"from_fiscal_year": "2023-2024", "to_fiscal_year": "2024-2025"}, "Co")
+        self.assertEqual(filters["from_fiscal_year"], "2023-2024")
+        self.assertEqual(filters["to_fiscal_year"], "2024-2025")
+
+    def test_report_view_is_validated(self):
+        self.assertEqual(
+            _build_pnl_filters({"fiscal_year": "2025", "selected_view": "Growth"}, "Co")["selected_view"], "Growth"
+        )
+        with self.assertRaises(ValueError):
+            _build_pnl_filters({"fiscal_year": "2025", "selected_view": "Anything"}, "Co")
+
+    def test_unknown_periodicity_is_rejected(self):
+        with self.assertRaises(ValueError):
+            _build_pnl_filters({"fiscal_year": "2025", "periodicity": "Weekly"}, "Co")
+
+    def test_dimension_filters_only_when_declared(self):
+        payload = {"fiscal_year": "2025", "branch": "Montreal", "warehouse": "X"}
+        self.assertNotIn("branch", _build_pnl_filters(payload, "Co"))
+        filters = _build_pnl_filters(payload, "Co", ("branch",))
+        self.assertEqual(filters["branch"], "Montreal")
+        self.assertNotIn("warehouse", filters)
+
+
 if __name__ == "__main__":
     unittest.main()

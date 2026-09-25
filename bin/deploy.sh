@@ -60,6 +60,17 @@ log_success() {
     printf "${GREEN}${BOLD}[OK] %s${NC}\n" "$1"
 }
 
+# Compile the Cortex SPA (apps/cortex_rental/frontend -> public/frontend + www/cortex.html).
+build_cortex_spa() {
+    local fe_dir="${REPO_ROOT}/apps/cortex_rental/frontend"
+    if [ ! -f "${fe_dir}/package.json" ]; then
+        log_warn "Frontend Cortex introuvable (${fe_dir}) — /cortex ne sera pas servi."
+        return 0
+    fi
+    echo "Compilation de l'application Cortex (/cortex)..."
+    (cd "${fe_dir}" && npm ci --no-audit --no-fund && npm run build)
+}
+
 log_warn() {
     printf "${YELLOW}${BOLD}[AVERTISSEMENT] %s${NC}\n" "$1"
 }
@@ -261,8 +272,9 @@ deploy_1click() {
 
     # 7. Compilation des Bundles Vue 3
     log_step "7/8" "Compilation des bundles Vue 3 et assets Desk..."
+    build_cortex_spa
     bench build --app cortex_rental
-    log_success "Bundles frontend esbuild generes avec succes."
+    log_success "Application Cortex (/cortex) et assets compiles."
 
     # 8. Donnees de Demonstration & Tests
     log_step "8/8" "Chargement des donnees de demonstration & verification finale..."
@@ -323,6 +335,7 @@ deploy_tour() {
     log_success "Migrations MariaDB executees avec succes."
 
     log_step "3/5" "Compilation des bundles JS Vue 3..."
+    build_cortex_spa
     bench build --app cortex_rental
     log_success "Bundles Vue 3 compiles."
 

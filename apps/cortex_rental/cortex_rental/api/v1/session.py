@@ -5,6 +5,8 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.permissions.agent_scopes import FINANCE_STAFF_ROLES
+
 
 if frappe:
 
@@ -50,6 +52,10 @@ if frappe:
             "cortex:team:manage": bool(set(roles) & {"System Manager", "Administrator"}),
             "cortex:migration:run": bool(set(roles) & {"System Manager", "Administrator"}),
             "cortex:audit:view": frappe.has_permission("Audit Event", "read"),
+            # Same rule as require_finance_role(), so the menu and the API agree.
+            "cortex:finance:view": bool(
+                set(roles) & ({"System Manager", "Administrator", "Cortex System Manager"} | set(FINANCE_STAFF_ROLES))
+            ),
         }
         return {
             "data": {

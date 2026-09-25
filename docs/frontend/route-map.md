@@ -1,4 +1,7 @@
-# Cortex ERP AI-Native — Canonical 24 Screens Route Map
+# Cortex ERP AI-Native — Canonical Screens Route Map
+
+> **Mise à jour 2026-09-25 — routes servies sous `/cortex/`.** Les chemins ci-dessous en `/app/cortex-*` sont historiques. La table de vérité est `apps/cortex_rental/frontend/src/app/router/routes.ts` : `/cortex/operations`, `/cortex/availability`, `/cortex/rentals`, `/cortex/rentals/new`, `/cortex/rentals/:name`, `/cortex/checkout/:rental?`, `/cortex/checkin/:rental?`, `/cortex/equipment[/:item]`, `/cortex/serials/:serial`, `/cortex/kits`, `/cortex/consignment`, `/cortex/consignment/owners[/:owner/statement/:period]`, `/cortex/ai/inbox`, `/cortex/ai/workspace/:itemId?`, `/cortex/ai/audit`, `/cortex/assistant`, `/cortex/admin/{policies,team,import,audit}`. Écrans ajoutés : **27** Clients (`/cortex/customers`), **28** Fiche client (`/cortex/customers/:customer`), **29** Compte de résultat (`/cortex/finance/profit-and-loss`), **30** Factures & paiements (`/cortex/finance/invoices`). Les écrans 8, 16, 17 et 19 sont fusionnés (redirections vers AI Inbox, AI Audit, Assistant).
+
 
 This document defines the authoritative 24 canonical screens for Cortex ERP. No screen may change its ID, canonical route, or priority without updating this table.
 

@@ -1,7 +1,7 @@
 # Cortex UI handoff v2 — ERPNext-first, AI-native
 
 **Statut :** contrat produit canonique pour l’interface Cortex et les agents de développement.  
-**Version :** 2.1 · 2026-09-23  
+**Version :** 2.2 · 2026-09-25  
 **Socle :** ERPNext + Frappe Framework, Vue 3 et Frappe UI.  
 **Principe :** *Cortex suggère, l’humain décide.*
 
@@ -30,8 +30,9 @@ Cortex est l’ERP d’une vraie société de location de caméras et d’équip
 
 Recrée le langage de la capture Profit and Loss fournie : interface de travail dense, claire, neutre, immédiatement lisible, conçue pour les opérations d’entreprise.
 
-- Rail vertical gauche étroit, icônes seules en état replié, séparateurs de groupes fins et sélection vert pâle.
-- Barre supérieure blanche d’environ 56 px, recherche centrée, commandes et identité utilisateur à droite.
+- Rail vertical gauche de 50 px (49 + bordure `#E2E2E2`), fond `#F8F8F8`, marque de 22 px centrée dans les 48 px du haut, icônes de 16 px au pas de 34 px ; élément actif sur fond blanc avec ombre légère (style Frappe UI).
+- Barre supérieure blanche de 48 px (47 + bordure `#EDEDED`) : module à gauche, recherche 300 × 28 px, notifications, Aide et avatar 28 px à droite.
+- Palette = tokens Frappe UI « espresso » (gris `#F8F8F8` → `#171717`), mesurés sur `inspiration/image.png` ; les noms `cortex-*` historiques pointent désormais vers ces valeurs. Mesures détaillées : en-tête de page 46 px, champs 28 px, filtres sur 6 colonnes (gouttières 24 px, espacements 16/20 px), lignes de table 33 px.
 - Barre de titre et actions compacte, filtres métier alignés sur une grille stable.
 - Grandes surfaces blanches, bordures fines, rayons discrets, très peu d’ombres, arrière-plan de travail gris très pâle.
 - Tables larges avec lignes compactes, séparateurs horizontaux, en-têtes sobres, chiffres alignés et filtres visibles.
@@ -44,15 +45,15 @@ L’AI Workspace peut reprendre une composition conversationnelle à la Claude, 
 
 ## Shell et navigation
 
-Le shell est partagé par les pages Cortex : sidebar repliable, topbar, recherche universelle, sélection d’entreprise, notifications et profil. L’état replié est l’état initial privilégié pour retrouver le rail ERPNext de la référence; la préférence de l’utilisateur est persistée. Ne duplique pas le shell dans les vues.
+L’application Cortex est une SPA Vue 3 + Frappe UI servie par Frappe sous `/cortex/*` (`www/cortex.py`, sources dans `apps/cortex_rental/frontend`, build vers `public/frontend`). Le Desk `/app` reste l’ERPNext standard (comptabilité, factures, administration) ; aucune page Desk Cortex n’existe plus. Le shell est partagé par les pages Cortex : sidebar repliable, topbar, recherche universelle, sélection d’entreprise, notifications et profil. L’état replié est l’état initial privilégié pour retrouver le rail ERPNext de la référence; la préférence de l’utilisateur est persistée. Ne duplique pas le shell dans les vues.
 
 Navigation IA canonique :
 
 | Destination | Route frontend | Rôle |
 |---|---|---|
-| AI Inbox | `/app/cortex-ai-inbox` | Travail à traiter : suggestions, approbations, documents entrants |
-| AI Workspace | `/app/cortex-ai-workspace/:itemId?` | Source, brouillon, preuves, conversation et prochaine action |
-| AI Audit | `/app/cortex-ai-audit` | Décisions, acteurs, latence et événements traçables |
+| AI Inbox | `/cortex/ai/inbox` | Travail à traiter : suggestions, approbations, documents entrants |
+| AI Workspace | `/cortex/ai/workspace/:itemId?` | Source, brouillon, preuves, conversation et prochaine action |
+| AI Audit | `/cortex/ai/audit` | Décisions, acteurs, latence et événements traçables |
 
 Les anciennes routes approvals/incoming/drafts redirigent vers l’Inbox avec leur filtre. Ne maintiens pas des files concurrentes.
 
@@ -143,6 +144,11 @@ Flux attendu : Vue → API Frappe authentifiée → service Cortex → (a) Onyx 
 ## Niveau de vérité de l’implémentation
 
 Les pages et actions doivent indiquer leur provenance réelle. Mock, fixture, API backend et service IA sont des modes différents. Le mode Mock ne devient pas « production » parce qu’il passe le build.
+
+État vérifié le 2026-09-25 (lot 1 de la refonte) :
+
+- Shell reconstruit au pixel sur la capture P&L : écarts mesurés ≤ 1,5 px sur les séparateurs, filtres, synthèse, graphique et table (comparaison automatisée via la prévisualisation `frontend/preview/`, données DEMO). Écran Compte de résultat (`/cortex/finance/profit-and-loss`) branché sur le rapport ERPNext ; le parcours live n’a pas été recetté sur un bench.
+- Les écrans Clients et Factures affichent explicitement « en cours de reconstruction » jusqu’à leur lot.
 
 État vérifié le 2026-09-23 :
 

@@ -1,5 +1,7 @@
 # Handoff — Cortex ERP AI-Native
 
+> **Mise à jour 2026-09-25 :** refonte UI en cours sur `feat/ui-rebuild` (lot 1 : shell pixel-perfect, SPA sous `/cortex`, Compte de résultat, correctifs multi-tenant). Les pages Desk `cortex-*` décrites plus bas ont été **supprimées** ; l’interface est désormais `/cortex`. Voir `CHANGELOG.md` (v0.6.0-dev).
+>
 > **Mise à jour 2026-09-23 :** pour la direction UX, les écrans AI-native, les seuils de confiance, les règles de validation et le contrat d’intégration Onyx/Ollama, le document canonique est [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md). Les sections frontend historiques ci-dessous peuvent être obsolètes; vérifier chaque état dans le code avant de s’y fier.
 
 **Date** : 2026-08-31

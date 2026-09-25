@@ -192,6 +192,25 @@ function Test-NativeBenchWorking {
     return $false
 }
 
+# Compile the Cortex SPA (apps/cortex_rental/frontend -> public/frontend + www/cortex.html).
+function Build-CortexSpa {
+    $feDir = Join-Path $RepoRoot "apps\cortex_rental\frontend"
+    if (-not (Test-Path (Join-Path $feDir "package.json"))) {
+        Write-Host "Frontend Cortex introuvable ($feDir) - /cortex ne sera pas servi." -ForegroundColor Yellow
+        return
+    }
+    Write-Host "Compilation de l'application Cortex (/cortex)..."
+    Push-Location $feDir
+    try {
+        & npm ci --no-audit --no-fund
+        if ($LASTEXITCODE -ne 0) { throw "npm ci a echoue." }
+        & npm run build
+        if ($LASTEXITCODE -ne 0) { throw "La compilation de l'application Cortex a echoue." }
+    } finally {
+        Pop-Location
+    }
+}
+
 function Invoke-Bench {
     param([string[]]$Arguments)
     $benchCmd = Get-Command bench -ErrorAction SilentlyContinue
@@ -427,8 +446,9 @@ function Deploy-1Click {
 
     # 7. Compilation des Bundles Vue 3
     Log-Step "7/8" "Compilation des bundles Vue 3 et assets Desk..."
+    Build-CortexSpa
     Invoke-Bench @("build", "--app", "cortex_rental")
-    Log-Success "Bundles frontend esbuild generes avec succes."
+    Log-Success "Application Cortex (/cortex) et assets compiles."
 
     # 8. Donnees de Demonstration et Tests
     Log-Step "8/8" "Chargement des donnees de demonstration et verification finale..."
@@ -497,6 +517,7 @@ function Deploy-Tour {
     Log-Success "Migrations MariaDB executees avec succes."
 
     Log-Step "3/5" "Compilation des bundles JS Vue 3..."
+    Build-CortexSpa
     Invoke-Bench @("build", "--app", "cortex_rental")
     Log-Success "Bundles Vue 3 compiles."
 

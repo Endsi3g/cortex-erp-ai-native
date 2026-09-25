@@ -31,12 +31,14 @@
 
 ## Les 4 Écrans Clés
 
+Cortex est une application Vue 3 + Frappe UI servie par Frappe sous **`/cortex`** ; le Desk `/app` reste l’ERPNext standard.
+
 | Écran | URL | Description |
 |---|---|---|
-| **Scanner Check-in** | `/app/cortex-checkin` | Réception ultra-rapide par scan (bip sonore Web Audio), diagnostic d'avarie (bris/manquants/quarantaine) et reçu imprimable. |
-| **Disponibilité** | `/app/cortex-availability` | Grille calendaire interactive du parc d'équipements avec détection des conflits en temps réel. |
-| **Composer de Devis** | `/app/cortex-transaction-composer` | Élaboration de devis express avec tarification dynamique (**règle 7 jours loués = 3 jours facturés**) et création de clients à la volée. |
-| **P&L Financier** | `/app/cortex-accounting-pnl` | Compte de résultat hiérarchique en direct avec drill-down vers le Grand Livre ERPNext et export CSV instantané. |
+| **Scanner Check-in** | `/cortex/checkin` | Réception ultra-rapide par scan (bip sonore Web Audio), diagnostic d'avarie (bris/manquants/quarantaine) et reçu imprimable. |
+| **Disponibilité** | `/cortex/availability` | Grille calendaire interactive du parc d'équipements avec détection des conflits en temps réel. |
+| **Composer de Devis** | `/cortex/rentals/new` | Élaboration de devis express avec tarification dynamique (**règle 7 jours loués = 3 jours facturés**) et création de clients à la volée. |
+| **P&L Financier** | `/cortex/finance/profit-and-loss` | Compte de résultat hiérarchique en direct avec drill-down vers le Grand Livre ERPNext et export CSV instantané. |
 
 <br/>
 

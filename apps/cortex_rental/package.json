@@ -1,0 +1,9 @@
+{
+  "name": "cortex_rental",
+  "private": true,
+  "description": "Frappe runs this app's build script during `bench build`; it compiles the Cortex SPA.",
+  "scripts": {
+    "build": "cd frontend && npm ci --no-audit --no-fund && npm run build",
+    "dev": "cd frontend && npm run dev"
+  }
+}

@@ -14,28 +14,14 @@ app_logo_url = "/assets/cortex_rental/images/cortex-logo.svg"
 app_icon = "octicon octicon-briefcase"
 app_color = "#059669"
 
-# Includes in <head>
-# ------------------
-
-# Cortex Operations System design tokens/theme/utilities — plain CSS,
-# no build step (see cortex-tokens.css header for why). Injected into
-# desk.html only, never web.html — this app has no public-facing pages
-# beyond the one authenticated www/onyx-assistant.html, which loads its
-# own styling and isn't part of the Desk chrome these files target.
-app_include_css = [
-    "/assets/cortex_rental/css/cortex-tokens.css",
-    "/assets/cortex_rental/css/cortex-theme.css",
-    "/assets/cortex_rental/css/cortex-utilities.css",
-]
-
-# Global floating Cortex Copilot launcher — mounted on every Desk page
-# via frappe.ready() (see cortex_copilot.bundle.js). Verified real
-# pattern: app_include_js can reference a .bundle.js with ESM imports,
-# resolved by the same esbuild pipeline that compiles a Desk Page's own
-# .bundle.js (docs.frappe.io + frappe/frappe wiki, cross-checked before
-# use — see CHANGELOG.md, eighth wave).
-app_include_js = [
-    "cortex_copilot.bundle.js",
+# Cortex web application
+# ----------------------
+# The Cortex operator UI is a Vue 3 + Frappe UI single-page app built from
+# apps/cortex_rental/frontend into public/frontend and served by
+# www/cortex.html (same model as Frappe CRM / Helpdesk). ERPNext Desk (/app)
+# stays the standard ERPNext; nothing is injected into it.
+website_route_rules = [
+    {"from_route": "/cortex/<path:app_path>", "to_route": "cortex"},
 ]
 
 # DocType Events (Audit logging & validation hooks)
@@ -81,7 +67,34 @@ permission_query_conditions = {
 # Cortex roles referenced by permissions/agent_scopes.py and the Cortex
 # Company scoping custom field on the core ERPNext Customer doctype.
 fixtures = [
-    {"dt": "Role", "filters": [["role_name", "like", "Cortex %"]]},
+    {
+        "dt": "Role",
+        "filters": [
+            [
+                "role_name",
+                "in",
+                [
+                    "Agent Service Account",
+                    "Auditor",
+                    "Cortex Account Reviewer",
+                    "Cortex Agent Availability",
+                    "Cortex Agent Intake",
+                    "Cortex Agent Reporting",
+                    "Cortex Consignment Manager",
+                    "Cortex Counter Staff",
+                    "Cortex Finance Manager",
+                    "Cortex Inventory Manager",
+                    "Cortex Migration Worker",
+                    "Cortex Operations Manager",
+                    "Cortex Read Only",
+                    "Cortex System Manager",
+                    "Pricing Manager",
+                    "Rental Manager",
+                    "Rental Operator",
+                ],
+            ]
+        ],
+    },
     {
         "dt": "Custom Field",
         "filters": [["name", "in", ["Customer-cortex_company", "Serial No-cortex_status"]]],
@@ -92,9 +105,3 @@ fixtures = [
 before_migrate = "cortex_rental.setup.before_migrate"
 after_migrate = "cortex_rental.setup.after_migrate"
 after_install = "cortex_rental.setup.after_install"
-boot_session = "cortex_rental.setup.boot_session"
-
-# Whitelisted Method Overrides
-override_whitelisted_methods = {
-    "frappe.desk.desktop.get_workspace_sidebar_items": "cortex_rental.setup.get_cortex_workspace_sidebar_items",
-}

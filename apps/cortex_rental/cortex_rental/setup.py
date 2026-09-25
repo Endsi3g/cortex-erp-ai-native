@@ -172,126 +172,13 @@ def ensure_prerequisites() -> None:
         )
 
 
-def setup_cortex_sidebar() -> None:
-    """
-    Ensures that only the 'Cortex Rental' workspace is visible in the Frappe Desk sidebar.
-    Hides all standard ERPNext and Frappe workspaces (Accounting, Buying, HR, etc.)
-    by setting is_hidden = 1, and guarantees Cortex Rental has is_hidden = 0, public = 1,
-    and sequence_id = 1.0.
-    """
-    if not frappe or not getattr(frappe, "db", None):
-        return
-
-    try:
-        if frappe.db.table_exists("Workspace"):
-            frappe.db.sql(
-                """
-                UPDATE `tabWorkspace`
-                SET `is_hidden` = 1
-                WHERE `name` != 'Cortex Rental'
-                """
-            )
-            frappe.db.sql(
-                """
-                UPDATE `tabWorkspace`
-                SET `is_hidden` = 0, `public` = 1, `sequence_id` = 1.0
-                WHERE `name` = 'Cortex Rental'
-                """
-            )
-            frappe.db.commit()
-    except Exception:
-        pass
-
-
 def before_migrate() -> None:
     ensure_prerequisites()
 
 
 def after_migrate() -> None:
     ensure_prerequisites()
-    setup_cortex_sidebar()
 
 
 def after_install() -> None:
     ensure_prerequisites()
-    setup_cortex_sidebar()
-
-
-def boot_session(bootinfo: Any = None) -> None:
-    ensure_prerequisites()
-    setup_cortex_sidebar()
-    if bootinfo and isinstance(bootinfo, dict) and "allowed_workspaces" in bootinfo:
-        # Keep only the dedicated Cortex workspaces; CORTEX_WORKSPACE_ORDER is the
-        # single source of truth — match on both name and title for robustness.
-        bootinfo["allowed_workspaces"] = [
-            ws
-            for ws in bootinfo["allowed_workspaces"]
-            if ws.get("name") in CORTEX_WORKSPACE_ORDER or ws.get("title") in CORTEX_WORKSPACE_ORDER
-        ]
-
-
-# Ordered list of Cortex-dedicated workspaces — single source of truth for sidebar
-# filtering in both boot_session and the get_cortex_workspace_sidebar_items override.
-CORTEX_WORKSPACE_ORDER = [
-    "Disponibilité",
-    "Devis & Locations",
-    "Check-in & Retours",
-    "Parc Matériel",
-    "Clients & Risque",
-    "Facturation & P&L",
-    "Supervision & IA",
-    "Cortex Rental",
-]
-
-
-if frappe:
-
-    @frappe.whitelist()
-    def get_cortex_workspace_sidebar_items() -> Dict[str, Any]:
-        """
-        Override of frappe.desk.desktop.get_workspace_sidebar_items.
-        Registered via hooks.override_whitelisted_methods.
-
-        Filters the sidebar items so that ONLY the dedicated Cortex workspaces
-        (defined in CORTEX_WORKSPACE_ORDER) are presented in the Frappe Desk
-        workspace sidebar. All generic ERPNext workspaces are hidden.
-        """
-        try:
-            from frappe.desk.desktop import get_workspace_sidebar_items as _original
-
-            sidebar = _original()
-            if isinstance(sidebar, dict) and "pages" in sidebar:
-                filtered = [
-                    p
-                    for p in sidebar["pages"]
-                    if p.get("name") in CORTEX_WORKSPACE_ORDER or p.get("title") in CORTEX_WORKSPACE_ORDER
-                ]
-
-                def _sort_key(p: Dict[str, Any]) -> int:
-                    label = p.get("title") or p.get("name") or ""
-                    return CORTEX_WORKSPACE_ORDER.index(label) if label in CORTEX_WORKSPACE_ORDER else 99
-
-                filtered.sort(key=_sort_key)
-                sidebar["pages"] = filtered
-            return sidebar
-        except Exception:
-            # Fallback: direct DB query when the core Frappe function is unavailable.
-            pages = frappe.get_all(
-                "Workspace",
-                filters={"name": ["in", CORTEX_WORKSPACE_ORDER], "is_hidden": 0},
-                fields=[
-                    "name",
-                    "title",
-                    "for_user",
-                    "parent_page",
-                    "content",
-                    "public",
-                ],
-                order_by="sequence_id asc",
-            )
-            return {"pages": pages}
-else:
-
-    def get_cortex_workspace_sidebar_items() -> Dict[str, Any]:  # type: ignore[misc]
-        """No-op stub when Frappe is not installed (e.g. unit-test environments)."""
-        return {"pages": []}

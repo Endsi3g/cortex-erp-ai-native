@@ -1,5 +1,29 @@
 # Changelog — Cortex Security & Correctness Remediation
 
+## v0.6.0-dev — 2026-09-25 — Refonte UI, lot 1 (fondations + Compte de résultat)
+
+**Application**
+- The Cortex UI is now a single Vue 3 + Frappe UI app served by Frappe under `/cortex/*` (`www/cortex.py`, `website_route_rules`). Sources moved from `cortex_rental/public/frontend` (which Frappe exposed publicly under `/assets`, source and `node_modules` included) to `apps/cortex_rental/frontend`; only the build lands in `public/frontend`.
+- Removed the legacy Desk pages (`page/cortex_*`), their bundles (`public/js/*`), the Desk CSS injection and the global Desk copilot launcher. The Desk workspace is now a plain entry point (link to `/cortex` + real DocType lists).
+- ERPNext Desk is standard again: removed `setup_cortex_sidebar` (it hid every non-Cortex workspace in the database on every login) and the sidebar override; patch `v1_0.restore_erpnext_workspaces` makes public workspaces visible again.
+
+**Security**
+- Tenant resolution no longer falls back to the hard-coded "CineRental Montreal" nor to the user-editable session default Company. Access comes from User Permission (or System Manager); a single-Company site grants that Company; otherwise nothing.
+- Roles referenced by DocType permissions (`Rental Manager`, `Rental Operator`, `Pricing Manager`, `Auditor`) are now shipped as fixtures.
+
+**Shell (pixel-matched to `inspiration/image.png`)**
+- 50px rail, 48px top bar, 46px page header, 28px Frappe UI controls, espresso palette. Measured deviations ≤ 1.5px (automated comparison through the dev-only `frontend/preview/`).
+- Navigation built from the route table and filtered by server permissions; ⌘K search backed by the new `api/v1/search.global_search` (tenant-scoped); removed hard-coded DEMO links, fake search results, the invented "3" inbox badge and the default pending-approvals count of 4.
+
+**Finance**
+- Compte de résultat (`/cortex/finance/profit-and-loss`): ERPNext filter bar (company, finance book, fiscal years or date range, periodicity, currency, cost center, accounting dimensions, project, report view, accumulated values, default FB entries), KPI summary, chart, tree table with row filters, General Ledger drill-down, CSV export with formula-injection guard, print.
+- `get_profit_and_loss` now recognises ERPNext v14/v15 labels (`'Total Income (Credit)'`, `'Profit for the year'`, spacer rows) and returns `available: false` with a reason instead of a zeroed statement when the report fails. New `get_pnl_filter_options`.
+
+**Quality**
+- `tests/fake_frappe.py`: runs the `if frappe:` paths in pytest and validates every insert against the DocType JSON (unknown / missing mandatory fields).
+- CI now typechecks, tests and builds the frontend.
+- Not verified on a live bench in this lot; see HANDOFF for what to check on the tower.
+
 ## v0.5.0 — 2026-09-23
 
 This release establishes the ERPNext-first, AI-native Cortex workspace and documents the implementation contract for future product and AI agents in `docs/frontend/CORTEX_UI_HANDOFF_V2.md`.
