@@ -51,6 +51,14 @@
 - Kits are a Cortex model (**Cortex Rental Kit**, per company): required/optional components and a kit discount. Added to a rental they expand into real lines, each priced, availability-checked and reserved; the kit discount is accepted without the manager role only when it matches an active kit containing the item (kit reference stored on the line).
 - Fixed two double-booking paths: confirmation re-checked availability line by line (two lines of the same item could exceed the fleet), and serial allocation could give the same serial to two lines of one rental. Staff availability checks now sum quantities per item too.
 
+### Lot 6 — Customers 360 and consignment
+
+- **Customers** (`api/v1/clients.py`): list with rentals, active rentals, outstanding balance and insurance status; 360° record with rentals, ERPNext invoices and payments; creation of an ERPNext Customer bound to the company; audited insurance verification (feeds the contract requirement).
+- **Consignment computed from real rentals**: a serial is linked to its owner (`Serial No.cortex_consignment_owner`); statements take each owned unit's net revenue on rentals returned/closed in the month, at the owner's share. Workflow prepared (consignment manager) → approved → paid with ERPNext payment reference (finance). Agent tool `prepare_owner_statement` now takes owner + period only (it used to accept caller-supplied amounts and a default serial "SN-GENERIC-001").
+- Owner statements keep the strict `OwnerStatementSafe` contract end to end; the screen refuses to render a statement carrying any field outside it.
+- **Blocking fix**: `Consignment Payout` had a field named `owner`, a Frappe reserved fieldname — the DocType could not be migrated. Renamed to `consignment_owner`; a new schema test rejects reserved fieldnames, duplicate fields, dangling child tables and missing controllers across all DocTypes.
+- Removed the fictitious server-side statement export (CSV is generated client-side with the injection guard; PDF through print).
+
 **Quality (lot 1)**
 - `tests/fake_frappe.py`: runs the `if frappe:` paths in pytest and validates every insert against the DocType JSON (unknown / missing mandatory fields).
 - CI now typechecks, tests and builds the frontend.

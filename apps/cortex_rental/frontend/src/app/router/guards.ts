@@ -80,7 +80,12 @@ export function setupRouterGuards(router: Router) {
     if (category) {
       breadcrumbList.push({ labelKey: `common.navigation_groups.${category}` })
     }
-    if (parent?.name && parent.meta.titleKey) {
+    const sameAsModule = category && parent?.meta.titleKey
+      ? i18n.global.t(parent.meta.titleKey) === i18n.global.t(`common.navigation_groups.${category}`)
+      : false
+    if (parent?.name && parent.meta.titleKey && sameAsModule) {
+      breadcrumbList[0] = { labelKey: parent.meta.titleKey, to: router.resolve({ name: parent.name }).path }
+    } else if (parent?.name && parent.meta.titleKey) {
       breadcrumbList.push({ labelKey: parent.meta.titleKey, to: router.resolve({ name: parent.name }).path })
     }
     navigationStore.setBreadcrumbs(breadcrumbList)

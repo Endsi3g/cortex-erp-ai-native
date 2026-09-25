@@ -79,6 +79,7 @@ export interface SerialRecord {
   item_name: string
   erpnext_status: string | null
   status: SerialStatus
+  consignment_owner?: string | null
   warranty_expiry_date: string | null
   current_rental: string | null
   rentals: Array<{ name: string; customer: string; rental_state: string; starts_at: string; ends_at: string }>

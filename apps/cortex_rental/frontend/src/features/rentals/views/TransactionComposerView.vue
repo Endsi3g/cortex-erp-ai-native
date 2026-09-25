@@ -407,6 +407,13 @@ onMounted(async () => {
       saveError.value = error instanceof Error ? error.message : String(error)
     }
   } else {
+    const customerId = typeof route.query.customer === 'string' ? route.query.customer : ''
+    if (customerId) {
+      try {
+        const match = (await api.searchRentalCustomers(customerId)).find(option => option.id === customerId)
+        if (match) pickCustomer(match)
+      } catch { /* customer not reachable: left empty, nothing invented */ }
+    }
     const period = defaultPeriod()
     form.startsAt = typeof route.query.starts_at === 'string' ? `${route.query.starts_at.slice(0, 10)}T08:00` : period.startsAt
     form.endsAt = typeof route.query.ends_at === 'string' ? `${route.query.ends_at.slice(0, 10)}T18:00` : period.endsAt

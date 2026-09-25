@@ -4,7 +4,7 @@ from cortex_rental.services.transaction_state import TransactionStateService
 from cortex_rental.api.v1.quotes import create_draft_handler, preview_pricing_handler
 from cortex_rental.api.v1.availability import check_availability_handler, get_matrix_handler
 from cortex_rental.api.v1.approvals import submit_approval_handler
-from cortex_rental.api.v1.consignment import prepare_owner_statement_handler
+from cortex_rental.services.consignment import ConsignmentService
 from cortex_rental.cortex_rental.doctype.approval_request.approval_request import ApprovalRequest
 from cortex_rental.cortex_rental.doctype.audit_event.audit_event import AuditEvent
 
@@ -120,18 +120,13 @@ class TestCortexDemoScenario(unittest.TestCase):
         self.assertIn("Approval required", reason)
 
     def test_step_9_consignment_payout_redacts_renter_identity(self):
-        payout = prepare_owner_statement_handler(
-            {
-                "owner_id": "Roger Deakins Productions Inc.",
-                "gross_amount": 9000.00,
-                "consignment_percentage": 70.0,
-                "serial_no": "SN-ALX35-001",
-                "days": 3.0,
-                "rate": 1500.00,
-                "customer_name": "Dune 3 Productions Inc.",
-                "customer_email": "producer@dune3.com",
-            },
-            self.company,
+        payout = ConsignmentService.calculate_payout(
+            gross_amount=9000.00,
+            consignment_percentage=70.0,
+            serial_no="SN-ALX35-001",
+            days=3.0,
+            rate=1500.00,
+            metadata={"customer_name": "Dune 3 Productions Inc.", "customer_email": "producer@dune3.com"},
         )
 
         self.assertEqual(payout["owner_payout_amount"], 6300.00)

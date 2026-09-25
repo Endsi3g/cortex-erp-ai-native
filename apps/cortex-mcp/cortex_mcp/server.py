@@ -33,7 +33,6 @@ try:
         create_customer_draft_handler,
     )
     from cortex_rental.api.v1.items import search_items_handler
-    from cortex_rental.api.v1.consignment import prepare_owner_statement_handler
     from cortex_rental.api.v1.intake import (
         register_evidence_handler,
         record_extraction_handler,
@@ -47,7 +46,6 @@ except ImportError:
     search_customers_handler = None
     create_customer_draft_handler = None
     search_items_handler = None
-    prepare_owner_statement_handler = None
     register_evidence_handler = None
     record_extraction_handler = None
 
@@ -198,33 +196,15 @@ async def submit_approval_request(
 
 
 @mcp.tool()
-async def prepare_owner_statement(
-    owner_id: str,
-    gross_amount: float,
-    consignment_percentage: float,
-    serial_no: str,
-    days: float = 3.0,
-    rate: float = 1500.0,
-) -> Dict[str, Any]:
+async def prepare_owner_statement(owner_id: str, period: str) -> Dict[str, Any]:
     """
-    Prepare a third-party equipment consignment payout statement.
-    Strict Invariant: Redacts all customer and renter identities from the owner calculation snapshot.
+    Read the consignment owner statement for a period (YYYY-MM), computed by
+    Cortex from the rentals that actually used the owner's serials. The
+    agent supplies no amount. The statement never contains renter identity.
     """
-    payload = {
-        "owner_id": owner_id,
-        "gross_amount": gross_amount,
-        "consignment_percentage": consignment_percentage,
-        "serial_no": serial_no,
-        "days": days,
-        "rate": rate,
-    }
-
-    if prepare_owner_statement_handler:
-        return prepare_owner_statement_handler(payload=payload, company=_COMPANY)
-
     res = await client.call_method(
         "cortex_rental.api.v1.consignment.prepare_owner_statement",
-        json_data=payload,
+        json_data={"owner_id": owner_id, "period": period},
     )
     return res.get("data") if isinstance(res, dict) and "data" in res else res
 

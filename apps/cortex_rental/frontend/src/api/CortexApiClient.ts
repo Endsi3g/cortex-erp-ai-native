@@ -52,7 +52,12 @@ import type {
   ConsignmentDashboardResponse,
   OwnerStatementInput,
   OwnerStatementResponse,
-  OwnerStatementExportInput,
+  ConsignmentOwnerRecord,
+  OwnerDraft,
+  CustomerRecord,
+  ListCustomersInput,
+  ListCustomersResponse,
+  NewCustomerInput,
   ListApprovalRequestsInput,
   ListApprovalsResponse,
   GetApprovalRequestInput,
@@ -135,7 +140,6 @@ export interface CortexApiClient {
   listOwners(input: ListOwnersInput): Promise<ListOwnersResponse>
   getConsignmentDashboard(input: ConsignmentDashboardInput): Promise<ConsignmentDashboardResponse>
   getOwnerStatement(input: OwnerStatementInput): Promise<OwnerStatementResponse>
-  requestOwnerStatementExport(input: OwnerStatementExportInput): Promise<MutationResponse>
 
   // 5. Human Supervision & Approval Queue SAS
   listApprovalRequests(input: ListApprovalRequestsInput): Promise<ListApprovalsResponse>
@@ -200,4 +204,16 @@ export interface CortexApiClient {
   updateEquipmentProfile(itemCode: string, changes: EquipmentProfileChanges): Promise<GetEquipmentResponse>
   setSerialStatus(serialNo: string, status: SerialStatus, reason: string): Promise<GetSerialResponse>
   saveKit(kit: RentalKit): Promise<RentalKit>
+
+  // 16. Consignment workflow & customers (staff)
+  getOwner(ownerId: string, period?: string): Promise<ConsignmentOwnerRecord>
+  saveOwner(owner: OwnerDraft): Promise<ConsignmentOwnerRecord>
+  setSerialOwner(serialNo: string, ownerId: string | null): Promise<void>
+  prepareStatement(ownerId: string, period: string): Promise<void>
+  approveStatement(ownerId: string, period: string): Promise<void>
+  markStatementPaid(ownerId: string, period: string, reference: string): Promise<void>
+  listCustomers(input: ListCustomersInput): Promise<ListCustomersResponse>
+  getCustomer(customer: string): Promise<CustomerRecord>
+  createCustomer(input: NewCustomerInput): Promise<CustomerRecord>
+  setCustomerInsurance(customer: string, validUntil: string | null, note?: string): Promise<CustomerRecord>
 }

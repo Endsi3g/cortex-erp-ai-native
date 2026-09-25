@@ -1,289 +1,114 @@
 <template>
-  <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-    <!-- Header -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-xl font-bold text-cortex-text-primary">
-            {{ $t('consignment.title', 'Consignment Dashboard — Suivi des Reversements') }}
-          </h1>
-          <span class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-            F13 • PRD-CON
-          </span>
+  <div class="flex min-h-full flex-col bg-surface-white">
+    <PageHeader :title="t('routes.consignment_dashboard')">
+      <template #title-suffix>
+        <Tooltip v-if="dashboard?.provenance === 'mock'" :text="t('consignment_screen.demo_notice')">
+          <Badge theme="orange" variant="subtle" size="md" role="status">DEMO</Badge>
+        </Tooltip>
+      </template>
+      <template #actions>
+        <TextInput v-model="period" type="month" size="sm" variant="subtle" class="w-40" :aria-label="t('consignment_screen.period')" />
+        <Button size="sm" variant="subtle" :route="{ name: 'consignment-owners' }">{{ t('routes.consignment_owners') }}</Button>
+      </template>
+    </PageHeader>
+
+    <p v-if="errorMessage" class="mx-6 mt-6 rounded border border-outline-red-1 bg-surface-red-1 px-4 py-2 text-p-sm text-ink-red-4" role="alert">{{ errorMessage }}</p>
+    <div v-else-if="!dashboard" class="mx-6 mt-10 flex items-center gap-2 text-base text-ink-gray-5" role="status"><LoadingIndicator class="size-4" /> {{ t('table.loading') }}</div>
+
+    <template v-else>
+      <section class="grid grid-cols-2 gap-4 px-6 pt-5 xl:grid-cols-4" :aria-label="t('consignment_screen.kpis')">
+        <div v-for="card in cards" :key="card.label" class="rounded border border-outline-gray-1 px-4 py-3">
+          <p class="text-base text-ink-gray-6">{{ card.label }}</p>
+          <p class="mt-2 text-2xl font-semibold tabular-nums text-ink-gray-8">{{ card.value }}</p>
         </div>
-        <p class="text-xs text-cortex-text-muted mt-0.5">
-          {{ $t('consignment.subtitle', 'Tableau de bord financier pour le calcul et le suivi des reversements dus aux propriétaires tiers') }}
-        </p>
-      </div>
+      </section>
 
-      <!-- Actions / Period Switcher -->
-      <div class="flex items-center gap-3">
-        <label for="period-select" class="text-xs font-medium text-cortex-text-muted hidden sm:inline">
-          Période :
-        </label>
-        <select
-          id="period-select"
-          v-model="selectedPeriod"
-          class="px-3 py-2 text-xs font-mono font-semibold rounded-xl border border-cortex-border bg-cortex-surface text-cortex-text-primary focus:ring-2 focus:ring-cortex-primary/30 min-h-[44px]"
-          @change="loadDashboard"
-        >
-          <option value="2026-09">Septembre 2026 (En cours)</option>
-          <option value="2026-08">Août 2026 (Clôturé)</option>
-          <option value="2026-07">Juillet 2026</option>
-        </select>
+      <section class="mt-6">
+        <h2 class="px-6 pb-2 text-base font-semibold text-ink-gray-9">{{ t('consignment_screen.owners_for', { period: periodLabel }) }}</h2>
+        <DataTable :label="t('routes.consignment_owners')" :columns="ownerColumns" :rows="dashboard.owners" row-key="id" :filter-row="false" :empty-text="t('consignment_screen.no_owners')" clickable @row-click="row => openStatement(String(row.id))">
+          <template #cell-statement_status="{ row }"><StatementStatusBadge :status="row.statement_status as StatementStatus" /></template>
+        </DataTable>
+      </section>
 
-        <router-link
-          to="/consignment/owners"
-          class="px-4 py-2 rounded-xl border border-cortex-border bg-cortex-surface hover:bg-cortex-surface-muted text-xs font-semibold text-cortex-text-primary transition-colors min-h-[44px] flex items-center gap-1.5"
-        >
-          <Users class="w-4 h-4 text-cortex-primary" />
-          <span>Répertoire Propriétaires</span>
-        </router-link>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="isLoading" class="p-12 text-center text-cortex-text-muted bg-cortex-surface rounded-2xl border border-cortex-border">
-      <Loader2 class="w-8 h-8 animate-spin mx-auto text-cortex-primary mb-2" />
-      <span class="text-xs font-semibold">Chargement des données de consignation...</span>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="errorMessage" class="p-6 rounded-2xl border border-red-200 bg-red-50 text-red-900">
-      <div class="flex items-center gap-2 font-bold text-sm">
-        <AlertTriangle class="w-5 h-5 text-red-600" />
-        <span>Erreur de chargement</span>
-      </div>
-      <p class="text-xs text-red-800 mt-1">{{ errorMessage }}</p>
-    </div>
-
-    <template v-else-if="dashboard">
-      <!-- 4 KPI Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- KPI 1: Current Month Payout -->
-        <div class="p-4 rounded-2xl border border-cortex-border bg-cortex-surface space-y-2">
-          <div class="flex items-center justify-between text-xs text-cortex-text-muted">
-            <span class="font-bold uppercase tracking-wider">Montant Dû (Mois)</span>
-            <DollarSign class="w-4 h-4 text-emerald-600" />
-          </div>
-          <div class="text-2xl font-bold font-mono text-emerald-700">
-            {{ formatMoney(dashboard.current_month_total_payout) }}
-          </div>
-          <div class="text-[11px] text-cortex-text-muted flex items-center gap-1">
-            <span class="text-emerald-600 font-semibold">Net admissible</span>
-            <span>sur la période</span>
-          </div>
-        </div>
-
-        <!-- KPI 2: Previous Month Payout -->
-        <div class="p-4 rounded-2xl border border-cortex-border bg-cortex-surface space-y-2">
-          <div class="flex items-center justify-between text-xs text-cortex-text-muted">
-            <span class="font-bold uppercase tracking-wider">Mois Précédent</span>
-            <TrendingUp class="w-4 h-4 text-cortex-primary" />
-          </div>
-          <div class="text-2xl font-bold font-mono text-cortex-text-primary">
-            {{ formatMoney(dashboard.previous_month_total_payout) }}
-          </div>
-          <div class="text-[11px] text-cortex-text-muted">
-            Total versé aux tiers
-          </div>
-        </div>
-
-        <!-- KPI 3: Active Owners Count -->
-        <div class="p-4 rounded-2xl border border-cortex-border bg-cortex-surface space-y-2">
-          <div class="flex items-center justify-between text-xs text-cortex-text-muted">
-            <span class="font-bold uppercase tracking-wider">Propriétaires Actifs</span>
-            <Users class="w-4 h-4 text-blue-600" />
-          </div>
-          <div class="text-2xl font-bold font-mono text-cortex-text-primary">
-            {{ dashboard.active_owners_count }}
-          </div>
-          <div class="text-[11px] text-cortex-text-muted">
-            Partenaires sous contrat
-          </div>
-        </div>
-
-        <!-- KPI 4: Active Consigned Serials -->
-        <div class="p-4 rounded-2xl border border-cortex-border bg-cortex-surface space-y-2">
-          <div class="flex items-center justify-between text-xs text-cortex-text-muted">
-            <span class="font-bold uppercase tracking-wider">Séries en Flotte</span>
-            <Layers class="w-4 h-4 text-purple-600" />
-          </div>
-          <div class="text-2xl font-bold font-mono text-cortex-text-primary">
-            {{ dashboard.active_consigned_serials_count }} unités
-          </div>
-          <div class="text-[11px] text-cortex-text-muted">
-            Matériel tiers en exploitation
-          </div>
-        </div>
-      </div>
-
-      <!-- Pending Statements (Relevés en attente) — Demo Critical for Flow 4 -->
-      <div class="p-5 rounded-2xl border border-cortex-border bg-cortex-surface space-y-4">
-        <div class="flex items-center justify-between border-b border-cortex-border pb-3">
-          <div>
-            <h2 class="text-sm font-bold text-cortex-text-primary uppercase tracking-wider">
-              Relevés Propriétaires en Attente ({{ dashboard.pending_statements.length }})
-            </h2>
-            <p class="text-xs text-cortex-text-muted mt-0.5">
-              Relevés mensuels certifiés conformes au protocole d'isolation étanche OwnerStatementSafe
-            </p>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="border-b border-cortex-border text-cortex-text-muted font-bold uppercase tracking-wider">
-                <th class="py-2.5 px-3">Propriétaire Partenaire</th>
-                <th class="py-2.5 px-3">Période</th>
-                <th class="py-2.5 px-3 text-right">Montant Dû</th>
-                <th class="py-2.5 px-3 text-center">Statut Relevé</th>
-                <th class="py-2.5 px-3 text-right">Action Étanche</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-cortex-border">
-              <tr
-                v-for="stmt in dashboard.pending_statements"
-                :key="`${stmt.owner_id}_${stmt.period}`"
-                class="hover:bg-cortex-surface-muted/40 transition-colors"
-              >
-                <td class="py-3 px-3 font-semibold text-cortex-text-primary">
-                  {{ stmt.owner_name }}
-                  <span class="block text-[11px] font-mono text-cortex-text-muted font-normal">{{ stmt.owner_id }}</span>
-                </td>
-                <td class="py-3 px-3 font-mono font-medium text-cortex-text-secondary">
-                  {{ stmt.period }}
-                </td>
-                <td class="py-3 px-3 font-mono font-bold text-right text-emerald-700 text-sm">
-                  {{ formatMoney(stmt.amount_due) }}
-                </td>
-                <td class="py-3 px-3 text-center">
-                  <span
-                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                    :class="
-                      stmt.status === 'approved'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : stmt.status === 'paid'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-amber-100 text-amber-800'
-                    "
-                  >
-                    {{ stmt.status === 'approved' ? 'Approuvé' : stmt.status === 'paid' ? 'Payé' : 'Brouillon' }}
-                  </span>
-                </td>
-                <td class="py-3 px-3 text-right">
-                  <router-link
-                    :to="`/consignment/owners/${stmt.owner_id}/statement/${stmt.period}`"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cortex-primary hover:bg-cortex-primary-hover text-white text-xs font-bold transition-colors min-h-[38px] shadow-xs"
-                    :data-test="`view-statement-${stmt.owner_id}`"
-                  >
-                    <FileCheck class="w-3.5 h-3.5" />
-                    <span>Consulter le relevé étanche</span>
-                    <ArrowRight class="w-3.5 h-3.5" />
-                  </router-link>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Top Earning Consigned Items -->
-      <div class="p-5 rounded-2xl border border-cortex-border bg-cortex-surface space-y-4">
-        <div class="flex items-center justify-between border-b border-cortex-border pb-3">
-          <div>
-            <h2 class="text-sm font-bold text-cortex-text-primary uppercase tracking-wider">
-              Top Équipements Générateurs de Revenus
-            </h2>
-            <p class="text-xs text-cortex-text-muted mt-0.5">
-              Performances locatives ventilées entre part distributeur et part propriétaire
-            </p>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="border-b border-cortex-border text-cortex-text-muted font-bold uppercase tracking-wider">
-                <th class="py-2.5 px-3">Équipement</th>
-                <th class="py-2.5 px-3">Code Propriétaire</th>
-                <th class="py-2.5 px-3 text-right">Revenu Brut Généré</th>
-                <th class="py-2.5 px-3 text-right">Reversement Propriétaire</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-cortex-border">
-              <tr
-                v-for="item in dashboard.top_earning_items"
-                :key="item.item_code"
-                class="hover:bg-cortex-surface-muted/40 transition-colors"
-              >
-                <td class="py-3 px-3 font-semibold text-cortex-text-primary">
-                  {{ item.item_name }}
-                  <span class="block text-[11px] font-mono text-cortex-text-muted font-normal">{{ item.item_code }}</span>
-                </td>
-                <td class="py-3 px-3">
-                  <span class="px-2 py-0.5 rounded font-mono text-xs font-bold bg-cortex-surface-muted border border-cortex-border">
-                    {{ item.owner_code }}
-                  </span>
-                </td>
-                <td class="py-3 px-3 font-mono text-right text-cortex-text-primary font-semibold">
-                  {{ formatMoney(item.revenue_generated) }}
-                </td>
-                <td class="py-3 px-3 font-mono font-bold text-right text-emerald-700">
-                  {{ formatMoney(item.owner_payout) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <section class="mt-6 pb-8">
+        <h2 class="px-6 pb-2 text-base font-semibold text-ink-gray-9">{{ t('consignment_screen.top_units') }}</h2>
+        <DataTable :label="t('consignment_screen.top_units')" :columns="itemColumns" :rows="topItems" row-key="serial_number" :filter-row="false" :empty-text="t('consignment_screen.no_revenue')" />
+      </section>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import {
-  AlertTriangle,
-  ArrowRight,
-  DollarSign,
-  FileCheck,
-  Layers,
-  Loader2,
-  TrendingUp,
-  Users
-} from 'lucide-vue-next'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { Badge, Button, LoadingIndicator, TextInput, Tooltip } from 'frappe-ui'
+import PageHeader from '@/design-system/components/page/PageHeader.vue'
+import DataTable, { type DataTableColumn } from '@/design-system/components/page/DataTable.vue'
 import { getCortexApiClient } from '@/api'
-import type { ConsignmentDashboardResponse } from '@/api/contracts'
-import { formatCurrency } from '@/utils/formatters'
+import type { ConsignmentDashboardResponse, ConsignmentOwner, StatementStatus } from '@/api/contracts'
+import { formatMoney } from '@/app/i18n/formatters'
+import type { LocaleType } from '@/app/i18n'
+import StatementStatusBadge from '../components/StatementStatusBadge.vue'
 
-const selectedPeriod = ref('2026-08')
+const { t, locale } = useI18n()
+const route = useRoute()
+const router = useRouter()
+
+const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
+const period = ref(typeof route.query.period === 'string' ? route.query.period : currentMonth())
 const dashboard = ref<ConsignmentDashboardResponse | null>(null)
-const isLoading = ref(true)
 const errorMessage = ref('')
 
-async function loadDashboard() {
-  isLoading.value = true
+const money = (value: number) => formatMoney(value, dashboard.value?.currency, locale.value as LocaleType)
+const periodLabel = computed(() => new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }).format(new Date(`${period.value}-01T00:00:00`)))
+
+const cards = computed(() => {
+  const d = dashboard.value!
+  return [
+    { label: t('consignment_screen.due_this_period'), value: money(d.current_month_total_payout) },
+    { label: t('consignment_screen.due_previous_period'), value: money(d.previous_month_total_payout) },
+    { label: t('consignment_screen.active_owners'), value: String(d.active_owners_count) },
+    { label: t('consignment_screen.consigned_units'), value: String(d.active_consigned_serials_count) }
+  ]
+})
+
+const ownerColumns = computed<DataTableColumn<ConsignmentOwner>[]>(() => [
+  { key: 'display_name', label: t('consignment_screen.owner'), width: '260px' },
+  { key: 'owner_code', label: t('catalog.code'), width: '110px' },
+  { key: 'default_commission_percentage', label: t('consignment_screen.share'), width: '100px', align: 'right', format: row => `${row.default_commission_percentage} %` },
+  { key: 'active_serials_count', label: t('consignment_screen.units'), width: '90px', align: 'right' },
+  { key: 'period_revenue', label: t('consignment_screen.revenue'), width: '150px', align: 'right', format: row => money(row.period_revenue) },
+  { key: 'period_amount_due', label: t('consignment_screen.amount_due'), width: '150px', align: 'right', format: row => money(row.period_amount_due) },
+  { key: 'statement_status', label: t('consignment_screen.statement'), width: '150px' }
+])
+
+type ItemRow = ConsignmentDashboardResponse['top_earning_items'][number] & Record<string, unknown>
+const topItems = computed(() => (dashboard.value?.top_earning_items ?? []) as ItemRow[])
+const itemColumns = computed<DataTableColumn<ItemRow>[]>(() => [
+  { key: 'serial_number', label: t('rental_detail.serial'), width: '200px' },
+  { key: 'item_name', label: t('rental_detail.item'), width: '300px' },
+  { key: 'owner_code', label: t('consignment_screen.owner'), width: '120px' },
+  { key: 'revenue_generated', label: t('consignment_screen.revenue'), width: '150px', align: 'right', format: row => money(row.revenue_generated) },
+  { key: 'owner_payout', label: t('consignment_screen.amount_due'), width: '150px', align: 'right', format: row => money(row.owner_payout) }
+])
+
+function openStatement(ownerId: string) {
+  void router.push({ name: 'owner-statement', params: { owner: ownerId, period: period.value } })
+}
+
+async function load() {
   errorMessage.value = ''
   try {
-    const client = getCortexApiClient()
-    const res = await client.getConsignmentDashboard({
-      period: selectedPeriod.value
-    })
-    dashboard.value = res
-  } catch (err) {
-    errorMessage.value = err instanceof Error ? err.message : 'Erreur lors du chargement de la consignation.'
-  } finally {
-    isLoading.value = false
+    dashboard.value = await getCortexApiClient().getConsignmentDashboard({ period: period.value })
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : String(error)
   }
 }
 
-function formatMoney(amount: number): string {
-  return formatCurrency(amount)
-}
-
-onMounted(() => {
-  loadDashboard()
+watch(period, value => {
+  void router.replace({ query: { period: value } })
+  void load()
 })
+onMounted(load)
 </script>

@@ -37,7 +37,12 @@ import type {
   ConsignmentDashboardResponse,
   OwnerStatementInput,
   OwnerStatementResponse,
-  OwnerStatementExportInput,
+  ConsignmentOwnerRecord,
+  OwnerDraft,
+  CustomerRecord,
+  ListCustomersInput,
+  ListCustomersResponse,
+  NewCustomerInput,
   ListApprovalRequestsInput,
   ListApprovalsResponse,
   GetApprovalRequestInput,
@@ -291,19 +296,18 @@ export class HttpCortexApiClient implements CortexApiClient {
 
   // 4. Consignment
   async listOwners(input: ListOwnersInput): Promise<ListOwnersResponse> {
-    return this.http.get<ListOwnersResponse>('/consignment/owners', input)
+    const dashboard = await this.getConsignmentDashboard({ period: input.period })
+    const needle = (input.search ?? '').toLowerCase()
+    const items = dashboard.owners.filter(owner => !needle || [owner.display_name, owner.owner_code].some(value => value.toLowerCase().includes(needle)))
+    return { provenance: 'api', items, total_count: items.length }
   }
 
   async getConsignmentDashboard(input: ConsignmentDashboardInput): Promise<ConsignmentDashboardResponse> {
-    return this.http.get<ConsignmentDashboardResponse>('/consignment/dashboard', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ConsignmentDashboardResponse>>('/cortex_rental.api.v1.consignment.get_dashboard', { period: input.period }))
   }
 
   async getOwnerStatement(input: OwnerStatementInput): Promise<OwnerStatementResponse> {
-    return this.http.get<OwnerStatementResponse>(`/consignment/statement/${input.owner_id}/${input.period}`)
-  }
-
-  async requestOwnerStatementExport(input: OwnerStatementExportInput): Promise<MutationResponse> {
-    return this.http.post<MutationResponse>('/consignment/export_statement', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<OwnerStatementResponse>>('/cortex_rental.api.v1.consignment.get_owner_statement', { owner: input.owner_id, period: input.period }))
   }
 
   // 5. Approvals
@@ -506,6 +510,47 @@ export class HttpCortexApiClient implements CortexApiClient {
     form.append('folder', 'Home/Attachments')
     const result = unwrapFrappe(await this.http.upload<FrappeResult<{ name: string; file_url: string }>>('/upload_file', form))
     return { file_name: result.name, file_url: result.file_url }
+  }
+
+  // 16. Consignment workflow & customers
+  async getOwner(ownerId: string, period?: string): Promise<ConsignmentOwnerRecord> {
+    return unwrapFrappe(await this.http.get<FrappeResult<ConsignmentOwnerRecord>>('/cortex_rental.api.v1.consignment.get_owner', { owner: ownerId, period }))
+  }
+
+  async saveOwner(owner: OwnerDraft): Promise<ConsignmentOwnerRecord> {
+    return unwrapFrappe(await this.http.post<FrappeResult<ConsignmentOwnerRecord>>('/cortex_rental.api.v1.consignment.save_owner', { owner: JSON.stringify(owner) }))
+  }
+
+  async setSerialOwner(serialNo: string, ownerId: string | null): Promise<void> {
+    await this.http.post('/cortex_rental.api.v1.consignment.set_serial_owner', { serial_no: serialNo, owner: ownerId })
+  }
+
+  async prepareStatement(ownerId: string, period: string): Promise<void> {
+    await this.http.post('/cortex_rental.api.v1.consignment.prepare_statement', { owner: ownerId, period }, makeIdempotencyKey())
+  }
+
+  async approveStatement(ownerId: string, period: string): Promise<void> {
+    await this.http.post('/cortex_rental.api.v1.consignment.approve_statement', { owner: ownerId, period })
+  }
+
+  async markStatementPaid(ownerId: string, period: string, reference: string): Promise<void> {
+    await this.http.post('/cortex_rental.api.v1.consignment.mark_statement_paid', { owner: ownerId, period, reference })
+  }
+
+  async listCustomers(input: ListCustomersInput): Promise<ListCustomersResponse> {
+    return unwrapFrappe(await this.http.get<FrappeResult<ListCustomersResponse>>('/cortex_rental.api.v1.clients.list_customers', { ...input }))
+  }
+
+  async getCustomer(customer: string): Promise<CustomerRecord> {
+    return unwrapFrappe(await this.http.get<FrappeResult<CustomerRecord>>('/cortex_rental.api.v1.clients.get_customer', { customer }))
+  }
+
+  async createCustomer(input: NewCustomerInput): Promise<CustomerRecord> {
+    return unwrapFrappe(await this.http.post<FrappeResult<CustomerRecord>>('/cortex_rental.api.v1.clients.create_customer', input, makeIdempotencyKey()))
+  }
+
+  async setCustomerInsurance(customer: string, validUntil: string | null, note?: string): Promise<CustomerRecord> {
+    return unwrapFrappe(await this.http.post<FrappeResult<CustomerRecord>>('/cortex_rental.api.v1.clients.set_insurance', { customer, valid_until: validUntil, note }))
   }
 
   // 11. Global search

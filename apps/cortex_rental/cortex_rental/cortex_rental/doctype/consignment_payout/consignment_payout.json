@@ -6,7 +6,8 @@
   "engine": "InnoDB",
   "field_order": [
     "company",
-    "owner",
+    "consignment_owner",
+    "period",
     "serial_no",
     "status",
     "gross_amount",
@@ -15,7 +16,8 @@
     "consignment_percentage",
     "owner_payout_amount",
     "paid_at",
-    "calculation_snapshot"
+    "calculation_snapshot",
+    "payment_reference"
   ],
   "fields": [
     {
@@ -28,13 +30,20 @@
       "reqd": 1
     },
     {
-      "fieldname": "owner",
+      "fieldname": "consignment_owner",
       "fieldtype": "Link",
       "in_list_view": 1,
       "in_standard_filter": 1,
       "label": "Consignment Owner",
       "options": "Consignment Owner",
       "reqd": 1
+    },
+    {
+      "fieldname": "period",
+      "fieldtype": "Data",
+      "label": "Période (AAAA-MM)",
+      "in_list_view": 1,
+      "in_standard_filter": 1
     },
     {
       "fieldname": "serial_no",
@@ -99,6 +108,11 @@
       "label": "Calculation Snapshot (JSON)",
       "options": "JSON",
       "reqd": 1
+    },
+    {
+      "fieldname": "payment_reference",
+      "fieldtype": "Data",
+      "label": "Référence du paiement"
     }
   ],
   "module": "Cortex Rental",
@@ -118,5 +132,6 @@
   ],
   "sort_field": "creation",
   "sort_order": "DESC",
-  "track_changes": 1
+  "track_changes": 1,
+  "modified": "2026-09-25 00:00:00.000000"
 }

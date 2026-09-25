@@ -36,7 +36,12 @@ import type {
   ConsignmentDashboardResponse,
   OwnerStatementInput,
   OwnerStatementResponse,
-  OwnerStatementExportInput,
+  ConsignmentOwnerRecord,
+  OwnerDraft,
+  CustomerRecord,
+  ListCustomersInput,
+  ListCustomersResponse,
+  NewCustomerInput,
   ListApprovalRequestsInput,
   ListApprovalsResponse,
   GetApprovalRequestInput,
@@ -88,6 +93,7 @@ import type {
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
 import { demoPnlFilterOptions, demoProfitAndLoss } from './fixtures/finance'
 import type { RentalSummary, ListRentalSummariesInput, ReadinessField, OperationsOverview } from '../contracts'
+import type { ConsignmentOwner } from '../contracts'
 import type { InvoiceRow, PaymentRow, PagedResult, ListInvoicesInput, ListPaymentsInput, RentalBilling, PaymentMode, RecordAdvanceInput, RecordAdvanceResult } from '../contracts'
 import { demoInvoices, demoPayments } from './fixtures/billing'
 import { demoActions } from './fixtures/rentals'
@@ -1163,65 +1169,42 @@ export class MockCortexApiClient implements CortexApiClient {
   }
 
   // 4. Consignment & Owner Statements (Strict Anti-PII Guarantee)
-  async listOwners(input: ListOwnersInput): Promise<ListOwnersResponse> {
-    await LatencySimulator.inject('standard')
-    let list = [...this.store.owners]
-    if (input.search) {
-      const q = input.search.toLowerCase()
-      list = list.filter((o) => o.display_name.toLowerCase().includes(q) || o.owner_code.toLowerCase().includes(q))
-    }
+  // Consignment: DEMO data mapped to the server shapes (explicit mock mode only).
+  private demoOwnerRow(o: (typeof this.store.owners)[number]): ConsignmentOwner {
+    const pending = this.store.consignmentDashboard.pending_statements.find(p => p.owner_id === o.id)
     return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      items: list,
-      total_count: list.length
+      id: o.id, owner_code: o.owner_code, display_name: o.display_name, owner_type: 'Third-Party', contact_email: o.contact_email,
+      contact_phone: o.contact_phone ?? '', default_commission_percentage: o.default_commission_percentage, active_serials_count: o.active_serials_count,
+      period_revenue: Math.round(o.pending_payout_amount / (o.default_commission_percentage / 100)), period_amount_due: o.pending_payout_amount,
+      statement_status: pending ? pending.status : 'not_prepared'
     }
   }
 
-  async getConsignmentDashboard(_input: ConsignmentDashboardInput): Promise<ConsignmentDashboardResponse> {
-    await LatencySimulator.inject('heavy')
+  async listOwners(input: ListOwnersInput): Promise<ListOwnersResponse> {
+    await LatencySimulator.inject('fast')
+    const q = (input.search ?? '').toLowerCase()
+    const items = this.store.owners.filter(o => !q || o.display_name.toLowerCase().includes(q) || o.owner_code.toLowerCase().includes(q)).map(o => this.demoOwnerRow(o))
+    return { provenance: 'mock', items, total_count: items.length }
+  }
+
+  async getConsignmentDashboard(input: ConsignmentDashboardInput): Promise<ConsignmentDashboardResponse> {
+    await LatencySimulator.inject('fast')
+    const d = this.store.consignmentDashboard
     return {
-      ...this.store.consignmentDashboard,
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString()
+      provenance: 'mock', period: input.period ?? '2026-08', currency: 'CAD',
+      current_month_total_payout: d.current_month_total_payout, previous_month_total_payout: d.previous_month_total_payout,
+      active_owners_count: d.active_owners_count, active_consigned_serials_count: d.active_consigned_serials_count,
+      owners: this.store.owners.map(o => this.demoOwnerRow(o)),
+      top_earning_items: d.top_earning_items.map(item => ({ serial_number: item.item_code, item_name: item.item_name, owner_code: item.owner_code, revenue_generated: item.revenue_generated, owner_payout: item.owner_payout }))
     }
   }
 
   async getOwnerStatement(input: OwnerStatementInput): Promise<OwnerStatementResponse> {
-    await LatencySimulator.inject('heavy')
-    const key = `${input.owner_id}_${input.period}`
-    const statement = this.store.ownerStatements[key]
-
-    if (!statement) {
-      throw new Error(`Relevé propriétaire introuvable pour ${input.owner_id} (${input.period})`)
-    }
-
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      statement
-    }
-  }
-
-  async requestOwnerStatementExport(input: OwnerStatementExportInput): Promise<MutationResponse> {
-    await LatencySimulator.inject('mutation')
-    const auditId = this.store.recordAudit(
-      'cortex.consignment.statement_exported',
-      'Owner Statement',
-      `${input.owner_id}_${input.period}`,
-      'kael@cortex.local',
-      'Human',
-      `Export ${input.format.toUpperCase()} du relevé propriétaire pour ${input.owner_id} (${input.period})`
-    )
-
-    return {
-      request_id: `req-exp-${Date.now()}`,
-      entity_id: `${input.owner_id}_${input.period}`,
-      status: 'completed',
-      approval_required: false,
-      audit_event_id: auditId,
-      mutation_performed: true
-    }
+    await LatencySimulator.inject('fast')
+    const statement = this.store.ownerStatements[`${input.owner_id}_${input.period}`]
+    if (!statement) throw new Error(`Relevé propriétaire introuvable pour ${input.owner_id} (${input.period})`)
+    const pending = this.store.consignmentDashboard.pending_statements.find(p => p.owner_id === input.owner_id && p.period === input.period)
+    return { provenance: 'mock', last_synced_at: new Date().toISOString(), statement, status: pending?.status ?? 'not_prepared' }
   }
 
   // 5. Approvals
@@ -1772,5 +1755,104 @@ export class MockCortexApiClient implements CortexApiClient {
   async uploadRentalEvidence(rentalId: string, file: File): Promise<{ file_name: string; file_url: string }> {
     await LatencySimulator.inject('mutation')
     return { file_name: `DEMO-FILE-${rentalId}-${file.name}`, file_url: '' }
+  }
+
+  // 16. Consignment workflow & customers (DEMO, explicit mock mode only)
+  async getOwner(ownerId: string): Promise<ConsignmentOwnerRecord> {
+    await LatencySimulator.inject('fast')
+    const owner = this.store.owners.find(o => o.id === ownerId)
+    if (!owner) throw new Error(`Propriétaire introuvable : ${ownerId}`)
+    return {
+      ...this.demoOwnerRow(owner), billing_address: '',
+      serials: this.store.serials.filter(s => s.owner_id === ownerId).map(s => ({ serial_no: s.serial_number, item_code: s.item_code, status: s.status })),
+      statements: this.store.consignmentDashboard.pending_statements.filter(p => p.owner_id === ownerId).map(p => ({ period: p.period, status: p.status, amount: p.amount_due })),
+      can_manage: true
+    }
+  }
+
+  async saveOwner(owner: OwnerDraft): Promise<ConsignmentOwnerRecord> {
+    await LatencySimulator.inject('mutation')
+    const existing = owner.id ? this.store.owners.find(o => o.id === owner.id) : undefined
+    if (existing) {
+      Object.assign(existing, { display_name: owner.display_name ?? existing.display_name, default_commission_percentage: owner.default_commission_percentage ?? existing.default_commission_percentage, contact_email: owner.contact_email ?? existing.contact_email })
+      return this.getOwner(existing.id)
+    }
+    const id = `DEMO-OWN-${String(this.store.owners.length + 1).padStart(3, '0')}`
+    this.store.owners.push({ provenance: 'demo', last_synced_at: new Date().toISOString(), id, owner_code: owner.owner_code ?? id, display_name: owner.display_name ?? id, contact_email: owner.contact_email ?? '', default_commission_percentage: owner.default_commission_percentage ?? 70, active_serials_count: 0, pending_payout_amount: 0, currency: 'CAD' })
+    return this.getOwner(id)
+  }
+
+  async setSerialOwner(serialNo: string, ownerId: string | null): Promise<void> {
+    await LatencySimulator.inject('mutation')
+    const serial = this.store.serials.find(s => s.serial_number === serialNo)
+    if (serial) { serial.owner_id = ownerId ?? undefined; serial.is_consigned = Boolean(ownerId) }
+  }
+
+  private setDemoStatement(ownerId: string, period: string, status: 'draft' | 'approved' | 'paid') {
+    const list = this.store.consignmentDashboard.pending_statements
+    const existing = list.find(p => p.owner_id === ownerId && p.period === period)
+    if (existing) existing.status = status
+    else {
+      const owner = this.store.owners.find(o => o.id === ownerId)
+      list.push({ owner_id: ownerId, owner_name: owner?.display_name ?? ownerId, period, amount_due: owner?.pending_payout_amount ?? 0, status })
+    }
+  }
+
+  async prepareStatement(ownerId: string, period: string): Promise<void> {
+    await LatencySimulator.inject('mutation')
+    this.setDemoStatement(ownerId, period, 'draft')
+  }
+
+  async approveStatement(ownerId: string, period: string): Promise<void> {
+    await LatencySimulator.inject('mutation')
+    this.setDemoStatement(ownerId, period, 'approved')
+  }
+
+  async markStatementPaid(ownerId: string, period: string): Promise<void> {
+    await LatencySimulator.inject('mutation')
+    this.setDemoStatement(ownerId, period, 'paid')
+  }
+
+  private demoCustomerRecord(customerId: string): CustomerRecord {
+    const c = this.store.customers.find(x => x.id === customerId)
+    if (!c) throw new Error(`Client introuvable : ${customerId}`)
+    const rentals = this.store.rentals.filter(r => r.customer_id === c.id)
+    const status = !c.insurance_valid_until ? 'unknown' : c.insurance_valid_until >= new Date().toISOString().slice(0, 10) ? 'valid' : 'expired'
+    return {
+      provenance: 'mock', name: c.id, customer_name: c.name, customer_type: 'Company', customer_group: 'Commercial', email: c.contact_email, phone: c.phone,
+      insurance: { valid_until: c.insurance_valid_until || null, status }, currency: 'CAD',
+      stats: { rentals: rentals.length, active_rentals: rentals.filter(r => ['Reservation', 'Contract', 'Checked Out'].includes(r.rental_state)).length, lifetime_value: rentals.filter(r => ['Returned', 'Closed'].includes(r.rental_state)).reduce((sum, r) => sum + r.grand_total, 0), outstanding: 0, disputes: 0 },
+      rentals: rentals.map(r => ({ name: r.id, project_name: r.project_name ?? '', rental_state: r.rental_state, starts_at: r.starts_at, ends_at: r.ends_at, grand_total: r.grand_total })),
+      invoices: [], payments: [], can_verify: true
+    }
+  }
+
+  async listCustomers(input: ListCustomersInput): Promise<ListCustomersResponse> {
+    await LatencySimulator.inject('fast')
+    const q = (input.search ?? '').toLowerCase()
+    const rows = this.store.customers.filter(c => !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)).map(c => {
+      const record = this.demoCustomerRecord(c.id)
+      return { name: c.id, customer_name: c.name, customer_group: 'Commercial', email: c.contact_email, phone: c.phone, rentals: record.stats.rentals, active_rentals: record.stats.active_rentals, outstanding: 0, insurance_status: record.insurance.status, insurance_valid_until: record.insurance.valid_until }
+    })
+    return { provenance: 'mock', items: rows.slice((input.page - 1) * input.page_size, input.page * input.page_size), total_count: rows.length, page: input.page, page_size: input.page_size, currency: 'CAD' }
+  }
+
+  async getCustomer(customer: string): Promise<CustomerRecord> {
+    await LatencySimulator.inject('fast')
+    return this.demoCustomerRecord(customer)
+  }
+
+  async createCustomer(input: NewCustomerInput): Promise<CustomerRecord> {
+    await LatencySimulator.inject('mutation')
+    const id = `DEMO-CUST-${String(this.store.customers.length + 1).padStart(3, '0')}`
+    this.store.customers.push({ id, name: input.customer_name, contact_email: input.email ?? '', phone: input.phone ?? '', is_verified: false, insurance_valid_until: '', insurance_coverage_cad: 0, deposit_on_file_cad: 0, account_status: 'Review_Needed' })
+    return this.demoCustomerRecord(id)
+  }
+
+  async setCustomerInsurance(customer: string, validUntil: string | null): Promise<CustomerRecord> {
+    await LatencySimulator.inject('mutation')
+    const c = this.store.customers.find(x => x.id === customer)
+    if (c) c.insurance_valid_until = validUntil ?? ''
+    return this.demoCustomerRecord(customer)
   }
 }

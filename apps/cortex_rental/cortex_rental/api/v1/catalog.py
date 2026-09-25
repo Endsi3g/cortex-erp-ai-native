@@ -362,6 +362,7 @@ if frappe:
                 "item_name": serial.get("item_name") or serial.item_code,
                 "erpnext_status": serial.get("status"),
                 "status": serial.get("cortex_status") or "Active",
+                "consignment_owner": serial.get("cortex_consignment_owner") or None,
                 "warranty_expiry_date": str(serial.get("warranty_expiry_date") or "") or None,
                 "current_rental": _serials_out(company, serial.item_code).get(serial.name),
                 "rentals": [

@@ -44,6 +44,11 @@
         <div><dt class="text-sm text-ink-gray-5">{{ t('catalog.erpnext_status') }}</dt><dd class="mt-1 text-base">{{ record.erpnext_status || '—' }}</dd></div>
         <div><dt class="text-sm text-ink-gray-5">{{ t('catalog.warranty') }}</dt><dd class="mt-1 text-base">{{ record.warranty_expiry_date ? date(record.warranty_expiry_date) : '—' }}</dd></div>
       </dl>
+      <div v-if="canAssignOwner" class="flex flex-wrap items-end gap-3 border-b border-outline-gray-1 px-6 py-4 print:hidden">
+        <FormControl v-model="ownerChoice" type="select" size="sm" variant="subtle" class="w-72" :label="t('catalog.consignment_owner')" :options="ownerOptions" />
+        <Button size="sm" variant="subtle" :loading="savingOwner" @click="saveOwner">{{ t('composer.save_changes') }}</Button>
+        <p class="text-p-sm text-ink-gray-5">{{ t('catalog.consignment_owner_hint') }}</p>
+      </div>
 
       <section class="mt-5 print:hidden">
         <h2 class="px-6 pb-2 text-base font-semibold text-ink-gray-9">{{ t('catalog.rental_history') }}</h2>
@@ -81,7 +86,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Badge, Button, Dropdown, LoadingIndicator, Tooltip, toast } from 'frappe-ui'
+import { Badge, Button, Dropdown, FormControl, LoadingIndicator, Tooltip, toast } from 'frappe-ui'
 import { ChevronDown } from 'lucide-vue-next'
 import PageHeader from '@/design-system/components/page/PageHeader.vue'
 import DataTable, { type DataTableColumn } from '@/design-system/components/page/DataTable.vue'
@@ -157,6 +162,7 @@ async function load() {
   errorMessage.value = ''
   try {
     record.value = await getCortexApiClient().getSerial({ serial_number: String(route.params.serial) })
+    ownerChoice.value = record.value.consignment_owner ?? ''
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : String(error)
   }
@@ -177,10 +183,34 @@ async function applyStatus(reason: string) {
   }
 }
 
+const CONSIGNMENT_MANAGERS = ['System Manager', 'Cortex System Manager', 'Cortex Consignment Manager', 'Rental Manager']
+const canAssignOwner = computed(() => CONSIGNMENT_MANAGERS.some(role => session.hasRole(role)))
+const owners = ref<Array<{ id: string; display_name: string; owner_code: string }>>([])
+const ownerChoice = ref('')
+const savingOwner = ref(false)
+const ownerOptions = computed(() => [{ label: t('catalog.house_owned'), value: '' }, ...owners.value.map(owner => ({ label: `${owner.display_name} · ${owner.owner_code}`, value: owner.id }))])
+
+async function loadOwners() {
+  if (!canAssignOwner.value) return
+  try { owners.value = (await getCortexApiClient().listOwners({})).items } catch { owners.value = [] }
+}
+
+async function saveOwner() {
+  savingOwner.value = true
+  try {
+    await getCortexApiClient().setSerialOwner(record.value!.serial_no, ownerChoice.value || null)
+    toast.create({ message: t('catalog.owner_saved'), type: 'success' })
+  } catch (error) {
+    toast.create({ message: error instanceof Error ? error.message : String(error), type: 'error' })
+  } finally {
+    savingOwner.value = false
+  }
+}
+
 function printLabel() {
   window.print()
 }
 
 watch(() => route.params.serial, () => void load())
-onMounted(load)
+onMounted(() => { void load(); void loadOwners() })
 </script>

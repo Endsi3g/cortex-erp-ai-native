@@ -236,16 +236,6 @@ describe('MockCortexApiClient Comprehensive 32-Method Test Suite', () => {
     expect(res.statement.totals.owner_amount_due).toBe(3150)
   })
 
-  it('24. requestOwnerStatementExport records audited statement export', async () => {
-    const res = await client.requestOwnerStatementExport({
-      owner_id: 'DEMO-OWN-001',
-      period: '2026-08',
-      format: 'pdf'
-    })
-    expect(res.status).toBe('completed')
-  })
-
-  // 5. Approvals
   it('25. listApprovalRequests returns pending approvals', async () => {
     const res = await client.listApprovalRequests({})
     expect(res.items.length).toBeGreaterThan(0)
