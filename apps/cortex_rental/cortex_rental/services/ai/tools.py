@@ -149,7 +149,16 @@ def _preview_price(args, ctx):
     from cortex_rental.api.v1.rentals import _pricing
 
     data = _pricing({"starts_at": args["starts_at"], "ends_at": args["ends_at"], "items": args["items"]}, ctx.company)
-    return {"data": data, "view": {"type": "pricing"}}
+    return {
+        "data": data,
+        "view": {
+            "type": "pricing",
+            "items": [i["item_code"] for i in args["items"]],
+            "quantities": [i["quantity"] for i in args["items"]],
+            "starts_at": args["starts_at"],
+            "ends_at": args["ends_at"],
+        },
+    }
 
 
 def _list_rentals(args, ctx):
@@ -175,13 +184,38 @@ def _operations_overview(args, ctx):
 
 
 def _profit_and_loss(args, ctx):
-    data = call_endpoint(
+    report = call_endpoint(
         _mod("accounting").get_profit_and_loss,
         filter_based_on="Date Range",
         from_date=args["from_date"],
         to_date=args["to_date"],
         periodicity=args.get("periodicity") or "Monthly",
     )
+
+    def top(rows):
+        # Totals plus first-level accounts: enough to answer, small enough for the model.
+        return [
+            {
+                "name": r.get("name"),
+                "total": r.get("total"),
+                "children": [{"name": c.get("name"), "total": c.get("total")} for c in r.get("children") or []],
+            }
+            for r in rows or []
+        ]
+
+    keys = (
+        "available",
+        "reason",
+        "company",
+        "currency",
+        "periodStart",
+        "periodEnd",
+        "totalIncome",
+        "totalExpense",
+        "netProfit",
+    )
+    data = {k: report.get(k) for k in keys}
+    data["accounts"] = top(report.get("accounts"))
     return {
         "data": data,
         "view": {"type": "report", "entity": "pnl", "from_date": args["from_date"], "to_date": args["to_date"]},

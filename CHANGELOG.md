@@ -20,6 +20,19 @@
 - The ⌘J panel uses the same conversation components, with the current page as context. It is hidden on the home page.
 - Model text is rendered as Markdown and sanitized (DOMPurify; no scripts, images, forms or `javascript:` links). Internal links open inside the app.
 
+### Phase C — Widgets and artifacts
+
+- Read-tool results appear in the conversation as widgets, formatted from what the endpoint returned (no numbers computed client-side):
+  - tables: customers, equipment, rentals, invoices, AI inbox;
+  - records: customer, equipment, rental, rental billing, owner statement;
+  - KPI tiles: day overview, consignment, policies;
+  - availability, with a red/green status per item;
+  - server price with taxes;
+  - P&L totals, or ERPNext's refusal reason instead of zeros.
+- Every widget links to its real page. **Ouvrir ici** shows that page as an artifact beside the conversation, like Claude's artifact panel: the real screen in embed mode (`?embed=1`, no rail or top bar). Availability and pricing widgets offer **Préparer une soumission**, which opens the composer prefilled.
+- In the ⌘J panel, links navigate to the page directly; there is no room for a side artifact there.
+- The P&L tool now sends the model totals and first-level accounts only.
+
 ## v0.6.0-dev — 2026-09-25 — Refonte UI complète (`feat/ui-rebuild`, lots 1 à 8)
 
 Not verified on a live bench: see HANDOFF §0 for the deployment and per-screen checks on the tower.

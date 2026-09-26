@@ -10,9 +10,7 @@
       <div v-else class="group space-y-3">
         <template v-for="(block, index) in message.blocks" :key="index">
           <MarkdownText v-if="block.type === 'assistant_text'" :text="block.text" />
-          <slot v-else name="block" :block="block" :message="message">
-            <ChatBlocks :blocks="[block]" />
-          </slot>
+          <BlockRenderer v-else :block="block" :can-preview="canPreview" @open="(route, title) => $emit('open', route, title)" />
         </template>
         <MarkdownText v-if="message.streaming || !message.blocks.length" :text="message.text" :streaming="message.streaming" />
         <p v-if="message.activeTool" class="flex items-center gap-1.5 text-sm text-[var(--cl-muted)]" role="status">
@@ -36,10 +34,11 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Check, Copy, LoaderCircle } from 'lucide-vue-next'
 import type { ChatMessage } from '@/api/contracts/ai'
-import ChatBlocks from '@/features/copilot/components/ChatBlocks.vue'
+import BlockRenderer from './BlockRenderer.vue'
 import MarkdownText from './MarkdownText.vue'
 
-defineProps<{ messages: ChatMessage[] }>()
+defineProps<{ messages: ChatMessage[]; canPreview?: boolean }>()
+defineEmits<{ open: [route: string, title: string] }>()
 const { t, te } = useI18n()
 const copied = ref<string | null>(null)
 

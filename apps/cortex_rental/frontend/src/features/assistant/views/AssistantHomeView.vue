@@ -9,7 +9,7 @@
       @open="openConversation"
     />
 
-    <div class="relative flex min-h-0 min-w-0 flex-1 flex-col">
+    <div class="relative flex min-h-0 min-w-0 flex-1 flex-col" :class="artifact ? 'hidden lg:flex lg:max-w-[48%]' : ''">
       <!-- Thin header: history toggle and conversation title -->
       <div class="flex h-11 shrink-0 items-center gap-2 px-3">
         <button
@@ -65,7 +65,7 @@
       <template v-else>
         <div ref="scroller" class="min-h-0 flex-1 overflow-y-auto">
           <div class="mx-auto w-full max-w-[720px] px-4 pb-10 pt-6">
-            <MessageList :messages="copilot.messages" />
+            <MessageList :messages="copilot.messages" can-preview @open="openArtifact" />
             <p v-if="copilot.sending && !streamingVisible" class="mt-6 flex items-center gap-2 text-[14px] text-[var(--cl-muted)]" role="status">
               <Asterisk class="size-4 animate-spin text-[var(--cl-accent)] [animation-duration:2s]" :stroke-width="2.25" aria-hidden="true" />
               {{ t('ai.thinking') }}
@@ -83,6 +83,8 @@
         </div>
       </template>
     </div>
+
+    <ArtifactPanel v-if="artifact" class="flex-1" :route="artifact.route" :title="artifact.title" @close="artifact = null" @navigate="route => router.push(route)" />
   </div>
 </template>
 
@@ -96,6 +98,7 @@ import { useSessionStore } from '@/stores/session'
 import ChatComposer from '../components/ChatComposer.vue'
 import HistoryPanel from '../components/HistoryPanel.vue'
 import MessageList from '../components/MessageList.vue'
+import ArtifactPanel from '../components/ArtifactPanel.vue'
 
 const HISTORY_KEY = 'cortex_assistant_history_open'
 const { t } = useI18n()
@@ -105,6 +108,11 @@ const copilot = useCopilotStore()
 const session = useSessionStore()
 const composer = ref<InstanceType<typeof ChatComposer> | null>(null)
 const scroller = ref<HTMLElement | null>(null)
+const artifact = ref<{ route: string; title: string } | null>(null)
+
+function openArtifact(route: string, title: string) {
+  artifact.value = { route, title }
+}
 
 function readHistoryPref(): boolean {
   try { return localStorage.getItem(HISTORY_KEY) !== '0' } catch { return true }
@@ -148,6 +156,7 @@ async function send(text: string) {
 }
 
 function startNew() {
+  artifact.value = null
   copilot.newConversation()
   void router.replace({ query: {} })
 }

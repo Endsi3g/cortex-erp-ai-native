@@ -32,7 +32,7 @@
     <template v-else>
       <div ref="scroller" class="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-2">
         <p v-if="!copilot.messages.length" class="claude-serif px-1 pt-6 text-[17px] leading-7 text-[var(--cl-muted)]">{{ t('ai.drawer_empty', { context: contextLabel }) }}</p>
-        <MessageList :messages="copilot.messages" />
+        <MessageList :messages="copilot.messages" @open="route => router.push(route)" />
         <p v-if="copilot.sending && !streamingVisible" class="mt-4 flex items-center gap-2 text-[13px] text-[var(--cl-muted)]" role="status">
           <Asterisk class="size-4 animate-spin text-[var(--cl-accent)] [animation-duration:2s]" :stroke-width="2.25" aria-hidden="true" />
           {{ t('ai.thinking') }}

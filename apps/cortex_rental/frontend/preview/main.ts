@@ -42,6 +42,11 @@ class PreviewAssistantClient extends MockCortexApiClient {
       status: 'completed' as const,
       blocks: [
         { type: 'assistant_text' as const, source_ids: [], text: `Voici ce que je vois pour **aujourd’hui** :\n\n- **3 départs** : DEMO-TRX-2026-002 (Studio Lumière), DEMO-TRX-2026-006 (Production Nord) et un kit éclairage.\n- **2 retours** attendus, dont un **en retard** depuis hier (DEMO-TRX-2026-001).\n\nVoulez-vous que je prépare un rappel au client en retard ?` },
+        { type: 'widget' as const, tool: 'operations_overview', view: { type: 'kpis', entity: 'operations' }, data: { day: '2026-09-25', kpis: { departures: 3, returns: 2, overdue: 1, exceptions: 1 } } },
+        { type: 'widget' as const, tool: 'check_availability', view: { type: 'availability', items: ['DEMO-ITM-ALX35', 'DEMO-ITM-CKE-S4'], starts_at: '2026-10-01T08:00', ends_at: '2026-10-04T18:00' }, data: [
+          { item_id: 'DEMO-ITM-ALX35', requested_quantity: 2, available_quantity: 1, total_fleet_quantity: 3, is_available: false },
+          { item_id: 'DEMO-ITM-CKE-S4', requested_quantity: 1, available_quantity: 2, total_fleet_quantity: 2, is_available: true }
+        ] },
         { type: 'page_link' as const, route: '/operations', label: 'Ouvrir l’aperçu du jour' }
       ],
       _echo: input.message
