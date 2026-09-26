@@ -59,19 +59,13 @@ import type {
   EquipmentProfileChanges,
   SerialStatus,
   RentalKit,
-  ListRentalPoliciesInput,
-  ListRentalPoliciesResponse,
-  GetTeamRolesInput,
-  TeamRolesResponse,
-  ListMigrationBatchesInput,
-  MigrationBatchesResponse,
-  ListAuditEventsInput,
-  ListAuditEventsResponse,
   CreateUploadIntentInput,
   UploadIntentResponse,
   RegisterEvidenceInput,
   MutationResponse
 } from '../contracts'
+import type { Policies, PricingRuleInput, CompanySettingsInput, Team, AuditQuery, AuditPage, AuditEventDetail, ImportBatches, ImportBatch, ImportType, ImportAnalysis, ImportValidation, ImportRollback } from '../contracts/administration'
+import { DEMO_IMPORT_SPECS, standardBillableDays } from './fixtures/administration'
 import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult } from '../contracts/ai'
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
 import { demoPnlFilterOptions, demoProfitAndLoss } from './fixtures/finance'
@@ -1436,77 +1430,6 @@ export class MockCortexApiClient implements CortexApiClient {
     return saved
   }
 
-  async listRentalPolicies(_input: ListRentalPoliciesInput): Promise<ListRentalPoliciesResponse> {
-    await LatencySimulator.inject('standard')
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      policies: this.store.policies
-    }
-  }
-
-  async getTeamRoles(_input: GetTeamRolesInput): Promise<TeamRolesResponse> {
-    await LatencySimulator.inject('standard')
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      roles: [
-        {
-          role_name: 'Operations Lead',
-          description: 'Responsable de la planification, approbation des contrats et dérogations.',
-          permissions: ['cortex:operations:manage', 'cortex:approvals:decide', 'cortex:quote:override'],
-          assigned_users_count: 3
-        },
-        {
-          role_name: 'Warehouse Tech',
-          description: 'Préparation et validation des sorties et retours de matériel via le scanner.',
-          permissions: ['cortex:checkout:perform', 'cortex:checkin:perform', 'cortex:serial:quarantine'],
-          assigned_users_count: 8
-        },
-        {
-          role_name: 'Finance Lead',
-          description: 'Gestion de la facturation et des relevés de consignation propriétaires.',
-          permissions: ['cortex:consignment:finance', 'cortex:invoicing:manage'],
-          assigned_users_count: 2
-        }
-      ],
-      service_accounts: [
-        {
-          account_name: 'cortex-onyx-agent-service',
-          role: 'AI Agent Service Account',
-          api_key_masked: 'ctx_live_••••••••••••9941',
-          last_active: '2026-09-02T15:58:00Z'
-        }
-      ]
-    }
-  }
-
-  async listMigrationBatches(_input: ListMigrationBatchesInput): Promise<MigrationBatchesResponse> {
-    await LatencySimulator.inject('standard')
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      batches: this.store.migrationBatches
-    }
-  }
-
-  async listAuditEvents(input: ListAuditEventsInput): Promise<ListAuditEventsResponse> {
-    await LatencySimulator.inject('standard')
-    let list = [...this.store.auditEvents]
-    if (input.entity_type) {
-      list = list.filter((e) => e.entity_type === input.entity_type)
-    }
-    if (input.entity_id) {
-      list = list.filter((e) => e.entity_id === input.entity_id)
-    }
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      events: list,
-      total_count: list.length
-    }
-  }
-
   // 9. Upload & Evidence
   async createUploadIntent(input: CreateUploadIntentInput): Promise<UploadIntentResponse> {
     await LatencySimulator.inject('fast')
@@ -1772,5 +1695,145 @@ export class MockCortexApiClient implements CortexApiClient {
     const c = this.store.customers.find(x => x.id === customer)
     if (c) c.insurance_valid_until = validUntil ?? ''
     return this.demoCustomerRecord(customer)
+  }
+
+  // 17. Administration (DEMO state in the server shapes; explicit mock mode only)
+  private demoPolicies(): Policies {
+    const rules = new Map(this.store.pricingRules.filter(r => r.is_active).map(r => [r.calendar_days, r.billable_days]))
+    const curve = Array.from({ length: 31 }, (_, i) => {
+      const days = i + 1
+      const rule = rules.get(days)
+      return { calendar_days: days, billable_days: rule ?? standardBillableDays(days), source: rule === undefined ? 'standard' as const : 'rule' as const }
+    })
+    return {
+      provenance: 'mock',
+      rules: this.store.pricingRules,
+      curve,
+      settings: this.store.companySettings,
+      tax_templates: ['TPS/TVQ QC - DEMO'],
+      currency: 'CAD',
+      can_edit_pricing: true,
+      can_edit_settings: true
+    }
+  }
+
+  async getPolicies(): Promise<Policies> {
+    await LatencySimulator.inject('standard')
+    return this.demoPolicies()
+  }
+
+  async savePricingRule(input: PricingRuleInput): Promise<Policies> {
+    if (input.billable_days <= 0 || input.billable_days > input.calendar_days) throw new Error('Les jours facturables doivent être supérieurs à 0 et au plus égaux aux jours calendrier.')
+    const existing = this.store.pricingRules.find(r => r.calendar_days === input.calendar_days)
+    const values = { billable_days: input.billable_days, description: input.description ?? '', is_active: input.is_active, modified: new Date().toISOString(), modified_by: 'demo@cortex.local' }
+    if (existing) Object.assign(existing, values)
+    else this.store.pricingRules.push({ name: `DEMO-${input.calendar_days}J`, calendar_days: input.calendar_days, ...values })
+    this.store.pricingRules.sort((x, y) => x.calendar_days - y.calendar_days)
+    return this.demoPolicies()
+  }
+
+  async saveCompanySettings(values: CompanySettingsInput): Promise<Policies> {
+    Object.assign(this.store.companySettings, values, { configured: true })
+    return this.demoPolicies()
+  }
+
+  async listTeam(): Promise<Team> {
+    await LatencySimulator.inject('standard')
+    return { provenance: 'mock', ...JSON.parse(JSON.stringify(this.store.team)) }
+  }
+
+  async setUserRoles(user: string, roles: string[]): Promise<Team> {
+    const member = this.store.team.users.find(u => u.user === user)
+    if (!member) throw new Error('Utilisateur introuvable.')
+    if (member.is_self) throw new Error('Vous ne pouvez pas modifier vos propres rôles.')
+    const manageable = new Set(this.store.team.manageable_roles)
+    member.roles = [...member.roles.filter(r => !manageable.has(r)), ...roles.filter(r => manageable.has(r))].sort()
+    return this.listTeam()
+  }
+
+  async listAuditEvents(query: AuditQuery): Promise<AuditPage> {
+    await LatencySimulator.inject('standard')
+    const rows = this.store.auditEvents
+      .map(e => ({ name: e.id, timestamp: e.timestamp.replace('T', ' ').replace('Z', ''), actor_type: e.actor.actor_type, actor_id: e.actor.actor_id, action: e.action, entity_type: e.entity_type, entity_id: e.entity_id, request_id: e.request_id }))
+      .filter(r => (!query.action || r.action.includes(query.action)) && (!query.entity_type || r.entity_type === query.entity_type) && (!query.entity_id || r.entity_id.includes(query.entity_id)) && (!query.actor || r.actor_id.includes(query.actor)) && (!query.actor_type || r.actor_type === query.actor_type))
+    const start = (query.page - 1) * query.page_size
+    return { provenance: 'mock', items: rows.slice(start, start + query.page_size), total_count: rows.length, page: query.page, page_size: query.page_size, entity_types: [...new Set(this.store.auditEvents.map(e => e.entity_type))].sort() }
+  }
+
+  async getAuditEvent(name: string): Promise<AuditEventDetail> {
+    const e = this.store.auditEvents.find(event => event.id === name)
+    if (!e) throw new Error('Événement introuvable.')
+    return { name: e.id, timestamp: e.timestamp, actor_type: e.actor.actor_type, actor_id: e.actor.actor_id, action: e.action, entity_type: e.entity_type, entity_id: e.entity_id, request_id: e.request_id, before_state: e.before_state ?? null, after_state: e.after_state ?? null, evidence: e.evidence_hash_sha256 ?? null, policy_decision: e.policy_execution ?? null }
+  }
+
+  async listImportBatches(): Promise<ImportBatches> {
+    await LatencySimulator.inject('standard')
+    return { provenance: 'mock', items: this.store.importBatches.map(b => ({ ...b })), specs: DEMO_IMPORT_SPECS }
+  }
+
+  private importBatch(name: string) {
+    const batch = this.store.importBatches.find(b => b.name === name)
+    if (!batch) throw new Error('Lot d’import introuvable.')
+    return batch
+  }
+
+  async getImportBatch(name: string): Promise<ImportBatch> {
+    return { ...this.importBatch(name) }
+  }
+
+  async createImportBatch(importType: ImportType): Promise<ImportBatch> {
+    const batch: ImportBatch = { name: `DEMO-IMP-${String(this.store.importBatches.length + 1).padStart(5, '0')}`, import_type: importType, status: 'Draft', source_file_name: null, total_rows: 0, valid_rows: 0, error_rows: 0, imported_rows: 0, created_by: 'demo@cortex.local', created_at: new Date().toISOString(), imported_at: null, imported_by: null, mapping: null, row_errors: [], records: [], rolled_back_by: null, rolled_back_at: null }
+    this.store.importBatches.unshift(batch)
+    return { ...batch }
+  }
+
+  async uploadImportFile(batch: string, file: File): Promise<void> {
+    const text = await file.text()
+    const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(line => line.trim())
+    const delimiter = [',', ';', '\t'].reduce((best, d) => (lines[0]!.split(d).length > lines[0]!.split(best).length ? d : best), ',')
+    this.store.importFiles[batch] = { name: file.name, rows: lines.map(line => line.split(delimiter).map(cell => cell.trim())) }
+  }
+
+  async analyzeImport(batch: string): Promise<ImportAnalysis> {
+    const file = this.store.importFiles[batch]
+    if (!file) throw new Error('Joignez d’abord le fichier CSV.')
+    const record = this.importBatch(batch)
+    const [headers = [], ...rows] = file.rows
+    record.source_file_name = file.name
+    record.total_rows = rows.length
+    const mapping = Object.fromEntries(DEMO_IMPORT_SPECS[record.import_type].map(spec => [spec.field, headers.find(h => h.toLowerCase() === spec.field || h.toLowerCase() === spec.label.toLowerCase()) ?? null]))
+    return { file_name: file.name, headers, preview: rows.slice(0, 10), total_rows: rows.length, mapping: record.mapping ?? mapping }
+  }
+
+  async validateImport(batch: string, mapping: Record<string, string | null>): Promise<ImportValidation> {
+    const record = this.importBatch(batch)
+    const [headers = [], ...rows] = this.store.importFiles[batch]?.rows ?? []
+    const specs = DEMO_IMPORT_SPECS[record.import_type]
+    const missing = specs.filter(s => s.required && !mapping[s.field])
+    if (missing.length) throw new Error(missing.map(s => `« ${s.label} » doit être associé à une colonne.`).join(' '))
+    const errors = rows.flatMap((row, i) => {
+      const problems = specs.filter(s => s.required && !row[headers.indexOf(mapping[s.field] ?? '')]).map(s => `${s.label} : obligatoire`)
+      return problems.length ? [{ line: i + 2, errors: problems }] : []
+    })
+    Object.assign(record, { mapping, status: 'Validated', total_rows: rows.length, valid_rows: rows.length - errors.length, error_rows: errors.length, row_errors: errors })
+    const sample = rows.filter((_, i) => !errors.some(e => e.line === i + 2)).slice(0, 10).map((row, i) => ({ line: i + 2, values: Object.fromEntries(specs.map(s => [s.field, row[headers.indexOf(mapping[s.field] ?? '')] ?? null])) }))
+    return { total_rows: rows.length, valid_rows: rows.length - errors.length, error_rows: errors.length, errors, sample }
+  }
+
+  async runImport(batch: string): Promise<ImportBatch> {
+    const record = this.importBatch(batch)
+    if (record.status !== 'Validated') throw new Error('Validez le lot avant de l’importer.')
+    const doctype = record.import_type === 'Customers' ? 'Customer' : record.import_type === 'Equipment' ? 'Cortex Rental Item Profile' : 'Serial No'
+    const errorLines = new Set(record.row_errors.map(e => e.line))
+    record.records = Array.from({ length: record.total_rows }, (_, i) => i + 2).filter(line => !errorLines.has(line)).map(line => ({ line, doctype, name: `DEMO-${doctype.replace(/\W+/g, '')}-${line}`, rolled_back: false }))
+    Object.assign(record, { imported_rows: record.records.length, status: record.error_rows ? 'Partially Imported' : 'Imported', imported_at: new Date().toISOString() })
+    return { ...record }
+  }
+
+  async rollbackImport(batch: string, _reason: string): Promise<ImportRollback> {
+    const record = this.importBatch(batch)
+    record.records.forEach(r => { r.rolled_back = true })
+    Object.assign(record, { status: 'Rolled Back', rolled_back_by: 'demo@cortex.local', rolled_back_at: new Date().toISOString() })
+    return { ...record, deleted: record.records.length, kept: [] }
   }
 }

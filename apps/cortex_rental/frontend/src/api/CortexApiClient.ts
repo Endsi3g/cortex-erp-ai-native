@@ -75,19 +75,12 @@ import type {
   EquipmentProfileChanges,
   SerialStatus,
   RentalKit,
-  ListRentalPoliciesInput,
-  ListRentalPoliciesResponse,
-  GetTeamRolesInput,
-  TeamRolesResponse,
-  ListMigrationBatchesInput,
-  MigrationBatchesResponse,
-  ListAuditEventsInput,
-  ListAuditEventsResponse,
   CreateUploadIntentInput,
   UploadIntentResponse,
   RegisterEvidenceInput,
   MutationResponse
 } from './contracts'
+import type { Policies, PricingRuleInput, CompanySettingsInput, Team, AuditQuery, AuditPage, AuditEventDetail, ImportBatches, ImportBatch, ImportType, ImportAnalysis, ImportValidation, ImportRollback } from './contracts/administration'
 import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult } from './contracts/ai'
 
 export interface CortexApiClient {
@@ -148,10 +141,6 @@ export interface CortexApiClient {
   getEquipment(input: GetEquipmentInput): Promise<GetEquipmentResponse>
   getSerial(input: GetSerialInput): Promise<GetSerialResponse>
   listKits(input: ListKitsInput): Promise<ListKitsResponse>
-  listRentalPolicies(input: ListRentalPoliciesInput): Promise<ListRentalPoliciesResponse>
-  getTeamRoles(input: GetTeamRolesInput): Promise<TeamRolesResponse>
-  listMigrationBatches(input: ListMigrationBatchesInput): Promise<MigrationBatchesResponse>
-  listAuditEvents(input: ListAuditEventsInput): Promise<ListAuditEventsResponse>
 
   // 9. Upload & Evidence Registration
   createUploadIntent(input: CreateUploadIntentInput): Promise<UploadIntentResponse>
@@ -198,4 +187,21 @@ export interface CortexApiClient {
   getCustomer(customer: string): Promise<CustomerRecord>
   createCustomer(input: NewCustomerInput): Promise<CustomerRecord>
   setCustomerInsurance(customer: string, validUntil: string | null, note?: string): Promise<CustomerRecord>
+
+  // 17. Administration (policies, team, audit log, CSV import)
+  getPolicies(): Promise<Policies>
+  savePricingRule(input: PricingRuleInput): Promise<Policies>
+  saveCompanySettings(values: CompanySettingsInput): Promise<Policies>
+  listTeam(): Promise<Team>
+  setUserRoles(user: string, roles: string[]): Promise<Team>
+  listAuditEvents(query: AuditQuery): Promise<AuditPage>
+  getAuditEvent(name: string): Promise<AuditEventDetail>
+  listImportBatches(): Promise<ImportBatches>
+  getImportBatch(name: string): Promise<ImportBatch>
+  createImportBatch(importType: ImportType): Promise<ImportBatch>
+  uploadImportFile(batch: string, file: File): Promise<void>
+  analyzeImport(batch: string): Promise<ImportAnalysis>
+  validateImport(batch: string, mapping: Record<string, string | null>): Promise<ImportValidation>
+  runImport(batch: string): Promise<ImportBatch>
+  rollbackImport(batch: string, reason: string): Promise<ImportRollback>
 }

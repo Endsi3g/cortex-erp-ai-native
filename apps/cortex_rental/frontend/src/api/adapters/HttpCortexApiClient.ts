@@ -60,19 +60,12 @@ import type {
   EquipmentProfileChanges,
   SerialStatus,
   RentalKit,
-  ListRentalPoliciesInput,
-  ListRentalPoliciesResponse,
-  GetTeamRolesInput,
-  TeamRolesResponse,
-  ListMigrationBatchesInput,
-  MigrationBatchesResponse,
-  ListAuditEventsInput,
-  ListAuditEventsResponse,
   CreateUploadIntentInput,
   UploadIntentResponse,
   RegisterEvidenceInput,
   MutationResponse
 } from '../contracts'
+import type { Policies, PricingRuleInput, CompanySettingsInput, Team, AuditQuery, AuditPage, AuditEventDetail, ImportBatches, ImportBatch, ImportType, ImportAnalysis, ImportValidation, ImportRollback } from '../contracts/administration'
 import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult } from '../contracts/ai'
 import type { RentalSummary, ListRentalSummariesInput, ReadinessField, OperationsOverview } from '../contracts'
 import type { InvoiceRow, PaymentRow, PagedResult, ListInvoicesInput, ListPaymentsInput, RentalBilling, PaymentMode, RecordAdvanceInput, RecordAdvanceResult } from '../contracts'
@@ -385,22 +378,6 @@ export class HttpCortexApiClient implements CortexApiClient {
     return unwrapFrappe(await this.http.post<FrappeResult<RentalKit>>('/cortex_rental.api.v1.catalog.save_kit', { kit: JSON.stringify(kit) }))
   }
 
-  async listRentalPolicies(input: ListRentalPoliciesInput): Promise<ListRentalPoliciesResponse> {
-    return this.http.get<ListRentalPoliciesResponse>('/policies', input)
-  }
-
-  async getTeamRoles(input: GetTeamRolesInput): Promise<TeamRolesResponse> {
-    return this.http.get<TeamRolesResponse>('/team/roles', input)
-  }
-
-  async listMigrationBatches(input: ListMigrationBatchesInput): Promise<MigrationBatchesResponse> {
-    return this.http.get<MigrationBatchesResponse>('/migration/batches', input)
-  }
-
-  async listAuditEvents(input: ListAuditEventsInput): Promise<ListAuditEventsResponse> {
-    return this.http.get<ListAuditEventsResponse>('/audit/events', input)
-  }
-
   // 9. Upload & Evidence
   async createUploadIntent(input: CreateUploadIntentInput): Promise<UploadIntentResponse> {
     return this.http.post<UploadIntentResponse>('/upload/intent', input)
@@ -541,6 +518,73 @@ export class HttpCortexApiClient implements CortexApiClient {
     return unwrapFrappe(await this.http.get<FrappeResult<GlobalSearchResponse>>(
       '/cortex_rental.api.v1.search.global_search', { query }
     ))
+  }
+
+  // 17. Administration
+  async getPolicies(): Promise<Policies> {
+    return unwrapFrappe(await this.http.get<FrappeResult<Policies>>('/cortex_rental.api.v1.admin.get_policies'))
+  }
+
+  async savePricingRule(input: PricingRuleInput): Promise<Policies> {
+    return unwrapFrappe(await this.http.post<FrappeResult<Policies>>('/cortex_rental.api.v1.admin.save_pricing_rule', { ...input, is_active: input.is_active ? 1 : 0 }))
+  }
+
+  async saveCompanySettings(values: CompanySettingsInput): Promise<Policies> {
+    return unwrapFrappe(await this.http.post<FrappeResult<Policies>>('/cortex_rental.api.v1.admin.save_company_settings', { values: JSON.stringify(values) }))
+  }
+
+  async listTeam(): Promise<Team> {
+    return unwrapFrappe(await this.http.get<FrappeResult<Team>>('/cortex_rental.api.v1.admin.list_team'))
+  }
+
+  async setUserRoles(user: string, roles: string[]): Promise<Team> {
+    return unwrapFrappe(await this.http.post<FrappeResult<Team>>('/cortex_rental.api.v1.admin.set_user_roles', { user, roles: JSON.stringify(roles) }))
+  }
+
+  async listAuditEvents(query: AuditQuery): Promise<AuditPage> {
+    return unwrapFrappe(await this.http.get<FrappeResult<AuditPage>>('/cortex_rental.api.v1.admin.list_audit_events', { ...query }))
+  }
+
+  async getAuditEvent(name: string): Promise<AuditEventDetail> {
+    return unwrapFrappe(await this.http.get<FrappeResult<AuditEventDetail>>('/cortex_rental.api.v1.admin.get_audit_event', { name }))
+  }
+
+  async listImportBatches(): Promise<ImportBatches> {
+    return unwrapFrappe(await this.http.get<FrappeResult<ImportBatches>>('/cortex_rental.api.v1.imports.list_import_batches'))
+  }
+
+  async getImportBatch(name: string): Promise<ImportBatch> {
+    return unwrapFrappe(await this.http.get<FrappeResult<ImportBatch>>('/cortex_rental.api.v1.imports.get_import_batch', { batch: name }))
+  }
+
+  async createImportBatch(importType: ImportType): Promise<ImportBatch> {
+    return unwrapFrappe(await this.http.post<FrappeResult<ImportBatch>>('/cortex_rental.api.v1.imports.create_import_batch', { import_type: importType }))
+  }
+
+  async uploadImportFile(batch: string, file: File): Promise<void> {
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('is_private', '1')
+    form.append('doctype', 'Cortex Import Batch')
+    form.append('docname', batch)
+    form.append('fieldname', 'source_file')
+    await this.http.upload('/upload_file', form)
+  }
+
+  async analyzeImport(batch: string): Promise<ImportAnalysis> {
+    return unwrapFrappe(await this.http.post<FrappeResult<ImportAnalysis>>('/cortex_rental.api.v1.imports.analyze_import', { batch }))
+  }
+
+  async validateImport(batch: string, mapping: Record<string, string | null>): Promise<ImportValidation> {
+    return unwrapFrappe(await this.http.post<FrappeResult<ImportValidation>>('/cortex_rental.api.v1.imports.validate_import', { batch, mapping: JSON.stringify(mapping) }))
+  }
+
+  async runImport(batch: string): Promise<ImportBatch> {
+    return unwrapFrappe(await this.http.post<FrappeResult<ImportBatch>>('/cortex_rental.api.v1.imports.run_import', { batch }, makeIdempotencyKey()))
+  }
+
+  async rollbackImport(batch: string, reason: string): Promise<ImportRollback> {
+    return unwrapFrappe(await this.http.post<FrappeResult<ImportRollback>>('/cortex_rental.api.v1.imports.rollback_import', { batch, reason }, makeIdempotencyKey()))
   }
 }
 

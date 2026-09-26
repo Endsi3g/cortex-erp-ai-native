@@ -133,6 +133,20 @@ class FakeDB:
     def commit(self) -> None:
         pass
 
+    def get_single_value(self, doctype: str, fieldname: str):
+        return self._frappe.singles.get(doctype, {}).get(fieldname)
+
+    def has_column(self, doctype: str, column: str) -> bool:
+        return True
+
+    def savepoint(self, name: str) -> None:
+        self._frappe.savepoints[name] = {k: [dict(r) for r in v] for k, v in self._frappe.tables.items()}
+
+    def rollback(self, save_point: Optional[str] = None) -> None:
+        snapshot = self._frappe.savepoints.get(save_point)
+        if snapshot is not None:
+            self._frappe.tables = {k: [dict(r) for r in v] for k, v in snapshot.items()}
+
 
 class FakeDoc(_Dict):
     def __init__(self, frappe_module: "FakeFrappe", data: Dict[str, Any]):
@@ -168,6 +182,9 @@ class FakeFrappe(types.ModuleType):
     def __init__(self, user: str, roles: List[str]):
         super().__init__("frappe")
         self.tables: Dict[str, List[Dict[str, Any]]] = {}
+        self.singles: Dict[str, Dict[str, Any]] = {}
+        self.savepoints: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
+        self.link_guard: Dict[str, str] = {}  # "doctype:name" -> reason delete_doc must refuse
         self.inserted: List[Dict[str, Any]] = []
         self.roles_by_user: Dict[str, List[str]] = {user: list(roles)}
         self.session = _Dict(user=user)
@@ -213,6 +230,12 @@ class FakeFrappe(types.ModuleType):
         if row is None:
             raise DoesNotExistError(f"{data} {name} not found")
         return FakeDoc(self, dict(row, doctype=data))
+
+    def delete_doc(self, doctype: str, name: str, **_: Any) -> None:
+        reason = self.link_guard.get(f"{doctype}:{name}")
+        if reason:
+            raise ValidationError(reason)
+        self.tables[doctype] = [r for r in self.tables.get(doctype, []) if r.get("name") != name]
 
     def as_json(self, value: Any) -> str:
         return json.dumps(value, default=str)

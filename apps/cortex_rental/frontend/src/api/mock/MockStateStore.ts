@@ -8,7 +8,8 @@ import { initialApprovals } from './fixtures/approvals'
 import { initialAuditEvents } from './fixtures/audit'
 import { initialInboxRows, initialInboundDetails, initialAgentRuns } from './fixtures/ai'
 import type { AgentRun, InboundDetail, InboxItem } from '@/api/contracts/ai'
-import { initialPolicies, initialMigrationBatches } from './fixtures/admin'
+import { initialCompanySettings, initialImportBatches, initialPricingRules, initialTeam } from './fixtures/administration'
+import type { CompanySettings, ImportBatch, PricingRule, Team } from '@/api/contracts/administration'
 
 import type {
   RentalTransaction,
@@ -19,9 +20,7 @@ import type {
   OwnerStatementSafe,
   ConsignmentDashboardData,
   ApprovalRequestItem,
-  AuditEvent,
-  RentalPolicy,
-  MigrationBatch
+  AuditEvent
 } from '@/types/domain'
 
 export class MockStateStore {
@@ -39,8 +38,11 @@ export class MockStateStore {
   public inboundDetails: InboundDetail[] = JSON.parse(JSON.stringify(initialInboundDetails))
   public agentRuns: AgentRun[] = JSON.parse(JSON.stringify(initialAgentRuns))
   public auditEvents: AuditEvent[] = JSON.parse(JSON.stringify(initialAuditEvents))
-  public policies: RentalPolicy[] = JSON.parse(JSON.stringify(initialPolicies))
-  public migrationBatches: MigrationBatch[] = JSON.parse(JSON.stringify(initialMigrationBatches))
+  public pricingRules: PricingRule[] = JSON.parse(JSON.stringify(initialPricingRules))
+  public companySettings: CompanySettings = JSON.parse(JSON.stringify(initialCompanySettings))
+  public team: Team = JSON.parse(JSON.stringify(initialTeam))
+  public importBatches: ImportBatch[] = JSON.parse(JSON.stringify(initialImportBatches))
+  public importFiles: Record<string, { name: string; rows: string[][] }> = {}
 
   public reset() {
     this.catalog = JSON.parse(JSON.stringify(initialCatalog))
@@ -55,8 +57,11 @@ export class MockStateStore {
     this.inboundDetails = JSON.parse(JSON.stringify(initialInboundDetails))
     this.agentRuns = JSON.parse(JSON.stringify(initialAgentRuns))
     this.auditEvents = JSON.parse(JSON.stringify(initialAuditEvents))
-    this.policies = JSON.parse(JSON.stringify(initialPolicies))
-    this.migrationBatches = JSON.parse(JSON.stringify(initialMigrationBatches))
+    this.pricingRules = JSON.parse(JSON.stringify(initialPricingRules))
+    this.companySettings = JSON.parse(JSON.stringify(initialCompanySettings))
+    this.team = JSON.parse(JSON.stringify(initialTeam))
+    this.importBatches = JSON.parse(JSON.stringify(initialImportBatches))
+    this.importFiles = {}
   }
 
   /** Inbox = inbound/draft rows + approval rows derived from the approvals fixture. */

@@ -296,6 +296,36 @@ describe('MockCortexApiClient Comprehensive 32-Method Test Suite', () => {
     await expect(client.sendChatMessage({ message: 'x', context: { page: 'dashboard', locale: 'fr-CA' } })).rejects.toThrow()
   })
 
+  // 7. Administration (server shapes from api/v1/admin.py and imports.py)
+  it('33. savePricingRule overrides the standard curve and refuses billable > calendar days', async () => {
+    const before = await client.getPolicies()
+    expect(before.curve.find(p => p.calendar_days === 10)).toMatchObject({ billable_days: 6, source: 'standard' })
+    const after = await client.savePricingRule({ calendar_days: 10, billable_days: 5, is_active: true })
+    expect(after.curve.find(p => p.calendar_days === 10)).toMatchObject({ billable_days: 5, source: 'rule' })
+    await expect(client.savePricingRule({ calendar_days: 3, billable_days: 4, is_active: true })).rejects.toThrow()
+  })
+
+  it('34. setUserRoles only changes manageable roles and never your own', async () => {
+    const team = await client.setUserRoles('lea.finance@cortex.demo', ['Auditor'])
+    expect(team.users.find(u => u.user === 'lea.finance@cortex.demo')?.roles).toEqual(['Accounts User', 'Auditor'])
+    await expect(client.setUserRoles('demo@cortex.local', ['Auditor'])).rejects.toThrow()
+  })
+
+  it('35. import batch goes through file, mapping, validation, import and rollback', async () => {
+    const batch = await client.createImportBatch('Customers')
+    const file = new File(['customer_name;email\nAcme;a@acme.test\n;b@b.test\n'], 'clients.csv', { type: 'text/csv' })
+    await client.uploadImportFile(batch.name, file)
+    const analysis = await client.analyzeImport(batch.name)
+    expect(analysis.mapping.customer_name).toBe('customer_name')
+    const validation = await client.validateImport(batch.name, analysis.mapping)
+    expect(validation).toMatchObject({ total_rows: 2, valid_rows: 1, error_rows: 1 })
+    const imported = await client.runImport(batch.name)
+    expect(imported.status).toBe('Partially Imported')
+    expect(imported.records).toHaveLength(1)
+    const rolled = await client.rollbackImport(batch.name, 'Mauvais fichier')
+    expect(rolled.status).toBe('Rolled Back')
+  })
+
   // Error Injection Test
   it('ErrorInjector injects simulated policy denial into mutation', async () => {
     ErrorInjector.setForcedError('policy_denied')

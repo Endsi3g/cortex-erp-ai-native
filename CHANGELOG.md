@@ -71,6 +71,22 @@
   - `create_quote_draft` / `preview_pricing` trusted the caller's `unit_rate`. Rates now come only from the company's rental profiles, and agents cannot apply discounts.
 - Removed the REST calls to routes that never existed (`/intelligence/*`, `/copilot/*`) and their fixtures/types.
 
+### Lot 8 — Administration: policies, team & roles, import & migration, audit log
+
+- **Rental policies** (`api/v1/admin.py`): the effective billable-days curve for 1–31 days, showing which points come from a company rule and which from the standard grid. Rules (Rental Pricing Rule) are edited per duration, with billable days bounded to at most the calendar days. The company billing settings (advance %, equipment guarantee, tax template, damage/loss items) are editable too. Every change is audited with before and after values.
+- **Team & roles**: System Manager only. Only human Cortex roles are granted or removed here; other roles a user holds are shown but never touched.
+  - Agent roles and System Manager are never assignable here.
+  - Nobody can edit their own roles.
+  - Agent accounts are listed read-only.
+  - Each change is audited (`cortex.team.roles_changed`).
+- **Import & migration** (`api/v1/imports.py`, new DocTypes `Cortex Import Batch` / `Cortex Import Batch Record`): a 6-step CSV import of customers, equipment (ERPNext Item plus rental profile) or serial numbers (with consignment owner).
+  - Steps: type → file → column mapping (French headers suggested) → row-by-row validation against the file and the site (duplicates, existing records, unknown catalog items or owners) → import → result.
+  - Each row is created inside its own savepoint, and every created document is recorded on the batch.
+  - Rollback deletes those documents newest first. A document that something else now links to is kept and reported. Import and rollback are audited.
+  - Parsing and validation live in `services/importer.py`, which has no Frappe dependency and is fully unit-tested.
+- **Audit log**: an append-only view of `Audit Event` with filters (action, document, actor, actor type, dates), a before/after/evidence/policy detail view and CSV export (up to 5,000 rows).
+- Removed the REST calls to routes that never existed (`/policies`, `/team/roles`, `/migration/batches`, `/audit/events`) and the invented team data (role counts, masked API key).
+
 **Quality (lot 1)**
 - `tests/fake_frappe.py`: runs the `if frappe:` paths in pytest and validates every insert against the DocType JSON (unknown / missing mandatory fields).
 - CI now typechecks, tests and builds the frontend.
