@@ -89,7 +89,12 @@ def run_turn(
     offered = tools_for(ctx.roles)
     specs = [t.spec() for t in offered]
     allowed = {t.name for t in offered}
-    messages = list(history) + [{"role": "user", "content": message}]
+    messages = [dict(m) for m in history]
+    if messages and messages[-1]["role"] == "user" and isinstance(messages[-1]["content"], str):
+        # A decision line or an unanswered question precedes: keep it, in the same user turn.
+        messages[-1]["content"] += "\n\n" + message
+    else:
+        messages.append({"role": "user", "content": message})
     result = TurnResult()
 
     for _round in range(MAX_ROUNDS):
@@ -180,16 +185,14 @@ def history_messages(rows: List[Dict[str, Any]], limit: int = 20) -> List[Dict[s
         text = (row.get("text") or "").strip()
         if not text:
             continue
-        role = "user" if row.get("sender_type") == "Human" else "assistant"
+        # System lines (decisions on proposals) are facts from the person's side of the conversation.
+        role = "assistant" if row.get("sender_type") == "Agent" else "user"
         if messages and messages[-1]["role"] == role:
             messages[-1]["content"] += "\n\n" + text
         else:
             messages.append({"role": role, "content": text})
     while messages and messages[0]["role"] != "user":
         messages.pop(0)
-    if messages and messages[-1]["role"] == "user":
-        # The new message is appended by run_turn; never send two user turns in a row.
-        messages.pop()
     return messages
 
 

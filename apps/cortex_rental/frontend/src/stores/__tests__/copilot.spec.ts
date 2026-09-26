@@ -97,3 +97,25 @@ describe('Copilot Store — streaming', () => {
     spy.mockRestore()
   })
 })
+
+describe('Copilot Store — proposals', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('C-TEST-6: confirming a proposal updates its card with the server outcome', async () => {
+    const decideAiAction = vi.fn().mockResolvedValue({ action_id: 'A1', status: 'executed', result: { rental: 'TRX-9', route: '/rentals/TRX-9' }, error: null })
+    const sendChatMessage = vi.fn().mockResolvedValue({
+      message_id: 'M1', chat_session_id: 'S1', status: 'completed',
+      blocks: [{ type: 'action_proposal', action_id: 'A1', tool: 'create_quote', title: 'Soumission', impact: [], effect: '', arguments: {}, status: 'proposed' }]
+    })
+    setCortexApiClient(fakeClient({ sendChatMessage, decideAiAction }))
+    const store = useCopilotStore()
+    await store.sendMessage('Prépare une soumission')
+    await store.decideAction('A1', 'confirm')
+    expect(decideAiAction).toHaveBeenCalledWith('A1', 'confirm')
+    const card = store.messages.at(-1)!.blocks[0] as unknown as { status: string; result: { route: string } }
+    expect(card.status).toBe('executed')
+    expect(card.result.route).toBe('/rentals/TRX-9')
+  })
+})

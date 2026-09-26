@@ -244,3 +244,10 @@ export interface SendChatResult {
   status: 'completed' | 'processing'
   blocks: ChatBlock[]
 }
+
+export interface ActionDecision {
+  action_id: string
+  status: 'executed' | 'cancelled' | 'failed'
+  result: (Record<string, unknown> & { route?: string }) | null
+  error: string | null
+}

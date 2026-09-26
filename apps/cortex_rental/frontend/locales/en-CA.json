@@ -1069,7 +1069,16 @@
       "close_artifact": "Close panel"
     },
     "action": {
-      "proposed": "Proposed action"
+      "proposed": "Proposed action",
+      "status_proposed": "To confirm",
+      "status_executed": "Confirmed and done",
+      "status_cancelled": "Cancelled",
+      "status_failed": "Refused by Cortex",
+      "status_expired": "Expired",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "audited": "Runs with your rights, recorded in the audit log",
+      "open_result": "Open the result"
     }
   },
   "admin": {

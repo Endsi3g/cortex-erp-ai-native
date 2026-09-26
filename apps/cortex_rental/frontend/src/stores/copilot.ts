@@ -142,6 +142,21 @@ export const useCopilotStore = defineStore('copilot', () => {
     sendError.value = ''
   }
 
+  /** Confirm (runs as this person, through the normal endpoint) or cancel a proposal; updates its card. */
+  async function decideAction(actionId: string, decision: 'confirm' | 'cancel') {
+    const outcome = await getCortexApiClient().decideAiAction(actionId, decision)
+    for (const message of messages.value) {
+      for (const block of message.blocks) {
+        if (block.type === 'action_proposal' && block.action_id === actionId) {
+          block.status = outcome.status
+          block.result = outcome.result
+          block.error = outcome.error
+        }
+      }
+    }
+    return outcome
+  }
+
   function newConversation() {
     sessionId.value = null
     messages.value = []
@@ -169,6 +184,7 @@ export const useCopilotStore = defineStore('copilot', () => {
     sendMessage,
     loadSessions,
     openSession,
+    decideAction,
     newConversation
   }
 })

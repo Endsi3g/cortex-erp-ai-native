@@ -212,17 +212,33 @@ def test_loop_stops_after_max_rounds(monkeypatch):
     assert sum(1 for b in result.blocks if b["type"] == "page_link") == engine.MAX_ROUNDS
 
 
-def test_history_alternates_roles_and_drops_a_dangling_user_turn():
+def test_history_alternates_roles_and_keeps_decision_lines_on_the_user_side():
     rows = [
         {"sender_type": "Agent", "text": "orphan"},
         {"sender_type": "Human", "text": "Bonjour"},
-        {"sender_type": "Agent", "text": "Salut"},
-        {"sender_type": "Human", "text": "Et la dispo ?"},
+        {"sender_type": "Agent", "text": "Je propose d’annuler."},
+        {"sender_type": "System", "text": "[Action A1 — Annuler] annulée par la personne."},
     ]
-    assert engine.history_messages(rows) == [
+    history = engine.history_messages(rows)
+    assert history == [
         {"role": "user", "content": "Bonjour"},
-        {"role": "assistant", "content": "Salut"},
+        {"role": "assistant", "content": "Je propose d’annuler."},
+        {"role": "user", "content": "[Action A1 — Annuler] annulée par la personne."},
     ]
+    provider = ScriptedProvider(final("D’accord."))
+    engine.run_turn(
+        provider,
+        "s",
+        history,
+        "Et maintenant ?",
+        ToolContext("u", "c", set()),
+        lambda *a: None,
+        lambda *a: "x",
+        lambda *a: None,
+    )
+    sent = provider.calls[0]["messages"]
+    assert [m["role"] for m in sent] == ["user", "assistant", "user"]
+    assert sent[-1]["content"].endswith("Et maintenant ?") and "annulée" in sent[-1]["content"]
 
 
 def test_system_prompt_states_the_honesty_and_confirmation_rules():
@@ -263,3 +279,58 @@ def test_ai_settings_default_to_anthropic_and_read_the_key_from_site_config():
         assert config.ai_settings("Demo") == {"provider": "anthropic", "model": "claude-opus-5-5", "available": True}
         fake.tables["Cortex Company Settings"][0]["ai_provider"] = "Onyx"
         assert config.ai_settings("Demo")["provider"] == "onyx"
+
+
+# ---- confirming proposals --------------------------------------------------------------
+
+from datetime import datetime, timedelta  # noqa: E402
+
+from cortex_rental.services.ai import actions  # noqa: E402
+
+
+def _action(**overrides):
+    base = {
+        "company": "Demo",
+        "user": "u@x.test",
+        "status": "Proposed",
+        "tool": "cancel_rental",
+        "creation": datetime(2026, 9, 25, 10),
+    }
+    base.update(overrides)
+    return base
+
+
+def test_only_the_owner_can_decide_a_fresh_pending_known_proposal():
+    now = datetime(2026, 9, 25, 12)
+    actions.check_decidable(_action(), "u@x.test", "Demo", now)
+    for action, user, company, expected in (
+        (_action(), "other@x.test", "Demo", "Seule la personne"),
+        (_action(), "u@x.test", "Other Co", "introuvable"),
+        (_action(status="Executed"), "u@x.test", "Demo", "déjà"),
+        (_action(creation=now - timedelta(hours=25)), "u@x.test", "Demo", "expiré"),
+        (_action(tool="drop_database"), "u@x.test", "Demo", "inconnue"),
+    ):
+        with pytest.raises(actions.ActionRefused, match=expected):
+            actions.check_decidable(action, user, company, now)
+
+
+def test_every_write_tool_has_an_executor():
+    from cortex_rental.services.ai.tools import WRITE_TOOLS
+
+    assert {t.name for t in WRITE_TOOLS} == set(actions.EXECUTORS)
+
+
+def test_executor_calls_the_screen_endpoint_as_the_user(monkeypatch):
+    calls = []
+
+    class Rentals:
+        @staticmethod
+        def cancel_rental(name, reason):
+            calls.append((name, reason))
+            return {"data": {}}
+
+    monkeypatch.setattr(actions, "_mod", lambda name: Rentals)
+    monkeypatch.setattr(actions, "call_endpoint", lambda fn, **kw: fn(**kw))
+    result, route = actions.execute("cancel_rental", {"rental": "TRX-1", "reason": "Client annule"})
+    assert calls == [("TRX-1", "Client annule")]
+    assert result == {"rental": "TRX-1", "state": "Cancelled"} and route == "/rentals/TRX-1"

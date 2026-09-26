@@ -1069,7 +1069,16 @@
       "close_artifact": "Fermer le panneau"
     },
     "action": {
-      "proposed": "Action proposée"
+      "proposed": "Action proposée",
+      "status_proposed": "À confirmer",
+      "status_executed": "Confirmée et exécutée",
+      "status_cancelled": "Annulée",
+      "status_failed": "Refusée par Cortex",
+      "status_expired": "Expirée",
+      "confirm": "Confirmer",
+      "cancel": "Annuler",
+      "audited": "Exécutée avec vos droits, inscrite au journal d’audit",
+      "open_result": "Ouvrir le résultat"
     }
   },
   "admin": {

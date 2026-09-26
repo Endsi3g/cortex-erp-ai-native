@@ -33,6 +33,18 @@
 - In the ⌘J panel, links navigate to the page directly; there is no room for a side artifact there.
 - The P&L tool now sends the model totals and first-level accounts only.
 
+### Phase D — Proposed actions, confirmed by a person
+
+- Each write proposal is a card: what will happen, the impact, the effect, then **Confirmer** or **Annuler**.
+- `chat.decide_action` runs the proposal only under all of these conditions:
+  - the person deciding owns the conversation;
+  - the action belongs to the active company;
+  - it is still pending, and is less than 24 hours old;
+  - it is decided only once: the row is locked, so two clicks or two tabs cannot run it twice.
+- A confirmed proposal runs through the same endpoint the screens use, under that person's rights: quote, reservation, advance, final invoice, cancellation, serial status, new customer, inbound rejection. A refusal (role, state machine, missing data) is shown on the card and nothing is half-done, because the call runs inside a savepoint.
+- Each decision is audited (`cortex.ai.action_executed` / `_cancelled` / `_failed`). It is also written into the conversation as a System line, so the assistant knows on the next turn what the person decided.
+- Reopened conversations show each card's current status.
+
 ## v0.6.0-dev — 2026-09-25 — Refonte UI complète (`feat/ui-rebuild`, lots 1 à 8)
 
 Not verified on a live bench: see HANDOFF §0 for the deployment and per-screen checks on the tower.

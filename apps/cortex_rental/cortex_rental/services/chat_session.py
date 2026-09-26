@@ -90,6 +90,26 @@ def _check_rate_limit(user: str) -> None:
     frappe.cache().set_value(cache_key, int(count) + 1, expires_in_sec=RATE_LIMIT_WINDOW_SECONDS)
 
 
+def _refresh_action_blocks(messages: List[Dict[str, Any]]) -> None:
+    """Stored proposal cards show their current status (confirmed, cancelled…) when a conversation is reopened."""
+    ids = [b.get("action_id") for m in messages for b in m["blocks"] if b.get("type") == "action_proposal"]
+    if not ids or not frappe:
+        return
+    rows = {
+        r.name: r
+        for r in frappe.get_all(
+            "Cortex AI Action", filters={"name": ["in", ids]}, fields=["name", "status", "result", "error_message"]
+        )
+    }
+    for message in messages:
+        for block in message["blocks"]:
+            row = rows.get(block.get("action_id")) if block.get("type") == "action_proposal" else None
+            if row:
+                block["status"] = row.status.lower()
+                block["result"] = json.loads(row.result) if row.result else None
+                block["error"] = row.error_message or None
+
+
 class ChatSessionService:
     def __init__(
         self, onyx_client: Optional[OnyxChatClient] = None, engine_provider: Any = None, company: Optional[str] = None
@@ -187,6 +207,7 @@ class ChatSessionService:
                     "created_at": str(row.created_at),
                 }
             )
+        _refresh_action_blocks(messages)
         data["messages"] = messages
         return data
 
@@ -641,4 +662,24 @@ class ChatSessionService:
         publish("done", {"message_id": message_doc_name})
         return SendMessageResponseData(
             message_id=message_doc_name, chat_session_id=session_name, status="completed", blocks=blocks
+        )
+
+    # -----------------------------------------------------------------
+    def record_action_outcome(self, session_name: str, company: str, action: Any) -> None:
+        """A System line in the conversation, so the assistant knows on the next turn what the person decided."""
+        if not frappe:
+            return
+        outcome = {
+            "Executed": "confirmée et exécutée",
+            "Cancelled": "annulée par la personne",
+            "Failed": f"confirmée mais refusée par Cortex : {action.error_message}",
+        }.get(action.status, action.status)
+        self._write_message(
+            session_name,
+            company,
+            "System",
+            frappe.session.user,
+            f"[Action {action.name} — {action.title}] {outcome}.",
+            [],
+            _new_id("REQ"),
         )

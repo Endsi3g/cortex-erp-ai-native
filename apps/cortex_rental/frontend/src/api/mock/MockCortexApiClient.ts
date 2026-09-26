@@ -66,7 +66,7 @@ import type {
 } from '../contracts'
 import type { Policies, PricingRuleInput, CompanySettingsInput, Team, AuditQuery, AuditPage, AuditEventDetail, ImportBatches, ImportBatch, ImportType, ImportAnalysis, ImportValidation, ImportRollback } from '../contracts/administration'
 import { DEMO_IMPORT_SPECS, standardBillableDays } from './fixtures/administration'
-import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult } from '../contracts/ai'
+import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult, ActionDecision } from '../contracts/ai'
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
 import { demoPnlFilterOptions, demoProfitAndLoss } from './fixtures/finance'
 import type { RentalSummary, ListRentalSummariesInput, ReadinessField, OperationsOverview } from '../contracts'
@@ -1340,6 +1340,10 @@ export class MockCortexApiClient implements CortexApiClient {
 
   async getChatSession(sessionId: string): Promise<ChatSessionDetail> {
     return { name: sessionId, agent_profile: 'cortex-operations', state: 'Active', messages: [] }
+  }
+
+  async decideAiAction(_actionId: string, _decision: 'confirm' | 'cancel'): Promise<ActionDecision> {
+    throw new Error('Assistant non configuré en mode démonstration.')
   }
 
   async listChatSessions(): Promise<ChatSessionSummary[]> {

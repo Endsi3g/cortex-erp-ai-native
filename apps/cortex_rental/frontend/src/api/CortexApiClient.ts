@@ -81,7 +81,7 @@ import type {
   MutationResponse
 } from './contracts'
 import type { Policies, PricingRuleInput, CompanySettingsInput, Team, AuditQuery, AuditPage, AuditEventDetail, ImportBatches, ImportBatch, ImportType, ImportAnalysis, ImportValidation, ImportRollback } from './contracts/administration'
-import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult } from './contracts/ai'
+import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult, ActionDecision } from './contracts/ai'
 
 export interface CortexApiClient {
   // 1. Availability & Inventory
@@ -135,6 +135,7 @@ export interface CortexApiClient {
   sendChatMessage(input: SendChatInput): Promise<SendChatResult>
   getChatSession(sessionId: string): Promise<ChatSessionDetail>
   listChatSessions(): Promise<ChatSessionSummary[]>
+  decideAiAction(actionId: string, decision: 'confirm' | 'cancel'): Promise<ActionDecision>
 
   // 8. Catalog, Fleet, Policies, Audit & Migration
   listEquipment(input: ListEquipmentInput): Promise<ListEquipmentResponse>
