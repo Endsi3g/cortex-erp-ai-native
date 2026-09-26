@@ -30,7 +30,15 @@ AGENT_ROLES = {
 # Roles this screen may grant or remove. Everything else a user holds is
 # shown but left untouched.
 MANAGEABLE_ROLES = [*HUMAN_STAFF_ROLES, "Pricing Manager", "Auditor", "Cortex Read Only"]
-SETTINGS_FIELDS = ("advance_percentage", "include_equipment_guarantee", "taxes_and_charges", "damage_item", "loss_item")
+SETTINGS_FIELDS = (
+    "advance_percentage",
+    "include_equipment_guarantee",
+    "taxes_and_charges",
+    "damage_item",
+    "loss_item",
+    "ai_provider",
+    "ai_model",
+)
 CURVE_DAYS = 31
 
 
@@ -116,6 +124,17 @@ def _curve(company: str) -> List[Dict[str, Any]]:
     return curve
 
 
+def _ai_settings_view(company: str) -> Dict[str, Any]:
+    from cortex_rental.services.ai.config import ai_settings
+
+    settings = ai_settings(company)
+    return {
+        "ai_provider": "Onyx" if settings["provider"] == "onyx" else "Anthropic",
+        "ai_model": settings["model"] if settings["provider"] == "anthropic" else None,
+        "ai_available": settings["available"],
+    }
+
+
 if frappe:
     # ---- Policies --------------------------------------------------------------
 
@@ -147,7 +166,7 @@ if frappe:
                     for r in rules
                 ],
                 "curve": _curve(company),
-                "settings": get_settings(company),
+                "settings": {**get_settings(company), **_ai_settings_view(company)},
                 "tax_templates": frappe.get_all(
                     "Sales Taxes and Charges Template", filters={"company": company, "disabled": 0}, pluck="name"
                 ),
@@ -221,6 +240,10 @@ if frappe:
             "Sales Taxes and Charges Template", {"name": values["taxes_and_charges"], "company": company}
         ):
             frappe.throw("Modèle de taxes introuvable pour la société.", frappe.ValidationError)
+        if "ai_provider" in values and values["ai_provider"] not in ("Anthropic", "Onyx"):
+            frappe.throw("Fournisseur IA inconnu.", frappe.ValidationError)
+        if "ai_model" in values:
+            values["ai_model"] = (values["ai_model"] or "").strip()[:140] or None
         for field in ("damage_item", "loss_item"):
             if values.get(field) and not frappe.db.exists("Item", values[field]):
                 frappe.throw(f"Article {values[field]} introuvable.", frappe.ValidationError)

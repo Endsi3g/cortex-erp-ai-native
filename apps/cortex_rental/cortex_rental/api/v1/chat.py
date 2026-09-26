@@ -51,7 +51,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
         _raise_validation_error(exc)
         return {}  # unreachable when frappe is available; keeps type-checkers happy
 
-    service = ChatSessionService()
+    service = ChatSessionService(company=company)
     try:
         response = service.send_message(
             user=user,
@@ -59,6 +59,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
             message=request.message,
             context=request.context.model_dump(),
             chat_session_id=request.chat_session_id,
+            client_turn_id=request.client_turn_id,
         )
     except ChatContextPermissionError as exc:
         if frappe:
@@ -139,17 +140,15 @@ if frappe:
 
     @frappe.whitelist(methods=["GET"])
     def get_assistant_status():
-        """Whether the assistant can answer, without exposing any URL, key or persona id."""
+        """Whether the assistant can answer, without exposing any URL or key."""
+        from cortex_rental.services.ai.config import ai_settings
+
         require_human_staff_role()
-        conf = frappe.conf
-        provider = str(conf.get("cortex_chat_provider", "onyx")).lower()
-        if provider == "mock" and conf.get("developer_mode"):
-            return {"data": {"available": True, "provider": "mock", "model_name": "Réponses simulées (développement)"}}
-        configured = bool(conf.get("onyx_base_url") and conf.get("onyx_api_key"))
+        settings = ai_settings(get_company_context())
         return {
             "data": {
-                "available": configured,
-                "provider": "onyx",
-                "model_name": conf.get("onyx_model_name") if configured else None,
+                "available": settings["available"],
+                "provider": settings["provider"],
+                "model_name": settings["model"] if settings["available"] else None,
             }
         }

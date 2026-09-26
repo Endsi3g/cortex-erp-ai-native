@@ -946,7 +946,8 @@
     "approval_Pending": "En attente",
     "approval_Approved": "Approuvée",
     "approval_Rejected": "Refusée",
-    "approval_Expired": "Expirée"
+    "approval_Expired": "Expirée",
+    "running_tool": "Outil en cours : {tool}…"
   },
   "admin": {
     "active": "Actif",
@@ -981,7 +982,15 @@
       "include_guarantee": "Ajouter la garantie d’équipement à l’acompte",
       "damage_item": "Article « dommages »",
       "loss_item": "Article « perte »",
-      "item_code": "Code d’article ERPNext"
+      "item_code": "Code d’article ERPNext",
+      "ai_title": "Assistant IA",
+      "ai_ready": "Prêt",
+      "ai_not_configured": "Non configuré",
+      "ai_hint": "Le moteur qui répond dans la conversation et le panneau ⌘J. Il n’agit jamais sans confirmation : chaque modification proposée devient une carte à valider.",
+      "ai_provider": "Fournisseur",
+      "ai_model": "Modèle",
+      "ai_key_anthropic": "La clé se configure sur le serveur uniquement : anthropic_api_key dans site_config.json. Elle n’est jamais envoyée au navigateur.",
+      "ai_key_onyx": "Onyx se configure sur le serveur : onyx_base_url et onyx_api_key dans site_config.json."
     },
     "team": {
       "manage_users": "Utilisateurs dans ERPNext",

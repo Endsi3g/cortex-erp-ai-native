@@ -1,5 +1,17 @@
 # Changelog — Cortex Security & Correctness Remediation
 
+## v0.7.0-dev — AI-first Cortex (`feat/ai-home`)
+
+### Phase A — One assistant engine, provider per company
+
+- **Engine** (`services/ai/`): Anthropic Messages API called directly from Frappe, with streaming and tool use. Plain HTTP; the key lives only in `site_config` (`anthropic_api_key`). Provider and model are chosen per company in Cortex Company Settings: **Anthropic** (default, `claude-sonnet-5`) or **Onyx** (existing path). The choice is editable in Admin › Politiques.
+- **Tools = the existing endpoints, run as the signed-in person**: customers, equipment, availability, server pricing, rentals, day overview, P&L, invoices, rental billing, consignment, AI inbox, policies, page links. The endpoints' own role and company checks apply; finance tools are not even offered to non-finance roles.
+- **Writes are only proposed.** Quote, reservation, advance, final invoice, cancellation, serial status, new customer and inbound rejection each record a `Cortex AI Action` (new DocType) and return an `action_proposal` block. Nothing runs until a person confirms (confirmation lands in phase D).
+- **Streaming**: text, tool progress and blocks are pushed on the `cortex_ai` Frappe realtime channel. The ⌘J panel shows them live and falls back to the full HTTP reply when the socket is unavailable.
+- Every turn is recorded as a `Cortex Agent Run` with its tool calls, so it shows in Activité des agents.
+- New block types: `widget` (read-tool data for the UI), `action_proposal`, `page_link`.
+- Onyx is no longer required for the chat history endpoints (the Onyx client is created lazily, only when a company uses Onyx).
+
 ## v0.6.0-dev — 2026-09-25 — Refonte UI complète (`feat/ui-rebuild`, lots 1 à 8)
 
 Not verified on a live bench: see HANDOFF §0 for the deployment and per-screen checks on the tower.

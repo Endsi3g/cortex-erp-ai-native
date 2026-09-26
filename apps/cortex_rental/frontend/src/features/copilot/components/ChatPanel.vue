@@ -16,11 +16,12 @@
           <div v-if="message.sender_type === 'Human'" class="max-w-[85%] whitespace-pre-wrap rounded-lg bg-surface-gray-2 px-3 py-2 text-p-base text-ink-gray-9">{{ message.text }}</div>
           <div v-else class="space-y-1">
             <ChatBlocks v-if="message.blocks.length" :blocks="message.blocks" />
-            <p v-else class="whitespace-pre-wrap text-p-base text-ink-gray-8">{{ message.text }}</p>
+            <p v-if="!message.blocks.length || message.streaming" class="whitespace-pre-wrap text-p-base text-ink-gray-8">{{ message.text }}<span v-if="message.streaming" class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-ink-gray-4 align-text-bottom" aria-hidden="true" /></p>
+            <p v-if="message.activeTool" class="text-xs text-ink-gray-5" role="status">{{ t('ai.running_tool', { tool: message.activeTool }) }}</p>
             <p v-if="message.model_name" class="text-xs text-ink-gray-4">{{ message.model_name }}</p>
           </div>
         </div>
-        <p v-if="copilot.sending" class="text-p-sm text-ink-gray-5" role="status">{{ t('ai.thinking') }}</p>
+        <p v-if="copilot.sending && !copilot.messages.some(m => m.streaming && (m.text || m.blocks.length))" class="text-p-sm text-ink-gray-5" role="status">{{ t('ai.thinking') }}</p>
         <p v-if="copilot.sendError" class="rounded border border-outline-red-1 bg-surface-red-1 px-3 py-2 text-p-sm text-ink-red-4" role="alert">{{ copilot.sendError }}</p>
       </div>
 

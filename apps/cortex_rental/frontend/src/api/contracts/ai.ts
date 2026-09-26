@@ -136,7 +136,7 @@ export interface AgentActivity {
 
 export interface AssistantStatus {
   available: boolean
-  provider: 'onyx' | 'mock'
+  provider: 'anthropic' | 'onyx' | 'mock'
   model_name: string | null
 }
 
@@ -150,6 +150,44 @@ export type ChatBlock =
   | { type: 'missing_information'; fields: string[]; suggested_next_action?: string | null }
   | { type: 'tool_progress'; tool_name: string; state: 'running' | 'success' | 'failed'; message: string }
   | { type: 'error'; title: string; safe_message: string; retry_allowed: boolean }
+  | { type: 'widget'; tool: string; view: WidgetView; data: unknown }
+  | ActionProposal
+  | { type: 'page_link'; route: string; label: string }
+
+/** How the UI should render a read tool's result (see services/ai/tools.py). */
+export interface WidgetView {
+  type?: 'table' | 'record' | 'kpis' | 'availability' | 'pricing' | 'report' | 'link'
+  entity?: string
+  id?: string
+  [key: string]: unknown
+}
+
+export interface ActionProposal {
+  type: 'action_proposal'
+  action_id: string
+  tool: string
+  title: string
+  impact: string[]
+  effect: string
+  arguments: Record<string, unknown>
+  status: 'proposed' | 'executed' | 'cancelled' | 'failed' | 'expired'
+  result?: Record<string, unknown> | null
+  error?: string | null
+}
+
+/** Streaming event published by the server on the `cortex_ai` realtime channel. */
+export interface AssistantStreamEvent {
+  session: string
+  turn: string | null
+  kind: 'text' | 'tool' | 'block' | 'done' | 'error'
+  delta?: string
+  tool?: string
+  state?: 'running' | 'success' | 'failed'
+  type?: string
+  message?: string
+  message_id?: string
+  [key: string]: unknown
+}
 
 export interface ChatMessage {
   id: string
@@ -158,6 +196,10 @@ export interface ChatMessage {
   blocks: ChatBlock[]
   model_name?: string | null
   created_at: string
+  /** Client-only: the answer is still streaming in. */
+  streaming?: boolean
+  /** Client-only: tool currently running during streaming. */
+  activeTool?: string | null
 }
 
 export interface ChatSessionSummary {
@@ -192,6 +234,8 @@ export interface SendChatInput {
   chat_session_id?: string
   message: string
   context: ChatContext
+  /** Echoed in streaming events so the UI can match them to this turn. */
+  client_turn_id?: string
 }
 
 export interface SendChatResult {

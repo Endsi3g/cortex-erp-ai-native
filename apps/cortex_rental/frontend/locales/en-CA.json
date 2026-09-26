@@ -946,7 +946,8 @@
     "approval_Pending": "Pending",
     "approval_Approved": "Approved",
     "approval_Rejected": "Rejected",
-    "approval_Expired": "Expired"
+    "approval_Expired": "Expired",
+    "running_tool": "Running tool: {tool}…"
   },
   "admin": {
     "active": "Active",
@@ -981,7 +982,15 @@
       "include_guarantee": "Add the equipment guarantee to the advance",
       "damage_item": "“Damage” item",
       "loss_item": "“Loss” item",
-      "item_code": "ERPNext item code"
+      "item_code": "ERPNext item code",
+      "ai_title": "AI assistant",
+      "ai_ready": "Ready",
+      "ai_not_configured": "Not configured",
+      "ai_hint": "The engine that answers in the conversation and the ⌘J panel. It never acts without confirmation: every proposed change becomes a card to approve.",
+      "ai_provider": "Provider",
+      "ai_model": "Model",
+      "ai_key_anthropic": "The key is set on the server only: anthropic_api_key in site_config.json. It is never sent to the browser.",
+      "ai_key_onyx": "Onyx is configured on the server: onyx_base_url and onyx_api_key in site_config.json."
     },
     "team": {
       "manage_users": "Users in ERPNext",

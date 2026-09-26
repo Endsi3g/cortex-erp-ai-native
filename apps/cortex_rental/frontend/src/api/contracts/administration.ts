@@ -19,6 +19,10 @@ export interface CompanySettings {
   taxes_and_charges: string | null
   damage_item: string | null
   loss_item: string | null
+  ai_provider: 'Anthropic' | 'Onyx'
+  ai_model: string | null
+  /** The chosen provider has its server-side key/URL configured (never sent to the browser). */
+  ai_available: boolean
   /** false while the company still runs on defaults (no Cortex Company Settings record). */
   configured: boolean
 }
@@ -41,7 +45,7 @@ export interface PricingRuleInput {
   is_active: boolean
 }
 
-export type CompanySettingsInput = Partial<Omit<CompanySettings, 'configured'>>
+export type CompanySettingsInput = Partial<Omit<CompanySettings, 'configured' | 'ai_available'>>
 
 export interface TeamMember {
   user: string

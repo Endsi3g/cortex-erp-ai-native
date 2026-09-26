@@ -53,6 +53,8 @@ class SendMessageRequest(BaseModel):
     chat_session_id: Optional[str] = None
     message: str = Field(min_length=1, max_length=MAX_MESSAGE_LENGTH)
     context: ChatContext
+    # Echoed in streaming events so the browser can match them to its pending turn.
+    client_turn_id: Optional[str] = Field(default=None, max_length=64)
 
 
 # ---------------------------------------------------------------------
@@ -142,6 +144,36 @@ class ErrorBlock(BaseModel):
     retry_allowed: bool = True
 
 
+class WidgetBlock(BaseModel):
+    """Data a read tool returned, rendered by the UI (table, record, KPIs, availability…)."""
+
+    type: Literal["widget"] = "widget"
+    tool: str
+    view: Dict[str, Any] = Field(default_factory=dict)
+    data: Any = None
+
+
+class ActionProposalBlock(BaseModel):
+    """A write the assistant proposed; executed only when the person confirms it."""
+
+    type: Literal["action_proposal"] = "action_proposal"
+    action_id: str
+    tool: str
+    title: str
+    impact: List[str] = Field(default_factory=list)
+    effect: str = ""
+    arguments: Dict[str, Any] = Field(default_factory=dict)
+    status: Literal["proposed", "executed", "cancelled", "failed", "expired"] = "proposed"
+    result: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+
+class PageLinkBlock(BaseModel):
+    type: Literal["page_link"] = "page_link"
+    route: str
+    label: str
+
+
 ChatBlock = Annotated[
     Union[
         VerifiedFactBlock,
@@ -153,6 +185,9 @@ ChatBlock = Annotated[
         MissingInformationBlock,
         ToolProgressBlock,
         ErrorBlock,
+        WidgetBlock,
+        ActionProposalBlock,
+        PageLinkBlock,
     ],
     Field(discriminator="type"),
 ]

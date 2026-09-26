@@ -337,7 +337,8 @@ export class HttpCortexApiClient implements CortexApiClient {
     return unwrapFrappe(await this.http.post<FrappeResult<SendChatResult>>('/cortex_rental.api.v1.chat.send_message', {
       chat_session_id: input.chat_session_id,
       message: input.message,
-      context: JSON.stringify(input.context)
+      context: JSON.stringify(input.context),
+      client_turn_id: input.client_turn_id
     }))
   }
 
