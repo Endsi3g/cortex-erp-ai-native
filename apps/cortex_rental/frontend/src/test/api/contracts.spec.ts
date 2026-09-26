@@ -3,13 +3,11 @@ import {
   MutationResponseSchema,
   RentalTransactionSchema,
   OwnerStatementSafeSchema,
-  ApprovalRequestItemSchema,
-  InboundRequestItemSchema
+  ApprovalRequestItemSchema
 } from '@/api/contracts'
 import { initialRentals } from '@/api/mock/fixtures/rentals'
 import { initialOwnerStatements } from '@/api/mock/fixtures/consignment'
 import { initialApprovals } from '@/api/mock/fixtures/approvals'
-import { initialInboundRequests } from '@/api/mock/fixtures/inbound'
 
 describe('API Contracts & Zod Schemas Validation Tests', () => {
   it('validates MutationResponseSchema with valid and invalid statuses', () => {
@@ -47,13 +45,6 @@ describe('API Contracts & Zod Schemas Validation Tests', () => {
   it('validates ApprovalRequestItemSchema against approval fixtures', () => {
     initialApprovals.forEach((item) => {
       const parseResult = ApprovalRequestItemSchema.safeParse(item)
-      expect(parseResult.success, JSON.stringify(parseResult)).toBe(true)
-    })
-  })
-
-  it('validates InboundRequestItemSchema against inbound fixtures', () => {
-    initialInboundRequests.forEach((item) => {
-      const parseResult = InboundRequestItemSchema.safeParse(item)
       expect(parseResult.success, JSON.stringify(parseResult)).toBe(true)
     })
   })

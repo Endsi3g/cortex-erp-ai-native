@@ -265,28 +265,35 @@ describe('MockCortexApiClient Comprehensive 32-Method Test Suite', () => {
     expect(updated.rejection_reason).toBe('Commercial discount exceeded budget')
   })
 
-  // 6. Inbound & Telemetry
-  it('29. listInboundRequests returns parsed incoming emails/PDFs', async () => {
-    const res = await client.listInboundRequests({})
-    expect(res.items.length).toBe(2)
-    expect(res.items[0]?.sender_name).toContain('Marc-André')
+  // 6. AI inbox & agent activity (server shapes from api/v1/ai.py)
+  it('29. listInbox merges approvals, inbound requests and agent drafts, open items only', async () => {
+    const res = await client.listInbox()
+    expect(res.provenance).toBe('mock')
+    expect(new Set(res.items.map(i => i.kind))).toEqual(new Set(['approval', 'inbound', 'draft']))
+    expect(res.items.every(i => !['validated', 'rejected', 'applied', 'expired'].includes(i.state))).toBe(true)
   })
 
-  it('30. getInboundRequest returns extracted fields and confidence scores', async () => {
-    const res = await client.getInboundRequest({ id: 'DEMO-INB-001' })
-    expect(res.overall_confidence).toBe(0.94)
-    expect(res.extracted_fields.customer_name).toBe('Production Nord Inc.')
+  it('30. getInboxItem returns the extraction with an uncalibrated model score', async () => {
+    const res = await client.getInboxItem('inbound', 'DEMO-INB-002')
+    if (res.kind !== 'inbound' || !res.extraction) throw new Error('expected an inbound extraction')
+    expect(res.extraction.calibrated).toBe(false)
+    expect(res.extraction.missing_fields.length).toBeGreaterThan(0)
   })
 
-  it('31. listAiDrafts returns agent proposals', async () => {
-    const res = await client.listAiDrafts({})
+  it('31. rejectInbound removes the request from the open inbox', async () => {
+    await client.rejectInbound('DEMO-INB-002', 'Hors zone de service')
+    const open = await client.listInbox('inbound')
+    expect(open.items.some(i => i.source_id === 'DEMO-INB-002')).toBe(false)
+    const all = await client.listInbox('inbound', true)
+    expect(all.items.find(i => i.source_id === 'DEMO-INB-002')?.state).toBe('rejected')
+  })
+
+  it('32. listAgentActivity returns runs with their tool calls; the mock assistant never answers', async () => {
+    const res = await client.listAgentActivity({ page: 1, page_size: 50 })
     expect(res.items.length).toBeGreaterThan(0)
-  })
-
-  it('32. getAgentActivity returns telemetry and tool invocations', async () => {
-    const res = await client.getAgentActivity({})
-    expect(res.runs.length).toBeGreaterThan(0)
-    expect(res.runs[0]?.tools_invoked.length).toBeGreaterThan(0)
+    expect(res.items[0]?.tool_calls.length).toBeGreaterThan(0)
+    expect((await client.getAssistantStatus()).available).toBe(false)
+    await expect(client.sendChatMessage({ message: 'x', context: { page: 'dashboard', locale: 'fr-CA' } })).rejects.toThrow()
   })
 
   // Error Injection Test

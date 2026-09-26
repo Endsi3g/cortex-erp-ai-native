@@ -64,24 +64,6 @@ import type {
   GetApprovalResponse,
   ApproveApprovalInput,
   RejectApprovalInput,
-  ListInboundRequestsInput,
-  ListInboundRequestsResponse,
-  GetInboundRequestInput,
-  GetInboundRequestResponse,
-  ListAiDraftsInput,
-  ListAiDraftsResponse,
-  GetAgentActivityInput,
-  AgentActivityResponse,
-  CreateCopilotSessionInput,
-  CreateCopilotSessionResponse,
-  SendCopilotMessageInput,
-  SendCopilotMessageResponse,
-  GetCopilotSessionInput,
-  GetCopilotSessionResponse,
-  ListCopilotSessionsInput,
-  ListCopilotSessionsResponse,
-  PinCopilotContextInput,
-  ClearCopilotContextInput,
   ListEquipmentInput,
   ListEquipmentResponse,
   GetEquipmentInput,
@@ -106,6 +88,7 @@ import type {
   RegisterEvidenceInput,
   MutationResponse
 } from './contracts'
+import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult } from './contracts/ai'
 
 export interface CortexApiClient {
   // 1. Availability & Inventory
@@ -147,19 +130,18 @@ export interface CortexApiClient {
   approveApprovalRequest(input: ApproveApprovalInput): Promise<MutationResponse>
   rejectApprovalRequest(input: RejectApprovalInput): Promise<MutationResponse>
 
-  // 6. Inbound Intake, AI Drafts & Telemetry
-  listInboundRequests(input: ListInboundRequestsInput): Promise<ListInboundRequestsResponse>
-  getInboundRequest(input: GetInboundRequestInput): Promise<GetInboundRequestResponse>
-  listAiDrafts(input: ListAiDraftsInput): Promise<ListAiDraftsResponse>
-  getAgentActivity(input: GetAgentActivityInput): Promise<AgentActivityResponse>
+  // 6. AI — inbox (approvals, inbound requests, agent drafts) and agent activity
+  listInbox(kind?: InboxKind, includeClosed?: boolean): Promise<InboxList>
+  getInboxItem(kind: InboxKind, sourceId: string): Promise<InboxDetail>
+  rejectInbound(sourceId: string, reason: string): Promise<void>
+  linkInboundToRental(sourceId: string, rentalId: string): Promise<void>
+  listAgentActivity(input: AgentActivityInput): Promise<AgentActivity>
 
-  // 7. Contextual Copilot & Assistant Gateway
-  createCopilotSession(input: CreateCopilotSessionInput): Promise<CreateCopilotSessionResponse>
-  sendCopilotMessage(input: SendCopilotMessageInput): Promise<SendCopilotMessageResponse>
-  getCopilotSession(input: GetCopilotSessionInput): Promise<GetCopilotSessionResponse>
-  listCopilotSessions(input: ListCopilotSessionsInput): Promise<ListCopilotSessionsResponse>
-  pinCopilotContext(input: PinCopilotContextInput): Promise<MutationResponse>
-  clearCopilotContext(input: ClearCopilotContextInput): Promise<MutationResponse>
+  // 7. Assistant (chat gateway — the server picks the agent from the page)
+  getAssistantStatus(): Promise<AssistantStatus>
+  sendChatMessage(input: SendChatInput): Promise<SendChatResult>
+  getChatSession(sessionId: string): Promise<ChatSessionDetail>
+  listChatSessions(): Promise<ChatSessionSummary[]>
 
   // 8. Catalog, Fleet, Policies, Audit & Migration
   listEquipment(input: ListEquipmentInput): Promise<ListEquipmentResponse>

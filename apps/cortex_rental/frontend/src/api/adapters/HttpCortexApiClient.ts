@@ -49,24 +49,6 @@ import type {
   GetApprovalResponse,
   ApproveApprovalInput,
   RejectApprovalInput,
-  ListInboundRequestsInput,
-  ListInboundRequestsResponse,
-  GetInboundRequestInput,
-  GetInboundRequestResponse,
-  ListAiDraftsInput,
-  ListAiDraftsResponse,
-  GetAgentActivityInput,
-  AgentActivityResponse,
-  CreateCopilotSessionInput,
-  CreateCopilotSessionResponse,
-  SendCopilotMessageInput,
-  SendCopilotMessageResponse,
-  GetCopilotSessionInput,
-  GetCopilotSessionResponse,
-  ListCopilotSessionsInput,
-  ListCopilotSessionsResponse,
-  PinCopilotContextInput,
-  ClearCopilotContextInput,
   ListEquipmentInput,
   ListEquipmentResponse,
   GetEquipmentInput,
@@ -91,6 +73,7 @@ import type {
   RegisterEvidenceInput,
   MutationResponse
 } from '../contracts'
+import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult } from '../contracts/ai'
 import type { RentalSummary, ListRentalSummariesInput, ReadinessField, OperationsOverview } from '../contracts'
 import type { InvoiceRow, PaymentRow, PagedResult, ListInvoicesInput, ListPaymentsInput, RentalBilling, PaymentMode, RecordAdvanceInput, RecordAdvanceResult } from '../contracts'
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
@@ -331,46 +314,46 @@ export class HttpCortexApiClient implements CortexApiClient {
     }, makeIdempotencyKey()))
   }
 
-  // 6. Inbound & Telemetry
-  async listInboundRequests(input: ListInboundRequestsInput): Promise<ListInboundRequestsResponse> {
-    return this.http.get<ListInboundRequestsResponse>('/intelligence/inbound', input)
+  // 6. AI
+  async listInbox(kind?: InboxKind, includeClosed = false): Promise<InboxList> {
+    return unwrapFrappe(await this.http.get<FrappeResult<InboxList>>('/cortex_rental.api.v1.ai.list_inbox', { kind, include_closed: includeClosed ? '1' : '0' }))
   }
 
-  async getInboundRequest(input: GetInboundRequestInput): Promise<GetInboundRequestResponse> {
-    return this.http.get<GetInboundRequestResponse>(`/intelligence/inbound/${input.id}`)
+  async getInboxItem(kind: InboxKind, sourceId: string): Promise<InboxDetail> {
+    return unwrapFrappe(await this.http.get<FrappeResult<InboxDetail>>('/cortex_rental.api.v1.ai.get_inbox_item', { kind, source_id: sourceId }))
   }
 
-  async listAiDrafts(input: ListAiDraftsInput): Promise<ListAiDraftsResponse> {
-    return this.http.get<ListAiDraftsResponse>('/intelligence/drafts', input)
+  async rejectInbound(sourceId: string, reason: string): Promise<void> {
+    await this.http.post('/cortex_rental.api.v1.ai.reject_inbound', { source_id: sourceId, reason }, makeIdempotencyKey())
   }
 
-  async getAgentActivity(input: GetAgentActivityInput): Promise<AgentActivityResponse> {
-    return this.http.get<AgentActivityResponse>('/intelligence/activity', input)
+  async linkInboundToRental(sourceId: string, rentalId: string): Promise<void> {
+    await this.http.post('/cortex_rental.api.v1.ai.link_inbound_to_rental', { source_id: sourceId, rental: rentalId }, makeIdempotencyKey())
   }
 
-  // 7. Copilot
-  async createCopilotSession(input: CreateCopilotSessionInput): Promise<CreateCopilotSessionResponse> {
-    return this.http.post<CreateCopilotSessionResponse>('/copilot/session', input)
+  async listAgentActivity(input: AgentActivityInput): Promise<AgentActivity> {
+    return unwrapFrappe(await this.http.get<FrappeResult<AgentActivity>>('/cortex_rental.api.v1.ai.list_agent_activity', { ...input }))
   }
 
-  async sendCopilotMessage(input: SendCopilotMessageInput): Promise<SendCopilotMessageResponse> {
-    return this.http.post<SendCopilotMessageResponse>(`/copilot/session/${input.session_id}/message`, input)
+  // 7. Assistant
+  async getAssistantStatus(): Promise<AssistantStatus> {
+    return unwrapFrappe(await this.http.get<FrappeResult<AssistantStatus>>('/cortex_rental.api.v1.chat.get_assistant_status'))
   }
 
-  async getCopilotSession(input: GetCopilotSessionInput): Promise<GetCopilotSessionResponse> {
-    return this.http.get<GetCopilotSessionResponse>(`/copilot/session/${input.session_id}`)
+  async sendChatMessage(input: SendChatInput): Promise<SendChatResult> {
+    return unwrapFrappe(await this.http.post<FrappeResult<SendChatResult>>('/cortex_rental.api.v1.chat.send_message', {
+      chat_session_id: input.chat_session_id,
+      message: input.message,
+      context: JSON.stringify(input.context)
+    }))
   }
 
-  async listCopilotSessions(input: ListCopilotSessionsInput): Promise<ListCopilotSessionsResponse> {
-    return this.http.get<ListCopilotSessionsResponse>('/copilot/sessions', input)
+  async getChatSession(sessionId: string): Promise<ChatSessionDetail> {
+    return unwrapFrappe(await this.http.get<FrappeResult<ChatSessionDetail>>('/cortex_rental.api.v1.chat.get_session', { name: sessionId }))
   }
 
-  async pinCopilotContext(input: PinCopilotContextInput): Promise<MutationResponse> {
-    return this.http.post<MutationResponse>(`/copilot/session/${input.session_id}/pin`, input)
-  }
-
-  async clearCopilotContext(input: ClearCopilotContextInput): Promise<MutationResponse> {
-    return this.http.post<MutationResponse>(`/copilot/session/${input.session_id}/clear`, input)
+  async listChatSessions(): Promise<ChatSessionSummary[]> {
+    return unwrapFrappe(await this.http.get<FrappeResult<ChatSessionSummary[]>>('/cortex_rental.api.v1.chat.list_sessions'))
   }
 
   // 8. Catalog, Fleet, Policies, Audit & Migration

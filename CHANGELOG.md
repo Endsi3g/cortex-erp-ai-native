@@ -59,6 +59,18 @@
 - **Blocking fix**: `Consignment Payout` had a field named `owner`, a Frappe reserved fieldname — the DocType could not be migrated. Renamed to `consignment_owner`; a new schema test rejects reserved fieldnames, duplicate fields, dangling child tables and missing controllers across all DocTypes.
 - Removed the fictitious server-side statement export (CSV is generated client-side with the injection guard; PDF through print).
 
+### Lot 7 — AI: inbox, workspace, assistant, agent activity
+
+- **AI inbox** (`api/v1/ai.py`): one list for pending approvals, inbound requests (with their latest extraction) and quote drafts created by agents, scoped to the active company. States are computed on the server (ready, needs review, low confidence below 0.7, extraction error, processing, then approved / applied / rejected).
+- **AI workspace**: the source on the left (message and evidence, the approval's current vs proposed values, or the draft's lines), the AI's work on the right. Every decision button says exactly what it will record. "Prepare rental" opens the composer prefilled with the recognised dates and items, and saving links the request (`cortex.inbound.converted`). Rejections require a reason (`cortex.inbound.rejected`). Approving runs the approved transition under the approver's name, and people cannot approve their own requests.
+- The model score is shown as reported by the agent, always labelled "not calibrated".
+- **Assistant** (⌘J drawer and `/assistant` with history) now uses the real `api/v1/chat.py` gateway. The server picks the agent from the page key, and the active document is sent only as context the server re-checks. The server's typed blocks are rendered with facts, extracted values and model text visually distinct. The old store invented replies (a fixed "no conflict detected", confidence 0.96, a DEMO evidence id) and a draft count of 2; all of that is removed. When the assistant is not configured (`get_assistant_status`), the drawer says so instead of answering.
+- **Agent activity** (`list_agent_activity`): agent runs with their tool calls (scope, status, duration, error), filters and CSV export; restricted to telemetry roles.
+- **Blocking fixes, agent tools**:
+  - `submit_approval_request` wrote to fields that do not exist on Approval Request, so no agent approval could be created. It now uses `requested_by_type/id`, `evidence_ids` and a new `rationale` field.
+  - `create_quote_draft` / `preview_pricing` trusted the caller's `unit_rate`. Rates now come only from the company's rental profiles, and agents cannot apply discounts.
+- Removed the REST calls to routes that never existed (`/intelligence/*`, `/copilot/*`) and their fixtures/types.
+
 **Quality (lot 1)**
 - `tests/fake_frappe.py`: runs the `if frappe:` paths in pytest and validates every insert against the DocType JSON (unknown / missing mandatory fields).
 - CI now typechecks, tests and builds the frontend.

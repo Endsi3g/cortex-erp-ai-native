@@ -41,7 +41,9 @@ class TestCortexMCPTools(unittest.TestCase):
         self.assertEqual(result["state"], "quote")
         self.assertEqual(result["billable_days"], 3.0)
         self.assertEqual(result["calendar_days"], 7)
-        self.assertEqual(result["total"], "13500.00")
+        # The agent-supplied unit_rate is never used: prices come from the
+        # company's rental profiles on the server (none in this offline test).
+        self.assertEqual(result["total"], "0.00")
 
     def test_check_availability_tool(self):
         result = asyncio.run(

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 try:
     import frappe
@@ -12,39 +12,66 @@ from cortex_rental.services.idempotency import get_idempotency_key_header, with_
 from cortex_rental.services.agent_telemetry import log_tool_call
 
 
-def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
+def _server_rates(lines: List[Dict[str, Any]], company: str) -> Dict[str, float]:
+    """Daily rates from the company's rental profiles (the only price authority)."""
+    codes = sorted({line.get("item_id") or line.get("item_code") for line in lines})
+    rates = {}
+    for code in codes:
+        rate = frappe.db.get_value("Cortex Rental Item Profile", {"company": company, "item_code": code}, "daily_rate")
+        if rate is None:
+            frappe.throw(f"{code} n’est pas dans le catalogue locatif de la société.", frappe.ValidationError)
+        rates[code] = float(rate or 0)
+    return rates
+
+
+def _price_lines(lines: List[Dict[str, Any]], billable_days: float, calendar_days: int, rates: Dict[str, float]):
+    """
+    Price agent-requested lines. `unit_rate` sent by the caller is ignored on
+    purpose: agents never set prices. Agents cannot apply discounts either.
+    """
+    total, processed = 0.0, []
+    for line in lines:
+        code = line.get("item_id") or line.get("item_code")
+        qty = float(line.get("quantity") or 1.0)
+        if qty <= 0:
+            raise ValueError(f"Quantité invalide pour {code}.")
+        if float(line.get("discount_percentage") or 0):
+            raise PermissionError("Un agent ne peut pas appliquer de remise ; une personne autorisée doit le faire.")
+        rate = float(rates.get(code) or 0.0)
+        amount = PricingService.calculate_line_total(rate, qty, billable_days)
+        total += amount
+        processed.append(
+            {
+                "item_code": code,
+                "qty": qty,
+                "rate": rate,
+                "calendar_days": calendar_days,
+                "billable_days": billable_days,
+                "discount_percentage": 0.0,
+                "amount": amount,
+            }
+        )
+    return round(total, 2), processed
+
+
+def create_draft_handler(
+    payload: Dict[str, Any], company: str, actor_id: str, rates: Optional[Dict[str, float]] = None
+) -> Dict[str, Any]:
     starts_at = payload.get("starts_at")
     ends_at = payload.get("ends_at")
     customer_id = payload.get("customer_id")
     lines = payload.get("lines") or []
+    if not starts_at or not ends_at or not lines:
+        raise ValueError("starts_at, ends_at and at least one line are required.")
 
     calendar_days, billable_days = PricingService.compute_billable_days(starts_at, ends_at, company)
+    if frappe:
+        if not frappe.db.exists("Customer", {"name": customer_id, "cortex_company": company}):
+            frappe.throw("Client introuvable pour la société.", frappe.PermissionError)
+        rates = _server_rates(lines, company)
+    total_amount, processed_lines = _price_lines(lines, billable_days, calendar_days, rates or {})
 
-    total_amount = 0.0
-    processed_lines = []
-
-    for line in lines:
-        item_id = line.get("item_id")
-        qty = float(line.get("quantity") or 1.0)
-        unit_rate = float(line.get("unit_rate") or 100.0)
-        discount = float(line.get("discount_percentage") or 0.0)
-        line_amount = PricingService.calculate_line_total(unit_rate, qty, billable_days, discount)
-        total_amount += line_amount
-
-        processed_lines.append(
-            {
-                "item_code": item_id,
-                "qty": qty,
-                "rate": unit_rate,
-                "calendar_days": calendar_days,
-                "billable_days": billable_days,
-                "discount_percentage": discount,
-                "amount": line_amount,
-            }
-        )
-
-    tx_name = f"CR-TRX-2026-{frappe.utils.now_datetime().strftime('%s')[-5:]}" if frappe else "CR-TRX-2026-00001"
-
+    tx_name = "CR-TRX-DRAFT"
     if frappe:
         doc = frappe.get_doc(
             {
@@ -54,12 +81,11 @@ def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -
                 "rental_state": "Quote",
                 "starts_at": starts_at,
                 "ends_at": ends_at,
-                "calendar_days": calendar_days,
-                "billable_days": billable_days,
-                "subtotal": total_amount,
-                "grand_total": total_amount,
-                "notes": payload.get("notes") or "Created by Cortex AI Intake",
-                "items": processed_lines,
+                "notes": payload.get("notes") or "Brouillon créé par l’assistant de demande client",
+                "items": [
+                    {k: v for k, v in line.items() if k in ("item_code", "qty", "rate", "discount_percentage")}
+                    for line in processed_lines
+                ],
             }
         )
         doc.insert(ignore_permissions=True)
@@ -88,53 +114,34 @@ def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -
     }
 
 
-def preview_pricing_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
-    """
-    Read-only counterpart to create_draft_handler: same PricingService
-    calls, no Cortex Rental Transaction ever created. Exists so the
-    Transaction Composer frontend can show a live price preview while
-    the user is still editing lines, without either creating a real
-    (throwaway) draft per keystroke or re-implementing the billable-days
-    curve in JavaScript — the design system explicitly forbids the
-    latter ("Le prix est présenté comme résultat du PricingService, pas
-    comme calcul frontend").
-
-    Unlike create_draft_handler, a missing unit_rate defaults to 0.0,
-    not a fabricated 100.0 — a preview silently showing a fake $100/day
-    would be worse than showing $0 and making the missing rate obvious.
-    """
+def preview_pricing_handler(
+    payload: Dict[str, Any], company: str, rates: Optional[Dict[str, float]] = None
+) -> Dict[str, Any]:
+    """Read-only counterpart of create_draft_handler: same pricing, nothing persisted."""
     starts_at = payload.get("starts_at")
     ends_at = payload.get("ends_at")
     if not starts_at or not ends_at:
         raise ValueError("starts_at and ends_at are required.")
-
     lines = payload.get("lines") or []
     calendar_days, billable_days = PricingService.compute_billable_days(starts_at, ends_at, company)
-
-    total_amount = 0.0
-    processed_lines = []
-    for line in lines:
-        qty = float(line.get("quantity") or 1.0)
-        unit_rate = float(line.get("unit_rate") or 0.0)
-        discount = float(line.get("discount_percentage") or 0.0)
-        line_amount = PricingService.calculate_line_total(unit_rate, qty, billable_days, discount)
-        total_amount += line_amount
-        processed_lines.append(
-            {
-                "item_id": line.get("item_id"),
-                "quantity": qty,
-                "unit_rate": unit_rate,
-                "discount_percentage": discount,
-                "amount": f"{line_amount:.2f}",
-            }
-        )
-
+    if frappe and lines:
+        rates = _server_rates(lines, company)
+    total, processed = _price_lines(lines, billable_days, calendar_days, rates or {})
     return {
         "calendar_days": calendar_days,
         "billable_days": billable_days,
-        "subtotal": f"{total_amount:.2f}",
-        "total": f"{total_amount:.2f}",
-        "lines": processed_lines,
+        "subtotal": f"{total:.2f}",
+        "total": f"{total:.2f}",
+        "lines": [
+            {
+                "item_id": line["item_code"],
+                "quantity": line["qty"],
+                "unit_rate": line["rate"],
+                "discount_percentage": 0.0,
+                "amount": f"{line['amount']:.2f}",
+            }
+            for line in processed
+        ],
     }
 
 

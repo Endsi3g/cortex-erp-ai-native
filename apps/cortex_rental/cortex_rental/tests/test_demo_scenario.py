@@ -26,7 +26,7 @@ class TestCortexDemoScenario(unittest.TestCase):
             "notes": "Incoming request from Dune 3 Productions for 3x Alexa 35 Packages.",
         }
 
-        result = create_draft_handler(payload, self.company, "agent:cortex-intake")
+        result = create_draft_handler(payload, self.company, "agent:cortex-intake", rates={"itm-alexa-35-pkg": 1500.0})
         self.assertEqual(result["state"], "quote")
         self.assertEqual(result["calendar_days"], 7)
         self.assertEqual(result["billable_days"], 3.0)
@@ -47,7 +47,7 @@ class TestCortexDemoScenario(unittest.TestCase):
             "ends_at": self.ends_at,
             "lines": [{"item_id": "itm-alexa-35-pkg", "quantity": 3, "unit_rate": 1500.00}],
         }
-        result = preview_pricing_handler(payload, self.company)
+        result = preview_pricing_handler(payload, self.company, rates={"itm-alexa-35-pkg": 1500.0})
         self.assertEqual(result["calendar_days"], 7)
         self.assertEqual(result["billable_days"], 3.0)
         self.assertEqual(result["total"], "13500.00")
@@ -56,11 +56,27 @@ class TestCortexDemoScenario(unittest.TestCase):
         with self.assertRaises(ValueError):
             preview_pricing_handler({"starts_at": self.starts_at}, self.company)
 
-    def test_preview_pricing_missing_unit_rate_defaults_to_zero_not_fabricated_rate(self):
-        # create_draft_handler defaults a missing unit_rate to 100.0 (a
-        # pre-existing behavior, not changed here) — preview_pricing
-        # deliberately does not inherit that: a live preview silently
-        # showing a fake $100/day rate would be worse than an honest $0.
+    def test_agent_supplied_unit_rate_is_ignored(self):
+        payload = {
+            "customer_id": "cust-dune3-01",
+            "starts_at": self.starts_at,
+            "ends_at": self.ends_at,
+            "lines": [{"item_id": "itm-alexa-35-pkg", "quantity": 1, "unit_rate": 9999.00}],
+        }
+        result = create_draft_handler(payload, self.company, "agent:cortex-intake", rates={"itm-alexa-35-pkg": 1500.0})
+        self.assertEqual(result["total"], "4500.00")
+
+    def test_agent_cannot_apply_a_discount(self):
+        payload = {
+            "starts_at": self.starts_at,
+            "ends_at": self.ends_at,
+            "lines": [{"item_id": "itm-alexa-35-pkg", "quantity": 1, "discount_percentage": 20}],
+        }
+        with self.assertRaises(PermissionError):
+            preview_pricing_handler(payload, self.company, rates={"itm-alexa-35-pkg": 1500.0})
+
+    def test_preview_pricing_unknown_rate_is_zero_not_fabricated(self):
+        # Without a server rate the line is priced at 0, never at an invented rate.
         payload = {
             "starts_at": self.starts_at,
             "ends_at": self.ends_at,

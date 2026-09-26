@@ -48,24 +48,6 @@ import type {
   GetApprovalResponse,
   ApproveApprovalInput,
   RejectApprovalInput,
-  ListInboundRequestsInput,
-  ListInboundRequestsResponse,
-  GetInboundRequestInput,
-  GetInboundRequestResponse,
-  ListAiDraftsInput,
-  ListAiDraftsResponse,
-  GetAgentActivityInput,
-  AgentActivityResponse,
-  CreateCopilotSessionInput,
-  CreateCopilotSessionResponse,
-  SendCopilotMessageInput,
-  SendCopilotMessageResponse,
-  GetCopilotSessionInput,
-  GetCopilotSessionResponse,
-  ListCopilotSessionsInput,
-  ListCopilotSessionsResponse,
-  PinCopilotContextInput,
-  ClearCopilotContextInput,
   ListEquipmentInput,
   ListEquipmentResponse,
   GetEquipmentInput,
@@ -90,6 +72,7 @@ import type {
   RegisterEvidenceInput,
   MutationResponse
 } from '../contracts'
+import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult } from '../contracts/ai'
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
 import { demoPnlFilterOptions, demoProfitAndLoss } from './fixtures/finance'
 import type { RentalSummary, ListRentalSummariesInput, ReadinessField, OperationsOverview } from '../contracts'
@@ -1288,150 +1271,85 @@ export class MockCortexApiClient implements CortexApiClient {
     }
   }
 
-  // 6. Inbound & Telemetry
-  async listInboundRequests(input: ListInboundRequestsInput): Promise<ListInboundRequestsResponse> {
+  // 6. AI (DEMO data in the server shapes; explicit mock mode only)
+  async listInbox(kind?: InboxKind, includeClosed = false): Promise<InboxList> {
     await LatencySimulator.inject('standard')
-    let list = [...this.store.inboundRequests]
-    if (input.status) {
-      list = list.filter((i) => i.status === input.status)
-    }
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      items: list,
-      total_count: list.length
-    }
+    const closed = new Set(['validated', 'rejected', 'applied', 'expired'])
+    const items = this.store.inbox.filter(item => (!kind || item.kind === kind) && (includeClosed || !closed.has(item.state)))
+    return { provenance: 'mock', items, can_decide_approvals: true, team_scope_available: false }
   }
 
-  async getInboundRequest(input: GetInboundRequestInput): Promise<GetInboundRequestResponse> {
+  async getInboxItem(kind: InboxKind, sourceId: string): Promise<InboxDetail> {
     await LatencySimulator.inject('standard')
-    const req = this.store.inboundRequests.find((i) => i.id === input.id)
-    if (!req) {
-      throw new Error(`Demande entrante introuvable: ${input.id}`)
+    if (kind === 'inbound') {
+      const detail = this.store.inboundDetails.find(d => d.id === sourceId)
+      if (!detail) throw new Error(`Demande entrante introuvable : ${sourceId}`)
+      return detail
     }
-    return { ...req, provenance: 'mock', last_synced_at: new Date().toISOString() }
-  }
-
-  async listAiDrafts(input: ListAiDraftsInput): Promise<ListAiDraftsResponse> {
-    await LatencySimulator.inject('standard')
-    let list = [...this.store.aiDrafts]
-    if (input.status) {
-      list = list.filter((d) => d.status === input.status)
-    }
+    if (kind === 'draft') return { kind: 'draft', rental: await this.getRental({ id: sourceId }) }
+    const row = this.store.inbox.find(item => item.kind === 'approval' && item.source_id === sourceId)
+    const approval = this.store.approvals.find(a => a.id === sourceId)
+    if (!row || !approval) throw new Error(`Approbation introuvable : ${sourceId}`)
     return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      items: list,
-      total_count: list.length
+      kind: 'approval',
+      row,
+      status: approval.status === 'pending' ? 'Pending' : approval.status === 'approved' ? 'Approved' : approval.status === 'rejected' ? 'Rejected' : 'Expired',
+      entity_type: approval.reference_doctype,
+      entity_id: approval.reference_name,
+      proposed: approval.after_state ?? {},
+      current: approval.before_state ?? {},
+      evidence_ids: approval.evidence_ids ?? [],
+      policy_decision: approval.threshold_exceeded_details ? { reason: approval.threshold_exceeded_details } : {},
+      decided_by: approval.resolved_by ?? null,
+      decided_at: approval.resolved_at ?? null,
+      decision_reason: approval.rejection_reason ?? null,
+      self_requested: false
     }
   }
 
-  async getAgentActivity(_input: GetAgentActivityInput): Promise<AgentActivityResponse> {
-    await LatencySimulator.inject('heavy')
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      runs: this.store.telemetryRuns,
-      total_runs_today: this.store.telemetryRuns.length,
-      total_cost_today_cad: 0.05,
-      avg_latency_ms: 7170
-    }
-  }
-
-  // 7. Copilot
-  async createCopilotSession(_input: CreateCopilotSessionInput): Promise<CreateCopilotSessionResponse> {
-    await LatencySimulator.inject('ai')
-    const sessionId = `DEMO-SES-${Date.now()}`
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      session_id: sessionId,
-      created_at: new Date().toISOString(),
-      messages: this.store.copilotMessages
-    }
-  }
-
-  async sendCopilotMessage(input: SendCopilotMessageInput): Promise<SendCopilotMessageResponse> {
-    await LatencySimulator.inject('ai')
-    const userMsg = {
-      id: `msg-${Date.now()}-u`,
-      session_id: input.session_id,
-      sender: 'user' as const,
-      content: input.content,
-      state: 'completed' as const,
-      timestamp: new Date().toISOString()
-    }
-
-    const assistantMsg = {
-      id: `msg-${Date.now()}-a`,
-      session_id: input.session_id,
-      sender: 'assistant' as const,
-      content: `J’ai analysé votre demande : « ${input.content} ». Les disponibilités sont confirmées et les règles de tarification (7j=3j) sont respectées.`,
-      state: 'proposed' as const,
-      timestamp: new Date().toISOString(),
-      tools_called: [
-        {
-          name: 'check_inventory_availability',
-          params: { query: input.content },
-          result_preview: 'Disponibilité: 100% libre'
-        }
-      ]
-    }
-
-    this.store.copilotMessages.push(userMsg, assistantMsg)
-
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      user_message: userMsg,
-      assistant_message: assistantMsg
-    }
-  }
-
-  async getCopilotSession(input: GetCopilotSessionInput): Promise<GetCopilotSessionResponse> {
-    await LatencySimulator.inject('standard')
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      session_id: input.session_id,
-      created_at: new Date().toISOString(),
-      messages: this.store.copilotMessages
-    }
-  }
-
-  async listCopilotSessions(_input: ListCopilotSessionsInput): Promise<ListCopilotSessionsResponse> {
-    await LatencySimulator.inject('standard')
-    return {
-      provenance: 'mock',
-      last_synced_at: new Date().toISOString(),
-      sessions: [
-        {
-          session_id: 'DEMO-SES-001',
-          created_at: '2026-09-02T16:00:00Z',
-          last_message_preview: 'Discussion sur la location DEMO-TRX-2026-001'
-        }
-      ]
-    }
-  }
-
-  async pinCopilotContext(_input: PinCopilotContextInput): Promise<MutationResponse> {
+  async rejectInbound(sourceId: string, _reason: string): Promise<void> {
     await LatencySimulator.inject('fast')
+    const row = this.store.inboxRows.find(item => item.kind === 'inbound' && item.source_id === sourceId)
+    if (row) row.state = 'rejected'
+  }
+
+  async linkInboundToRental(sourceId: string, rentalId: string): Promise<void> {
+    await LatencySimulator.inject('fast')
+    const row = this.store.inboxRows.find(item => item.kind === 'inbound' && item.source_id === sourceId)
+    if (row) row.state = 'applied'
+    const detail = this.store.inboundDetails.find(d => d.id === sourceId)
+    if (detail) detail.extracted_transaction = rentalId
+  }
+
+  async listAgentActivity(input: AgentActivityInput): Promise<AgentActivity> {
+    await LatencySimulator.inject('standard')
+    const items = this.store.agentRuns.filter(run => (!input.agent || run.agent === input.agent) && (!input.status || run.status === input.status))
+    const start = (input.page - 1) * input.page_size
     return {
-      request_id: `req-pin-${Date.now()}`,
-      status: 'completed',
-      approval_required: false,
-      mutation_performed: true
+      provenance: 'mock',
+      items: items.slice(start, start + input.page_size),
+      total_count: items.length,
+      page: input.page,
+      page_size: input.page_size,
+      agents: [...new Set(this.store.agentRuns.map(run => run.agent))].sort()
     }
   }
 
-  async clearCopilotContext(_input: ClearCopilotContextInput): Promise<MutationResponse> {
-    await LatencySimulator.inject('fast')
-    return {
-      request_id: `req-clr-${Date.now()}`,
-      status: 'completed',
-      approval_required: false,
-      mutation_performed: true
-    }
+  // 7. Assistant — the mock never invents an answer: it says it is not connected.
+  async getAssistantStatus(): Promise<AssistantStatus> {
+    return { available: false, provider: 'mock', model_name: null }
+  }
+
+  async sendChatMessage(_input: SendChatInput): Promise<SendChatResult> {
+    throw new Error('Assistant non configuré en mode démonstration.')
+  }
+
+  async getChatSession(sessionId: string): Promise<ChatSessionDetail> {
+    return { name: sessionId, agent_profile: 'cortex-operations', state: 'Active', messages: [] }
+  }
+
+  async listChatSessions(): Promise<ChatSessionSummary[]> {
+    return []
   }
 
   // 8. Catalog, Fleet, Policies, Audit & Migration

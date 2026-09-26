@@ -30,10 +30,11 @@ def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str
                 "entity_type": entity_type,
                 "entity_id": entity_id,
                 "status": "Pending",
+                "requested_by_type": "Agent",
+                "requested_by_id": actor_id,
                 "proposed_payload": frappe.as_json(proposed_payload) if proposed_payload else None,
-                "evidence_references": frappe.as_json(evidence_ids) if evidence_ids else None,
-                "agent_rationale": rationale,
-                "created_by_agent": actor_id,
+                "evidence_ids": frappe.as_json(evidence_ids) if evidence_ids else None,
+                "rationale": (rationale or "")[:2000] or None,
             }
         )
         doc.insert(ignore_permissions=True)

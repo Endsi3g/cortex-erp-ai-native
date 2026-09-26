@@ -369,6 +369,15 @@ async function save() {
     if (result.status !== 'completed' || !result.entity_id) throw new Error(result.errors?.[0]?.message ?? t('rental_detail.action_refused'))
     dirty.value = false
     toast.create({ message: editing.value ? t('composer.saved') : t('composer.created', { name: result.entity_id }), type: 'success' })
+    // Opened from an inbound request in the AI workspace: record the link so the request leaves the inbox.
+    const inbound = typeof route.query.inbound === 'string' ? route.query.inbound : ''
+    if (!editing.value && inbound) {
+      try {
+        await api.linkInboundToRental(inbound, result.entity_id)
+      } catch (error) {
+        toast.create({ message: t('ai.link_failed', { error: error instanceof Error ? error.message : String(error) }), type: 'warning' })
+      }
+    }
     await router.push({ name: 'rental-detail', params: { name: result.entity_id } })
   } catch (error) {
     saveError.value = error instanceof Error ? error.message : String(error)
