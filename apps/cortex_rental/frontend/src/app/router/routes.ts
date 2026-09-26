@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import type { CortexRouteMeta } from './types'
+import { useSessionStore } from '@/stores/session'
 
 /**
  * Canonical Cortex route map. The app is served by Frappe under /cortex/
@@ -16,7 +17,14 @@ function meta(value: Meta): CortexRouteMeta {
 }
 
 export const routes: RouteRecordRaw[] = [
-  { path: '/', redirect: { name: 'operations-overview' } },
+  // Home = the conversation (Claude-style). People without assistant access land on Operations.
+  {
+    path: '/',
+    name: 'home',
+    component: () => import('@/features/assistant/views/AssistantHomeView.vue'),
+    meta: meta({ screenId: 20, titleKey: 'routes.home', layout: 'app', category: 'assistant', iconName: 'Asterisk' }),
+    beforeEnter: () => (useSessionStore().hasPermission('cortex:copilot:access') ? true : { name: 'operations-overview' })
+  },
 
   // Operations
   {
@@ -149,12 +157,7 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/features/intelligence/views/AiWorkspaceView.vue'),
     meta: meta({ screenId: 26, titleKey: 'routes.ai_workspace', layout: 'app', requiredPermission: 'cortex:copilot:access', breadcrumbParent: 'ai-inbox', hideInSidebar: true })
   },
-  {
-    path: '/assistant',
-    name: 'assistant-full',
-    component: () => import('@/features/copilot/views/FullAssistantView.vue'),
-    meta: meta({ screenId: 20, titleKey: 'routes.assistant_full', priority: 'P2', layout: 'chat', requiredPermission: 'cortex:copilot:access', category: 'intelligence', iconName: 'Sparkles' })
-  },
+  { path: '/assistant', name: 'assistant-full', redirect: to => ({ name: 'home', query: to.query }) },
   {
     path: '/ai/audit',
     name: 'ai-audit',

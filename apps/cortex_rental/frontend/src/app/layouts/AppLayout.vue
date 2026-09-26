@@ -1,5 +1,9 @@
 <template>
-  <div class="flex h-screen w-screen overflow-hidden bg-surface-white text-ink-gray-8 print:block print:h-auto print:w-auto print:overflow-visible">
+  <!-- Embed mode (?embed=1): the page alone, for the assistant's artifact panel. -->
+  <main v-if="embedded" id="main-content" class="h-screen w-screen overflow-auto bg-surface-white text-ink-gray-8">
+    <slot />
+  </main>
+  <div v-else class="flex h-screen w-screen overflow-hidden bg-surface-white text-ink-gray-8 print:block print:h-auto print:w-auto print:overflow-visible">
     <a
       href="#main-content"
       class="sr-only z-50 rounded bg-surface-white px-3 py-2 text-base text-ink-gray-9 shadow focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
@@ -34,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppSidebar from './components/AppSidebar.vue'
@@ -45,6 +49,7 @@ import UniversalSearch from './components/UniversalSearch.vue'
 const { t } = useI18n()
 const route = useRoute()
 const mobileMenuOpen = ref(false)
+const embedded = computed(() => route.query.embed === '1')
 
 watch(() => route.fullPath, () => (mobileMenuOpen.value = false))
 </script>

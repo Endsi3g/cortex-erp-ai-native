@@ -49,6 +49,9 @@ export const initialCompanySettings: CompanySettings = {
   taxes_and_charges: 'TPS/TVQ QC - DEMO',
   damage_item: null,
   loss_item: null,
+  ai_provider: 'Anthropic',
+  ai_model: 'claude-sonnet-5',
+  ai_available: false,
   configured: false
 }
 

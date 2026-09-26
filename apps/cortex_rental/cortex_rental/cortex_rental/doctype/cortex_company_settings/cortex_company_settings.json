@@ -12,7 +12,10 @@
     "accounting_section",
     "taxes_and_charges",
     "damage_item",
-    "loss_item"
+    "loss_item",
+    "ai_section",
+    "ai_provider",
+    "ai_model"
   ],
   "fields": [
     {
@@ -67,6 +70,26 @@
       "fieldtype": "Link",
       "label": "Article « Équipement perdu »",
       "options": "Item"
+    },
+    {
+      "fieldname": "ai_section",
+      "fieldtype": "Section Break",
+      "label": "Assistant IA"
+    },
+    {
+      "fieldname": "ai_provider",
+      "fieldtype": "Select",
+      "label": "Fournisseur IA",
+      "options": "Anthropic\nOnyx",
+      "default": "Anthropic",
+      "description": "Anthropic : appel direct au modèle avec les outils Cortex. Onyx : service Onyx self-hosted."
+    },
+    {
+      "fieldname": "ai_model",
+      "fieldtype": "Data",
+      "label": "Modèle",
+      "default": "claude-sonnet-5",
+      "description": "Identifiant du modèle Anthropic. La clé API reste dans site_config (anthropic_api_key)."
     }
   ],
   "module": "Cortex Rental",

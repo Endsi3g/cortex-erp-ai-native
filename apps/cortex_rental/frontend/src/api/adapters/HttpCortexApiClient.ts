@@ -66,7 +66,7 @@ import type {
   MutationResponse
 } from '../contracts'
 import type { Policies, PricingRuleInput, CompanySettingsInput, Team, AuditQuery, AuditPage, AuditEventDetail, ImportBatches, ImportBatch, ImportType, ImportAnalysis, ImportValidation, ImportRollback } from '../contracts/administration'
-import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult } from '../contracts/ai'
+import type { InboxKind, InboxList, InboxDetail, AgentActivity, AgentActivityInput, AssistantStatus, ChatSessionSummary, ChatSessionDetail, SendChatInput, SendChatResult, ActionDecision } from '../contracts/ai'
 import type { RentalSummary, ListRentalSummariesInput, ReadinessField, OperationsOverview } from '../contracts'
 import type { InvoiceRow, PaymentRow, PagedResult, ListInvoicesInput, ListPaymentsInput, RentalBilling, PaymentMode, RecordAdvanceInput, RecordAdvanceResult } from '../contracts'
 import type { PnlFilterOptions, PnlFilters, PnlReport, GlobalSearchResponse } from '../contracts'
@@ -337,12 +337,17 @@ export class HttpCortexApiClient implements CortexApiClient {
     return unwrapFrappe(await this.http.post<FrappeResult<SendChatResult>>('/cortex_rental.api.v1.chat.send_message', {
       chat_session_id: input.chat_session_id,
       message: input.message,
-      context: JSON.stringify(input.context)
+      context: JSON.stringify(input.context),
+      client_turn_id: input.client_turn_id
     }))
   }
 
   async getChatSession(sessionId: string): Promise<ChatSessionDetail> {
     return unwrapFrappe(await this.http.get<FrappeResult<ChatSessionDetail>>('/cortex_rental.api.v1.chat.get_session', { name: sessionId }))
+  }
+
+  async decideAiAction(actionId: string, decision: 'confirm' | 'cancel'): Promise<ActionDecision> {
+    return unwrapFrappe(await this.http.post<FrappeResult<ActionDecision>>('/cortex_rental.api.v1.chat.decide_action', { action_id: actionId, decision }))
   }
 
   async listChatSessions(): Promise<ChatSessionSummary[]> {

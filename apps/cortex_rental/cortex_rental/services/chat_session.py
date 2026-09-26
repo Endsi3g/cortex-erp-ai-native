@@ -90,10 +90,46 @@ def _check_rate_limit(user: str) -> None:
     frappe.cache().set_value(cache_key, int(count) + 1, expires_in_sec=RATE_LIMIT_WINDOW_SECONDS)
 
 
+def _refresh_action_blocks(messages: List[Dict[str, Any]]) -> None:
+    """Stored proposal cards show their current status (confirmed, cancelled…) when a conversation is reopened."""
+    ids = [b.get("action_id") for m in messages for b in m["blocks"] if b.get("type") == "action_proposal"]
+    if not ids or not frappe:
+        return
+    rows = {
+        r.name: r
+        for r in frappe.get_all(
+            "Cortex AI Action", filters={"name": ["in", ids]}, fields=["name", "status", "result", "error_message"]
+        )
+    }
+    for message in messages:
+        for block in message["blocks"]:
+            row = rows.get(block.get("action_id")) if block.get("type") == "action_proposal" else None
+            if row:
+                block["status"] = row.status.lower()
+                block["result"] = json.loads(row.result) if row.result else None
+                block["error"] = row.error_message or None
+
+
 class ChatSessionService:
-    def __init__(self, onyx_client: Optional[OnyxChatClient] = None):
+    def __init__(
+        self, onyx_client: Optional[OnyxChatClient] = None, engine_provider: Any = None, company: Optional[str] = None
+    ):
+        # Anthropic (direct, with Cortex tools) or Onyx, chosen per company.
+        self.engine_provider = engine_provider
+        self.model_name = getattr(engine_provider, "model", "")
+        if engine_provider is None and onyx_client is None and frappe and company:
+            from cortex_rental.services.ai.config import ai_settings
+
+            settings = ai_settings(company)
+            if settings["provider"] == "anthropic":
+                from cortex_rental.services.ai.anthropic_provider import AnthropicProvider
+
+                self.engine_provider = AnthropicProvider(frappe.conf.get("anthropic_api_key"), settings["model"])
+                self.model_name = self.engine_provider.model
         if onyx_client is not None:
             self.onyx_client = onyx_client
+        elif self.engine_provider is not None:
+            self.onyx_client = None
         elif not frappe:
             # The deterministic mock remains available only to unit tests and
             # the local no-Frappe contract path.
@@ -104,7 +140,8 @@ class ChatSessionService:
             if provider == "mock" and conf.get("developer_mode"):
                 self.onyx_client = MockOnyxChatClient()
             else:
-                self.onyx_client = HttpOnyxChatClient.from_site_config()
+                # Created on first send: history/list endpoints must work without Onyx configured.
+                self.onyx_client = None
 
     # -----------------------------------------------------------------
     def create_session(self, user: str, company: str, page: str, locale: str = "fr-CA") -> Dict[str, Any]:
@@ -170,6 +207,7 @@ class ChatSessionService:
                     "created_at": str(row.created_at),
                 }
             )
+        _refresh_action_blocks(messages)
         data["messages"] = messages
         return data
 
@@ -229,6 +267,7 @@ class ChatSessionService:
         message: str,
         context: Dict[str, Any],
         chat_session_id: Optional[str],
+        client_turn_id: Optional[str] = None,
     ) -> SendMessageResponseData:
         _check_rate_limit(user)
 
@@ -266,10 +305,26 @@ class ChatSessionService:
         self._write_context_snapshot(session_name, company, page, resolved_context, context_hash)
         self._write_message(session_name, company, "Human", user, message, [], request_id)
 
+        if frappe and self.engine_provider is not None:
+            return self._send_with_engine(
+                user=user,
+                company=company,
+                message=message,
+                page=page,
+                resolved_context=resolved_context,
+                session_name=session_name,
+                request_id=request_id,
+                client_turn_id=client_turn_id,
+                start=start,
+                started_at=started_at,
+            )
+
         upstream_session_id = None
         if frappe:
             upstream_session_id = frappe.db.get_value("Cortex Chat Session", session_name, "onyx_chat_session_id")
 
+        if self.onyx_client is None:
+            self.onyx_client = HttpOnyxChatClient.from_site_config()
         try:
             result = self.onyx_client.send_message(
                 message=message,
@@ -442,4 +497,189 @@ class ChatSessionService:
             session_name,
             "last_message_at",
             frappe.utils.now_datetime(),
+        )
+
+    # -----------------------------------------------------------------
+    def _send_with_engine(
+        self,
+        user: str,
+        company: str,
+        message: str,
+        page: str,
+        resolved_context: Dict[str, Any],
+        session_name: str,
+        request_id: str,
+        client_turn_id: Optional[str],
+        start: float,
+        started_at: Any,
+    ) -> SendMessageResponseData:
+        """Anthropic path: the model calls Cortex tools as this user; writes become proposals."""
+        from cortex_rental.services.ai import engine
+        from cortex_rental.services.ai.tools import ToolContext
+        from cortex_rental.services.onyx_chat_client import OnyxChatResult
+
+        roles = set(frappe.get_roles(user))
+        rows = frappe.get_all(
+            "Cortex Chat Message",
+            filters={"chat_session": session_name},
+            fields=["sender_type", "content_sanitized as text", "request_id"],
+            order_by="created_at asc",
+            limit_page_length=60,
+        )
+        history = engine.history_messages([r for r in rows if r.request_id != request_id])
+        full_name = frappe.db.get_value("User", user, "full_name") or user
+        system = engine.system_prompt(
+            company=company,
+            user_name=full_name,
+            roles=[r for r in roles if r not in ("All", "Guest", "Desk User")],
+            page=page,
+            document=resolved_context.get("active_document_name"),
+            locale=resolved_context.get("locale", "fr-CA"),
+            now=frappe.utils.now_datetime(),
+        )
+
+        def publish(kind: str, payload: Dict[str, Any]) -> None:
+            frappe.publish_realtime(
+                "cortex_ai",
+                {"session": session_name, "turn": client_turn_id, "kind": kind, **payload},
+                user=user,
+            )
+
+        run = frappe.get_doc(
+            {
+                "doctype": "Cortex Agent Run",
+                "company": company,
+                "agent_id": "cortex-assistant",
+                "request_id": request_id,
+                "actor_id": user,
+                "model_used": self.model_name,
+                "status": "Running",
+                "tool_call_count": 0,
+                "started_at": started_at,
+                "last_seen_at": started_at,
+            }
+        )
+        run.flags.ignore_permissions = True
+        run.insert()
+
+        def record_tool_call(name: str, status: str, duration_ms: int, error: Optional[str]) -> None:
+            call = frappe.get_doc(
+                {
+                    "doctype": "Cortex Agent Tool Call",
+                    "company": company,
+                    "agent_run": run.name,
+                    "tool_name": name,
+                    "scope": "user",
+                    "status": status,
+                    "started_at": frappe.utils.now_datetime(),
+                    "duration_ms": duration_ms,
+                    "error_message": (error or "")[:1000] or None,
+                }
+            )
+            call.flags.ignore_permissions = True
+            call.insert()
+
+        def record_proposal(tool: Any, args: Dict[str, Any], preview: Dict[str, Any]) -> str:
+            action = frappe.get_doc(
+                {
+                    "doctype": "Cortex AI Action",
+                    "company": company,
+                    "chat_session": session_name,
+                    "user": user,
+                    "tool": tool.name,
+                    "title": (preview.get("title") or tool.name)[:140],
+                    "arguments": frappe.as_json(args),
+                    "preview": frappe.as_json(preview),
+                    "status": "Proposed",
+                }
+            )
+            action.flags.ignore_permissions = True
+            action.insert()
+            return action.name
+
+        try:
+            result = engine.run_turn(
+                provider=self.engine_provider,
+                system=system,
+                history=history,
+                message=message,
+                ctx=ToolContext(user=user, company=company, roles=roles),
+                publish=publish,
+                record_proposal=record_proposal,
+                record_tool_call=record_tool_call,
+            )
+        except Exception as exc:
+            frappe.db.set_value(
+                "Cortex Agent Run", run.name, {"status": "Failed", "last_seen_at": frappe.utils.now_datetime()}
+            )
+            ChatAuditTelemetryService.record_chat_turn(
+                company=company,
+                agent_profile="cortex-assistant",
+                request_id=request_id,
+                status="Failed",
+                started_at=started_at,
+                duration_ms=int((time.monotonic() - start) * 1000),
+                error_message=type(exc).__name__,
+            )
+            publish("error", {"message": str(exc)[:300]})
+            raise
+
+        blocks = ChatResponseTransformer.transform(
+            OnyxChatResult(onyx_message_id=request_id, text=result.text, blocks=result.blocks)
+        )
+        message_doc_name = self._write_message(
+            session_name,
+            company,
+            "Agent",
+            "cortex-assistant",
+            result.text,
+            blocks,
+            request_id,
+            model_provider="anthropic",
+            model_name=self.model_name,
+            routing_reason="Cortex assistant (Anthropic, outils Cortex)",
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+        )
+        self._touch_session(session_name)
+        frappe.db.set_value(
+            "Cortex Agent Run",
+            run.name,
+            {
+                "status": "Completed",
+                "tool_call_count": len(result.tool_calls),
+                "last_seen_at": frappe.utils.now_datetime(),
+            },
+        )
+        ChatAuditTelemetryService.record_chat_turn(
+            company=company,
+            agent_profile="cortex-assistant",
+            request_id=request_id,
+            status="Success",
+            started_at=started_at,
+            duration_ms=int((time.monotonic() - start) * 1000),
+        )
+        publish("done", {"message_id": message_doc_name})
+        return SendMessageResponseData(
+            message_id=message_doc_name, chat_session_id=session_name, status="completed", blocks=blocks
+        )
+
+    # -----------------------------------------------------------------
+    def record_action_outcome(self, session_name: str, company: str, action: Any) -> None:
+        """A System line in the conversation, so the assistant knows on the next turn what the person decided."""
+        if not frappe:
+            return
+        outcome = {
+            "Executed": "confirmée et exécutée",
+            "Cancelled": "annulée par la personne",
+            "Failed": f"confirmée mais refusée par Cortex : {action.error_message}",
+        }.get(action.status, action.status)
+        self._write_message(
+            session_name,
+            company,
+            "System",
+            frappe.session.user,
+            f"[Action {action.name} — {action.title}] {outcome}.",
+            [],
+            _new_id("REQ"),
         )

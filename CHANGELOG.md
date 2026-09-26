@@ -1,5 +1,50 @@
 # Changelog — Cortex Security & Correctness Remediation
 
+## v0.7.0-dev — AI-first Cortex (`feat/ai-home`)
+
+### Phase A — One assistant engine, provider per company
+
+- **Engine** (`services/ai/`): Anthropic Messages API called directly from Frappe, with streaming and tool use. Plain HTTP; the key lives only in `site_config` (`anthropic_api_key`). Provider and model are chosen per company in Cortex Company Settings: **Anthropic** (default, `claude-sonnet-5`) or **Onyx** (existing path). The choice is editable in Admin › Politiques.
+- **Tools = the existing endpoints, run as the signed-in person**: customers, equipment, availability, server pricing, rentals, day overview, P&L, invoices, rental billing, consignment, AI inbox, policies, page links. The endpoints' own role and company checks apply; finance tools are not even offered to non-finance roles.
+- **Writes are only proposed.** Quote, reservation, advance, final invoice, cancellation, serial status, new customer and inbound rejection each record a `Cortex AI Action` (new DocType) and return an `action_proposal` block. Nothing runs until a person confirms (confirmation lands in phase D).
+- **Streaming**: text, tool progress and blocks are pushed on the `cortex_ai` Frappe realtime channel. The ⌘J panel shows them live and falls back to the full HTTP reply when the socket is unavailable.
+- Every turn is recorded as a `Cortex Agent Run` with its tool calls, so it shows in Activité des agents.
+- New block types: `widget` (read-tool data for the UI), `action_proposal`, `page_link`.
+- Onyx is no longer required for the chat history endpoints (the Onyx client is created lazily, only when a company uses Onyx).
+
+### Phase B — Claude-style home and conversation
+
+- `/cortex` now opens on the conversation (route `home`). People without assistant access land on Operations, and `/assistant` redirects to the home page. The navigation rail and every regular page stay available.
+- Claude look, scoped to AI surfaces (`.claude-surface`: ivory background, serif greeting and answers, beige user bubbles, clay accent). Tables, forms and reports keep the ERPNext style.
+- **Home**: time-of-day greeting, large rounded composer (Enter to send, Shift+Enter for a new line), suggestions filtered by the person's permissions, and a collapsible history grouped by today, last 7 days and older (`?c=<session>` reopens one). The composer docks at the bottom once the conversation starts, with a live streaming caret and a copy button on answers.
+- The ⌘J panel uses the same conversation components, with the current page as context. It is hidden on the home page.
+- Model text is rendered as Markdown and sanitized (DOMPurify; no scripts, images, forms or `javascript:` links). Internal links open inside the app.
+
+### Phase C — Widgets and artifacts
+
+- Read-tool results appear in the conversation as widgets, formatted from what the endpoint returned (no numbers computed client-side):
+  - tables: customers, equipment, rentals, invoices, AI inbox;
+  - records: customer, equipment, rental, rental billing, owner statement;
+  - KPI tiles: day overview, consignment, policies;
+  - availability, with a red/green status per item;
+  - server price with taxes;
+  - P&L totals, or ERPNext's refusal reason instead of zeros.
+- Every widget links to its real page. **Ouvrir ici** shows that page as an artifact beside the conversation, like Claude's artifact panel: the real screen in embed mode (`?embed=1`, no rail or top bar). Availability and pricing widgets offer **Préparer une soumission**, which opens the composer prefilled.
+- In the ⌘J panel, links navigate to the page directly; there is no room for a side artifact there.
+- The P&L tool now sends the model totals and first-level accounts only.
+
+### Phase D — Proposed actions, confirmed by a person
+
+- Each write proposal is a card: what will happen, the impact, the effect, then **Confirmer** or **Annuler**.
+- `chat.decide_action` runs the proposal only under all of these conditions:
+  - the person deciding owns the conversation;
+  - the action belongs to the active company;
+  - it is still pending, and is less than 24 hours old;
+  - it is decided only once: the row is locked, so two clicks or two tabs cannot run it twice.
+- A confirmed proposal runs through the same endpoint the screens use, under that person's rights: quote, reservation, advance, final invoice, cancellation, serial status, new customer, inbound rejection. A refusal (role, state machine, missing data) is shown on the card and nothing is half-done, because the call runs inside a savepoint.
+- Each decision is audited (`cortex.ai.action_executed` / `_cancelled` / `_failed`). It is also written into the conversation as a System line, so the assistant knows on the next turn what the person decided.
+- Reopened conversations show each card's current status.
+
 ## v0.6.0-dev — 2026-09-25 — Refonte UI complète (`feat/ui-rebuild`, lots 1 à 8)
 
 Not verified on a live bench: see HANDOFF §0 for the deployment and per-screen checks on the tower.

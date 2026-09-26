@@ -22,6 +22,7 @@ from cortex_rental.permissions.agent_scopes import (
     get_company_context,
 )
 from cortex_rental.schemas.chat_schemas import SendMessageRequest
+from cortex_rental.services.onyx_chat_client import MockOnyxChatClient
 from cortex_rental.services.chat_session import (
     ChatSessionService,
     ChatContextPermissionError,
@@ -51,7 +52,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
         _raise_validation_error(exc)
         return {}  # unreachable when frappe is available; keeps type-checkers happy
 
-    service = ChatSessionService()
+    service = ChatSessionService(company=company)
     try:
         response = service.send_message(
             user=user,
@@ -59,6 +60,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
             message=request.message,
             context=request.context.model_dump(),
             chat_session_id=request.chat_session_id,
+            client_turn_id=request.client_turn_id,
         )
     except ChatContextPermissionError as exc:
         if frappe:
@@ -139,17 +141,85 @@ if frappe:
 
     @frappe.whitelist(methods=["GET"])
     def get_assistant_status():
-        """Whether the assistant can answer, without exposing any URL, key or persona id."""
+        """Whether the assistant can answer, without exposing any URL or key."""
+        from cortex_rental.services.ai.config import ai_settings
+
         require_human_staff_role()
-        conf = frappe.conf
-        provider = str(conf.get("cortex_chat_provider", "onyx")).lower()
-        if provider == "mock" and conf.get("developer_mode"):
-            return {"data": {"available": True, "provider": "mock", "model_name": "Réponses simulées (développement)"}}
-        configured = bool(conf.get("onyx_base_url") and conf.get("onyx_api_key"))
+        settings = ai_settings(get_company_context())
         return {
             "data": {
-                "available": configured,
-                "provider": "onyx",
-                "model_name": conf.get("onyx_model_name") if configured else None,
+                "available": settings["available"],
+                "provider": settings["provider"],
+                "model_name": settings["model"] if settings["available"] else None,
+            }
+        }
+
+    @frappe.whitelist(methods=["POST"])
+    def decide_action(action_id: str, decision: str):
+        """Confirm (execute as this person) or cancel a proposal made by the assistant."""
+        from cortex_rental.services.ai import actions
+        from cortex_rental.services.audit import AuditService
+
+        require_human_staff_role()
+        company = get_company_context()
+        if decision not in ("confirm", "cancel"):
+            frappe.throw("Décision inconnue.", frappe.ValidationError)
+        if not frappe.db.exists("Cortex AI Action", action_id):
+            frappe.throw("Action introuvable.", frappe.DoesNotExistError)
+        # Row lock: two clicks or two tabs cannot execute the same proposal twice.
+        frappe.db.get_value("Cortex AI Action", action_id, "status", for_update=True)
+        action = frappe.get_doc("Cortex AI Action", action_id)
+        try:
+            actions.check_decidable(action.as_dict(), frappe.session.user, company, frappe.utils.now_datetime())
+        except actions.ActionRefused as exc:
+            frappe.throw(str(exc), frappe.PermissionError)
+
+        now = frappe.utils.now_datetime()
+        arguments = frappe.parse_json(action.arguments or "{}") or {}
+        route = None
+        if decision == "cancel":
+            action.update({"status": "Cancelled", "decided_by": frappe.session.user, "decided_at": now})
+            action.flags.ignore_permissions = True
+            action.save()
+        else:
+            frappe.db.savepoint("cortex_ai_action")
+            try:
+                result, route = actions.execute(action.tool, arguments)
+            except Exception as exc:
+                frappe.db.rollback(save_point="cortex_ai_action")
+                message = str(exc)[:500] or type(exc).__name__
+                action.update(
+                    {"status": "Failed", "error_message": message, "decided_by": frappe.session.user, "decided_at": now}
+                )
+                action.flags.ignore_permissions = True
+                action.save()
+            else:
+                action.update(
+                    {
+                        "status": "Executed",
+                        "result": frappe.as_json({**result, "route": route}),
+                        "decided_by": frappe.session.user,
+                        "decided_at": now,
+                    }
+                )
+                action.flags.ignore_permissions = True
+                action.save()
+        AuditService.record_mutation(
+            company=company,
+            action=f"cortex.ai.action_{action.status.lower()}",
+            entity_type="Cortex AI Action",
+            entity_id=action.name,
+            after_state={"tool": action.tool, "status": action.status, "error": action.error_message},
+        )
+        if action.chat_session:
+            ChatSessionService(onyx_client=MockOnyxChatClient()).record_action_outcome(
+                session_name=action.chat_session, company=company, action=action
+            )
+        return {
+            "data": {
+                "action_id": action.name,
+                "status": action.status.lower(),
+                "result": frappe.parse_json(action.result) if action.result else None,
+                "error": action.error_message or None,
             }
         }

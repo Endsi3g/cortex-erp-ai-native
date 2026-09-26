@@ -7,6 +7,7 @@ export type LayoutType =
   | 'minimal'      // Authentication & standalone errors
 
 export type NavigationCategory =
+  | 'assistant'
   | 'operations'
   | 'warehouse'
   | 'customers'

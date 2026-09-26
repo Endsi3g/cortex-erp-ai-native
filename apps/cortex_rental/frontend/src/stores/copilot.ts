@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { getCortexApiClient } from '@/api'
-import type { AssistantStatus, ChatBlock, ChatContext, ChatMessage, ChatSessionSummary } from '@/api/contracts/ai'
+import type { AssistantStatus, AssistantStreamEvent, ChatBlock, ChatContext, ChatMessage, ChatSessionSummary } from '@/api/contracts/ai'
+import { onRealtime } from '@/app/realtime/socket'
 import { i18n } from '@/app/i18n'
 
 /**
@@ -93,16 +94,35 @@ export const useCopilotStore = defineStore('copilot', () => {
     const message = text.trim()
     if (!message || sending.value) return
     sendError.value = ''
-    const now = new Date().toISOString()
-    messages.value.push({ id: `local-${Date.now()}`, sender_type: 'Human', text: message, blocks: [], created_at: now })
+    const turnId = `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
+    messages.value.push({ id: `local-${turnId}`, sender_type: 'Human', text: message, blocks: [], created_at: new Date().toISOString() })
+    // Live answer, filled by realtime events; replaced by the server's final message.
+    messages.value.push({ id: `pending-${turnId}`, sender_type: 'Agent', text: '', blocks: [], created_at: new Date().toISOString(), streaming: true, activeTool: null })
+    const pending = () => messages.value.find(m => m.id === `pending-${turnId}`)
+    const stop = onRealtime<AssistantStreamEvent>('cortex_ai', event => {
+      if (event.turn !== turnId) return
+      const live = pending()
+      if (!live) return
+      if (event.kind === 'text' && event.delta) live.text += event.delta
+      else if (event.kind === 'tool') live.activeTool = event.state === 'running' ? String(event.tool) : null
+      else if (event.kind === 'block') {
+        const { session: _s, turn: _t, kind: _k, ...block } = event
+        live.blocks.push(block as unknown as ChatBlock)
+      }
+    })
     sending.value = true
     try {
-      const result = await getCortexApiClient().sendChatMessage({ chat_session_id: sessionId.value ?? undefined, message, context: buildContext() })
+      const result = await getCortexApiClient().sendChatMessage({ chat_session_id: sessionId.value ?? undefined, message, context: buildContext(), client_turn_id: turnId })
       sessionId.value = result.chat_session_id
-      messages.value.push({ id: result.message_id, sender_type: 'Agent', text: '', blocks: result.blocks, created_at: new Date().toISOString() })
+      const index = messages.value.findIndex(m => m.id === `pending-${turnId}`)
+      const final: ChatMessage = { id: result.message_id, sender_type: 'Agent', text: '', blocks: result.blocks, created_at: new Date().toISOString() }
+      if (index >= 0) messages.value.splice(index, 1, final)
+      else messages.value.push(final)
     } catch (error) {
+      messages.value = messages.value.filter(m => m.id !== `pending-${turnId}`)
       sendError.value = error instanceof Error ? error.message : String(error)
     } finally {
+      stop()
       sending.value = false
     }
   }
@@ -120,6 +140,21 @@ export const useCopilotStore = defineStore('copilot', () => {
     sessionId.value = detail.name
     messages.value = detail.messages
     sendError.value = ''
+  }
+
+  /** Confirm (runs as this person, through the normal endpoint) or cancel a proposal; updates its card. */
+  async function decideAction(actionId: string, decision: 'confirm' | 'cancel') {
+    const outcome = await getCortexApiClient().decideAiAction(actionId, decision)
+    for (const message of messages.value) {
+      for (const block of message.blocks) {
+        if (block.type === 'action_proposal' && block.action_id === actionId) {
+          block.status = outcome.status
+          block.result = outcome.result
+          block.error = outcome.error
+        }
+      }
+    }
+    return outcome
   }
 
   function newConversation() {
@@ -149,6 +184,7 @@ export const useCopilotStore = defineStore('copilot', () => {
     sendMessage,
     loadSessions,
     openSession,
+    decideAction,
     newConversation
   }
 })

@@ -68,6 +68,20 @@
           <span class="text-p-sm text-ink-gray-5">{{ t('admin.audited_hint') }}</span>
         </div>
       </section>
+
+      <!-- AI assistant provider -->
+      <section class="border-t border-outline-gray-1 px-6 py-5" :aria-labelledby="`${uid}-ai`">
+        <div class="flex items-center gap-2">
+          <h2 :id="`${uid}-ai`" class="text-base font-semibold text-ink-gray-9">{{ t('admin.policies.ai_title') }}</h2>
+          <Badge :theme="data.settings.ai_available ? 'green' : 'orange'" variant="subtle">{{ data.settings.ai_available ? t('admin.policies.ai_ready') : t('admin.policies.ai_not_configured') }}</Badge>
+        </div>
+        <p class="mt-1 text-p-sm text-ink-gray-5">{{ t('admin.policies.ai_hint') }}</p>
+        <div class="mt-4 grid max-w-4xl grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+          <FormControl v-model="settings.ai_provider" type="select" size="sm" variant="subtle" :label="t('admin.policies.ai_provider')" :options="[{ label: 'Anthropic (Claude)', value: 'Anthropic' }, { label: 'Onyx', value: 'Onyx' }]" :disabled="!data.can_edit_settings" />
+          <FormControl v-if="settings.ai_provider === 'Anthropic'" v-model="settings.ai_model" type="text" size="sm" variant="subtle" :label="t('admin.policies.ai_model')" placeholder="claude-sonnet-5" :disabled="!data.can_edit_settings" />
+        </div>
+        <p class="mt-3 text-p-sm text-ink-gray-5">{{ settings.ai_provider === 'Anthropic' ? t('admin.policies.ai_key_anthropic') : t('admin.policies.ai_key_onyx') }}</p>
+      </section>
     </template>
 
     <Dialog v-model="ruleOpen" :options="{ title: ruleForm.existing ? t('admin.policies.edit_rule', { days: ruleForm.calendar_days }) : t('admin.policies.add_rule'), size: 'md' }">
@@ -110,7 +124,7 @@ const uid = useId()
 const data = ref<Policies | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
-const settings = reactive({ advance_percentage: 30 as number | string, include_equipment_guarantee: true, taxes_and_charges: '', damage_item: '', loss_item: '' })
+const settings = reactive({ advance_percentage: 30 as number | string, include_equipment_guarantee: true, taxes_and_charges: '', damage_item: '', loss_item: '', ai_provider: 'Anthropic' as 'Anthropic' | 'Onyx', ai_model: '' })
 const savingSettings = ref(false)
 const settingsError = ref('')
 const ruleOpen = ref(false)
@@ -164,7 +178,8 @@ const settingsDirty = computed(() => {
   const s = data.value?.settings
   if (!s) return false
   return Number(settings.advance_percentage) !== s.advance_percentage || settings.include_equipment_guarantee !== s.include_equipment_guarantee ||
-    settings.taxes_and_charges !== (s.taxes_and_charges ?? '') || settings.damage_item !== (s.damage_item ?? '') || settings.loss_item !== (s.loss_item ?? '')
+    settings.taxes_and_charges !== (s.taxes_and_charges ?? '') || settings.damage_item !== (s.damage_item ?? '') || settings.loss_item !== (s.loss_item ?? '') ||
+    settings.ai_provider !== s.ai_provider || (settings.ai_provider === 'Anthropic' && settings.ai_model !== (s.ai_model ?? ''))
 })
 
 const ruleValid = computed(() => {
@@ -180,7 +195,9 @@ function apply(result: Policies) {
     include_equipment_guarantee: result.settings.include_equipment_guarantee,
     taxes_and_charges: result.settings.taxes_and_charges ?? '',
     damage_item: result.settings.damage_item ?? '',
-    loss_item: result.settings.loss_item ?? ''
+    loss_item: result.settings.loss_item ?? '',
+    ai_provider: result.settings.ai_provider,
+    ai_model: result.settings.ai_model ?? ''
   })
 }
 
@@ -226,7 +243,9 @@ async function saveSettings() {
     include_equipment_guarantee: settings.include_equipment_guarantee,
     taxes_and_charges: settings.taxes_and_charges || null,
     damage_item: settings.damage_item.trim() || null,
-    loss_item: settings.loss_item.trim() || null
+    loss_item: settings.loss_item.trim() || null,
+    ai_provider: settings.ai_provider,
+    ...(settings.ai_provider === 'Anthropic' ? { ai_model: settings.ai_model.trim() || null } : {})
   }
   try {
     apply(await getCortexApiClient().saveCompanySettings(values))

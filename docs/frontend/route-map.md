@@ -5,6 +5,7 @@
 > - **Opérations et entrepôt :** `/cortex/operations`, `/cortex/availability`, `/cortex/rentals`, `/cortex/rentals/new`, `/cortex/rentals/:name`, `/cortex/checkout/:rental?`, `/cortex/checkin/:rental?`.
 > - **Catalogue :** `/cortex/equipment[/:item]`, `/cortex/serials/:serial`, `/cortex/kits`.
 > - **Consignation :** `/cortex/consignment`, `/cortex/consignment/owners[/:owner/statement/:period]`.
+> - **Accueil :** `/cortex/` = conversation avec l’assistant (écran 20). `/cortex/assistant` y redirige ; sans droit assistant, redirection vers Opérations.
 > - **IA :** `/cortex/ai/inbox`, `/cortex/ai/workspace/:kind:sourceId` (ex. `inbound:INB-0001`), `/cortex/ai/audit` (activité des agents), `/cortex/assistant`.
 > - **Administration :** `/cortex/admin/policies`, `/cortex/admin/team`, `/cortex/admin/import[?batch=]`, `/cortex/admin/audit`.
 > - **Écrans ajoutés :** **27** Clients (`/cortex/customers`), **28** Fiche client (`/cortex/customers/:customer`), **29** Compte de résultat (`/cortex/finance/profit-and-loss`), **30** Factures et paiements (`/cortex/finance/invoices`).

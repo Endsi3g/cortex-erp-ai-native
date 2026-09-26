@@ -1,0 +1,118 @@
+{
+  "actions": [],
+  "creation": "2026-09-25 00:00:00.000000",
+  "modified": "2026-09-25 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "chat_session",
+    "user",
+    "tool",
+    "title",
+    "arguments",
+    "preview",
+    "status",
+    "result",
+    "error_message",
+    "decided_by",
+    "decided_at"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "chat_session",
+      "fieldtype": "Link",
+      "label": "Conversation",
+      "options": "Cortex Chat Session"
+    },
+    {
+      "fieldname": "user",
+      "fieldtype": "Link",
+      "label": "Utilisateur",
+      "options": "User",
+      "reqd": 1
+    },
+    {
+      "fieldname": "tool",
+      "fieldtype": "Data",
+      "label": "Action",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Titre",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "arguments",
+      "fieldtype": "Code",
+      "label": "Arguments",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "preview",
+      "fieldtype": "Code",
+      "label": "Aperçu",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Statut",
+      "options": "Proposed\nExecuted\nCancelled\nFailed\nExpired",
+      "default": "Proposed",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "result",
+      "fieldtype": "Code",
+      "label": "Résultat",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "error_message",
+      "fieldtype": "Small Text",
+      "label": "Erreur"
+    },
+    {
+      "fieldname": "decided_by",
+      "fieldtype": "Link",
+      "label": "Décidé par",
+      "options": "User"
+    },
+    {
+      "fieldname": "decided_at",
+      "fieldtype": "Datetime",
+      "label": "Décidé le"
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex AI Action",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 1,
+  "autoname": "hash",
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1
+    },
+    {
+      "role": "Cortex System Manager",
+      "read": 1
+    }
+  ]
+}

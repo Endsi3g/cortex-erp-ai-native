@@ -28,5 +28,8 @@ def get_context(context):
         "csrf_token": csrf_token,
         "cortex_user": frappe.session.user,
         "site_name": frappe.local.site,
+        # Realtime (assistant streaming): same rules as Frappe's own socket client.
+        "socketio_port": frappe.conf.get("socketio_port") or 9000,
+        "dev_server": bool(frappe.conf.get("developer_mode")),
     }
     return context

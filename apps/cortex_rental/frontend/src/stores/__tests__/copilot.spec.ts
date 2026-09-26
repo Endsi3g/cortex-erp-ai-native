@@ -59,3 +59,63 @@ describe('Copilot Store — real chat gateway', () => {
     expect(chatPageFor('checkin-scanner').page).toBe('checkin')
   })
 })
+
+describe('Copilot Store — streaming', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('C-TEST-5: shows streamed text and blocks for its own turn, then the final message', async () => {
+    const socket = await import('@/app/realtime/socket')
+    let handler: ((event: Record<string, unknown>) => void) | null = null
+    const spy = vi.spyOn(socket, 'onRealtime').mockImplementation((_event, fn) => {
+      handler = fn as (event: Record<string, unknown>) => void
+      return () => { handler = null }
+    })
+    let resolveSend: (value: unknown) => void = () => {}
+    const sendChatMessage = vi.fn().mockImplementation(() => new Promise(resolve => { resolveSend = resolve }))
+    setCortexApiClient(fakeClient({ sendChatMessage }))
+    const store = useCopilotStore()
+
+    const done = store.sendMessage('Dispo Alexa ?')
+    const turn = sendChatMessage.mock.calls[0]![0].client_turn_id as string
+    handler!({ session: 'S1', turn: 'someone-else', kind: 'text', delta: 'ignoré' })
+    handler!({ session: 'S1', turn, kind: 'text', delta: 'Je ' })
+    handler!({ session: 'S1', turn, kind: 'text', delta: 'vérifie.' })
+    handler!({ session: 'S1', turn, kind: 'tool', tool: 'check_availability', state: 'running' })
+    const live = store.messages.find(m => m.streaming)!
+    expect(live.text).toBe('Je vérifie.')
+    expect(live.activeTool).toBe('check_availability')
+    handler!({ session: 'S1', turn, kind: 'block', type: 'page_link', route: '/availability', label: 'Disponibilité' })
+    expect(live.blocks).toEqual([{ type: 'page_link', route: '/availability', label: 'Disponibilité' }])
+
+    resolveSend({ message_id: 'M1', chat_session_id: 'S1', status: 'completed', blocks: [{ type: 'assistant_text', text: 'Je vérifie.', source_ids: [] }] })
+    await done
+    expect(store.messages.some(m => m.streaming)).toBe(false)
+    expect(store.messages.at(-1)!.id).toBe('M1')
+    expect(handler).toBeNull()
+    spy.mockRestore()
+  })
+})
+
+describe('Copilot Store — proposals', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('C-TEST-6: confirming a proposal updates its card with the server outcome', async () => {
+    const decideAiAction = vi.fn().mockResolvedValue({ action_id: 'A1', status: 'executed', result: { rental: 'TRX-9', route: '/rentals/TRX-9' }, error: null })
+    const sendChatMessage = vi.fn().mockResolvedValue({
+      message_id: 'M1', chat_session_id: 'S1', status: 'completed',
+      blocks: [{ type: 'action_proposal', action_id: 'A1', tool: 'create_quote', title: 'Soumission', impact: [], effect: '', arguments: {}, status: 'proposed' }]
+    })
+    setCortexApiClient(fakeClient({ sendChatMessage, decideAiAction }))
+    const store = useCopilotStore()
+    await store.sendMessage('Prépare une soumission')
+    await store.decideAction('A1', 'confirm')
+    expect(decideAiAction).toHaveBeenCalledWith('A1', 'confirm')
+    const card = store.messages.at(-1)!.blocks[0] as unknown as { status: string; result: { route: string } }
+    expect(card.status).toBe('executed')
+    expect(card.result.route).toBe('/rentals/TRX-9')
+  })
+})

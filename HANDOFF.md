@@ -55,6 +55,30 @@ Consignment Payout : le champ `owner` (nom réservé par Frappe, la migration é
 | 13 | Admin › Import | Petit CSV de clients : valider, importer, puis annuler | `File.get_content()`, `upload_file` rattaché au lot, savepoints |
 | 14 | Admin › Journal d’audit | Les événements des étapes précédentes apparaissent, avec détail et export CSV | — |
 
+### Assistant IA (`feat/ai-home`, par-dessus la refonte)
+
+`/cortex` s’ouvre sur la conversation au style Claude. Le ⌘J donne la même conversation à côté de chaque page.
+
+**Configuration :**
+- dans `site_config.json` : `anthropic_api_key` (obligatoire pour Anthropic) ;
+- dans Admin › Politiques : fournisseur et modèle, par société (`claude-sonnet-5` par défaut). Choisir Onyx garde l’ancien chemin (`onyx_base_url`, `onyx_api_key`) ;
+- pour le streaming mot à mot : socket.io de Frappe, actif avec `bench start` ou le superviseur de production. Sans lui, la réponse arrive d’un bloc.
+
+**À vérifier sur la tour :**
+
+| # | Action | Attendu |
+|---|---|---|
+| A1 | Accueil, « Qu’est-ce qui part aujourd’hui ? » | La réponse arrive mot à mot ; carte « Journée du … » avec les vrais chiffres ; l’exécution apparaît dans Activité des agents avec ses appels d’outils |
+| A2 | « Disponibilité de <code article> du 1 au 4 octobre » | Carte disponibilité conforme à la grille ; « Ouvrir ici » affiche la page à droite ; « Préparer une soumission » ouvre le composeur prérempli |
+| A3 | « Prépare une soumission pour <client> avec … » | Carte « À confirmer ». Annuler : rien n’est créé. Confirmer : la location existe, avec les prix du catalogue ; événement `cortex.ai.action_executed` dans le Journal d’audit |
+| A4 | Même demande avec un rôle sans droit (Comptoir → facture) | L’outil n’est pas proposé, ou la carte indique le refus. Rien n’est modifié |
+| A5 | Rouvrir la conversation via l’historique | Les cartes montrent leur statut actuel |
+
+**Hypothèses non vérifiées en direct :**
+- le format réel du flux SSE de l’API Anthropic avec les outils. Le parseur suit la spécification et est testé sur des événements enregistrés à la main ;
+- `frappe.publish_realtime(..., user=...)` émis pendant la requête HTTP ;
+- l’URL socket.io en développement (`host:socketio_port/site`).
+
 Tests gated-Frappe à lancer ensuite : voir §2 (`bench --site <site> run-tests --app cortex_rental`).
 
 ## 1. État actuel en une phrase (historique, 2026-08-31)
