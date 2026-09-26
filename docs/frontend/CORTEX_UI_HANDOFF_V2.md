@@ -156,6 +156,12 @@ Les pages et actions doivent indiquer leur provenance réelle. Mock, fixture, AP
 - **Assistant** (⌘J et `/cortex/assistant`) : passe par `api/v1/chat.py`, et le serveur choisit l’agent selon la page. S’il n’est pas configuré, l’écran le dit ; aucune réponse n’est simulée.
 - **Rien n’a été recetté sur un bench réel dans cette refonte.** Voir `HANDOFF.md` §0 pour la liste des vérifications à faire sur la tour.
 
+État au 2026-09-25 — assistant au centre (`feat/ai-home`) :
+
+- **Accueil :** `/cortex` est la conversation au style Claude : fond ivoire, réponses en serif, zone de saisie arrondie, historique. Le style Claude est limité aux surfaces IA (`.claude-surface`) ; les données restent au style ERPNext.
+- **Moteur :** un seul moteur, Anthropic direct avec les outils Cortex, ou Onyx, au choix par société. Les outils de lecture s’exécutent avec les droits de la personne et s’affichent en widgets reliés aux pages. Les outils d’écriture produisent une carte à confirmer : rien n’est fait sans confirmation, et l’exécution passe par l’endpoint normal, auditée.
+- **Artefacts :** le panneau de droite affiche la vraie page en mode intégré (`?embed=1`).
+
 État vérifié le 2026-09-23 :
 
 - La stack de développement fonctionne dans Docker : Vite sur `localhost:5173`, Frappe/ERPNext sur `localhost:8000`, Onyx Lite sur `localhost:3000`, et Ollama sur l’hôte Windows. Le frontend est en mode API réelle par défaut; les mocks ne sont activés que par configuration explicite.
