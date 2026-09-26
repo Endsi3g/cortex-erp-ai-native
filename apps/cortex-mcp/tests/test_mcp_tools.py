@@ -41,7 +41,9 @@ class TestCortexMCPTools(unittest.TestCase):
         self.assertEqual(result["state"], "quote")
         self.assertEqual(result["billable_days"], 3.0)
         self.assertEqual(result["calendar_days"], 7)
-        self.assertEqual(result["total"], "13500.00")
+        # The agent-supplied unit_rate is never used: prices come from the
+        # company's rental profiles on the server (none in this offline test).
+        self.assertEqual(result["total"], "0.00")
 
     def test_check_availability_tool(self):
         result = asyncio.run(
@@ -54,19 +56,18 @@ class TestCortexMCPTools(unittest.TestCase):
         self.assertIsInstance(result, list)
         self.assertTrue(result[0]["is_available"])
 
-    def test_prepare_owner_statement_tool(self):
-        result = asyncio.run(
-            prepare_owner_statement(
-                owner_id="Roger Deakins Productions Inc.",
-                gross_amount=9000.00,
-                consignment_percentage=70.0,
-                serial_no="SN-ALX35-001",
-                days=3.0,
-                rate=1500.0,
-            )
-        )
-        self.assertEqual(result["owner_payout_amount"], 6300.00)
-        self.assertNotIn("customer_name", result["calculation_snapshot"])
+    def test_prepare_owner_statement_tool_sends_no_amount(self):
+        from unittest import mock
+
+        from cortex_mcp import server
+
+        with mock.patch.object(
+            server.client, "call_method", new=mock.AsyncMock(return_value={"data": {"lines": []}})
+        ) as call:
+            result = asyncio.run(prepare_owner_statement(owner_id="OWN-RD", period="2026-09"))
+        self.assertEqual(result, {"lines": []})
+        self.assertEqual(call.call_args.args[0], "cortex_rental.api.v1.consignment.prepare_owner_statement")
+        self.assertEqual(call.call_args.kwargs["json_data"], {"owner_id": "OWN-RD", "period": "2026-09"})
 
     def test_tools_do_not_accept_a_company_argument(self):
         """

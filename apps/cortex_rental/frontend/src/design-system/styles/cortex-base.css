@@ -1,0 +1,88 @@
+/**
+ * Cortex — base resets on top of Frappe UI (ERPNext reference look)
+ */
+
+/* High-Contrast Accessible Focus Rings (WCAG 2.2 SC 2.4.13) */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #c7c7c7;
+  border-radius: var(--radius-sm, 6px);
+}
+
+/* Monospace Helpers */
+.cx-mono {
+  font-family: var(--font-mono, "JetBrains Mono", monospace) !important;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Typography Classes */
+.cx-title-page {
+  font-family: var(--font-sans, Inter, sans-serif);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--cortex-text, #08120d);
+  margin: 0;
+}
+
+.cx-title-section {
+  font-family: var(--font-sans, Inter, sans-serif);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.30;
+  letter-spacing: -0.01em;
+  color: var(--cortex-text, #08120d);
+  margin: 0;
+}
+
+.cx-title-card {
+  font-family: var(--font-sans, Inter, sans-serif);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  color: var(--cortex-text, #08120d);
+  margin: 0;
+}
+
+.cx-text-body {
+  font-family: var(--font-sans, Inter, sans-serif);
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--cortex-text-secondary, #264034);
+}
+
+.cx-text-label {
+  font-family: var(--font-sans, Inter, sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.30;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cortex-text-muted, #436354);
+}
+
+.cx-text-kpi {
+  font-family: var(--font-sans, Inter, sans-serif);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--cortex-text, #08120d);
+}
+
+/* Screen Reader Only Utility */
+.cx-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

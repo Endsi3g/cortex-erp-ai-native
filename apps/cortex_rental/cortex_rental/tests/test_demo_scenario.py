@@ -4,7 +4,7 @@ from cortex_rental.services.transaction_state import TransactionStateService
 from cortex_rental.api.v1.quotes import create_draft_handler, preview_pricing_handler
 from cortex_rental.api.v1.availability import check_availability_handler, get_matrix_handler
 from cortex_rental.api.v1.approvals import submit_approval_handler
-from cortex_rental.api.v1.consignment import prepare_owner_statement_handler
+from cortex_rental.services.consignment import ConsignmentService
 from cortex_rental.cortex_rental.doctype.approval_request.approval_request import ApprovalRequest
 from cortex_rental.cortex_rental.doctype.audit_event.audit_event import AuditEvent
 
@@ -26,7 +26,7 @@ class TestCortexDemoScenario(unittest.TestCase):
             "notes": "Incoming request from Dune 3 Productions for 3x Alexa 35 Packages.",
         }
 
-        result = create_draft_handler(payload, self.company, "agent:cortex-intake")
+        result = create_draft_handler(payload, self.company, "agent:cortex-intake", rates={"itm-alexa-35-pkg": 1500.0})
         self.assertEqual(result["state"], "quote")
         self.assertEqual(result["calendar_days"], 7)
         self.assertEqual(result["billable_days"], 3.0)
@@ -47,7 +47,7 @@ class TestCortexDemoScenario(unittest.TestCase):
             "ends_at": self.ends_at,
             "lines": [{"item_id": "itm-alexa-35-pkg", "quantity": 3, "unit_rate": 1500.00}],
         }
-        result = preview_pricing_handler(payload, self.company)
+        result = preview_pricing_handler(payload, self.company, rates={"itm-alexa-35-pkg": 1500.0})
         self.assertEqual(result["calendar_days"], 7)
         self.assertEqual(result["billable_days"], 3.0)
         self.assertEqual(result["total"], "13500.00")
@@ -56,11 +56,27 @@ class TestCortexDemoScenario(unittest.TestCase):
         with self.assertRaises(ValueError):
             preview_pricing_handler({"starts_at": self.starts_at}, self.company)
 
-    def test_preview_pricing_missing_unit_rate_defaults_to_zero_not_fabricated_rate(self):
-        # create_draft_handler defaults a missing unit_rate to 100.0 (a
-        # pre-existing behavior, not changed here) — preview_pricing
-        # deliberately does not inherit that: a live preview silently
-        # showing a fake $100/day rate would be worse than an honest $0.
+    def test_agent_supplied_unit_rate_is_ignored(self):
+        payload = {
+            "customer_id": "cust-dune3-01",
+            "starts_at": self.starts_at,
+            "ends_at": self.ends_at,
+            "lines": [{"item_id": "itm-alexa-35-pkg", "quantity": 1, "unit_rate": 9999.00}],
+        }
+        result = create_draft_handler(payload, self.company, "agent:cortex-intake", rates={"itm-alexa-35-pkg": 1500.0})
+        self.assertEqual(result["total"], "4500.00")
+
+    def test_agent_cannot_apply_a_discount(self):
+        payload = {
+            "starts_at": self.starts_at,
+            "ends_at": self.ends_at,
+            "lines": [{"item_id": "itm-alexa-35-pkg", "quantity": 1, "discount_percentage": 20}],
+        }
+        with self.assertRaises(PermissionError):
+            preview_pricing_handler(payload, self.company, rates={"itm-alexa-35-pkg": 1500.0})
+
+    def test_preview_pricing_unknown_rate_is_zero_not_fabricated(self):
+        # Without a server rate the line is priced at 0, never at an invented rate.
         payload = {
             "starts_at": self.starts_at,
             "ends_at": self.ends_at,
@@ -120,18 +136,13 @@ class TestCortexDemoScenario(unittest.TestCase):
         self.assertIn("Approval required", reason)
 
     def test_step_9_consignment_payout_redacts_renter_identity(self):
-        payout = prepare_owner_statement_handler(
-            {
-                "owner_id": "Roger Deakins Productions Inc.",
-                "gross_amount": 9000.00,
-                "consignment_percentage": 70.0,
-                "serial_no": "SN-ALX35-001",
-                "days": 3.0,
-                "rate": 1500.00,
-                "customer_name": "Dune 3 Productions Inc.",
-                "customer_email": "producer@dune3.com",
-            },
-            self.company,
+        payout = ConsignmentService.calculate_payout(
+            gross_amount=9000.00,
+            consignment_percentage=70.0,
+            serial_no="SN-ALX35-001",
+            days=3.0,
+            rate=1500.00,
+            metadata={"customer_name": "Dune 3 Productions Inc.", "customer_email": "producer@dune3.com"},
         )
 
         self.assertEqual(payout["owner_payout_amount"], 6300.00)

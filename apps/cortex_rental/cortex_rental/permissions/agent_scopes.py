@@ -153,62 +153,39 @@ def get_allowed_companies(user: Optional[str] = None) -> List[str]:
     service account) is authorized to act on. This is the single source
     of truth for tenant scoping — derived server-side from Frappe's
     standard `User Permission` (allow="Company") mechanism, never from a
-    client-supplied header, prompt, or tool-call argument.
+    client-supplied header, prompt, tool-call argument, or a user-editable
+    session default.
+
+    - Administrator / System Manager: every Company.
+    - Otherwise: the Companies granted by User Permission.
+    - A site with exactly one Company grants it to every staff identity
+      (there is no other tenant to leak to).
+    - Anything else: no Company at all (callers must refuse the request).
     """
     if not frappe:
         return ["CineRental Montreal"]
 
     user = user or frappe.session.user
 
-    # If the Company DocType does not exist on this Frappe site (e.g. standalone Frappe bench without ERPNext),
-    # gracefully fall back without raising a pymysql ProgrammingError.
-    has_company_table = False
-    try:
-        if frappe.db and hasattr(frappe.db, "table_exists"):
-            has_company_table = bool(frappe.db.table_exists("Company"))
-    except Exception:
-        has_company_table = False
+    if not frappe.db.table_exists("Company"):
+        return []
 
-    if not has_company_table:
-        try:
-            from cortex_rental.setup import ensure_prerequisites
+    if user == "Administrator" or "System Manager" in frappe.get_roles(user):
+        return frappe.get_all("Company", pluck="name", order_by="name asc")
 
-            ensure_prerequisites()
-            if frappe.db and hasattr(frappe.db, "table_exists"):
-                has_company_table = bool(frappe.db.table_exists("Company"))
-        except Exception:
-            pass
+    allowed = frappe.get_all(
+        "User Permission",
+        filters={"user": user, "allow": "Company"},
+        pluck="for_value",
+    )
+    if allowed:
+        return list(dict.fromkeys(allowed))
 
-    if not has_company_table:
-        default = None
-        try:
-            default = frappe.defaults.get_user_default("Company", user) if hasattr(frappe, "defaults") else None
-        except Exception:
-            pass
-        return [default] if default else ["CineRental Montreal"]
+    companies = frappe.get_all("Company", pluck="name", limit_page_length=2)
+    if len(companies) == 1:
+        return companies
 
-    try:
-        if user == "Administrator" or "System Manager" in frappe.get_roles(user):
-            companies = frappe.get_all("Company", pluck="name")
-            return companies if companies else ["CineRental Montreal"]
-
-        allowed = frappe.get_all(
-            "User Permission",
-            filters={"user": user, "allow": "Company"},
-            pluck="for_value",
-        )
-        if allowed:
-            return list(dict.fromkeys(allowed))
-
-        default = frappe.defaults.get_user_default("Company", user)
-        return [default] if default else ["CineRental Montreal"]
-    except Exception:
-        default = None
-        try:
-            default = frappe.defaults.get_user_default("Company", user) if hasattr(frappe, "defaults") else None
-        except Exception:
-            pass
-        return [default] if default else ["CineRental Montreal"]
+    return []
 
 
 def get_company_context(company_header: Optional[str] = None) -> str:
@@ -265,15 +242,6 @@ def get_company_context(company_header: Optional[str] = None) -> str:
         )
 
     if company_header not in allowed:
-        # If Administrator or System Manager, allow company_header if Company table doesn't exist
-        if is_admin:
-            try:
-                has_company_table = bool(frappe.db and frappe.db.table_exists("Company"))
-            except Exception:
-                has_company_table = False
-            if not has_company_table:
-                return company_header
-
         frappe.throw(
             "Multi-Tenant Error: requested Company is not authorized for this identity.",
             frappe.PermissionError,

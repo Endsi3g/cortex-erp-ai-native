@@ -1,0 +1,154 @@
+{
+  "actions": [],
+  "creation": "2026-09-25 00:00:00.000000",
+  "modified": "2026-09-25 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "import_type",
+    "status",
+    "source_file",
+    "source_file_name",
+    "mapping",
+    "total_rows",
+    "valid_rows",
+    "error_rows",
+    "imported_rows",
+    "row_errors",
+    "imported_by",
+    "imported_at",
+    "rolled_back_by",
+    "rolled_back_at",
+    "records"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "import_type",
+      "fieldtype": "Select",
+      "label": "Type",
+      "options": "Customers\nEquipment\nSerial Numbers",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Statut",
+      "options": "Draft\nValidated\nImported\nPartially Imported\nRolled Back\nFailed",
+      "default": "Draft",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "source_file",
+      "fieldtype": "Attach",
+      "label": "Fichier source"
+    },
+    {
+      "fieldname": "source_file_name",
+      "fieldtype": "Data",
+      "label": "Nom du fichier"
+    },
+    {
+      "fieldname": "mapping",
+      "fieldtype": "Code",
+      "label": "Correspondance des colonnes",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "total_rows",
+      "fieldtype": "Int",
+      "label": "Lignes",
+      "default": "0",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "valid_rows",
+      "fieldtype": "Int",
+      "label": "Lignes valides",
+      "default": "0"
+    },
+    {
+      "fieldname": "error_rows",
+      "fieldtype": "Int",
+      "label": "Lignes en erreur",
+      "default": "0"
+    },
+    {
+      "fieldname": "imported_rows",
+      "fieldtype": "Int",
+      "label": "Lignes importées",
+      "default": "0",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "row_errors",
+      "fieldtype": "Code",
+      "label": "Erreurs par ligne",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "imported_by",
+      "fieldtype": "Link",
+      "label": "Importé par",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "imported_at",
+      "fieldtype": "Datetime",
+      "label": "Importé le",
+      "read_only": 1
+    },
+    {
+      "fieldname": "rolled_back_by",
+      "fieldtype": "Link",
+      "label": "Annulé par",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "rolled_back_at",
+      "fieldtype": "Datetime",
+      "label": "Annulé le",
+      "read_only": 1
+    },
+    {
+      "fieldname": "records",
+      "fieldtype": "Table",
+      "label": "Documents créés",
+      "options": "Cortex Import Batch Record"
+    }
+  ],
+  "module": "Cortex Rental",
+  "name": "Cortex Import Batch",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 1,
+  "autoname": "format:IMP-{#####}",
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "create": 1,
+      "write": 1
+    },
+    {
+      "role": "Cortex System Manager",
+      "read": 1,
+      "create": 1,
+      "write": 1
+    }
+  ]
+}

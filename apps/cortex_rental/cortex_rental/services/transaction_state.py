@@ -1,5 +1,5 @@
 """
-Transaction lifecycle state machine and ERPNext synchronization service.
+Transaction lifecycle state machine.
 Enforces preconditions for Quote -> Reservation -> Contract -> Checked Out -> Returned -> Closed.
 """
 
@@ -54,58 +54,3 @@ class TransactionStateService:
                 return False, "Security deposit or validated payment terms are required before confirming a contract."
 
         return True, None
-
-    @classmethod
-    def sync_with_erpnext(cls, transaction_doc: Any) -> Optional[str]:
-        """
-        Synchronize Cortex Rental Transaction state with standard ERPNext documents (Quotation / Sales Order / Sales Invoice).
-        """
-        if not frappe:
-            return None
-
-        # Implementation of ERPNext doc creation or update
-        try:
-            if transaction_doc.rental_state == "Quote" and not transaction_doc.erpnext_quotation:
-                q = frappe.get_doc(
-                    {
-                        "doctype": "Quotation",
-                        "quotation_to": "Customer",
-                        "party_name": transaction_doc.customer,
-                        "company": transaction_doc.company,
-                        "transaction_date": frappe.utils.today(),
-                        "items": [],
-                    }
-                )
-                for item in transaction_doc.items:
-                    q.append(
-                        "items",
-                        {"item_code": item.item_code, "qty": item.qty, "rate": item.rate, "amount": item.amount},
-                    )
-                q.insert(ignore_permissions=True)
-                transaction_doc.erpnext_quotation = q.name
-                return q.name
-
-            elif (
-                transaction_doc.rental_state in ["Reservation", "Contract"] and not transaction_doc.erpnext_sales_order
-            ):
-                so = frappe.get_doc(
-                    {
-                        "doctype": "Sales Order",
-                        "customer": transaction_doc.customer,
-                        "company": transaction_doc.company,
-                        "delivery_date": frappe.utils.getdate(transaction_doc.starts_at),
-                        "items": [],
-                    }
-                )
-                for item in transaction_doc.items:
-                    so.append(
-                        "items",
-                        {"item_code": item.item_code, "qty": item.qty, "rate": item.rate, "amount": item.amount},
-                    )
-                so.insert(ignore_permissions=True)
-                transaction_doc.erpnext_sales_order = so.name
-                return so.name
-        except Exception:
-            pass
-
-        return None

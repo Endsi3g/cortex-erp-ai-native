@@ -414,6 +414,12 @@ def complete_checkin(checkin_name: str, actor_id: str, finalize_mode: str = "aut
     }
 
 
+def _qty(value: Any, default: float) -> float:
+    if value is None or value == "":
+        return default
+    return float(value)
+
+
 def process_checkin(
     company: str,
     actor_id: str,
@@ -488,8 +494,9 @@ def process_checkin(
                 "transaction_item": item.get("transaction_item") or "",
                 "item_code": item.get("item_code"),
                 "serial_no": sn,
-                "expected_qty": float(item.get("expected_qty") or 1.0),
-                "returned_qty": float(item.get("returned_qty") or 1.0),
+                # 0 is a real answer (nothing came back): only a missing value defaults.
+                "expected_qty": _qty(item.get("expected_qty"), 1.0),
+                "returned_qty": _qty(item.get("returned_qty"), 1.0),
                 "condition": item.get("condition") or "Good",
                 "disposition": item.get("disposition") or "Return to Stock",
                 "damage_severity": item.get("damage_severity") or "None",

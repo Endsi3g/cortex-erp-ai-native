@@ -136,3 +136,20 @@ if frappe:
             frappe.throw("chat_session_id is required.", frappe.ValidationError)
         ChatSessionService().clear_context(session_name, user=frappe.session.user)
         return {"data": {"pinned": False}}
+
+    @frappe.whitelist(methods=["GET"])
+    def get_assistant_status():
+        """Whether the assistant can answer, without exposing any URL, key or persona id."""
+        require_human_staff_role()
+        conf = frappe.conf
+        provider = str(conf.get("cortex_chat_provider", "onyx")).lower()
+        if provider == "mock" and conf.get("developer_mode"):
+            return {"data": {"available": True, "provider": "mock", "model_name": "Réponses simulées (développement)"}}
+        configured = bool(conf.get("onyx_base_url") and conf.get("onyx_api_key"))
+        return {
+            "data": {
+                "available": configured,
+                "provider": "onyx",
+                "model_name": conf.get("onyx_model_name") if configured else None,
+            }
+        }

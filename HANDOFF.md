@@ -1,5 +1,7 @@
 # Handoff — Cortex ERP AI-Native
 
+> **Mise à jour 2026-09-25 :** l’interface a été entièrement refaite sur `feat/ui-rebuild`. C’est une SPA Vue 3 + Frappe UI sous `/cortex` avec un endpoint réel par écran ; le Desk `/app` redevient l’ERPNext standard. **Lire §0 en premier.** Les sections 3 et suivantes décrivent l’ancienne interface Desk (pages `cortex-*`, supprimées) et restent pour l’historique. Détail : `CHANGELOG.md` v0.6.0-dev, lots 1 à 8.
+
 > **Mise à jour 2026-09-23 :** pour la direction UX, les écrans AI-native, les seuils de confiance, les règles de validation et le contrat d’intégration Onyx/Ollama, le document canonique est [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md). Les sections frontend historiques ci-dessous peuvent être obsolètes; vérifier chaque état dans le code avant de s’y fier.
 
 **Date** : 2026-08-31
@@ -9,7 +11,53 @@
 
 ---
 
-## 1. État actuel en une phrase
+## 0. Refonte UI (`feat/ui-rebuild`) — déploiement et recette sur la tour
+
+**État :** les 30 écrans sont construits.
+- Tests : 147 passés côté Python (moteur Frappe simulé et strict sur les schémas), 265 côté frontend, vue-tsc sans erreur, build Vite OK.
+- **Rien n’a été exécuté sur un vrai bench** : Docker n’est pas lancé sur ce Mac, par décision.
+- Tout ce qui suit est à vérifier sur la tour, dans l’ordre.
+
+### Déployer
+
+```bash
+git fetch && git checkout feat/ui-rebuild
+./bin/deploy.sh tour --site <site>   # build SPA (npm ci + vite) → bench migrate → bench build → restart
+```
+
+`bench migrate` crée :
+- **DocTypes :** Cortex Company Settings, Cortex Rental Kit (+ Item), Cortex Import Batch (+ Record) ;
+- **champs :** `rationale` sur Approval Request, champs de facturation sur la transaction ;
+- **champs personnalisés en fixtures :** `Customer.cortex_insurance_valid_until`, `Serial No.cortex_consignment_owner`, `cortex_rental_transaction` sur Sales Order / Sales Invoice / Payment Entry ;
+- **rôles** Cortex en fixtures ;
+- le patch `restore_erpnext_workspaces`.
+
+Consignment Payout : le champ `owner` (nom réservé par Frappe, la migration échouait) devient `consignment_owner`.
+
+**Assistant** (optionnel) : dans `site_config.json`, définir `onyx_base_url`, `onyx_api_key` et éventuellement `onyx_model_name`. Sans cela, l’assistant indique qu’il n’est pas configuré.
+
+### Recette, écran par écran (me rapporter les tracebacks exacts)
+
+| # | Où | Ce qui doit se passer | Hypothèse non vérifiée |
+|---|---|---|---|
+| 1 | `/cortex` | Redirige vers `/login` si invité ; sinon ouvre le shell sans erreur console | `www/cortex.py` + `website_route_rules` |
+| 2 | `/app` | Les workspaces ERPNext sont visibles (lockdown retiré) | Le patch rend visibles les workspaces publics |
+| 3 | Finance › Compte de résultat | Mêmes chiffres que le rapport ERPNext natif pour les mêmes filtres | Forme de `profit_and_loss_statement.execute()` en v15 (libellés entre quotes) |
+| 4 | Locations › nouvelle → Réserver | Un Sales Order soumis est créé, avec le modèle de taxes | `create_sales_order` ; taxes ERPNext conservées ensuite |
+| 5 | Fiche location › Facturation | Acompte : Payment Entry contre le SO ; solde : Sales Invoice avec avances et lignes dommages/perte | `get_payment_entry`, `make_sales_invoice`, `set_advances` |
+| 6 | Sortie / Retour | Les scans mettent à jour les numéros de série ; un retour partiel garde la location ouverte | Chemins `checkout.py` / `checkin.py` en direct |
+| 7 | Catalogue | Profil modifiable, statut de série, kits développés en lignes | — |
+| 8 | Consignation | Relevé calculé sur des locations réelles ; préparé → approuvé → payé | Revenu net par série sur le mois |
+| 9 | AI Inbox / Workspace | Demandes entrantes et extractions réelles ; approuver exécute la transition | Données `Cortex Inbound Request` / `Cortex Extraction Run` réelles |
+| 10 | Assistant ⌘J | Réponse Onyx avec blocs typés, ou message « non configuré » | Client HTTP Onyx |
+| 11 | Admin › Politiques | Règle 10 j → 5 j : la courbe change et un nouveau devis de 10 jours utilise 5 jours | — |
+| 12 | Admin › Équipe | Liste des utilisateurs de la société ; modifier ses propres rôles est refusé | `User Permission` par société ; `add_roles` / `remove_roles` |
+| 13 | Admin › Import | Petit CSV de clients : valider, importer, puis annuler | `File.get_content()`, `upload_file` rattaché au lot, savepoints |
+| 14 | Admin › Journal d’audit | Les événements des étapes précédentes apparaissent, avec détail et export CSV | — |
+
+Tests gated-Frappe à lancer ensuite : voir §2 (`bench --site <site> run-tests --app cortex_rental`).
+
+## 1. État actuel en une phrase (historique, 2026-08-31)
 
 Le code est corrigé et testé en mode mock (44 tests passent dans ce sandbox, sans Frappe réel). **Un vrai bench tourne désormais sur une seconde machine (la tour) côté utilisateur** — première preuve concrète que le déploiement fonctionne (capture d'écran de l'espace de travail `Users` par défaut) — mais ce sandbox n'y a pas d'accès direct (pas de SSH exposé) : voir §3 pour le mode de travail "relais" utilisé pour tout ce qui suit.
 

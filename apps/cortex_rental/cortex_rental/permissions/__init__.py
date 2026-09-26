@@ -178,3 +178,11 @@ def cortex_chat_message_query_conditions(user: str) -> str:
 
 def cortex_chat_context_snapshot_query_conditions(user: str) -> str:
     return _own_chat_child_condition(user, "Cortex Chat Context Snapshot")
+
+
+def cortex_company_settings_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Company Settings")
+
+
+def cortex_rental_kit_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Rental Kit")

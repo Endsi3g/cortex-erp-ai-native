@@ -145,6 +145,36 @@
       "read_only": 1,
       "no_copy": 1,
       "hidden": 1
+    },
+    {
+      "fieldname": "billing_section",
+      "fieldtype": "Section Break",
+      "label": "Facturation ERPNext"
+    },
+    {
+      "fieldname": "advance_percentage_amount",
+      "fieldtype": "Currency",
+      "label": "Acompte (part du prix)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "guarantee_amount",
+      "fieldtype": "Currency",
+      "label": "Dépôt de garantie",
+      "read_only": 1
+    },
+    {
+      "fieldname": "advance_amount",
+      "fieldtype": "Currency",
+      "label": "Acompte demandé (total)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "final_invoice",
+      "fieldtype": "Link",
+      "label": "Facture de solde",
+      "options": "Sales Invoice",
+      "read_only": 1
     }
   ],
   "permissions": [
@@ -176,5 +206,6 @@
       "create": 0,
       "delete": 0
     }
-  ]
+  ],
+  "modified": "2026-09-25 00:00:00.000000"
 }

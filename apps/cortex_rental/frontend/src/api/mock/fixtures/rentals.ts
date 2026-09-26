@@ -1,0 +1,354 @@
+import type { RentalTransaction, RentalState } from '@/types/rental'
+import type { RentalAction } from '@/api/contracts/rentals'
+
+/** Same mapping as rentals.available_actions() on the server (demo user = verifier). */
+export function demoActions(state: RentalState, finalInvoice?: string | null): RentalAction[] {
+  const byState: Partial<Record<RentalState, RentalAction[]>> = {
+    Quote: ['edit_quote', 'confirm_reservation', 'cancel', 'verify_readiness'],
+    Reservation: ['request_contract', 'record_advance', 'cancel', 'verify_readiness'],
+    Contract: ['checkout', 'record_advance', 'cancel', 'verify_readiness'],
+    'Checked Out': ['checkin', 'record_advance']
+  }
+  if (['Returned', 'Quarantine', 'Disputed'].includes(state)) return finalInvoice ? ['close'] : ['prepare_final_invoice', 'close']
+  return byState[state] ?? []
+}
+
+const rentals: Array<Omit<RentalTransaction, 'available_actions'>> = [
+  {
+    provenance: 'demo',
+    last_synced_at: '2026-09-02T16:00:00Z',
+    version: 1,
+    id: 'DEMO-TRX-2026-001',
+    name: 'DEMO-TRX-2026-001',
+    company: 'DEMO-COMP-001',
+    customer_id: 'DEMO-CUST-001',
+    customer_name: 'Production Nord Inc.',
+    customer_contact_email: 'production@nord-film.demo',
+    project_name: 'Feature Film — Laurentian Winter',
+    rental_state: 'Checked Out',
+    starts_at: '2026-09-01T08:00:00Z',
+    ends_at: '2026-09-08T18:00:00Z',
+    calendar_days: 7,
+    billable_days: 3, // 7d = 3d rule
+    subtotal: 7350,
+    discount_total: 0,
+    tax_rate: 0.14975,
+    tax_amount: 1100.66,
+    grand_total: 8450.66,
+    currency: 'CAD',
+    readiness: {
+      customer_account_ready: true,
+      insurance_ready: true,
+      payment_ready: true,
+      overall_ready: true,
+      missing_requirements: []
+    },
+    items: [
+      {
+        id: 'DEMO-LINE-001',
+        item_code: 'DEMO-ITM-ALX35',
+        item_name: 'ARRI Alexa 35 Camera Package',
+        category: 'Cameras',
+        quantity: 1,
+        daily_rate: 1500,
+        discount_percentage: 0,
+        billable_days: 3,
+        subtotal: 4500,
+        assigned_serials: ['DEMO-SN-ALX-001'],
+        scanned_checkout_serials: ['DEMO-SN-ALX-001'],
+        scanned_checkin_serials: [],
+        is_consigned: true,
+        owner_code: 'DEMO-OWN-001'
+      },
+      {
+        id: 'DEMO-LINE-002',
+        item_code: 'DEMO-ITM-CKE-S4',
+        item_name: 'Cooke S4/i Prime Lens Set',
+        category: 'Lenses',
+        quantity: 1,
+        daily_rate: 950,
+        discount_percentage: 0,
+        billable_days: 3,
+        subtotal: 2850,
+        assigned_serials: ['DEMO-SN-CKE-101'],
+        scanned_checkout_serials: ['DEMO-SN-CKE-101'],
+        scanned_checkin_serials: [],
+        is_consigned: true,
+        owner_code: 'DEMO-OWN-002'
+      }
+    ],
+    notes: 'Pick-up completed by DP Marc-André. Handled with care.',
+    created_at: '2026-08-25T14:30:00Z',
+    updated_at: '2026-09-01T08:15:00Z'
+  },
+  {
+    provenance: 'demo',
+    last_synced_at: '2026-09-02T16:00:00Z',
+    version: 1,
+    id: 'DEMO-TRX-2026-002',
+    name: 'DEMO-TRX-2026-002',
+    company: 'DEMO-COMP-001',
+    customer_id: 'DEMO-CUST-002',
+    customer_name: 'Studio Lumière Montréal',
+    customer_contact_email: 'ops@studiolumiere.demo',
+    project_name: 'Commercial Shoot — Hydro Québec',
+    rental_state: 'Reservation',
+    starts_at: '2026-09-10T08:00:00Z',
+    ends_at: '2026-09-17T18:00:00Z',
+    calendar_days: 7,
+    billable_days: 3,
+    subtotal: 4500,
+    discount_total: 0,
+    tax_rate: 0.14975,
+    tax_amount: 673.88,
+    grand_total: 5173.88,
+    currency: 'CAD',
+    readiness: {
+      customer_account_ready: true,
+      insurance_ready: true,
+      payment_ready: true,
+      overall_ready: true,
+      missing_requirements: []
+    },
+    items: [
+      {
+        id: 'DEMO-LINE-003',
+        item_code: 'DEMO-ITM-ALX35',
+        item_name: 'ARRI Alexa 35 Camera Package',
+        category: 'Cameras',
+        quantity: 1,
+        daily_rate: 1500,
+        discount_percentage: 0,
+        billable_days: 3,
+        subtotal: 4500,
+        assigned_serials: ['DEMO-SN-ALX-002'],
+        scanned_checkout_serials: [],
+        scanned_checkin_serials: [],
+        is_consigned: false
+      }
+    ],
+    notes: 'Hold confirmed. Waiting for dispatch prep on Sep 9.',
+    created_at: '2026-08-28T10:00:00Z',
+    updated_at: '2026-08-28T10:00:00Z'
+  },
+  {
+    provenance: 'demo',
+    last_synced_at: '2026-09-02T16:00:00Z',
+    version: 1,
+    id: 'DEMO-TRX-2026-003',
+    name: 'DEMO-TRX-2026-003',
+    company: 'DEMO-COMP-001',
+    customer_id: 'DEMO-CUST-003',
+    customer_name: 'Trequista Events',
+    customer_contact_email: 'broadcast@trequista.demo',
+    project_name: 'Festival Live Stream 2026',
+    rental_state: 'Quote',
+    starts_at: '2026-09-15T08:00:00Z',
+    ends_at: '2026-09-18T18:00:00Z',
+    calendar_days: 3,
+    billable_days: 2,
+    subtotal: 2400,
+    discount_total: 0,
+    tax_rate: 0.14975,
+    tax_amount: 359.40,
+    grand_total: 2759.40,
+    currency: 'CAD',
+    readiness: {
+      customer_account_ready: true,
+      insurance_ready: false,
+      payment_ready: false,
+      overall_ready: false,
+      missing_requirements: [
+        'Attestation d’assurance valide requise (expirée le 30 août)',
+        'Dépôt de garantie requis'
+      ]
+    },
+    items: [
+      {
+        id: 'DEMO-LINE-004',
+        item_code: 'DEMO-ITM-VRP8K',
+        item_name: 'RED V-Raptor XL 8K Production Pack',
+        category: 'Cameras',
+        quantity: 1,
+        daily_rate: 1200,
+        discount_percentage: 0,
+        billable_days: 2,
+        subtotal: 2400,
+        assigned_serials: [],
+        scanned_checkout_serials: [],
+        scanned_checkin_serials: [],
+        is_consigned: false
+      }
+    ],
+    notes: 'Quote generated from AI intake. Insurance renewal requested.',
+    created_at: '2026-09-01T11:20:00Z',
+    updated_at: '2026-09-01T11:20:00Z'
+  },
+  {
+    provenance: 'demo',
+    last_synced_at: '2026-09-02T16:00:00Z',
+    version: 1,
+    id: 'DEMO-TRX-2026-004',
+    name: 'DEMO-TRX-2026-004',
+    company: 'DEMO-COMP-001',
+    customer_id: 'DEMO-CUST-001',
+    customer_name: 'Production Nord Inc.',
+    project_name: 'Commercial Teaser',
+    rental_state: 'Checked Out',
+    starts_at: '2026-08-28T08:00:00Z',
+    ends_at: '2026-09-01T18:00:00Z',
+    calendar_days: 4,
+    billable_days: 2,
+    subtotal: 3000,
+    tax_rate: 0.14975,
+    tax_amount: 449.25,
+    grand_total: 3449.25,
+    currency: 'CAD',
+    readiness: {
+      customer_account_ready: true,
+      insurance_ready: true,
+      payment_ready: true,
+      overall_ready: true,
+      missing_requirements: []
+    },
+    items: [
+      {
+        id: 'DEMO-LINE-005',
+        item_code: 'DEMO-ITM-ALX35',
+        item_name: 'ARRI Alexa 35 Camera Package',
+        category: 'Cameras',
+        quantity: 1,
+        daily_rate: 1500,
+        discount_percentage: 0,
+        billable_days: 2,
+        subtotal: 3000,
+        assigned_serials: ['DEMO-SN-ALX-004'],
+        scanned_checkout_serials: ['DEMO-SN-ALX-004'],
+        scanned_checkin_serials: ['DEMO-SN-ALX-004'],
+        is_consigned: true,
+        owner_code: 'DEMO-OWN-001'
+      }
+    ],
+    notes: 'Camera body returned with minor sensor dust (quarantine). Lens adapter accessory missing.',
+    created_at: '2026-08-20T09:00:00Z',
+    updated_at: '2026-09-01T17:30:00Z'
+  },
+  {
+    provenance: 'demo',
+    last_synced_at: '2026-09-02T16:00:00Z',
+    version: 1,
+    id: 'DEMO-TRX-2026-005',
+    name: 'DEMO-TRX-2026-005',
+    company: 'DEMO-COMP-001',
+    customer_id: 'DEMO-CUST-002',
+    customer_name: 'Studio Lumière Montréal',
+    project_name: 'Music Video — MTL Beats',
+    rental_state: 'Closed',
+    starts_at: '2026-08-15T08:00:00Z',
+    ends_at: '2026-08-22T18:00:00Z',
+    calendar_days: 7,
+    billable_days: 3,
+    subtotal: 4500,
+    tax_rate: 0.14975,
+    tax_amount: 673.88,
+    grand_total: 5173.88,
+    currency: 'CAD',
+    readiness: {
+      customer_account_ready: true,
+      insurance_ready: true,
+      payment_ready: true,
+      overall_ready: true,
+      missing_requirements: []
+    },
+    items: [
+      {
+        id: 'DEMO-LINE-006',
+        item_code: 'DEMO-ITM-ALX35',
+        item_name: 'ARRI Alexa 35 Camera Package',
+        category: 'Cameras',
+        quantity: 1,
+        daily_rate: 1500,
+        discount_percentage: 0,
+        billable_days: 3,
+        subtotal: 4500,
+        assigned_serials: ['DEMO-SN-ALX-003'],
+        scanned_checkout_serials: ['DEMO-SN-ALX-003'],
+        scanned_checkin_serials: ['DEMO-SN-ALX-003'],
+        is_consigned: false
+      }
+    ],
+    notes: 'Completed and synchronized with ERPNext Sales Invoice SINV-2026-0042.',
+    created_at: '2026-08-10T10:00:00Z',
+    updated_at: '2026-08-23T09:00:00Z'
+  },
+  {
+    provenance: 'demo',
+    last_synced_at: '2026-09-08T10:00:00Z',
+    version: 1,
+    id: 'DEMO-TRX-2026-006',
+    name: 'DEMO-TRX-2026-006',
+    company: 'DEMO-COMP-001',
+    customer_id: 'DEMO-CUST-001',
+    customer_name: 'Production Nord Inc.',
+    customer_contact_email: 'production@nord-film.demo',
+    project_name: 'Commercial Campaign — Horizon 2026',
+    rental_state: 'Contract',
+    starts_at: '2026-09-08T08:00:00Z',
+    ends_at: '2026-09-15T18:00:00Z',
+    calendar_days: 7,
+    billable_days: 3,
+    subtotal: 7350,
+    discount_total: 0,
+    tax_rate: 0.14975,
+    tax_amount: 1100.66,
+    grand_total: 8450.66,
+    currency: 'CAD',
+    readiness: {
+      customer_account_ready: true,
+      insurance_ready: true,
+      payment_ready: true,
+      overall_ready: true,
+      missing_requirements: []
+    },
+    items: [
+      {
+        id: 'DEMO-LINE-007',
+        item_code: 'DEMO-ITM-ALX35',
+        item_name: 'ARRI Alexa 35 Camera Package',
+        category: 'Cameras',
+        quantity: 1,
+        daily_rate: 1500,
+        discount_percentage: 0,
+        billable_days: 3,
+        subtotal: 4500,
+        assigned_serials: ['DEMO-SN-ALX-002'],
+        scanned_checkout_serials: [],
+        scanned_checkin_serials: [],
+        is_consigned: false
+      },
+      {
+        id: 'DEMO-LINE-008',
+        item_code: 'DEMO-ITM-CKE-S4',
+        item_name: 'Cooke S4/i Prime Lens Set',
+        category: 'Lenses',
+        quantity: 1,
+        daily_rate: 950,
+        discount_percentage: 0,
+        billable_days: 3,
+        subtotal: 2850,
+        assigned_serials: ['DEMO-SN-CKE-102'],
+        scanned_checkout_serials: [],
+        scanned_checkin_serials: [],
+        is_consigned: false
+      }
+    ],
+    notes: 'Contrat confirmé et signé. Prêt pour sortie en entrepôt.',
+    created_at: '2026-09-03T10:00:00Z',
+    updated_at: '2026-09-08T07:30:00Z'
+  }
+]
+
+export const initialRentals: RentalTransaction[] = rentals.map(rental => ({
+  ...rental,
+  available_actions: demoActions(rental.rental_state, rental.final_invoice)
+}))

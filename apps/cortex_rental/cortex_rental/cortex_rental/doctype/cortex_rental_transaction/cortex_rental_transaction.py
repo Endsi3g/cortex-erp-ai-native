@@ -23,6 +23,15 @@ from cortex_rental.services.locking import reservation_lock
 BLOCKING_STATES = {"Reservation", "Contract"}
 
 
+def aggregate_item_requests(rows) -> list:
+    """One availability request per item with the summed quantity (several lines may share an item)."""
+    totals: dict = {}
+    for row in rows:
+        if row.item_code:
+            totals[row.item_code] = totals.get(row.item_code, 0.0) + float(row.qty or 0)
+    return [{"item_id": code, "quantity": qty} for code, qty in totals.items()]
+
+
 class CortexRentalTransaction(Document):
     """
     Primary Transaction Hub for Cortex Rental Operations.
@@ -74,8 +83,17 @@ class CortexRentalTransaction(Document):
                 subtotal += item.amount
 
         self.subtotal = round(subtotal, 2)
-        tax_rate = float(self.tax_rate or 0.0)
-        self.tax_amount = round(self.subtotal * (tax_rate / 100.0), 2)
+        if getattr(self, "erpnext_sales_order", None):
+            # Once the ERPNext Sales Order exists, its taxes and grand total
+            # are authoritative (written by services.billing); never
+            # recompute them here.
+            return
+        if frappe and self.company:
+            from cortex_rental.services.billing import estimate_taxes
+
+            self.tax_amount = estimate_taxes(self.company, self.subtotal)["total"]
+        else:
+            self.tax_amount = round(self.subtotal * (float(self.tax_rate or 0.0) / 100.0), 2)
         self.grand_total = round(self.subtotal + self.tax_amount, 2)
 
     @staticmethod
@@ -143,8 +161,17 @@ class CortexRentalTransaction(Document):
             self.rental_state = new_state
             self.save()
 
-        # Synchronize with ERPNext documents
-        TransactionStateService.sync_with_erpnext(self)
+        # ERPNext documents: the Sales Order (and the requested advance) is
+        # created when the rental is confirmed. Failures surface to the
+        # caller and roll the request back; they are never swallowed.
+        if frappe and new_state == "Reservation":
+            from cortex_rental.services.billing import create_sales_order
+
+            create_sales_order(self)
+        elif frappe and new_state == "Cancelled" and getattr(self, "erpnext_sales_order", None):
+            from cortex_rental.services.billing import close_sales_order
+
+            close_sales_order(self)
 
         # Append-only audit record
         AuditService.record_mutation(
@@ -171,7 +198,7 @@ class CortexRentalTransaction(Document):
             for code in item_codes:
                 locks.enter_context(reservation_lock(self.company, code))
 
-            item_requests = [{"item_id": item.item_code, "quantity": item.qty} for item in (self.items or [])]
+            item_requests = aggregate_item_requests(self.items or [])
             checks = AvailabilityService().check(
                 company=self.company,
                 starts_at=str(self.starts_at),
@@ -195,6 +222,9 @@ class CortexRentalTransaction(Document):
 
     def _assign_serials_under_lock(self):
         """Allocate real serials atomically when a quote becomes a reservation."""
+        # Serials already given to an earlier line of this same rental (the
+        # SQL below only excludes other rentals).
+        taken: set = set()
         for row in self.items or []:
             profile = frappe.db.get_value(
                 "Cortex Rental Item Profile",
@@ -233,11 +263,12 @@ class CortexRentalTransaction(Document):
                     "item_code": row.item_code,
                     "company": self.company,
                     "transaction": self.name or "",
-                    "quantity": int(quantity),
+                    "quantity": int(quantity) + len(taken),
                 },
                 as_dict=False,
             )
-            serials = [candidate[0] for candidate in candidates]
+            serials = [candidate[0] for candidate in candidates if candidate[0] not in taken][: int(quantity)]
+            taken.update(serials)
             if len(serials) < int(quantity):
                 frappe.throw(
                     f"Only {len(serials)} serialized units remain available for {row.item_code}.",

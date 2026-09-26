@@ -86,6 +86,15 @@
       "default": "0.0",
       "read_only": 1,
       "description": "Running total returned across all Cortex Check-In records referencing this line. Set only by services/checkin.py."
+    },
+    {
+      "fieldname": "kit",
+      "fieldtype": "Link",
+      "label": "Kit",
+      "options": "Cortex Rental Kit",
+      "read_only": 1,
+      "description": "Kit dont provient la ligne (le rabais du kit s’applique)."
     }
-  ]
+  ],
+  "modified": "2026-09-25 00:00:00.000000"
 }

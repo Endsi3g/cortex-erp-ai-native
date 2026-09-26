@@ -24,5 +24,70 @@
     "insert_after": "status",
     "in_standard_filter": 1,
     "description": "Cortex-specific rental availability status, distinct from ERPNext's native Serial No status. A unit in Quarantine/Under Repair/Missing/Decommissioned is excluded from AvailabilityService's fleet count even if the ERPNext status is still Active."
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Order-cortex_rental_transaction",
+    "dt": "Sales Order",
+    "fieldname": "cortex_rental_transaction",
+    "label": "Cortex Rental Transaction",
+    "fieldtype": "Link",
+    "options": "Cortex Rental Transaction",
+    "insert_after": "customer",
+    "read_only": 1,
+    "in_standard_filter": 1,
+    "no_copy": 1,
+    "description": "Rental this ERPNext document was generated for by Cortex (traceability; set by the server, never by hand)."
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-cortex_rental_transaction",
+    "dt": "Sales Invoice",
+    "fieldname": "cortex_rental_transaction",
+    "label": "Cortex Rental Transaction",
+    "fieldtype": "Link",
+    "options": "Cortex Rental Transaction",
+    "insert_after": "customer",
+    "read_only": 1,
+    "in_standard_filter": 1,
+    "no_copy": 1,
+    "description": "Rental this ERPNext document was generated for by Cortex (traceability; set by the server, never by hand)."
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Payment Entry-cortex_rental_transaction",
+    "dt": "Payment Entry",
+    "fieldname": "cortex_rental_transaction",
+    "label": "Cortex Rental Transaction",
+    "fieldtype": "Link",
+    "options": "Cortex Rental Transaction",
+    "insert_after": "party",
+    "read_only": 1,
+    "in_standard_filter": 1,
+    "no_copy": 1,
+    "description": "Rental this ERPNext document was generated for by Cortex (traceability; set by the server, never by hand)."
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Customer-cortex_insurance_valid_until",
+    "dt": "Customer",
+    "fieldname": "cortex_insurance_valid_until",
+    "label": "Assurance valide jusqu’au (Cortex)",
+    "fieldtype": "Date",
+    "insert_after": "cortex_company",
+    "in_standard_filter": 1,
+    "description": "Date d’expiration du certificat d’assurance (COI) vérifié. Cortex s’en sert pour signaler une assurance manquante ou expirée avant un contrat."
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Serial No-cortex_consignment_owner",
+    "dt": "Serial No",
+    "fieldname": "cortex_consignment_owner",
+    "label": "Propriétaire consignataire (Cortex)",
+    "fieldtype": "Link",
+    "options": "Consignment Owner",
+    "insert_after": "cortex_status",
+    "in_standard_filter": 1,
+    "description": "Propriétaire tiers de cette unité. Ses revenus de location entrent dans le relevé du propriétaire."
   }
 ]

@@ -29,14 +29,22 @@
 
 ---
 
-## Les 4 Écrans Clés
+## Écrans
 
-| Écran | URL | Description |
-|---|---|---|
-| **Scanner Check-in** | `/app/cortex-checkin` | Réception ultra-rapide par scan (bip sonore Web Audio), diagnostic d'avarie (bris/manquants/quarantaine) et reçu imprimable. |
-| **Disponibilité** | `/app/cortex-availability` | Grille calendaire interactive du parc d'équipements avec détection des conflits en temps réel. |
-| **Composer de Devis** | `/app/cortex-transaction-composer` | Élaboration de devis express avec tarification dynamique (**règle 7 jours loués = 3 jours facturés**) et création de clients à la volée. |
-| **P&L Financier** | `/app/cortex-accounting-pnl` | Compte de résultat hiérarchique en direct avec drill-down vers le Grand Livre ERPNext et export CSV instantané. |
+Cortex est une application Vue 3 + Frappe UI servie par Frappe sous **`/cortex`** ; le Desk `/app` reste l’ERPNext standard (comptabilité, documents, administration du site). Chaque écran lit et écrit par un endpoint Frappe réel (`cortex_rental/api/v1/*`).
+
+| Module | Écrans (sous `/cortex`) |
+|---|---|
+| **Opérations** | Aperçu du jour, Disponibilité, Locations (liste, composeur, fiche 360° avec préparation et facturation) |
+| **Entrepôt** | Sortie et Retour par scanner (retours partiels, dommages, preuves) |
+| **Catalogue** | Équipements, Numéros de série, Kits (développés en lignes réelles) |
+| **Clients** | Liste, Fiche 360° (locations, factures, paiements, assurance) |
+| **Finance** | Compte de résultat ERPNext, Factures et paiements. Acompte (Payment Entry) et solde (Sales Invoice) sur des documents ERPNext |
+| **Consignation** | Tableau de bord, Propriétaires, Relevés (`OwnerStatementSafe`, sans données du locataire) |
+| **IA** | Boîte IA, Espace de travail IA, Activité des agents, Assistant (⌘J) |
+| **Administration** | Politiques de location, Équipe et rôles, Import et migration CSV (avec annulation), Journal d’audit |
+
+La règle de prix reste **7 jours loués = 3 jours facturés** (grille modifiable par société). Voir `HANDOFF.md` §0 pour le déploiement et la recette.
 
 <br/>
 
@@ -134,11 +142,14 @@ Le script universel prend en charge l'installation, les migrations MariaDB, la c
 ## Tests & Qualité de Code
 
 ```bash
-# Lancer la suite complète de validation (87 tests unitaires + vérification DocTypes)
+# Lancer la suite complète de validation (tests Python + vérification DocTypes)
 ./bin/pre-claude-check.sh
 
 # Lancer les tests pytest
 PYTHONPATH=apps/cortex_rental:apps/cortex-mcp pytest apps/ -v
+
+# Frontend (typecheck, tests, build)
+cd apps/cortex_rental/frontend && npx vue-tsc --noEmit && TZ=America/Montreal npx vitest run && npm run build
 ```
 
 <br/>

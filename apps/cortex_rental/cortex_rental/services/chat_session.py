@@ -13,6 +13,7 @@ Company or user identity.
 """
 
 import time
+import json
 from typing import Any, Dict, List, Optional
 
 try:
@@ -146,20 +147,54 @@ class ChatSessionService:
                 "Unauthorized: this chat session belongs to a different user.",
                 frappe.PermissionError,
             )
-        return session.as_dict()
+        data = session.as_dict()
+        messages = []
+        for row in frappe.get_all(
+            "Cortex Chat Message",
+            filters={"chat_session": name},
+            fields=["name", "sender_type", "content_sanitized", "ui_blocks_json", "model_name", "created_at"],
+            order_by="created_at asc",
+            limit_page_length=500,
+        ):
+            try:
+                blocks = json.loads(row.ui_blocks_json or "[]")
+            except (TypeError, ValueError):
+                blocks = []
+            messages.append(
+                {
+                    "id": row.name,
+                    "sender_type": row.sender_type,
+                    "text": row.content_sanitized or "",
+                    "blocks": blocks,
+                    "model_name": row.model_name,
+                    "created_at": str(row.created_at),
+                }
+            )
+        data["messages"] = messages
+        return data
 
     # -----------------------------------------------------------------
     def list_sessions(self, user: str, company: str) -> List[Dict[str, Any]]:
         if not frappe:
             return []
 
-        return frappe.get_all(
+        sessions = frappe.get_all(
             "Cortex Chat Session",
             filters={"user": user, "company": company},
             fields=["name", "agent_profile", "state", "started_at", "last_message_at"],
             order_by="last_message_at desc",
             limit_page_length=50,
         )
+        for session in sessions:
+            first = frappe.get_all(
+                "Cortex Chat Message",
+                filters={"chat_session": session.name, "sender_type": "Human"},
+                fields=["content_sanitized"],
+                order_by="created_at asc",
+                limit_page_length=1,
+            )
+            session["title"] = ((first[0].content_sanitized if first else "") or "")[:80]
+        return sessions
 
     # -----------------------------------------------------------------
     def pin_context(self, session_name: str, context_snapshot_name: str, user: str) -> None:

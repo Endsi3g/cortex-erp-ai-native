@@ -1,5 +1,101 @@
 # Changelog — Cortex Security & Correctness Remediation
 
+## v0.6.0-dev — 2026-09-25 — Refonte UI complète (`feat/ui-rebuild`, lots 1 à 8)
+
+Not verified on a live bench: see HANDOFF §0 for the deployment and per-screen checks on the tower.
+
+### Lot 1 — Foundations, shell and Compte de résultat
+
+**Application**
+- The Cortex UI is now a single Vue 3 + Frappe UI app served by Frappe under `/cortex/*` (`www/cortex.py`, `website_route_rules`). Sources moved from `cortex_rental/public/frontend` (which Frappe exposed publicly under `/assets`, source and `node_modules` included) to `apps/cortex_rental/frontend`; only the build lands in `public/frontend`.
+- Removed the legacy Desk pages (`page/cortex_*`), their bundles (`public/js/*`), the Desk CSS injection and the global Desk copilot launcher. The Desk workspace is now a plain entry point (link to `/cortex` + real DocType lists).
+- ERPNext Desk is standard again: removed `setup_cortex_sidebar` (it hid every non-Cortex workspace in the database on every login) and the sidebar override; patch `v1_0.restore_erpnext_workspaces` makes public workspaces visible again.
+
+**Security**
+- Tenant resolution no longer falls back to the hard-coded "CineRental Montreal" nor to the user-editable session default Company. Access comes from User Permission (or System Manager); a single-Company site grants that Company; otherwise nothing.
+- Roles referenced by DocType permissions (`Rental Manager`, `Rental Operator`, `Pricing Manager`, `Auditor`) are now shipped as fixtures.
+
+**Shell (pixel-matched to `inspiration/image.png`)**
+- 50px rail, 48px top bar, 46px page header, 28px Frappe UI controls, espresso palette. Measured deviations ≤ 1.5px (automated comparison through the dev-only `frontend/preview/`).
+- Navigation built from the route table and filtered by server permissions; ⌘K search backed by the new `api/v1/search.global_search` (tenant-scoped); removed hard-coded DEMO links, fake search results, the invented "3" inbox badge and the default pending-approvals count of 4.
+
+**Finance**
+- Compte de résultat (`/cortex/finance/profit-and-loss`): ERPNext filter bar (company, finance book, fiscal years or date range, periodicity, currency, cost center, accounting dimensions, project, report view, accumulated values, default FB entries), KPI summary, chart, tree table with row filters, General Ledger drill-down, CSV export with formula-injection guard, print.
+- `get_profit_and_loss` now recognises ERPNext v14/v15 labels (`'Total Income (Credit)'`, `'Profit for the year'`, spacer rows) and returns `available: false` with a reason instead of a zeroed statement when the report fails. New `get_pnl_filter_options`.
+
+### Lot 2 — Finance: advance + balance billing on ERPNext documents
+
+- Reservation now creates and submits the ERPNext **Sales Order** with the server-priced period lines (billable days, discounts) and the company's sales tax template (TPS/TVQ). The previous sync created orders at the *daily* rate, lost the link after save and swallowed every error; ERPNext failures now fail the reservation with ERPNext's message.
+- Requested **advance** = share of the order's grand total (new DocType **Cortex Company Settings**, 30% by default) + equipment guarantee (`deposit_required` × qty). Recorded as a native ERPNext **Payment Entry** against the order (submitted for accounting roles, draft otherwise); `payment_ready` follows the order's `advance_paid`.
+- After return, a **draft balance Sales Invoice** is mapped from the order with advances allocated and damage / loss lines from completed check-ins; it refuses (instead of dropping charges) when the damage/loss items are not configured. A person submits it in ERPNext.
+- Traceability custom field `cortex_rental_transaction` on Sales Order, Sales Invoice and Payment Entry.
+- **Factures et paiements** screen (`/cortex/finance/invoices`) on the shared ERPNext-style `DataTable`.
+- Fixed a date bug across the app: Frappe `YYYY-MM-DD` values were read as UTC and shown one day early in Québec.
+- To check on the tower after `bench migrate`: create a Cortex Company Settings record (tax template, damage and loss items), confirm a reservation creates a submitted Sales Order with taxes, record an advance, then prepare a balance invoice after a return.
+
+### Lot 3 — Operations: overview, availability, rentals, composer, rental record
+
+- **Availability grid rewritten**: blocks were positioned by rental *state* with hard-coded offsets, not by their dates. They are now placed on their real period, with overlapping rentals in separate lanes, conflicts outlined in red and a "now" line.
+- **Operations overview** on a new tenant-scoped endpoint (`api/v1/operations.get_operations_overview`): departures/returns of the day, overdue returns, exceptions, rentals starting within 48 h with missing requirements, out-of-service serials, pending approvals and inbound requests. Removed the hard-coded DEMO timeline, alerts and incoming widgets.
+- **Rentals list** on `list_rental_summaries` (one query per page instead of ~6 per row).
+- **Composer** rebuilt as a single ERPNext-style form (create and edit): server pricing and per-line availability, same-category alternatives when a line conflicts, tax estimate from the company's ERPNext template (the official amounts stay ERPNext's).
+- **Rental record** rebuilt: next action driven by `available_actions` computed on the server, requirement verification with audited reason (bug: contracts were impossible from Cortex because nothing could set these flags), billing tab (advance, payments, balance invoice), equipment & serials, audit; cancel with mandatory reason (closes the ERPNext order) and close (requires the balance invoice to be submitted).
+- Fixed: the rental controller recomputed taxes from `tax_rate = 0` on every save, which would have wiped ERPNext taxes after reservation; the customer search read a non-existent `custom_insurance_valid_until` column (new custom field `cortex_insurance_valid_until`).
+- Frontend state types now mirror the server state machine (removed `Draft`, `Partially Returned`, `Invoiced`; added `Closed`, `Disputed`, `Quarantine`); currency is the company's, not a hard-coded CAD.
+
+### Lot 4 — Warehouse: check-out and check-in
+
+- Check-out and check-in rebuilt on the shared ERPNext layout with a 52px scan field (audio/visual feedback, focus kept between scans) and a rental picker when no rental is given (replaces the DEMO links of the old menu).
+- Check-in: per-unit condition and disposition, damage severity/type/repair cost, photo evidence uploaded as a private Frappe File attached to the rental (hashed and linked server-side), bulk quantities, and explicit finalisation (automatic, partial, settle with loss).
+- Fixed: a unit returned with quantity 0 was recorded as 1 returned (`float(0 or 1.0)`), so lost equipment was never billed; the frontend offered check-in conditions the DocType rejects (`Missing_Accessory`, `Needs_Clean`); the check-in response was typed as a mutation envelope it never was.
+
+### Lot 5 — Catalog: equipment, serial numbers, kits
+
+- New `api/v1/catalog.py` (the old client called non-existent REST routes): equipment list with real fleet status, equipment record (ERPNext Item + rental profile + serials + pricing curve from the real PricingService), audited profile edits (catalog managers), serial record with rental / return / status history, status changes (quarantine, repair, release, missing, write-off) with mandatory reason.
+- Kits are a Cortex model (**Cortex Rental Kit**, per company): required/optional components and a kit discount. Added to a rental they expand into real lines, each priced, availability-checked and reserved; the kit discount is accepted without the manager role only when it matches an active kit containing the item (kit reference stored on the line).
+- Fixed two double-booking paths: confirmation re-checked availability line by line (two lines of the same item could exceed the fleet), and serial allocation could give the same serial to two lines of one rental. Staff availability checks now sum quantities per item too.
+
+### Lot 6 — Customers 360 and consignment
+
+- **Customers** (`api/v1/clients.py`): list with rentals, active rentals, outstanding balance and insurance status; 360° record with rentals, ERPNext invoices and payments; creation of an ERPNext Customer bound to the company; audited insurance verification (feeds the contract requirement).
+- **Consignment computed from real rentals**: a serial is linked to its owner (`Serial No.cortex_consignment_owner`); statements take each owned unit's net revenue on rentals returned/closed in the month, at the owner's share. Workflow prepared (consignment manager) → approved → paid with ERPNext payment reference (finance). Agent tool `prepare_owner_statement` now takes owner + period only (it used to accept caller-supplied amounts and a default serial "SN-GENERIC-001").
+- Owner statements keep the strict `OwnerStatementSafe` contract end to end; the screen refuses to render a statement carrying any field outside it.
+- **Blocking fix**: `Consignment Payout` had a field named `owner`, a Frappe reserved fieldname — the DocType could not be migrated. Renamed to `consignment_owner`; a new schema test rejects reserved fieldnames, duplicate fields, dangling child tables and missing controllers across all DocTypes.
+- Removed the fictitious server-side statement export (CSV is generated client-side with the injection guard; PDF through print).
+
+### Lot 7 — AI: inbox, workspace, assistant, agent activity
+
+- **AI inbox** (`api/v1/ai.py`): one list for pending approvals, inbound requests (with their latest extraction) and quote drafts created by agents, scoped to the active company. States are computed on the server (ready, needs review, low confidence below 0.7, extraction error, processing, then approved / applied / rejected).
+- **AI workspace**: the source on the left (message and evidence, the approval's current vs proposed values, or the draft's lines), the AI's work on the right. Every decision button says exactly what it will record. "Prepare rental" opens the composer prefilled with the recognised dates and items, and saving links the request (`cortex.inbound.converted`). Rejections require a reason (`cortex.inbound.rejected`). Approving runs the approved transition under the approver's name, and people cannot approve their own requests.
+- The model score is shown as reported by the agent, always labelled "not calibrated".
+- **Assistant** (⌘J drawer and `/assistant` with history) now uses the real `api/v1/chat.py` gateway. The server picks the agent from the page key, and the active document is sent only as context the server re-checks. The server's typed blocks are rendered with facts, extracted values and model text visually distinct. The old store invented replies (a fixed "no conflict detected", confidence 0.96, a DEMO evidence id) and a draft count of 2; all of that is removed. When the assistant is not configured (`get_assistant_status`), the drawer says so instead of answering.
+- **Agent activity** (`list_agent_activity`): agent runs with their tool calls (scope, status, duration, error), filters and CSV export; restricted to telemetry roles.
+- **Blocking fixes, agent tools**:
+  - `submit_approval_request` wrote to fields that do not exist on Approval Request, so no agent approval could be created. It now uses `requested_by_type/id`, `evidence_ids` and a new `rationale` field.
+  - `create_quote_draft` / `preview_pricing` trusted the caller's `unit_rate`. Rates now come only from the company's rental profiles, and agents cannot apply discounts.
+- Removed the REST calls to routes that never existed (`/intelligence/*`, `/copilot/*`) and their fixtures/types.
+
+### Lot 8 — Administration: policies, team & roles, import & migration, audit log
+
+- **Rental policies** (`api/v1/admin.py`): the effective billable-days curve for 1–31 days, showing which points come from a company rule and which from the standard grid. Rules (Rental Pricing Rule) are edited per duration, with billable days bounded to at most the calendar days. The company billing settings (advance %, equipment guarantee, tax template, damage/loss items) are editable too. Every change is audited with before and after values.
+- **Team & roles**: System Manager only. Only human Cortex roles are granted or removed here; other roles a user holds are shown but never touched.
+  - Agent roles and System Manager are never assignable here.
+  - Nobody can edit their own roles.
+  - Agent accounts are listed read-only.
+  - Each change is audited (`cortex.team.roles_changed`).
+- **Import & migration** (`api/v1/imports.py`, new DocTypes `Cortex Import Batch` / `Cortex Import Batch Record`): a 6-step CSV import of customers, equipment (ERPNext Item plus rental profile) or serial numbers (with consignment owner).
+  - Steps: type → file → column mapping (French headers suggested) → row-by-row validation against the file and the site (duplicates, existing records, unknown catalog items or owners) → import → result.
+  - Each row is created inside its own savepoint, and every created document is recorded on the batch.
+  - Rollback deletes those documents newest first. A document that something else now links to is kept and reported. Import and rollback are audited.
+  - Parsing and validation live in `services/importer.py`, which has no Frappe dependency and is fully unit-tested.
+- **Audit log**: an append-only view of `Audit Event` with filters (action, document, actor, actor type, dates), a before/after/evidence/policy detail view and CSV export (up to 5,000 rows).
+- Removed the REST calls to routes that never existed (`/policies`, `/team/roles`, `/migration/batches`, `/audit/events`) and the invented team data (role counts, masked API key).
+
+**Quality (lot 1)**
+- `tests/fake_frappe.py`: runs the `if frappe:` paths in pytest and validates every insert against the DocType JSON (unknown / missing mandatory fields).
+- CI now typechecks, tests and builds the frontend.
+- Not verified on a live bench in this lot; see HANDOFF for what to check on the tower.
+
 ## v0.5.0 — 2026-09-23
 
 This release establishes the ERPNext-first, AI-native Cortex workspace and documents the implementation contract for future product and AI agents in `docs/frontend/CORTEX_UI_HANDOFF_V2.md`.

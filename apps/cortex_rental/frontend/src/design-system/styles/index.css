@@ -1,0 +1,10 @@
+/**
+ * Cortex stylesheet bundle.
+ *
+ * frappe-ui/style.css emits @tailwind base/components/utilities and the
+ * Inter font; it is the visual source of truth (ERPNext reference).
+ */
+
+@import 'frappe-ui/style.css';
+@import './motion.css';
+@import './cortex-base.css';

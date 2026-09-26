@@ -2,7 +2,7 @@
 
 ## Architecture
 - **Framework & Frontend Core**: Vue 3 (`<script setup lang="ts">`), TypeScript Strict, Vite, Tailwind CSS, Pinia, Vue Router, Vue I18n (`fr-CA`, `en-CA`).
-- **Location**: `apps/cortex_rental/cortex_rental/public/frontend`
+- **Location**: `apps/cortex_rental/frontend`
 - **Design System**: "Cortex OS — Operational Green" (Ink 900 `#08120D`, Ink 800 `#102019`, Ink 50 `#F2F7F4`, Green 500 `#087A43`, Green 400 `#14B86A`, Amber, Red, Violet, Blue).
 - **Typography**: `Inter` for operational UI, `JetBrains Mono` for IDs, serials, hashes, and technical values.
 - **Client Architecture**: Strictly typed `CortexApiClient` adapter interface isolating all frontend mutations from raw backend APIs, with isolated mock layer in `src/api/mock/`.
@@ -55,7 +55,7 @@
 
 ## Code Layout
 ```
-apps/cortex_rental/cortex_rental/public/frontend/
+apps/cortex_rental/frontend/
 ├── src/
 │   ├── app/
 │   │   ├── router/          # 24 canonical routes with metadata & guards

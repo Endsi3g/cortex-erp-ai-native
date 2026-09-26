@@ -93,3 +93,13 @@ class TestCheckinServiceAndApi(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReturnedQuantity(unittest.TestCase):
+    def test_zero_returned_is_not_turned_into_one(self):
+        from cortex_rental.services.checkin import _qty
+
+        self.assertEqual(_qty(0, 1.0), 0.0)
+        self.assertEqual(_qty("0", 1.0), 0.0)
+        self.assertEqual(_qty(None, 1.0), 1.0)
+        self.assertEqual(_qty("", 1.0), 1.0)

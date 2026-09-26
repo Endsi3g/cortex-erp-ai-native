@@ -9,7 +9,7 @@ Cortex is an AI-native operational cockpit and cloud ERP for audiovisual, cinema
 
 ### Gate 1 — Foundation & Scaffolding (Milestone 1)
 - **Scope**:
-  - Frontend repository setup in `apps/cortex_rental/cortex_rental/public/frontend`
+  - Frontend repository setup in `apps/cortex_rental/frontend`
   - TypeScript strict configuration, Vite, Tailwind CSS, Pinia, Vue Router, Vue I18n
   - Design Tokens "Cortex OS — Operational Green" (`#08120D`, `#087A43`, `#14B86A`)
   - Reusable base components (`CortexButton`, `CortexInput`, `CortexModal`, `CortexTable`, etc.)

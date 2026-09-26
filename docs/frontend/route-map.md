@@ -1,4 +1,20 @@
-# Cortex ERP AI-Native — Canonical 24 Screens Route Map
+# Cortex ERP AI-Native — Canonical Screens Route Map
+
+> **Mise à jour 2026-09-25 — routes servies sous `/cortex/`, tous les écrans construits.** Les chemins `/app/cortex-*` de la table ci-dessous sont historiques ; la table de vérité est `apps/cortex_rental/frontend/src/app/router/routes.ts`.
+>
+> - **Opérations et entrepôt :** `/cortex/operations`, `/cortex/availability`, `/cortex/rentals`, `/cortex/rentals/new`, `/cortex/rentals/:name`, `/cortex/checkout/:rental?`, `/cortex/checkin/:rental?`.
+> - **Catalogue :** `/cortex/equipment[/:item]`, `/cortex/serials/:serial`, `/cortex/kits`.
+> - **Consignation :** `/cortex/consignment`, `/cortex/consignment/owners[/:owner/statement/:period]`.
+> - **IA :** `/cortex/ai/inbox`, `/cortex/ai/workspace/:kind:sourceId` (ex. `inbound:INB-0001`), `/cortex/ai/audit` (activité des agents), `/cortex/assistant`.
+> - **Administration :** `/cortex/admin/policies`, `/cortex/admin/team`, `/cortex/admin/import[?batch=]`, `/cortex/admin/audit`.
+> - **Écrans ajoutés :** **27** Clients (`/cortex/customers`), **28** Fiche client (`/cortex/customers/:customer`), **29** Compte de résultat (`/cortex/finance/profit-and-loss`), **30** Factures et paiements (`/cortex/finance/invoices`).
+> - **Écrans fusionnés :** 8 (approbations), 16 (demandes entrantes) et 17 (brouillons IA) redirigent vers l’AI Inbox filtrée ; 18 est l’AI Audit ; 19 est le tiroir ⌘J de l’Assistant (20).
+> - **Écart avec les descriptions de la table :**
+>   - 21 : les politiques sont modifiables par les rôles autorisés, avec audit.
+>   - 22 : pas de clés API affichées ; les comptes d’agent sont en lecture seule.
+>   - 23 : les étapes réelles sont Type, Fichier, Colonnes, Validation, Import, Résultat/annulation. La « quarantaine » correspond aux lignes rejetées.
+>   - 24 : pas de vérificateur de hash SHA-256.
+
 
 This document defines the authoritative 24 canonical screens for Cortex ERP. No screen may change its ID, canonical route, or priority without updating this table.
 
