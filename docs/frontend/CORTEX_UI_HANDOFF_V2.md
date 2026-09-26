@@ -1,7 +1,7 @@
 # Cortex UI handoff v2 — ERPNext-first, AI-native
 
 **Statut :** contrat produit canonique pour l’interface Cortex et les agents de développement.  
-**Version :** 2.2 · 2026-09-25  
+**Version :** 2.3 · 2026-09-25  
 **Socle :** ERPNext + Frappe Framework, Vue 3 et Frappe UI.  
 **Principe :** *Cortex suggère, l’humain décide.*
 
@@ -145,10 +145,16 @@ Flux attendu : Vue → API Frappe authentifiée → service Cortex → (a) Onyx 
 
 Les pages et actions doivent indiquer leur provenance réelle. Mock, fixture, API backend et service IA sont des modes différents. Le mode Mock ne devient pas « production » parce qu’il passe le build.
 
-État vérifié le 2026-09-25 (lot 1 de la refonte) :
+État au 2026-09-25 — refonte complète (`feat/ui-rebuild`, lots 1 à 8) :
 
-- Shell reconstruit au pixel sur la capture P&L : écarts mesurés ≤ 1,5 px sur les séparateurs, filtres, synthèse, graphique et table (comparaison automatisée via la prévisualisation `frontend/preview/`, données DEMO). Écran Compte de résultat (`/cortex/finance/profit-and-loss`) branché sur le rapport ERPNext ; le parcours live n’a pas été recetté sur un bench.
-- Les écrans Clients et Factures affichent explicitement « en cours de reconstruction » jusqu’à leur lot.
+- Tous les écrans canoniques existent en Vue 3 + Frappe UI sous `/cortex`, dans la grille de la capture P&L. Le shell a été comparé au pixel près : écarts mesurés ≤ 1,5 px via la prévisualisation `frontend/preview/`, sur données DEMO.
+- Chaque écran a son propre endpoint Frappe (`api/v1/*`) ; aucune route REST fictive ne subsiste. Le mode mock n’est utilisé que par la prévisualisation et les tests, et il affiche un badge DEMO.
+- **AI Inbox :** réunit approbations, demandes entrantes et brouillons d’agents (`api/v1/ai.py`). Il n’y a pas de vue équipe : `team_scope_available: false`, et la bascule n’est pas affichée. Il n’y a pas non plus de sélection groupée.
+- **AI Workspace :** la source à gauche, le travail de l’IA à droite. Chaque bouton décrit l’événement exact qu’il inscrit. « Préparer la location » ouvre le composeur ; rien n’est créé avant l’enregistrement, qui lie ensuite la demande. La correction champ par champ et la réextraction ne sont pas exposées.
+- **Confiance :** le score du modèle est affiché tel que l’agent l’a déclaré, toujours marqué « non calibré ». Le seuil de 0,70 sert uniquement à signaler une confiance faible ; il n’enchaîne rien automatiquement. Les seuils de la section « Langage et états de confiance » restent en attente d’une calibration.
+- **AI Audit** (`/cortex/ai/audit`) : exécutions d’agents et appels d’outils, avec export CSV. Le **Journal d’audit** métier est sous `/cortex/admin/audit`.
+- **Assistant** (⌘J et `/cortex/assistant`) : passe par `api/v1/chat.py`, et le serveur choisit l’agent selon la page. S’il n’est pas configuré, l’écran le dit ; aucune réponse n’est simulée.
+- **Rien n’a été recetté sur un bench réel dans cette refonte.** Voir `HANDOFF.md` §0 pour la liste des vérifications à faire sur la tour.
 
 État vérifié le 2026-09-23 :
 

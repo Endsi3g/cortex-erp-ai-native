@@ -1,6 +1,10 @@
 # Changelog — Cortex Security & Correctness Remediation
 
-## v0.6.0-dev — 2026-09-25 — Refonte UI, lot 1 (fondations + Compte de résultat)
+## v0.6.0-dev — 2026-09-25 — Refonte UI complète (`feat/ui-rebuild`, lots 1 à 8)
+
+Not verified on a live bench: see HANDOFF §0 for the deployment and per-screen checks on the tower.
+
+### Lot 1 — Foundations, shell and Compte de résultat
 
 **Application**
 - The Cortex UI is now a single Vue 3 + Frappe UI app served by Frappe under `/cortex/*` (`www/cortex.py`, `website_route_rules`). Sources moved from `cortex_rental/public/frontend` (which Frappe exposed publicly under `/assets`, source and `node_modules` included) to `apps/cortex_rental/frontend`; only the build lands in `public/frontend`.

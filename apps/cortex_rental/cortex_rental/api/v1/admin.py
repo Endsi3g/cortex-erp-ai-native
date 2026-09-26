@@ -256,12 +256,9 @@ if frappe:
             fields=["name", "full_name", "enabled", "last_login", "user_type"],
             order_by="full_name asc",
         )
-        role_rows = frappe.get_all(
-            "Has Role", filters={"parent": ["in", names or [""]], "parenttype": "User"}, fields=["parent", "role"]
-        )
-        roles_by_user: Dict[str, List[str]] = {}
-        for row in role_rows:
-            roles_by_user.setdefault(row.parent, []).append(row.role)
+        # frappe.get_roles avoids querying the Has Role child table directly
+        # (child-table reads need a parent doctype and permissions in v15).
+        roles_by_user: Dict[str, List[str]] = {user.name: frappe.get_roles(user.name) for user in users}
         people, services = [], []
         for user in users:
             roles = sorted(roles_by_user.get(user.name, []))
