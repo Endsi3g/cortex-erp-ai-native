@@ -12,6 +12,14 @@
 - New block types: `widget` (read-tool data for the UI), `action_proposal`, `page_link`.
 - Onyx is no longer required for the chat history endpoints (the Onyx client is created lazily, only when a company uses Onyx).
 
+### Phase B — Claude-style home and conversation
+
+- `/cortex` now opens on the conversation (route `home`). People without assistant access land on Operations, and `/assistant` redirects to the home page. The navigation rail and every regular page stay available.
+- Claude look, scoped to AI surfaces (`.claude-surface`: ivory background, serif greeting and answers, beige user bubbles, clay accent). Tables, forms and reports keep the ERPNext style.
+- **Home**: time-of-day greeting, large rounded composer (Enter to send, Shift+Enter for a new line), suggestions filtered by the person's permissions, and a collapsible history grouped by today, last 7 days and older (`?c=<session>` reopens one). The composer docks at the bottom once the conversation starts, with a live streaming caret and a copy button on answers.
+- The ⌘J panel uses the same conversation components, with the current page as context. It is hidden on the home page.
+- Model text is rendered as Markdown and sanitized (DOMPurify; no scripts, images, forms or `javascript:` links). Internal links open inside the app.
+
 ## v0.6.0-dev — 2026-09-25 — Refonte UI complète (`feat/ui-rebuild`, lots 1 à 8)
 
 Not verified on a live bench: see HANDOFF §0 for the deployment and per-screen checks on the tower.

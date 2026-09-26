@@ -12,7 +12,7 @@
   >
     <div class="flex h-12 shrink-0 items-center" :class="expanded ? 'px-[13px]' : 'justify-center'">
       <RouterLink
-        :to="{ name: 'operations-overview' }"
+        :to="{ name: 'home' }"
         class="flex items-center gap-2 rounded outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
         :aria-label="t('common.navigation.home')"
         @click="$emit('navigate')"

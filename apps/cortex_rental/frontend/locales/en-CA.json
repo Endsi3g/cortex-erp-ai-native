@@ -45,7 +45,8 @@
     "customers_list": "Customers",
     "customer_detail": "Customer",
     "finance_pnl": "Profit and Loss Statement",
-    "finance_invoices": "Invoices & Payments"
+    "finance_invoices": "Invoices & Payments",
+    "home": "Assistant"
   },
   "ai_states": {
     "verified": {
@@ -410,7 +411,8 @@
       "catalog": "Catalog",
       "finance": "Accounting",
       "intelligence": "Intelligence",
-      "admin": "Administration"
+      "admin": "Administration",
+      "assistant": "Assistant"
     },
     "mobile_tabs": {
       "operations": "Operations",
@@ -947,7 +949,51 @@
     "approval_Approved": "Approved",
     "approval_Rejected": "Rejected",
     "approval_Expired": "Expired",
-    "running_tool": "Running tool: {tool}…"
+    "running_tool": "Running tool: {tool}…",
+    "hide_history": "Hide history",
+    "show_history": "Show history",
+    "go_to_operations": "Go to operations",
+    "greeting_morning": "Good morning, {name}",
+    "greeting_afternoon": "Good afternoon, {name}",
+    "greeting_evening": "Good evening, {name}",
+    "greeting_plain": "Hello",
+    "home_placeholder": "How can I help you today?",
+    "reply_placeholder": "Reply to Cortex…",
+    "company_context": "Company: {company}",
+    "disclaimer": "Cortex can make mistakes. Data comes from the ERP; every change needs your confirmation.",
+    "suggest_today_label": "Today",
+    "suggest_today": "What goes out and comes back today, and is anything overdue?",
+    "suggest_availability_label": "Availability",
+    "suggest_availability": "Which cameras are available next week?",
+    "suggest_quote_label": "New quote",
+    "suggest_quote": "Prepare a quote for ",
+    "suggest_invoices_label": "Invoices",
+    "suggest_invoices": "Which invoices are overdue or unpaid?",
+    "history_today": "Today",
+    "history_week": "Last 7 days",
+    "history_older": "Older",
+    "untitled": "New conversation",
+    "copy": "Copy",
+    "tools": {
+      "search_customers": "customer search",
+      "get_customer": "customer record",
+      "search_equipment": "equipment search",
+      "get_equipment": "equipment record",
+      "check_availability": "availability check",
+      "preview_price": "price calculation",
+      "list_rentals": "rentals list",
+      "get_rental": "rental detail",
+      "operations_overview": "day overview",
+      "profit_and_loss": "profit and loss",
+      "list_invoices": "invoices",
+      "rental_billing": "rental billing",
+      "consignment_dashboard": "consignment",
+      "owner_statement": "owner statement",
+      "ai_inbox": "AI inbox",
+      "pricing_policies": "pricing policies",
+      "open_page": "page link"
+    },
+    "drawer_empty": "I can see “{context}”. Ask a question or request an action: I will propose it before doing it."
   },
   "admin": {
     "active": "Active",

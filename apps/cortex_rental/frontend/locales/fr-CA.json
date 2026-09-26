@@ -45,7 +45,8 @@
     "customers_list": "Clients",
     "customer_detail": "Client",
     "finance_pnl": "Compte de résultat",
-    "finance_invoices": "Factures et paiements"
+    "finance_invoices": "Factures et paiements",
+    "home": "Assistant"
   },
   "ai_states": {
     "verified": {
@@ -410,7 +411,8 @@
       "catalog": "Catalogue",
       "finance": "Comptabilité",
       "intelligence": "Intelligence",
-      "admin": "Administration"
+      "admin": "Administration",
+      "assistant": "Assistant"
     },
     "mobile_tabs": {
       "operations": "Opérations",
@@ -947,7 +949,51 @@
     "approval_Approved": "Approuvée",
     "approval_Rejected": "Refusée",
     "approval_Expired": "Expirée",
-    "running_tool": "Outil en cours : {tool}…"
+    "running_tool": "Outil en cours : {tool}…",
+    "hide_history": "Masquer l’historique",
+    "show_history": "Afficher l’historique",
+    "go_to_operations": "Aller aux opérations",
+    "greeting_morning": "Bonjour, {name}",
+    "greeting_afternoon": "Bon après-midi, {name}",
+    "greeting_evening": "Bonsoir, {name}",
+    "greeting_plain": "Bonjour",
+    "home_placeholder": "Comment puis-je vous aider aujourd’hui ?",
+    "reply_placeholder": "Répondre à Cortex…",
+    "company_context": "Société : {company}",
+    "disclaimer": "Cortex peut se tromper. Les données viennent de l’ERP ; toute modification demande votre confirmation.",
+    "suggest_today_label": "Aujourd’hui",
+    "suggest_today": "Qu’est-ce qui part et revient aujourd’hui, et y a-t-il des retards ?",
+    "suggest_availability_label": "Disponibilité",
+    "suggest_availability": "Qu’est-ce qui est disponible en caméras la semaine prochaine ?",
+    "suggest_quote_label": "Nouvelle soumission",
+    "suggest_quote": "Prépare une soumission pour ",
+    "suggest_invoices_label": "Factures",
+    "suggest_invoices": "Quelles factures sont en retard ou impayées ?",
+    "history_today": "Aujourd’hui",
+    "history_week": "7 derniers jours",
+    "history_older": "Plus ancien",
+    "untitled": "Nouvelle conversation",
+    "copy": "Copier",
+    "tools": {
+      "search_customers": "recherche de clients",
+      "get_customer": "fiche client",
+      "search_equipment": "recherche d’équipements",
+      "get_equipment": "fiche équipement",
+      "check_availability": "vérification de disponibilité",
+      "preview_price": "calcul du prix",
+      "list_rentals": "liste des locations",
+      "get_rental": "détail de la location",
+      "operations_overview": "aperçu du jour",
+      "profit_and_loss": "compte de résultat",
+      "list_invoices": "factures",
+      "rental_billing": "facturation de la location",
+      "consignment_dashboard": "consignation",
+      "owner_statement": "relevé propriétaire",
+      "ai_inbox": "boîte IA",
+      "pricing_policies": "politiques de prix",
+      "open_page": "lien vers une page"
+    },
+    "drawer_empty": "Je vois la page « {context} ». Posez une question ou demandez une action : je vous la proposerai avant de la faire."
   },
   "admin": {
     "active": "Actif",

@@ -31,11 +31,13 @@ describe('Cortex OS — Router & Navigation Architecture (canonical routes)', ()
     }
   })
 
-  it('R-TEST-2: Root path redirects directly to Operations Overview (/operations)', async () => {
+  it('R-TEST-2: Root path is the assistant home; /assistant redirects to it', async () => {
     const router = createAppRouter(true)
     await router.push('/')
-    expect(router.currentRoute.value.path).toBe('/operations')
-    expect(router.currentRoute.value.name).toBe('operations-overview')
+    expect(router.currentRoute.value.name).toBe('home')
+    await router.push('/assistant?c=S1')
+    expect(router.currentRoute.value.name).toBe('home')
+    expect(router.currentRoute.value.query.c).toBe('S1')
   })
 
   it('R-TEST-3: Navigates across P0 demo-critical routes successfully', async () => {

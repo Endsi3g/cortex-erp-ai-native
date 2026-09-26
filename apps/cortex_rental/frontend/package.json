@@ -15,8 +15,10 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "dompurify": "^3.4.15",
     "frappe-ui": "^0.1.278",
     "lucide-vue-next": "^0.438.0",
+    "marked": "^15.0.12",
     "pinia": "^2.2.2",
     "socket.io-client": "^4.8.3",
     "tailwind-merge": "^2.5.2",

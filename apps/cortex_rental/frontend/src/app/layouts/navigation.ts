@@ -3,6 +3,7 @@ import { useRouter, type RouteRecordNormalized } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   Activity,
+  Asterisk,
   Boxes,
   CalendarRange,
   Camera,
@@ -26,6 +27,7 @@ import type { NavigationCategory } from '@/app/router/types'
 
 const ICONS: Record<string, Component> = {
   Activity,
+  Asterisk,
   Boxes,
   CalendarRange,
   Camera,
@@ -46,6 +48,7 @@ const ICONS: Record<string, Component> = {
 }
 
 export const NAV_CATEGORY_ORDER: NavigationCategory[] = [
+  'assistant',
   'operations',
   'warehouse',
   'customers',
