@@ -44,6 +44,8 @@ L’AI Workspace peut reprendre une composition conversationnelle à la Claude, 
 
 ## Shell et navigation
 
+> **Décision du 2026-09-28 :** les écrans restent des Pages Desk ERPNext (`/app/cortex-*`) qui utilisent Frappe UI ; la SPA Vite n'est plus une cible de déploiement. La sidebar est celle des Workspaces du Desk. Le plan d'exécution, les écrans et les critères d'acceptation sont dans [`UI_REBUILD_PLAN.md`](UI_REBUILD_PLAN.md). La faisabilité de Frappe UI dans `bench build` reste à prouver (Phase 0) : ne la présente pas comme acquise.
+
 Le shell est partagé par les pages Cortex : sidebar repliable, topbar, recherche universelle, sélection d’entreprise, notifications et profil. L’état replié est l’état initial privilégié pour retrouver le rail ERPNext de la référence; la préférence de l’utilisateur est persistée. Ne duplique pas le shell dans les vues.
 
 Navigation IA canonique :
