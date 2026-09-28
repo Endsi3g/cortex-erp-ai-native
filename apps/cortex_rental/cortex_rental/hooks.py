@@ -89,12 +89,8 @@ fixtures = [
 ]
 
 # Lifecycle Hooks & Schema Prerequisites
+# Navigation lives in the Workspace JSON files (workspace/*), synced by `bench migrate`.
+# No boot-time database writes and no sidebar filtering: ERPNext workspaces stay visible.
 before_migrate = "cortex_rental.setup.before_migrate"
 after_migrate = "cortex_rental.setup.after_migrate"
 after_install = "cortex_rental.setup.after_install"
-boot_session = "cortex_rental.setup.boot_session"
-
-# Whitelisted Method Overrides
-override_whitelisted_methods = {
-    "frappe.desk.desktop.get_workspace_sidebar_items": "cortex_rental.setup.get_cortex_workspace_sidebar_items",
-}

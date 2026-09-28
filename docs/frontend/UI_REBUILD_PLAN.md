@@ -97,7 +97,7 @@ La sidebar est celle du Desk : la liste des **Workspaces**. On la rend correcte 
 - **Ne plus cacher ERPNext.** Réduire `get_cortex_workspace_sidebar_items` à un simple tri (Cortex d'abord), ou le retirer si les fixtures suffisent.
 - **Visibilité par rôle** via la table de rôles du Workspace (`Cortex *`), jamais par masquage côté client. Le serveur reste la source de vérité des droits.
 - **Cibles valides uniquement** : chaque entrée pointe vers une Page ou un DocType qui existe. Les écrans pas encore livrés pointent vers la liste DocType native, jamais vers une route morte ni un placeholder.
-- **Badges live** : endpoint `get_nav_counts` (approbations en attente, demandes entrantes) filtré par droits et par société ; affichage via les compteurs natifs des raccourcis de workspace (`stats_filter`). Un enrichissement de la sidebar par JS (`app_include_js`) n'est ajouté qu'après le spike et reste facultatif : modifier le DOM du Desk est fragile entre versions.
+- **Badges live** : compteurs natifs des raccourcis de workspace (`stats_filter`), calculés avec les permissions de l'utilisateur : approbations `Pending` et demandes entrantes `Received`. Aucun endpoint `get_nav_counts` n'est nécessaire à ce stade. Un enrichissement de la sidebar par JS n'est envisagé qu'après le spike et reste facultatif : modifier le DOM du Desk est fragile entre versions.
 - **Écrans récents** : liste par utilisateur en `localStorage` (confort par visiteur, avec try/catch), jamais un état métier.
 - **Supprimer** `CortexSidebar.vue` (mort), les liens `DEMO-*` et le badge fictif de `AppSidebar.vue`.
 
@@ -107,6 +107,10 @@ La sidebar est celle du Desk : la liste des **Workspaces**. On la rend correcte 
 - Un utilisateur sans rôle Cortex ne voit pas les groupes Cortex ; un rôle limité ne voit que ses groupes.
 - Aucune écriture en base pendant `boot_session`.
 - Navigation entière au clavier, focus visible, cibles d'au moins 44 px.
+
+### 4.4 État d'avancement (2026-09-28)
+Livré et testé par `tests/test_workspace_navigation.py` (statique, sans bench) : hub `Cortex Rental` + 6 groupes enfants (`Cortex Operations`, `Warehouse`, `Finance`, `AI`, `Catalog`, `Admin`) avec rôles et compteurs ; doublon de workspace supprimé ; SQL de masquage et hook `boot_session` retirés ; patch `restore_erpnext_workspaces` ; traductions `fr.csv` ; `CortexSidebar.vue` mort supprimé ; liens `DEMO-*` et badge fictif retirés de `AppSidebar.vue`.
+**Non vérifié (bench requis)** : rendu des sous-pages de workspace en v15, synchronisation de `sequence_id`, application du patch sur une base existante, traductions chargées.
 
 ## 5. Matrice des écrans
 

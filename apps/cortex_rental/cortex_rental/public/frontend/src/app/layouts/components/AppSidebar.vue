@@ -22,7 +22,7 @@
         <!-- Group Header (Hidden in collapsed mode) -->
         <div
           v-if="!navigationStore.sidebarCollapsed"
-          class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cortex-text-muted"
+          class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-cortex-text-muted"
         >
           {{ t(group.titleKey) }}
         </div>
@@ -115,15 +115,12 @@ import {
   CalendarRange,
   FileSpreadsheet,
   PlusCircle,
-  LogOut,
-  LogIn,
   Percent,
   Users,
   Inbox,
   Sparkles,
   Activity,
   Package,
-  Barcode,
   Layers,
   Scale,
   ShieldAlert,
@@ -164,15 +161,6 @@ const navGroups: NavGroup[] = [
       { name: 'rental-composer', to: '/app/cortex-rental/new', titleKey: 'routes.rental_composer', icon: PlusCircle }
     ]
   },
-  // 2. Warehouse & Field
-  {
-    id: 'warehouse',
-    titleKey: 'common.navigation_groups.warehouse',
-    items: [
-      { name: 'checkout-scanner', to: '/app/cortex-checkout/DEMO-TRX-2026-006', titleKey: 'routes.checkout_scanner', icon: LogOut },
-      { name: 'checkin-scanner', to: '/app/cortex-checkin/DEMO-TRX-2026-001', titleKey: 'routes.checkin_scanner', icon: LogIn }
-    ]
-  },
   // 3. Supervision & Finance
   {
     id: 'supervision',
@@ -187,7 +175,7 @@ const navGroups: NavGroup[] = [
     id: 'intelligence',
     titleKey: 'common.navigation_groups.intelligence',
     items: [
-      { name: 'ai-inbox', to: '/app/cortex-ai-inbox', titleKey: 'routes.ai_inbox', icon: Inbox, badgeCount: 3 },
+      { name: 'ai-inbox', to: '/app/cortex-ai-inbox', titleKey: 'routes.ai_inbox', icon: Inbox },
       { name: 'ai-workspace', to: '/app/cortex-ai-workspace', titleKey: 'routes.ai_workspace', icon: Sparkles },
       { name: 'ai-audit', to: '/app/cortex-ai-audit', titleKey: 'routes.ai_audit', icon: Activity }
     ]
@@ -198,7 +186,6 @@ const navGroups: NavGroup[] = [
     titleKey: 'common.navigation_groups.catalog',
     items: [
       { name: 'equipment-list', to: '/app/cortex-equipment', titleKey: 'routes.equipment_list', icon: Package },
-      { name: 'serial-detail', to: '/app/cortex-serial/DEMO-SN-ALX-001', titleKey: 'routes.serial_detail', icon: Barcode },
       { name: 'kits-list', to: '/app/cortex-kits', titleKey: 'routes.kits_list', icon: Layers }
     ]
   },
