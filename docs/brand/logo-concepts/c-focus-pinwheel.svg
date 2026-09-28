@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Cortex symbol, concept C: Focus pinwheel</title>
+  <g id="symbol" fill="#000000">
+    <path d="M24 24L144 24L144 56L56 56L56 80L24 80Z"/>
+    <path d="M232 24L232 144L200 144L200 56L176 56L176 24Z"/>
+    <path d="M232 232L112 232L112 200L200 200L200 176L232 176Z"/>
+    <path d="M24 232L24 112L56 112L56 200L80 200L80 232Z"/>
+    <circle cx="128" cy="128" r="20"/>
+  </g>
+</svg>
