@@ -58,7 +58,7 @@
  "shortcuts": [
   {
    "label": "Opérations",
-   "link_to": "cortex-operations",
+   "link_to": "cortex-ops-overview",
    "type": "Page",
    "color": "Grey",
    "doc_view": ""

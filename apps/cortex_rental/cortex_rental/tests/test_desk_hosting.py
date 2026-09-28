@@ -28,6 +28,9 @@ LEGACY_PAGES = {
 }
 # SPA routes that are not Desk Pages: the router redirects them, the sidebar links to the native
 # ERPNext list, or they are legacy names handled by the host.
+# A Workspace slug wins over a Page with the same name, so these SPA paths live in Pages with
+# another name; cortex_host.js maps between the two.
+PAGE_ALIASES = {"cortex-operations": "cortex-ops-overview", "cortex-rental": "cortex-rental-detail"}
 NOT_PAGES = {
     "cortex-approvals",
     "cortex-incoming",
@@ -68,7 +71,8 @@ def _desk_pages():
 
 class TestDeskHosting(unittest.TestCase):
     def test_every_spa_screen_has_a_desk_page(self):
-        missing = _spa_pages() - NOT_PAGES - LEGACY_PAGES - set(_desk_pages())
+        expected = {PAGE_ALIASES.get(name, name) for name in _spa_pages() - NOT_PAGES - LEGACY_PAGES}
+        missing = expected - set(_desk_pages())
         self.assertFalse(missing, f"SPA routes without a Desk Page: {sorted(missing)}")
 
     def test_hosted_pages_call_the_host_with_their_own_name(self):
@@ -83,6 +87,19 @@ class TestDeskHosting(unittest.TestCase):
             self.assertIn("cortex_rental.host.mount(wrapper)", script)
             self.assertTrue(os.path.exists(os.path.join(folder, "__init__.py")), name)
 
+    def test_no_page_shares_its_name_with_a_workspace(self):
+        slugs = set()
+        for path in glob.glob(os.path.join(MODULE_DIR, "workspace", "*", "*.json")):
+            with open(path, encoding="utf-8") as handle:
+                slugs.add(json.load(handle)["title"].lower().replace(" ", "-"))
+        self.assertTrue(slugs)
+        self.assertFalse(slugs & set(_desk_pages()), "a Workspace would hide the Page with the same slug")
+
+    def test_host_maps_the_aliased_pages(self):
+        host = _read("public", "js", "cortex_host", "cortex_host.js")
+        for spa, page in PAGE_ALIASES.items():
+            self.assertIn(f'"{spa}": "{page}"', host)
+
     def test_hosted_pages_are_role_restricted(self):
         for name, folder in _desk_pages().items():
             with open(os.path.join(folder, f"{os.path.basename(folder)}.json"), encoding="utf-8") as handle:
@@ -94,6 +111,13 @@ class TestDeskHosting(unittest.TestCase):
         hooks = _read("hooks.py")
         self.assertIn('"/assets/cortex_rental/js/cortex_host/cortex_host.js"', hooks)
         self.assertTrue(os.path.exists(os.path.join(APP_DIR, "public", "js", "cortex_host", "cortex_host.js")))
+
+    def test_global_scripts_do_not_use_the_website_only_frappe_ready(self):
+        for parts in (
+            ("public", "js", "cortex_copilot", "cortex_copilot.bundle.js"),
+            ("public", "js", "cortex_host", "cortex_host.js"),
+        ):
+            self.assertNotIn("frappe.ready(", _read(*parts), parts)
 
     def test_host_never_writes_model_output_as_html(self):
         host = _read("public", "js", "cortex_host", "cortex_host.js")

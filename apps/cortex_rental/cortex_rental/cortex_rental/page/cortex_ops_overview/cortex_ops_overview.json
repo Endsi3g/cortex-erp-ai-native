@@ -4,9 +4,9 @@
  "doctype": "Page",
  "idx": 0,
  "module": "Cortex Rental",
- "name": "cortex-rental",
+ "name": "cortex-ops-overview",
  "owner": "Administrator",
- "page_name": "Cortex Rental",
+ "page_name": "Cortex Ops Overview",
  "restrict_to_domain": "",
  "roles": [
   {
@@ -44,5 +44,5 @@
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "Détail de location"
+ "title": "Opérations"
 }

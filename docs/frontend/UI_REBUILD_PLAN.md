@@ -110,7 +110,15 @@ La sidebar est celle du Desk : la liste des **Workspaces**. On la rend correcte 
 
 ### 4.4 État d'avancement (2026-09-28)
 Livré et testé par `tests/test_workspace_navigation.py` (statique, sans bench) : hub `Cortex Rental` + 6 groupes enfants (`Cortex Operations`, `Warehouse`, `Finance`, `AI`, `Catalog`, `Admin`) avec rôles et compteurs ; doublon de workspace supprimé ; SQL de masquage et hook `boot_session` retirés ; patch `restore_erpnext_workspaces` ; traductions `fr.csv` ; `CortexSidebar.vue` mort supprimé ; liens `DEMO-*` et badge fictif retirés de `AppSidebar.vue`.
-**Non vérifié (bench requis)** : rendu des sous-pages de workspace en v15, synchronisation de `sequence_id`, application du patch sur une base existante, traductions chargées.
+**Vérifié sur bench réel le 2026-09-28** (Frappe/ERPNext 15.121.1, MariaDB 10.11, site neuf + démo) : le hub et ses 6 groupes s'affichent en sous-pages dans la sidebar du Desk, à côté des modules ERPNext restaurés (Accounting, Buying, Selling, Stock…) ; les compteurs de raccourcis sont réels (« Transactions 3 ») ; les patches s'appliquent à `bench migrate`. Reste non vérifié : Raven (non installé), traductions `fr.csv` sur un utilisateur en français, application du patch sur une base existante avec workspaces masqués.
+
+### 4.5 Hébergement Desk : ce qui a été retenu et validé (2026-09-28)
+- **Plan B retenu** : les écrans Vue 3 + Frappe UI sont compilés par Vite (`npm run build:desk` → `public/frontend/dist-desk/cortex-desk.js`) et chargés par `public/js/cortex_host/cortex_host.js` via `import()`. Le build esbuild de `bench build` n'est pas utilisé pour Frappe UI. `dist-desk` n'est pas versionné : l'entrypoint Docker et `make build-desk` le produisent.
+- **Isolation CSS** : tout est sous `.cortex-root` ; les accents bleus de Frappe UI sont remplacés par la palette Cortex ; Inter est conservée ; `desk.css` neutralise les règles Desk qui fuient (`dt` gras, `font-variation-settings`, espacement des lettres).
+- **Collision Workspace / Page** : un Workspace gagne toujours sur une Page du même slug. Les écrans `cortex-operations` et `cortex-rental` vivent donc dans les Pages `cortex-ops-overview` et `cortex-rental-detail` ; `cortex_host.js` traduit les chemins SPA (`PAGE_ALIASES`), le patch `remove_shadowed_pages` supprime les anciennes Pages et un test interdit toute nouvelle collision.
+- **Validé avec Chromium sur un vrai Desk** : 13 Pages montées (opérations, locations, détail, équipements, série, kits, consignation, propriétaire, relevé, AI Inbox/Workspace/Audit, check-out), données réelles issues des endpoints `cortex_rental.api.v1.*` (12 endpoints de lecture répondent 200), lien de navigation via `frappe.set_route`.
+- **Défauts trouvés uniquement grâce au bench et corrigés** : `frappe.ready` n'existe pas dans le Desk (le lanceur Copilot ne se montait jamais → événement `startup`) ; la racine flottante du Copilot masquait toute la page (fond `#fafafa` plein écran) ; la société par défaut côté serveur et côté session pouvaient diverger ; la fixture de démo ne respectait plus `Cortex Rental Item Profile` (société et valeur de remplacement obligatoires) ; dates brutes dans l'onglet Aperçu.
+- **Limites connues** : pas de mode sombre dans le build Desk ; les Pages historiques (disponibilité, check-in, composeur, clients, parc, supervision, P&L, assistant) ne sont pas redessinées ; jetons de couleur légèrement différents entre le Desk (`#047857`) et la SPA (`#066336`) ; exports, téléversements et actions de consignation restent affichés comme indisponibles ; le test de flux d'écriture (approbations, check-out) n'a pas été rejoué sur le bench.
 
 ## 5. Matrice des écrans
 
@@ -210,8 +218,8 @@ Les tokens du projet et le contrat v2 priment. Le tableau indique comment les r�
 
 | Risque / question | Traitement |
 |---|---|
-| Frappe UI incompatible avec l'esbuild de `bench build` | Phase 0 ; Plan B prévu. |
-| Rendu des sous-pages de workspace en v15 non vérifié | À valider sur bench en Phase 1 ; repli : groupes plats avec préfixe. |
+| Frappe UI incompatible avec l'esbuild de `bench build` | Résolu : Plan B (bundle Vite chargé par `cortex_host.js`), validé sur bench réel. |
+| Rendu des sous-pages de workspace en v15 | Validé sur bench 15.121.1 (section 4.5). |
 | Version Frappe/ERPNext non épinglée | Épingler après la première recette réelle. |
 | Raven absent du bench de dev | Lien conditionnel ; installer Raven pour la recette Phase 3. |
 | Comparaison visuelle P&L jamais validée | Élément de recette Phase 5. |

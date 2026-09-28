@@ -29,7 +29,7 @@ app_include_css = [
 ]
 
 # Global floating Cortex Copilot launcher — mounted on every Desk page
-# via frappe.ready() (see cortex_copilot.bundle.js). Verified real
+# on the Desk `startup` event (see cortex_copilot.bundle.js). Verified real
 # pattern: app_include_js can reference a .bundle.js with ESM imports,
 # resolved by the same esbuild pipeline that compiles a Desk Page's own
 # .bundle.js (docs.frappe.io + frappe/frappe wiki, cross-checked before

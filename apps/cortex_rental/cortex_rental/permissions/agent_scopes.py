@@ -251,12 +251,16 @@ def get_company_context(company_header: Optional[str] = None) -> str:
         if is_admin:
             default = None
             try:
-                default = frappe.defaults.get_user_default("Company", user) if hasattr(frappe, "defaults") else None
+                if hasattr(frappe, "defaults"):
+                    # Same order as api.v1.session: user default, then the site-wide default.
+                    default = frappe.defaults.get_user_default("Company", user) or frappe.defaults.get_global_default(
+                        "company"
+                    )
             except Exception:
                 pass
             if default and default in allowed:
                 return default
-            return allowed[0]
+            return sorted(allowed)[0]
 
         frappe.throw(
             "Multi-Tenant Error: Company context (X-Company-ID) is required "

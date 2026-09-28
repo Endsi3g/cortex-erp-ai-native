@@ -147,7 +147,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
         {
             "item_code": "ARRI-ALX35",
             "item_name": "ARRI Alexa 35 Camera Body",
-            "category": "Camera",
+            "category": "Camera Bodies",
             "is_serialized": 1,
             "daily_rate": 1500.0,
             "weekly_rate": 4500.0,
@@ -158,7 +158,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
         {
             "item_code": "COOKE-S4I-SET",
             "item_name": "Cooke S4/i Prime Lens Set (5-Lens)",
-            "category": "Optics",
+            "category": "Cinema Lenses",
             "is_serialized": 1,
             "daily_rate": 800.0,
             "weekly_rate": 2400.0,
@@ -180,7 +180,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
         {
             "item_code": "BNC-50FT",
             "item_name": "BNC 12G-SDI Video Cable 50ft",
-            "category": "Grip & Cables",
+            "category": "Grip & Rigging",
             "is_serialized": 0,
             "total_quantity": 20,
             "daily_rate": 15.0,
@@ -192,7 +192,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
         {
             "item_code": "C-STAND-40",
             "item_name": 'Avenger C-Stand 40" with Grip Arm',
-            "category": "Grip & Cables",
+            "category": "Grip & Rigging",
             "is_serialized": 0,
             "total_quantity": 15,
             "daily_rate": 20.0,
@@ -224,6 +224,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
             doc_profile = frappe.get_doc(
                 {
                     "doctype": "Cortex Rental Item Profile",
+                    "company": company,
                     "item_code": item["item_code"],
                     "item_name": item["item_name"],
                     "is_rental": 1,
@@ -232,7 +233,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
                     "daily_rate": item["daily_rate"],
                     "weekly_rate": item["weekly_rate"],
                     "monthly_rate": item["monthly_rate"],
-                    "insurance_value": item["insurance_value"],
+                    "replacement_value": item["insurance_value"],
                 }
             )
             doc_profile.insert(ignore_permissions=True)

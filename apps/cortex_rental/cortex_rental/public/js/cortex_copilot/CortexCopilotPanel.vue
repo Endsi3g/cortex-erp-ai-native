@@ -225,6 +225,8 @@ const panelStyle = computed(() =>
 	inset: 0;
 	pointer-events: none;
 	z-index: 100;
+	/* `.cortex-app` paints the page background; this root spans the viewport and must stay clear. */
+	background: transparent;
 }
 .cp-launcher {
 	position: fixed;

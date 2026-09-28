@@ -194,7 +194,7 @@ select.cx-field {
 .cx-kpis {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-around;
   gap: 16px 24px;
   margin: 8px 20px 0;

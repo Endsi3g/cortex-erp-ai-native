@@ -32,6 +32,9 @@
   font-size: 14px;
   line-height: 1.5;
   color: #08120d;
+  font-weight: 400;
+  letter-spacing: normal;
+  font-variation-settings: normal;
   /* Desk sets its own text colour and font on the page: Cortex screens carry theirs. */
   -webkit-font-smoothing: antialiased;
 }
@@ -69,4 +72,20 @@
 /* ERPNext gives table cells their own padding; Cortex tables set theirs with utilities. */
 .cortex-root :is(th, td) {
   padding: 0;
+}
+
+/* The Desk and Frappe UI restyle bare elements: Bootstrap `dt` is bold, Frappe UI's base sets Inter's
+   optical size and `cv11` on every text element, and its `text-*` sizes add letter-spacing.
+   Cortex screens keep plain Inter. Selectors are chosen to beat those rules without touching the
+   `cx-*` typography classes (which set their own letter-spacing). */
+.cortex-root.cortex-root :is(p, span, div, li, label, dt, dd, td, th, a, button, input, select, textarea, small, strong) {
+  font-variation-settings: normal;
+}
+
+.cortex-root.cortex-root dt {
+  font-weight: 400;
+}
+
+.cortex-root :is(.text-xs, .text-sm, .text-base, .text-lg, .text-xl) {
+  letter-spacing: normal;
 }

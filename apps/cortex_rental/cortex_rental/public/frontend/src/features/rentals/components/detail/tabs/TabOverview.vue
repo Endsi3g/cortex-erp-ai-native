@@ -13,8 +13,8 @@
       <section aria-labelledby="ov-plan">
         <h3 id="ov-plan" class="m-0 mb-3 text-base font-semibold">Planning</h3>
         <dl class="cx-dl">
-          <div><dt>Départ prévu</dt><dd>{{ rental.starts_at }}</dd></div>
-          <div><dt>Retour prévu</dt><dd>{{ rental.ends_at }}</dd></div>
+          <div><dt>Départ prévu</dt><dd>{{ formatDateTime(rental.starts_at) }}</dd></div>
+          <div><dt>Retour prévu</dt><dd>{{ formatDateTime(rental.ends_at) }}</dd></div>
           <div><dt>Durée calendaire</dt><dd>{{ rental.calendar_days }} jours</dd></div>
           <div><dt>Jours facturés (règle 7 j = 3 j)</dt><dd>{{ rental.billable_days }} jours</dd></div>
         </dl>
@@ -29,6 +29,7 @@
 
 <script setup lang="ts">
 import type { RentalTransaction } from '@/types/rental'
+import { formatDateTime } from '@/app/i18n/formatters'
 
 defineProps<{ rental: RentalTransaction }>()
 </script>

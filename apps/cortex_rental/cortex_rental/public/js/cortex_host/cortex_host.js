@@ -1,6 +1,6 @@
 // Host for the Cortex screens built with Vue 3 + Frappe UI (public/frontend, `npm run build:desk`).
 //
-// Each Desk Page (cortex-operations, cortex-rentals, ...) is a thin shell that calls
+// Each Desk Page (cortex-ops-overview, cortex-rentals, ...) is a thin shell that calls
 // `cortex_rental.host.mount(wrapper)`. The Desk keeps the URL, the breadcrumbs, the navbar and the
 // workspace sidebar; the bundle renders the screen inside `.cortex-root` and hands every
 // page-changing link back to `frappe.set_route`.
@@ -16,6 +16,11 @@ frappe.provide("cortex_rental");
 	const STYLE = `${BASE}/cortex-desk.css`;
 	// SPA paths that have a dedicated Desk page under another name.
 	const LEGACY_ROUTES = [[/^\/app\/cortex-rental\/new$/, ["cortex-transaction-composer"]]];
+	// A Workspace slug always wins over a Page of the same name, and the hub / group workspaces own
+	// `cortex-rental` and `cortex-operations`. The screens behind those SPA paths are registered
+	// under other Page names.
+	const PAGE_ALIASES = { "cortex-operations": "cortex-ops-overview", "cortex-rental": "cortex-rental-detail" };
+	const SPA_ALIASES = Object.fromEntries(Object.entries(PAGE_ALIASES).map(([spa, page]) => [page, spa]));
 
 	let modulePromise = null;
 
@@ -54,6 +59,7 @@ frappe.provide("cortex_rental");
 			.split("/")
 			.filter(Boolean)
 			.map(decodeURIComponent);
+		if (PAGE_ALIASES[route[0]]) route[0] = PAGE_ALIASES[route[0]];
 		return { route, options };
 	}
 
@@ -67,6 +73,7 @@ frappe.provide("cortex_rental");
 		const route = (frappe.get_route && frappe.get_route()) || [];
 		const query = frappe.route_options ? new URLSearchParams(frappe.route_options).toString() : "";
 		frappe.route_options = null;
+		if (SPA_ALIASES[route[0]]) route[0] = SPA_ALIASES[route[0]];
 		return `/app/${route.map(encodeURIComponent).join("/")}${query ? `?${query}` : ""}`;
 	}
 
