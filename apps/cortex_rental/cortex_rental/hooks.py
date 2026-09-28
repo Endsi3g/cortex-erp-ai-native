@@ -6,13 +6,13 @@ app_email = "architecture@cortex.local"
 app_license = "proprietary"
 required_apps = ["erpnext"]
 
-# Branding — placeholder mark (see docs/design-system.md "Branding
-# Frappe"); `app_logo_url`/`app_icon`/`app_color` are real hooks.py keys
+# Branding — "Return ring" mark (docs/brand/logo-kit/GUIDELINES.md); the logo file is
+# the small-size cut. `app_logo_url`/`app_icon`/`app_color` are real hooks.py keys
 # (verified against docs.frappe.io/framework/user/en/python-api/hooks),
 # not guessed. This does not touch any core Frappe file.
 app_logo_url = "/assets/cortex_rental/images/cortex-logo.svg"
 app_icon = "octicon octicon-briefcase"
-app_color = "#059669"
+app_color = "#047857"
 
 # Includes in <head>
 # ------------------

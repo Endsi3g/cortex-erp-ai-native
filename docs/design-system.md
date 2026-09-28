@@ -181,9 +181,9 @@ Toute page/composant Cortex doit :
 
 `hooks.py` : `app_logo_url`, `app_icon`, `app_color` (clés hooks.py
 réelles, vérifiées contre `docs.frappe.io/framework/user/en/python-api/hooks`
-avant utilisation). Logo : `public/images/cortex-logo.svg`, un
-monogramme indigo placeholder — un vrai logo est une décision de marque
-pour plus tard, pas inventée ici. Aucune modification du core Frappe :
+avant utilisation). Logo : `public/images/cortex-logo.svg`, la coupe
+petite taille du mark « Return ring » (sources, variantes et guide dans
+`docs/brand/logo-kit/`). Aucune modification du core Frappe :
 tout passe par les hooks documentés de cette app.
 
 ## Composants livrés dans cette passe

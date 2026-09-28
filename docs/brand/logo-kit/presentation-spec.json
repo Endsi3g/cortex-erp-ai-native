@@ -1,0 +1,28 @@
+{
+  "brand": "Cortex",
+  "tagline": "Every rental, under control",
+  "brief": "AI-native ERP for professional camera and equipment rental houses, built on ERPNext. Dense, calm and trustworthy: the assistant suggests, the human decides.",
+  "adjectives": ["calm", "precise", "reliable", "operational"],
+  "criteria": "Recognisable at 16 px in the Desk navbar and browser tab, works in one colour and reversed, distinct from blue AI marks, no violet or glow.",
+  "industry": "saas",
+  "nav": ["Availability", "Rentals", "Check-in", "Finance"],
+  "brand_color": "#047857",
+  "greyscale": false,
+  "designer": "Cortex",
+  "round": 2,
+  "concepts": [
+    {
+      "name": "Return ring",
+      "symbol": "cortex-symbol.svg",
+      "lockup": "cortex-horizontal.svg",
+      "idea": "An open ring: equipment leaves and comes back; the unit sits in the gap.",
+      "rationale": [
+        "A C for Cortex that is one shape, so it holds at 16 px",
+        "The dot is the single accent: the item in motion, the human decision",
+        "Reads calm and operational, with none of the sparkle or glow of AI marks"
+      ]
+    }
+  ],
+  "recommendation": "Return ring, with a heavier small-size cut for favicon and app icon.",
+  "next_steps": ["Approve the direction", "Replace the placeholder logo in the app", "Apply the guidelines in the Desk and the SPA"]
+}
