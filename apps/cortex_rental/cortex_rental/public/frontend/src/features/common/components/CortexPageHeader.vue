@@ -1,19 +1,20 @@
 <template>
-  <header class="flex flex-col gap-4 pb-4 border-b border-cortex-border sm:flex-row sm:items-start sm:justify-between">
-    <div class="min-w-0">
-      <div class="flex flex-wrap items-center gap-2">
-        <h1 class="text-2xl font-semibold tracking-tight text-cortex-text-primary">{{ title }}</h1>
+  <header>
+    <div class="cx-titlebar">
+      <div class="cx-titlebar__lead">
+        <h1>{{ title }}</h1>
         <ProvenanceTag :provenance="provenance" />
       </div>
-      <p v-if="subtitle" class="mt-1 text-sm text-cortex-text-secondary">{{ subtitle }}</p>
+      <div class="cx-actions">
+        <slot name="actions" />
+      </div>
     </div>
-    <div class="flex flex-wrap items-center gap-2">
-      <slot name="actions" />
-    </div>
+    <p v-if="subtitle" class="cx-caption">{{ subtitle }}</p>
   </header>
 </template>
 
 <script setup lang="ts">
+// ERPNext report title bar: title on the left, actions on the right (see cortex-erp.css).
 import ProvenanceTag from './ProvenanceTag.vue'
 
 defineProps<{ title: string; subtitle?: string; provenance?: string | null }>()

@@ -82,6 +82,12 @@ fi
 
 # 5. Build Vue 3 bundles
 if [ -d "${BENCH_DIR}/apps/cortex_rental" ]; then
+    # Desk screens (Vue 3 + Frappe UI): built by Vite, loaded by public/js/cortex_host/cortex_host.js
+    FRONTEND_DIR="${BENCH_DIR}/apps/cortex_rental/cortex_rental/public/frontend"
+    if [ -d "${FRONTEND_DIR}" ] && command -v npm >/dev/null 2>&1; then
+        echo "Building Cortex Desk screens (Vite)..."
+        (cd "${FRONTEND_DIR}" && npm ci --no-audit --no-fund && npm run build:desk) || echo "WARNING: Desk screens bundle not built; Cortex pages will show a build hint."
+    fi
     echo "Building cortex_rental frontend bundles..."
     bench build --app cortex_rental || true
 fi

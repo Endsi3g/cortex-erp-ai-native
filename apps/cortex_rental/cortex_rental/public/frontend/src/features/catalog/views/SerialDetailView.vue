@@ -1,21 +1,20 @@
 <template>
-  <div class="mx-auto max-w-3xl space-y-8" data-test="screen-serial-detail">
+  <div class="cx-page" data-test="screen-serial-detail">
     <CortexPageHeader :title="String(route.params.serial)" :subtitle="data ? data.item_name : undefined" :provenance="data?.provenance">
       <template #actions>
-        <RouterLink v-if="data" :to="`/app/cortex-equipment/${encodeURIComponent(data.item_code)}`" class="cx-btn-secondary inline-flex min-h-[40px] items-center px-4 text-sm">Voir l'équipement</RouterLink>
+        <RouterLink v-if="data" :to="`/app/cortex-equipment/${encodeURIComponent(data.item_code)}`" class="cx-btn-soft">Voir l'équipement</RouterLink>
         <RefreshButton :loading="loading" @refresh="reload" />
       </template>
     </CortexPageHeader>
 
-    <CortexErrorBanner v-if="error" :error-message="error" @retry="reload" />
-    <CortexSkeleton v-if="loading && !data" variant="rect" height="160px" />
+    <div v-if="error" class="cx-section"><CortexErrorBanner :error-message="error" @retry="reload" /></div>
+    <div v-if="loading && !data" class="cx-section"><CortexSkeleton variant="rect" height="120px" /></div>
 
-    <dl v-if="data" class="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-      <div v-for="row in rows" :key="row.label">
-        <dt class="text-sm text-cortex-text-secondary">{{ row.label }}</dt>
-        <dd class="mt-1 text-base text-cortex-text-primary">{{ row.value }}</dd>
-      </div>
-    </dl>
+    <section v-if="data" class="cx-section" aria-label="Détails du numéro de série">
+      <dl class="cx-dl">
+        <div v-for="row in rows" :key="row.label"><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>
+      </dl>
+    </section>
   </div>
 </template>
 

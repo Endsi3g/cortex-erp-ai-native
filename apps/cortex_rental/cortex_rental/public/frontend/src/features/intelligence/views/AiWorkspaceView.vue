@@ -1,88 +1,124 @@
 <template>
-  <section class="mx-auto max-w-[1600px] space-y-4" data-test="screen-ai-workspace">
-    <header class="flex flex-wrap items-center justify-between gap-3 border-b border-cortex-border pb-3">
-      <div class="flex min-w-0 items-center gap-3">
-        <Button size="sm" variant="subtle" @click="router.push({ name: 'ai-inbox' })">← Inbox</Button>
-        <div class="min-w-0"><h1 class="truncate text-lg font-semibold">AI Workspace</h1><p class="truncate text-xs text-cortex-text-muted">{{ item?.title || 'Document entrant et révision assistée' }}</p></div>
-      </div>
-      <div class="flex items-center gap-2">
-        <Badge :theme="item && item.confidence !== null && item.confidence < 0.7 ? 'red' : 'green'" variant="subtle">{{ item?.confidence == null ? 'Confiance non évaluée' : `Confiance ${Math.round(item.confidence * 100)}%` }}</Badge>
-        <Button size="sm" variant="subtle" @click="toggleDense">{{ dense ? 'Vue détaillée' : 'Vue compacte' }}</Button>
-        <Button size="sm" variant="solid" theme="green" :disabled="!item || item.type !== 'inbound'" @click="openComposer">Ouvrir dans le Composer</Button>
-      </div>
-    </header>
+  <div class="cx-page" data-test="screen-ai-workspace">
+    <CortexPageHeader title="AI Workspace" :subtitle="item?.title || 'Document entrant et révision assistée'">
+      <template #actions>
+        <RouterLink to="/app/cortex-ai-inbox" class="cx-btn-soft">AI Inbox</RouterLink>
+        <span class="cx-tag" :class="item && item.confidence !== null && item.confidence < 0.7 ? 'cx-tag--bad' : 'cx-tag--ok'">{{ item?.confidence == null ? 'Confiance non évaluée' : `Confiance ${Math.round(item.confidence * 100)} %` }}</span>
+        <button type="button" class="cx-btn-soft" @click="toggleDense">{{ dense ? 'Vue détaillée' : 'Vue compacte' }}</button>
+        <button type="button" class="cx-btn-primary" :disabled="!item || item.type !== 'inbound'" @click="openComposer">Ouvrir dans le composer</button>
+      </template>
+    </CortexPageHeader>
 
-    <div v-if="error" class="rounded border border-red-200 bg-red-50 p-3 text-xs text-red-900" role="alert">{{ error }}</div>
-    <div v-if="item?.confidence !== null && item?.confidence !== undefined && item.confidence < 0.7" class="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950" role="alert">
-      <TriangleAlert class="mt-0.5 h-4 w-4 shrink-0" /><div><strong>Confiance faible : correction humaine requise.</strong><p class="mt-1">Les champs incertains sont signalés. La validation restera bloquée tant que les informations critiques ne sont pas vérifiées.</p></div>
+    <div v-if="error" class="cx-notice" role="alert">{{ error }}</div>
+    <div v-if="item?.confidence !== null && item?.confidence !== undefined && item.confidence < 0.7" class="cx-notice" role="alert">
+      <span><strong>Confiance faible: correction humaine requise.</strong> Les champs incertains sont signalés; la validation reste bloquée tant que les informations critiques ne sont pas vérifiées.</span>
     </div>
 
-    <div class="grid min-h-[calc(100vh-210px)] grid-cols-1 gap-3 xl:grid-cols-2">
-      <!-- Source document -->
-      <section class="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-md border border-cortex-border bg-white" aria-label="Document source">
-        <header class="flex items-center justify-between border-b border-cortex-border bg-cortex-surface-subtle/60 px-4 py-3">
-          <div class="flex items-center gap-2"><FileText class="h-4 w-4 text-cortex-text-secondary" /><h2 class="text-xs font-semibold">Source & preuves</h2></div>
-          <span class="text-[10px] text-cortex-text-muted">{{ sourceLabel }}</span>
-        </header>
-        <div class="flex-1 overflow-auto p-4" :class="dense ? 'space-y-3' : 'space-y-5'">
+    <div class="cx-split" style="min-height: 560px">
+      <section aria-label="Document source" class="min-w-0">
+        <div class="cx-titlebar" style="min-height: 44px"><h2 class="m-0 text-sm font-semibold">Source et preuves</h2><span class="cx-tag">{{ sourceLabel }}</span></div>
+        <div class="cx-section" :style="{ display: 'grid', gap: dense ? '12px' : '20px' }">
           <template v-if="inbound">
-            <div class="rounded border border-cortex-border bg-[#fafbfa] p-3 text-xs">
-              <div class="grid grid-cols-[58px_1fr] gap-x-2 gap-y-1"><span class="text-cortex-text-muted">De</span><span>{{ inbound.sender_name || inbound.sender_email }} &lt;{{ inbound.sender_email }}&gt;</span><span class="text-cortex-text-muted">Objet</span><span class="font-medium">{{ inbound.subject }}</span><span class="text-cortex-text-muted">Reçu</span><span>{{ formatDate(inbound.received_at) }}</span></div>
-            </div>
-            <article class="whitespace-pre-wrap rounded border border-cortex-border/70 p-4 text-xs leading-6 text-cortex-text-secondary">{{ inbound.raw_body }}</article>
-            <div v-if="inbound.source === 'pdf'" class="rounded border border-dashed border-cortex-border bg-cortex-surface-subtle/50 p-5 text-center text-xs text-cortex-text-muted"><FileText class="mx-auto mb-2 h-5 w-5" />Le fichier PDF original n’est pas encore fourni par l’API. Le texte extrait est affiché ci-dessus lorsque disponible.</div>
-            <section class="rounded border border-cortex-border p-3">
-              <div class="mb-2 flex items-center justify-between"><h3 class="text-xs font-semibold">Extraits de preuve</h3><Button size="xs" variant="subtle" :loading="extractingField !== ''" @click="requestFieldReview('all')">Réextraire le document</Button></div>
-              <blockquote class="border-l-2 border-cortex-primary-500 pl-3 text-xs italic leading-5 text-cortex-text-secondary">{{ evidenceExcerpt }}</blockquote>
-              <p class="mt-2 text-[10px] text-cortex-text-muted">Source : {{ inbound.source }} · SHA-256 : <span class="font-mono">Non fourni par le contrat d’ingestion actuel</span></p>
+            <dl class="cx-dl">
+              <div><dt>De</dt><dd>{{ inbound.sender_name || inbound.sender_email }} &lt;{{ inbound.sender_email }}&gt;</dd></div>
+              <div><dt>Objet</dt><dd>{{ inbound.subject }}</dd></div>
+              <div><dt>Reçu</dt><dd>{{ formatDate(inbound.received_at) }}</dd></div>
+            </dl>
+            <article class="whitespace-pre-wrap text-sm" style="padding: 16px; border: 1px solid var(--erp-border); border-radius: 8px; line-height: 1.7">{{ inbound.raw_body }}</article>
+            <p v-if="inbound.source === 'pdf'" class="cx-notice" style="margin: 0">Le fichier PDF original n’est pas encore fourni par l’API. Le texte extrait est affiché ci-dessus lorsque disponible.</p>
+            <section aria-label="Extraits de preuve">
+              <div class="mb-2 flex items-center justify-between"><h3 class="m-0 text-sm font-semibold">Extrait de preuve</h3><button type="button" class="cx-btn-soft" :disabled="extractingField !== ''" @click="requestFieldReview('all')">Réextraire le document</button></div>
+              <blockquote class="m-0 text-sm italic" style="border-left: 2px solid var(--erp-accent); padding-left: 12px; color: var(--erp-text-2)">{{ evidenceExcerpt }}</blockquote>
+              <p class="mt-2 text-xs" style="color: var(--erp-muted)">Source: {{ inbound.source }} · SHA-256: non fourni par le contrat d’ingestion actuel</p>
             </section>
           </template>
           <template v-else-if="draft">
-            <div class="rounded border border-cortex-border p-4"><h3 class="text-sm font-semibold">{{ draft.title }}</h3><p class="mt-2 text-xs text-cortex-text-secondary">Type : {{ draft.draft_type }} · Cible : {{ draft.target_doctype }} {{ draft.target_name || '' }}</p><pre class="mt-3 max-h-96 overflow-auto rounded bg-cortex-surface-subtle p-3 text-[11px] leading-5">{{ JSON.stringify(draft.proposed_payload, null, 2) }}</pre></div>
-            <div class="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">La preuve liée au brouillon doit être chargée depuis le service Evidence pour afficher le document original et ses empreintes.</div>
+            <div>
+              <h3 class="m-0 text-base font-semibold">{{ draft.title }}</h3>
+              <p class="mt-1 text-sm" style="color: var(--erp-text-2)">Type: {{ draft.draft_type }} · Cible: {{ draft.target_doctype }} {{ draft.target_name || '' }}</p>
+              <pre class="mt-3 max-h-96 overflow-auto text-xs" style="padding: 12px; background: var(--erp-field); border-radius: 8px">{{ JSON.stringify(draft.proposed_payload, null, 2) }}</pre>
+            </div>
+            <p class="cx-notice" style="margin: 0">La preuve liée au brouillon doit être chargée depuis le service Evidence pour afficher le document original et ses empreintes.</p>
           </template>
-          <div v-else-if="loading" class="py-20 text-center text-xs text-cortex-text-muted">Chargement du document…</div>
-          <div v-else class="py-20 text-center text-xs text-cortex-text-muted">Aucun document lié. Ouvre un élément depuis AI Inbox.</div>
+          <div v-else-if="loading" class="cx-empty">Chargement du document…</div>
+          <div v-else class="cx-empty"><strong>Aucun document lié</strong>Ouvrez un élément depuis AI Inbox.</div>
         </div>
       </section>
 
-      <!-- Editable extraction, diff, contextual conversation -->
-      <section class="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-md border border-cortex-border bg-white" aria-label="Brouillon et assistant">
-        <div class="flex border-b border-cortex-border">
-          <TabButtons v-model="activeTab" class="p-1" :buttons="workspaceTabButtons" aria-label="Vue du workspace" />
+      <aside aria-label="Brouillon et assistant" style="padding: 0">
+        <div class="cx-tabs" role="tablist" aria-label="Vue du workspace">
+          <button v-for="tab in rightTabs" :key="tab.key" type="button" role="tab" class="cx-tab" :aria-selected="activeTab === tab.key" @click="activeTab = tab.key">{{ tab.label }}</button>
         </div>
-        <div v-if="activeTab === 'draft'" class="flex-1 space-y-4 overflow-auto p-4">
-          <div class="flex items-start justify-between gap-3"><div><h2 class="text-sm font-semibold">Données structurées</h2><p class="mt-1 text-[11px] text-cortex-text-muted">Les corrections restent locales à cette session jusqu’à leur enregistrement par une API métier.</p></div><Badge theme="gray" variant="subtle">{{ edited ? 'Modifié par vous' : 'Brouillon IA' }}</Badge></div>
-          <label class="block space-y-1 text-xs"><span class="text-cortex-text-muted">Client</span><TextInput v-model="fields.customer" size="sm" variant="outline" :class="editedField('customer')" @update:model-value="markEdited('customer')" /></label>
-          <div class="grid grid-cols-2 gap-3"><label class="space-y-1 text-xs"><span class="text-cortex-text-muted">Début</span><TextInput v-model="fields.start" type="datetime-local" size="sm" variant="outline" :class="editedField('start')" @update:model-value="markEdited('start')" /></label><label class="space-y-1 text-xs"><span class="text-cortex-text-muted">Fin</span><TextInput v-model="fields.end" type="datetime-local" size="sm" variant="outline" :class="editedField('end')" @update:model-value="markEdited('end')" /></label></div>
-          <div><div class="mb-2 flex items-center justify-between"><h3 class="text-xs font-semibold">Équipement demandé</h3><Button size="xs" variant="subtle" @click="requestFieldReview('equipment')">Réextraire ce champ</Button></div><div v-for="(gear, index) in fields.gear" :key="index" class="mb-2 grid grid-cols-[1fr_70px_auto] gap-2"><TextInput v-model="gear.label" size="sm" variant="outline" :class="editedField(`gear-${index}`)" :aria-label="`Équipement ${index + 1}`" @update:model-value="markEdited(`gear-${index}`)" /><TextInput v-model.number="gear.quantity" type="number" min="1" size="sm" variant="outline" :class="editedField(`gear-${index}`)" :aria-label="`Quantité équipement ${index + 1}`" @update:model-value="markEdited(`gear-${index}`)" /><Button size="xs" variant="subtle" @click="requestFieldReview(`gear-${index}`)">Réextraire</Button></div></div>
-          <section class="rounded border border-cortex-border"><div class="border-b border-cortex-border px-3 py-2 text-xs font-semibold">Comparaison avec la source</div><div class="grid grid-cols-2 divide-x divide-cortex-border text-xs"><div class="p-3"><p class="mb-2 text-[10px] uppercase text-cortex-text-muted">Extrait</p><p>{{ inbound?.extracted_fields.customer_name || '—' }}</p><p class="mt-2">{{ inbound?.extracted_fields.start_date || '—' }}</p><p class="mt-2">{{ inbound?.extracted_fields.end_date || '—' }}</p></div><div class="p-3"><p class="mb-2 text-[10px] uppercase text-cortex-text-muted">Valeur actuelle</p><p :class="editedField('customer')">{{ fields.customer || '—' }}</p><p class="mt-2" :class="editedField('start')">{{ fields.start || '—' }}</p><p class="mt-2" :class="editedField('end')">{{ fields.end || '—' }}</p></div></div></section>
-          <p v-if="notice" class="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900" role="status">{{ notice }}</p>
-          <div class="flex flex-wrap gap-2 border-t border-cortex-border pt-3"><Button size="sm" variant="subtle" :disabled="!edited" @click="restoreOriginal">Restaurer la version chargée</Button><Button size="sm" variant="solid" theme="green" @click="openComposer">Continuer dans le Composer</Button><Button v-if="approval" size="sm" variant="subtle" @click="openApproval">Voir l’approbation</Button></div>
-        </div>
-        <div v-else-if="activeTab === 'chat'" class="flex min-h-0 flex-1 flex-col">
-          <div ref="chatLog" class="flex-1 space-y-3 overflow-auto p-4" role="log" aria-live="polite">
-            <div v-if="!messages.length" class="rounded bg-cortex-surface-subtle/60 p-3 text-xs text-cortex-text-secondary">Discute avec l’agent en gardant le document et les données extraites comme contexte.</div>
-            <article v-for="message in messages" :key="message.id" class="max-w-[92%] rounded-md border p-3 text-xs leading-5" :class="message.sender === 'user' ? 'ml-auto border-cortex-primary-200 bg-cortex-primary-50' : 'border-cortex-border bg-white'"><p class="mb-1 text-[10px] font-semibold text-cortex-text-muted">{{ message.sender === 'user' ? 'Vous' : agentLabel }}</p><p class="whitespace-pre-wrap">{{ message.content }}</p><div v-if="message.evidence_refs?.length" class="mt-2 border-t border-cortex-border pt-2 text-[10px]">Preuves : {{ message.evidence_refs.map(ref => ref.name).join(', ') }}</div></article>
-            <p v-if="chatError" class="text-xs text-red-700" role="alert">{{ chatError }}</p>
+
+        <div v-if="activeTab === 'draft'" class="cx-section" style="display: grid; gap: 16px">
+          <div class="flex items-start justify-between gap-3">
+            <div><h2 class="m-0 text-base font-semibold">Données structurées</h2><p class="m-0 mt-1 text-xs" style="color: var(--erp-muted)">Les corrections restent locales à cette session jusqu’à leur enregistrement par une API métier.</p></div>
+            <span class="cx-tag">{{ edited ? 'Modifié par vous' : 'Brouillon IA' }}</span>
           </div>
-          <form class="flex items-end gap-2 border-t border-cortex-border p-3" @submit.prevent="sendMessage"><Input type="textarea" :model-value="prompt" class="min-h-10 flex-1" input-class="resize-y text-xs" :rows="2" placeholder="Demande une analyse de ce document…" :disabled="sending" aria-label="Message à l’assistant" @input="prompt = $event" /><Button type="submit" size="sm" variant="solid" theme="green" :loading="sending" :disabled="!prompt.trim()">Envoyer</Button></form>
-          <p class="border-t border-cortex-border bg-cortex-surface-subtle px-3 py-2 text-[10px] text-cortex-text-muted">{{ provenance === 'frappe-onyx' ? 'Réponse fournie par Onyx via la passerelle Frappe. Les réponses du modèle restent des suggestions; les faits métier doivent être vérifiés par les services ERP.' : 'Les messages sont envoyés à la passerelle Frappe authentifiée. Le modèle et ses outils sont configurés côté serveur.' }}</p>
+          <label class="block"><span class="mb-1 block text-xs" style="color: var(--erp-muted)">Client</span><input v-model="fields.customer" class="cx-field" :class="editedField('customer')" @input="markEdited('customer')" /></label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block"><span class="mb-1 block text-xs" style="color: var(--erp-muted)">Début</span><input v-model="fields.start" type="datetime-local" class="cx-field" :class="editedField('start')" @input="markEdited('start')" /></label>
+            <label class="block"><span class="mb-1 block text-xs" style="color: var(--erp-muted)">Fin</span><input v-model="fields.end" type="datetime-local" class="cx-field" :class="editedField('end')" @input="markEdited('end')" /></label>
+          </div>
+          <div>
+            <div class="mb-2 flex items-center justify-between"><h3 class="m-0 text-sm font-semibold">Équipement demandé</h3><button type="button" class="cx-btn-soft" @click="requestFieldReview('equipment')">Réextraire ce champ</button></div>
+            <div v-for="(gear, index) in fields.gear" :key="index" class="mb-2 grid gap-2" style="grid-template-columns: 1fr 72px auto">
+              <input v-model="gear.label" class="cx-field" :class="editedField(`gear-${index}`)" :aria-label="`Équipement ${index + 1}`" @input="markEdited(`gear-${index}`)" />
+              <input v-model.number="gear.quantity" type="number" min="1" class="cx-field" :class="editedField(`gear-${index}`)" :aria-label="`Quantité équipement ${index + 1}`" @input="markEdited(`gear-${index}`)" />
+              <button type="button" class="cx-btn-soft" @click="requestFieldReview(`gear-${index}`)">Réextraire</button>
+            </div>
+          </div>
+          <div class="cx-tablewrap">
+            <table class="cx-table" aria-label="Comparaison avec la source">
+              <thead><tr><th scope="col">Champ</th><th scope="col">Extrait</th><th scope="col">Valeur actuelle</th></tr></thead>
+              <tbody>
+                <tr><td>Client</td><td>{{ inbound?.extracted_fields.customer_name || '—' }}</td><td :class="editedField('customer')">{{ fields.customer || '—' }}</td></tr>
+                <tr><td>Début</td><td>{{ inbound?.extracted_fields.start_date || '—' }}</td><td :class="editedField('start')">{{ fields.start || '—' }}</td></tr>
+                <tr><td>Fin</td><td>{{ inbound?.extracted_fields.end_date || '—' }}</td><td :class="editedField('end')">{{ fields.end || '—' }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p v-if="notice" class="cx-notice" style="margin: 0" role="status">{{ notice }}</p>
+          <div class="cx-actions" style="padding-top: 8px; border-top: 1px solid var(--erp-border)">
+            <button type="button" class="cx-btn-soft" :disabled="!edited" @click="restoreOriginal">Restaurer la version chargée</button>
+            <button v-if="approval" type="button" class="cx-btn-soft" @click="openApproval">Voir l’approbation</button>
+          </div>
         </div>
-        <div v-else class="flex-1 space-y-3 overflow-auto p-4"><h2 class="text-sm font-semibold">Historique des versions</h2><p class="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">Le contrat d’API actuel ne fournit pas encore de versionnement/restauration du brouillon. La version initiale est conservée en mémoire jusqu’à fermeture de cette page.</p><div class="rounded border border-cortex-border p-3 text-xs"><span class="font-medium">Version chargée</span><span class="float-right text-cortex-text-muted">{{ item ? formatDate(item.createdAt) : '—' }}</span></div></div>
-      </section>
+
+        <div v-else-if="activeTab === 'chat'" class="flex min-h-0 flex-col" style="min-height: 480px">
+          <div ref="chatLog" class="cx-section flex-1 overflow-auto" style="display: grid; gap: 12px; align-content: start" role="log" aria-live="polite">
+            <p v-if="!messages.length" class="cx-notice" style="margin: 0">Discutez avec l’agent en gardant le document et les données extraites comme contexte.</p>
+            <article v-for="message in messages" :key="message.id" class="text-sm" :style="{ maxWidth: '92%', marginLeft: message.sender === 'user' ? 'auto' : '0', padding: '12px', border: '1px solid var(--erp-border)', borderRadius: '8px', background: message.sender === 'user' ? 'var(--erp-field)' : '#fff' }">
+              <p class="m-0 mb-1 text-xs font-semibold" style="color: var(--erp-muted)">{{ message.sender === 'user' ? 'Vous' : agentLabel }}</p>
+              <p class="m-0 whitespace-pre-wrap">{{ message.content }}</p>
+              <p v-if="message.evidence_refs?.length" class="m-0 mt-2 text-xs" style="color: var(--erp-muted)">Preuves: {{ message.evidence_refs.map(ref => ref.name).join(', ') }}</p>
+            </article>
+            <p v-if="chatError" class="m-0 text-sm text-red-700" role="alert">{{ chatError }}</p>
+          </div>
+          <form class="flex items-end gap-2" style="padding: 12px 20px; border-top: 1px solid var(--erp-border)" @submit.prevent="sendMessage">
+            <textarea v-model="prompt" class="cx-field flex-1" style="padding: 8px 12px; resize: vertical" rows="2" placeholder="Demandez une analyse de ce document…" :disabled="sending" aria-label="Message à l’assistant" />
+            <button type="submit" class="cx-btn-primary" :disabled="!prompt.trim() || sending">Envoyer</button>
+          </form>
+          <p class="cx-caption" style="padding-bottom: 12px">{{ provenance === 'frappe-onyx' ? 'Réponse fournie par Onyx via la passerelle Frappe. Les réponses du modèle restent des suggestions; les faits métier doivent être vérifiés par les services ERP.' : 'Les messages sont envoyés à la passerelle Frappe authentifiée. Le modèle et ses outils sont configurés côté serveur.' }}</p>
+        </div>
+
+        <div v-else class="cx-section" style="display: grid; gap: 12px">
+          <h2 class="m-0 text-base font-semibold">Historique des versions</h2>
+          <p class="cx-notice" style="margin: 0">Le contrat d’API actuel ne fournit pas encore de versionnement ni de restauration du brouillon. La version initiale est conservée en mémoire jusqu’à la fermeture de cette page.</p>
+          <dl class="cx-dl"><div><dt>Version chargée</dt><dd>{{ item ? formatDate(item.createdAt) : '—' }}</dd></div></dl>
+        </div>
+      </aside>
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Badge, Button, Input, TabButtons, TextInput } from 'frappe-ui'
-import { FileText, TriangleAlert } from 'lucide-vue-next'
 import { getCortexApiClient } from '@/api'
 import type { AiDraftItem, ApprovalRequestItem, CopilotMessage, InboundRequestItem } from '@/api/contracts'
 import { useSessionStore } from '@/stores/session'
+import CortexPageHeader from '@/features/common/components/CortexPageHeader.vue'
 import { toAiWorkItem, type AiWorkItem } from '../aiNative'
 import { createAiChatSession, sendAiChatMessage } from '../aiChatGateway'
 
@@ -102,7 +138,6 @@ const editedKeys = ref(new Set<string>())
 const extractingField = ref('')
 const activeTab = ref<'draft' | 'chat' | 'history'>('draft')
 const rightTabs = [{ key: 'draft', label: 'Brouillon' }, { key: 'chat', label: 'Conversation' }, { key: 'history', label: 'Versions' }] as const
-const workspaceTabButtons = rightTabs.map(tab => ({ label: tab.label, value: tab.key, theme: 'gray' as const, variant: 'subtle' as const }))
 const dense = ref(false)
 const prompt = ref('')
 const sending = ref(false)
@@ -120,15 +155,12 @@ async function loadWorkspace() {
   loading.value = true
   try {
     const id = String(route.params.itemId || '')
-    const [inboundRes, draftsRes, approvalsRes] = await Promise.all([
-      getCortexApiClient().listInboundRequests({ page: 1, page_size: 100 }),
-      getCortexApiClient().listAiDrafts({ page: 1, page_size: 100 }),
-      getCortexApiClient().listApprovalRequests({ page: 1, page_size: 100, status: undefined })
-    ])
+    const api = getCortexApiClient()
     const [kind, sourceId] = id.includes(':') ? id.split(':', 2) : ['', id]
-    inbound.value = kind === 'inbound' ? inboundRes.items.find(row => row.id === sourceId) || null : null
-    draft.value = kind === 'draft' ? draftsRes.items.find(row => row.id === sourceId) || null : null
-    approval.value = kind === 'approval' ? approvalsRes.items.find(row => row.id === sourceId) || null : null
+    // Fetch only the requested source: each one has its own permission.
+    if (kind === 'inbound') inbound.value = await api.getInboundRequest({ id: sourceId })
+    else if (kind === 'draft') draft.value = (await api.listAiDrafts({ page: 1, page_size: 100 })).items.find(row => row.id === sourceId) || null
+    else if (kind === 'approval') approval.value = await api.getApprovalRequest({ id: sourceId })
     const selectedSource = inbound.value || draft.value || approval.value
     item.value = selectedSource ? toAiWorkItem(selectedSource, kind as 'inbound' | 'draft' | 'approval') : null
     if (inbound.value) {
@@ -144,7 +176,7 @@ async function loadWorkspace() {
 }
 function toLocalDate(value?: string) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16) }
 function markEdited(key: string) { editedKeys.value = new Set(editedKeys.value).add(key) }
-function editedField(key: string) { return editedKeys.value.has(key) ? 'border-cortex-primary-500 bg-cortex-primary-50/40' : '' }
+function editedField(key: string) { return editedKeys.value.has(key) ? 'cx-field--edited' : '' }
 function toggleDense() { dense.value = !dense.value }
 function restoreOriginal() { Object.assign(fields, JSON.parse(original.value)); editedKeys.value = new Set(); notice.value = 'La version initiale chargée a été restaurée.' }
 function formatDate(value: string) { return new Intl.DateTimeFormat(session.locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }

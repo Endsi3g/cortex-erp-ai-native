@@ -18,6 +18,11 @@ const config: Config = {
         '104': '26rem',  // 416px (copilot drawer)
       },
       colors: {
+        // Frappe UI's default accent is blue; Cortex has a single accent, its green (same ramp as the Desk build).
+        blue: {
+          50: '#E8F7EE', 100: '#C8EDD6', 200: '#A3E3BE', 300: '#5CD094', 400: '#14B86A',
+          500: '#087A43', 600: '#066336', 700: '#044C29', 800: '#05361F', 900: '#08120D'
+        },
         cortex: {
           bg: '#F2F7F4',
           surface: '#FFFFFF',

@@ -1,102 +1,112 @@
 <template>
-  <section class="mx-auto max-w-[1600px] space-y-4" data-test="screen-ai-inbox">
-    <header class="flex flex-wrap items-end justify-between gap-3 border-b border-cortex-border pb-4">
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-xl font-semibold">AI Inbox</h1>
-          <Badge theme="green" variant="subtle">{{ pendingCount }} à traiter</Badge>
-        </div>
-        <p class="mt-1 text-xs text-cortex-text-secondary">Suggestions, demandes d’approbation et documents entrants réunis au même endroit.</p>
-      </div>
-      <div class="flex items-center gap-3">
-        <span class="text-[11px] text-cortex-text-muted">Ma boîte · entreprise active</span>
-        <Button size="sm" variant="subtle" :loading="loading" @click="loadItems">Actualiser</Button>
-      </div>
-    </header>
+  <div class="cx-page" data-test="screen-ai-inbox">
+    <CortexPageHeader title="AI Inbox" subtitle="Suggestions, demandes d’approbation et documents entrants, avec la source de chacune.">
+      <template #actions>
+        <span class="cx-tag cx-tag--ok">{{ pendingCount }} à traiter</span>
+        <RefreshButton :loading="loading" @refresh="loadItems" />
+      </template>
+    </CortexPageHeader>
 
-    <div class="grid grid-cols-2 gap-2 md:grid-cols-4">
-      <TabButtons v-model="activeType" :buttons="typeButtons" aria-label="Type de travail à afficher" />
+    <div class="cx-tabs" role="tablist" aria-label="Type de travail à afficher">
+      <button v-for="tab in tabs" :key="tab.value" type="button" role="tab" class="cx-tab" :aria-selected="activeType === tab.value" @click="activeType = tab.value">
+        {{ tab.label }} ({{ countByType(tab.value) }})
+      </button>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2 rounded-md border border-cortex-border bg-white p-2.5">
-      <TextInput v-model="search" class="min-w-48 flex-1" size="sm" variant="outline" aria-label="Rechercher dans l’inbox" placeholder="Client, suggestion ou agent…" />
-      <Select v-model="confidenceFilter" class="min-w-40" size="sm" variant="outline" aria-label="Filtrer par confiance" :options="confidenceOptions" />
-      <Select v-model="priorityFilter" class="min-w-36" size="sm" variant="outline" aria-label="Filtrer par priorité" :options="priorityOptions" />
-      <TextInput v-model="dateFilter" type="date" class="min-w-36" size="sm" variant="outline" aria-label="Filtrer par date" />
+    <div class="cx-filters">
+      <FilterField label="Rechercher dans l’inbox"><input v-model="search" type="search" class="cx-field" placeholder="Client, suggestion ou agent" /></FilterField>
+      <FilterField label="Confiance"><select v-model="confidenceFilter" class="cx-field"><option v-for="o in confidenceOptions" :key="o.value" :value="o.value">{{ o.label }}</option></select></FilterField>
+      <FilterField label="Priorité"><select v-model="priorityFilter" class="cx-field"><option v-for="o in priorityOptions" :key="o.value" :value="o.value">{{ o.label }}</option></select></FilterField>
+      <FilterField label="Date"><input v-model="dateFilter" type="date" class="cx-field" /></FilterField>
     </div>
 
-    <div v-if="error" class="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-900" role="alert">{{ error }}</div>
-    <div v-if="bulkApprovals.length" class="flex items-center justify-between rounded-md border border-cortex-primary-200 bg-cortex-primary-50 px-3 py-2 text-xs">
+    <div v-if="error" class="cx-notice" role="alert">{{ error }}</div>
+    <div v-for="notice in notices" :key="notice" class="cx-notice" role="status">{{ notice }}</div>
+
+    <div v-if="bulkApprovals.length" class="cx-notice">
       <span>{{ selectedIds.size }} élément(s) sélectionné(s)</span>
-          <Button size="sm" variant="solid" theme="green" @click="requestBulkApproval">Valider {{ bulkApprovals.length }} approbation(s)</Button>
+      <button type="button" class="cx-btn-primary" @click="requestBulkApproval">Valider {{ bulkApprovals.length }} approbation(s)</button>
+    </div>
+    <div v-if="approvalDialogOpen" class="cx-notice" role="alertdialog" aria-label="Confirmer les approbations">
+      <span>{{ confirmationMessage }} Chaque décision sera autorisée et journalisée côté serveur.</span>
+      <span class="cx-actions">
+        <button type="button" class="cx-btn-soft" :disabled="approvalLoading" @click="approvalDialogOpen = false">Annuler</button>
+        <button type="button" class="cx-btn-primary" :disabled="approvalLoading" @click="confirmApproval">Confirmer</button>
+      </span>
     </div>
 
-    <div class="grid min-h-[560px] grid-cols-1 overflow-hidden rounded-md border border-cortex-border bg-white lg:grid-cols-[minmax(0,1fr)_390px]">
-      <div class="min-w-0 overflow-x-auto">
-        <table class="w-full border-collapse text-left text-xs">
-          <thead class="sticky top-0 bg-cortex-surface-subtle text-[10px] uppercase tracking-wide text-cortex-text-secondary">
-            <tr><th class="w-9 px-3 py-2"><Checkbox :model-value="allVisibleSelected" aria-label="Sélectionner les éléments visibles" @update:model-value="toggleVisible" /></th><th class="px-3 py-2">Suggestion</th><th class="px-3 py-2">Client / Référence</th><th class="px-3 py-2">Agent</th><th class="px-3 py-2">Confiance</th><th class="px-3 py-2">État</th><th class="px-3 py-2">Date</th></tr>
+    <div class="cx-split">
+      <div class="cx-tablewrap">
+        <table class="cx-table">
+          <thead>
+            <tr>
+              <th scope="col" class="cx-rownum"><input type="checkbox" :checked="allVisibleSelected" aria-label="Sélectionner les éléments visibles" @change="toggleVisible(($event.target as HTMLInputElement).checked)" /></th>
+              <th scope="col">Suggestion</th><th scope="col">Client / référence</th><th scope="col">Agent</th>
+              <th scope="col" class="num">Confiance</th><th scope="col">État</th><th scope="col">Date</th>
+            </tr>
           </thead>
           <tbody>
-            <tr v-for="item in filteredItems" :key="item.id" tabindex="0" class="cursor-pointer border-t border-cortex-border/70 hover:bg-cortex-surface-subtle/70 focus:bg-cortex-primary-50" :class="selected?.id === item.id ? 'bg-cortex-primary-50' : ''" @click="select(item)" @keydown.enter="select(item)" @keydown.space.prevent="select(item)">
-              <td class="px-3 py-2.5" @click.stop><Checkbox :model-value="selectedIds.has(item.id)" :aria-label="`Sélectionner ${item.title}`" @update:model-value="onSelection(item.id, $event)" /></td>
-              <td class="max-w-[300px] px-3 py-2.5"><div class="truncate font-medium text-cortex-text-primary">{{ item.title }}</div><div class="mt-0.5 text-[10px] text-cortex-text-muted">{{ typeLabels[item.type] }} · {{ item.summary }}</div></td>
-              <td class="max-w-40 truncate px-3 py-2.5">{{ item.customer }}</td>
-              <td class="whitespace-nowrap px-3 py-2.5">{{ item.agent }}</td>
-              <td class="whitespace-nowrap px-3 py-2.5"><span class="font-mono" :class="item.confidence === null ? 'text-cortex-text-muted' : confidenceTone(item.confidence)">{{ item.confidence === null ? '—' : `${Math.round(item.confidence * 100)}%` }}</span></td>
-              <td class="whitespace-nowrap px-3 py-2.5"><Badge :theme="stateTheme(item.state)" variant="subtle">{{ aiStateLabels[item.state] }}</Badge></td>
-              <td class="whitespace-nowrap px-3 py-2.5 text-cortex-text-muted">{{ formatDate(item.createdAt) }}</td>
+            <tr v-for="item in filteredItems" :key="item.id" tabindex="0" class="cx-clickable" :aria-selected="selected?.id === item.id" @click="select(item)" @keydown.enter="select(item)" @keydown.space.prevent="select(item)">
+              <td class="cx-rownum" @click.stop><input type="checkbox" :checked="selectedIds.has(item.id)" :aria-label="`Sélectionner ${item.title}`" @change="onSelection(item.id, ($event.target as HTMLInputElement).checked)" /></td>
+              <td><div class="truncate-cell font-medium">{{ item.title }}</div><div style="font-size: 12px; color: var(--erp-muted)">{{ typeLabels[item.type] }} · {{ item.summary }}</div></td>
+              <td class="truncate-cell">{{ item.customer }}</td>
+              <td>{{ item.agent }}</td>
+              <td class="num" :class="confidenceTone(item.confidence)">{{ item.confidence === null ? 'non évaluée' : `${Math.round(item.confidence * 100)} %` }}</td>
+              <td><span class="cx-tag" :class="stateTag(item.state)">{{ aiStateLabels[item.state] }}</span></td>
+              <td>{{ formatDate(item.createdAt) }}</td>
             </tr>
-            <tr v-if="!loading && filteredItems.length === 0"><td colspan="7" class="px-5 py-16 text-center text-sm text-cortex-text-muted">Aucun élément ne correspond à ces filtres.</td></tr>
-            <tr v-if="loading"><td colspan="7" class="px-5 py-16 text-center text-xs text-cortex-text-muted">Chargement des éléments IA…</td></tr>
+            <tr v-if="loading"><td colspan="7" class="cx-empty">Chargement des éléments IA…</td></tr>
+            <tr v-else-if="filteredItems.length === 0"><td colspan="7" class="cx-empty"><strong>Aucun élément</strong>Aucun élément ne correspond à ces filtres.</td></tr>
           </tbody>
         </table>
       </div>
 
-      <aside class="border-t border-cortex-border bg-[#fbfdfb] p-4 lg:border-l lg:border-t-0" aria-label="Détail de la suggestion">
+      <aside aria-label="Détail de la suggestion">
         <template v-if="selected">
           <div class="flex items-start justify-between gap-3">
-            <div><p class="text-[10px] font-semibold uppercase tracking-wider text-cortex-primary-700">{{ typeLabels[selected.type] }}</p><h2 class="mt-1 text-sm font-semibold leading-5">{{ selected.title }}</h2></div>
-            <Button size="sm" variant="ghost" icon="x" aria-label="Fermer le détail" @click="selected = null" />
+            <div><p class="m-0 text-xs" style="color: var(--erp-muted)">{{ typeLabels[selected.type] }}</p><h2 class="m-0 mt-1 text-base font-semibold">{{ selected.title }}</h2></div>
+            <button type="button" class="cx-btn-soft cx-btn-icon" aria-label="Fermer le détail" @click="selected = null">✕</button>
           </div>
-          <p class="mt-3 text-xs leading-5 text-cortex-text-secondary">{{ selected.summary }}</p>
-          <dl class="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 border-y border-cortex-border py-3 text-xs">
-            <div><dt class="text-[10px] text-cortex-text-muted">Confiance</dt><dd class="mt-1 font-semibold" :class="selected.confidence === null ? 'text-cortex-text-muted' : confidenceTone(selected.confidence)">{{ selected.confidence === null ? 'Non évaluée' : `${Math.round(selected.confidence * 100)}%` }}</dd></div>
-            <div><dt class="text-[10px] text-cortex-text-muted">Priorité</dt><dd class="mt-1 capitalize">{{ priorityLabels[selected.priority] }}</dd></div>
-            <div><dt class="text-[10px] text-cortex-text-muted">Agent</dt><dd class="mt-1">{{ selected.agent }}</dd></div>
+          <p class="mt-3 text-sm">{{ selected.summary }}</p>
+          <dl class="cx-dl mt-4">
+            <div><dt>Confiance</dt><dd :class="confidenceTone(selected.confidence)">{{ selected.confidence === null ? 'Non évaluée' : `${Math.round(selected.confidence * 100)} %` }}</dd></div>
+            <div><dt>Priorité</dt><dd>{{ priorityLabels[selected.priority] }}</dd></div>
+            <div><dt>Agent</dt><dd>{{ selected.agent }}</dd></div>
           </dl>
-          <div v-if="selected.type === 'inbound'" class="mt-4 space-y-2">
-            <h3 class="text-xs font-semibold">Éléments extraits</h3>
-            <p class="text-xs"><span class="text-cortex-text-muted">Client :</span> {{ (selected.source as InboundRequestItem).extracted_fields.customer_name || 'À préciser' }}</p>
-            <p class="text-xs"><span class="text-cortex-text-muted">Période :</span> {{ dateRange(selected.source as InboundRequestItem) }}</p>
-            <ul class="space-y-1 text-xs"><li v-for="gear in (selected.source as InboundRequestItem).extracted_fields.equipment_mentions || []" :key="gear.raw_text" class="flex justify-between gap-2"><span>{{ gear.quantity || 1 }} × {{ gear.raw_text }}</span><span :class="confidenceTone(gear.confidence ?? null)">{{ gear.confidence == null ? 'non évaluée' : `${Math.round(gear.confidence * 100)}%` }}</span></li></ul>
-            <p v-if="(selected.source as InboundRequestItem).extracted_fields.missing_fields.length" class="rounded bg-amber-50 p-2 text-xs text-amber-900">À compléter : {{ (selected.source as InboundRequestItem).extracted_fields.missing_fields.join(', ') }}</p>
+          <div v-if="selected.type === 'inbound'" class="mt-4">
+            <h3 class="m-0 mb-2 text-sm font-semibold">Éléments extraits</h3>
+            <p class="m-0 text-sm"><span style="color: var(--erp-muted)">Client:</span> {{ (selected.source as InboundRequestItem).extracted_fields.customer_name || 'À préciser' }}</p>
+            <p class="m-0 mt-1 text-sm"><span style="color: var(--erp-muted)">Période:</span> {{ dateRange(selected.source as InboundRequestItem) }}</p>
+            <ul class="m-0 mt-2 list-none p-0 text-sm">
+              <li v-for="gear in (selected.source as InboundRequestItem).extracted_fields.equipment_mentions || []" :key="gear.raw_text" class="flex justify-between gap-2 py-1">
+                <span>{{ gear.quantity || 1 }} × {{ gear.raw_text }}</span>
+                <span :class="confidenceTone(gear.confidence ?? null)">{{ gear.confidence == null ? 'non évaluée' : `${Math.round(gear.confidence * 100)} %` }}</span>
+              </li>
+            </ul>
+            <p v-if="(selected.source as InboundRequestItem).extracted_fields.missing_fields.length" class="cx-notice" style="margin: 12px 0 0">À compléter: {{ (selected.source as InboundRequestItem).extracted_fields.missing_fields.join(', ') }}</p>
           </div>
-          <div v-if="selected.type === 'approval'" class="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">Cette action attend une personne ayant le rôle approprié. La règle serveur reste l’autorité pour l’approbation.</div>
-          <div class="mt-5 flex flex-wrap gap-2">
-            <Button size="sm" variant="solid" theme="green" @click="openWorkspace(selected)">Ouvrir / réviser</Button>
-            <Button v-if="selected.type === 'approval' && canApprove" size="sm" variant="subtle" @click="approveOne(selected)">Valider</Button>
-            <Button v-if="selected.type === 'inbound'" size="sm" variant="subtle" @click="openComposer(selected)">Ouvrir le Composer</Button>
+          <p v-if="selected.type === 'approval'" class="cx-notice" style="margin: 16px 0 0">Cette action attend une personne ayant le rôle approprié. La règle serveur reste l’autorité pour l’approbation.</p>
+          <div class="cx-actions mt-5">
+            <button type="button" class="cx-btn-primary" @click="openWorkspace(selected)">Ouvrir / réviser</button>
+            <button v-if="selected.type === 'approval' && canApprove" type="button" class="cx-btn-soft" @click="approveOne(selected)">Valider</button>
+            <button v-if="selected.type === 'inbound'" type="button" class="cx-btn-soft" @click="openComposer(selected)">Ouvrir le composer</button>
           </div>
         </template>
-        <div v-else class="flex h-full min-h-48 flex-col items-center justify-center text-center"><Sparkles class="h-6 w-6 text-cortex-primary-600" /><p class="mt-2 text-xs font-medium">Sélectionne un élément</p><p class="mt-1 max-w-56 text-[11px] text-cortex-text-muted">Le contexte, les preuves et les actions apparaîtront ici.</p></div>
+        <div v-else class="cx-empty"><strong>Sélectionnez un élément</strong>Le contexte, les preuves et les actions apparaîtront ici.</div>
       </aside>
     </div>
-  </section>
-  <Dialog v-model="approvalDialogOpen" :options="{ title: 'Confirmer les approbations', size: 'md' }" :disable-outside-click-to-close="approvalLoading">
-    <template #body-content><p class="text-sm text-ink-gray-7">{{ confirmationMessage }} Chaque décision sera autorisée et journalisée côté serveur.</p></template>
-    <template #actions="{ close }"><div class="flex justify-end gap-2"><Button variant="subtle" :disabled="approvalLoading" @click="close">Annuler</Button><Button theme="green" variant="solid" :loading="approvalLoading" @click="confirmApproval(close)">Confirmer</Button></div></template>
-  </Dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Badge, Button, Checkbox, Dialog, Select, TabButtons, TextInput } from 'frappe-ui'
-import { Sparkles } from 'lucide-vue-next'
 import { getCortexApiClient } from '@/api'
 import type { InboundRequestItem } from '@/api/contracts'
 import { useSessionStore } from '@/stores/session'
+import CortexPageHeader from '@/features/common/components/CortexPageHeader.vue'
+import FilterField from '@/features/common/components/FilterField.vue'
+import RefreshButton from '@/features/common/components/RefreshButton.vue'
 import { aiStateLabels, toAiWorkItem, type AiWorkItem, type AiWorkType } from '../aiNative'
 
 const route = useRoute()
@@ -111,6 +121,7 @@ const confirmationMessage = ref('')
 const approvalTargets = ref<AiWorkItem[]>([])
 const loading = ref(false)
 const error = ref('')
+const notices = ref<string[]>([])
 const search = ref('')
 const activeType = ref<'all' | AiWorkType>((route.query.type as AiWorkType) || 'all')
 const confidenceFilter = ref('all')
@@ -119,7 +130,6 @@ const dateFilter = ref('')
 const tabs: Array<{ value: 'all' | AiWorkType; label: string }> = [
   { value: 'all', label: 'Tout' }, { value: 'inbound', label: 'Documents entrants' }, { value: 'draft', label: 'Suggestions & brouillons' }, { value: 'approval', label: 'Approbations' }
 ]
-const typeButtons = computed(() => tabs.map(tab => ({ label: `${tab.label} (${countByType(tab.value)})`, value: tab.value, theme: 'gray' as const, variant: 'subtle' as const })))
 const confidenceOptions = [
   { label: 'Toute confiance', value: 'all' }, { label: 'Confiance faible', value: 'low' },
   { label: 'Confiance moyenne', value: 'medium' }, { label: 'Confiance élevée', value: 'high' }
@@ -149,18 +159,26 @@ const bulkApprovals = computed(() => items.value.filter(item => selectedIds.valu
 async function loadItems() {
   loading.value = true
   error.value = ''
+  notices.value = []
   try {
     const api = getCortexApiClient()
-    const [inbound, drafts, approvals] = await Promise.all([
+    // Each source has its own permission: a role that cannot read one still sees the others.
+    const [inbound, drafts, approvals] = await Promise.allSettled([
       api.listInboundRequests({ page: 1, page_size: 100 }),
       api.listAiDrafts({ page: 1, page_size: 100 }),
       api.listApprovalRequests({ page: 1, page_size: 100, status: undefined })
     ])
-    items.value = [
-      ...inbound.items.map(item => toAiWorkItem(item, 'inbound')),
-      ...drafts.items.map(item => toAiWorkItem(item, 'draft')),
-      ...approvals.items.map(item => toAiWorkItem(item, 'approval'))
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    const problems: string[] = []
+    const rows: AiWorkItem[] = []
+    if (inbound.status === 'fulfilled') rows.push(...inbound.value.items.map(item => toAiWorkItem(item, 'inbound')))
+    else problems.push(`Documents entrants: ${inbound.reason instanceof Error ? inbound.reason.message : 'indisponibles'}`)
+    if (drafts.status === 'fulfilled') rows.push(...drafts.value.items.map(item => toAiWorkItem(item, 'draft')))
+    else problems.push(`Suggestions: ${drafts.reason instanceof Error ? drafts.reason.message : 'indisponibles'}`)
+    if (approvals.status === 'fulfilled') rows.push(...approvals.value.items.map(item => toAiWorkItem(item, 'approval')))
+    else problems.push(`Approbations: ${approvals.reason instanceof Error ? approvals.reason.message : 'indisponibles'}`)
+    if (problems.length === 3) error.value = problems.join(' · ')
+    else if (problems.length) notices.value = problems
+    items.value = rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     const requestedId = route.params.itemId || route.query.item
     if (requestedId) selected.value = items.value.find(item => item.id === requestedId || item.sourceId === requestedId) || items.value[0] || null
     else if (!selected.value) selected.value = items.value.find(item => ['needs_review', 'low_confidence', 'ready'].includes(item.state)) || null
@@ -195,7 +213,7 @@ function requestBulkApproval() {
   confirmationMessage.value = `Vous allez approuver ${approvalTargets.value.length} demandes sélectionnées.`
   approvalDialogOpen.value = true
 }
-async function confirmApproval(close: () => void) {
+async function confirmApproval() {
   if (!canApprove || approvalLoading.value || !approvalTargets.value.length) return
   approvalLoading.value = true
   const failed: Array<{ item: AiWorkItem; message: string }> = []
@@ -206,7 +224,6 @@ async function confirmApproval(close: () => void) {
     }
     selectedIds.value = new Set(failed.map(result => result.item.id))
     approvalDialogOpen.value = false
-    close()
     await loadItems()
     if (failed.length) error.value = `Approbations refusées (${failed.length}) : ${failed.map(result => `${result.item.sourceId} — ${result.message}`).join('; ')}`
   } finally {
@@ -217,8 +234,8 @@ async function confirmApproval(close: () => void) {
 function openWorkspace(item: AiWorkItem) { router.push({ name: 'ai-workspace', params: { itemId: item.id } }) }
 function openComposer(item: AiWorkItem) { router.push({ name: 'rental-composer', query: { intake_id: item.sourceId } }) }
 function formatDate(value: string) { return new Intl.DateTimeFormat(session.locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)) }
-function confidenceTone(value: number | null) { return value === null ? 'text-cortex-text-muted' : value < 0.7 ? 'text-red-700 font-semibold' : value < 0.9 ? 'text-amber-700' : 'text-cortex-primary-700' }
-function stateTheme(state: AiWorkItem['state']) { return state === 'low_confidence' || state === 'extraction_error' ? 'red' : state === 'needs_review' ? 'orange' : ['validated', 'applied'].includes(state) ? 'green' : 'gray' }
+function confidenceTone(value: number | null) { return value === null ? '' : value < 0.7 ? 'text-red-700 font-semibold' : value < 0.9 ? 'text-amber-700' : '' }
+function stateTag(state: AiWorkItem['state']) { return state === 'low_confidence' || state === 'extraction_error' ? 'cx-tag--bad' : state === 'needs_review' ? 'cx-tag--warn' : ['validated', 'applied'].includes(state) ? 'cx-tag--ok' : '' }
 function dateRange(item: InboundRequestItem) { const start = item.extracted_fields.start_date; const end = item.extracted_fields.end_date; return start && end ? `${formatDate(start)} – ${formatDate(end)}` : 'À confirmer' }
 watch(() => route.query.type, value => { activeType.value = (value as AiWorkType) || 'all' })
 onMounted(loadItems)

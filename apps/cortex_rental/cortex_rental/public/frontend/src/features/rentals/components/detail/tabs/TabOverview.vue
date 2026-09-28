@@ -1,49 +1,34 @@
 <template>
-  <div class="space-y-4 text-xs" data-test="tab-overview">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- Client & Contact Card -->
-      <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-2.5">
-        <h4 class="font-bold text-cortex-text-primary uppercase tracking-wider text-[11px]">
-          Coordonnées Client & Production
-        </h4>
-        <div class="space-y-1 text-cortex-text-secondary">
-          <p><strong>Société :</strong> {{ rental.customer_name }}</p>
-          <p><strong>ID Client :</strong> <span class="font-mono">{{ rental.customer_id }}</span></p>
-          <p><strong>Courriel de contact :</strong> {{ rental.customer_contact_email || 'Non renseigné' }}</p>
-          <p><strong>Projet :</strong> {{ rental.project_name || 'Non renseigné' }}</p>
-        </div>
-      </div>
-
-      <!-- Dates & Dispatch Card -->
-      <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-2.5">
-        <h4 class="font-bold text-cortex-text-primary uppercase tracking-wider text-[11px]">
-          Planning & Logistique Entrepôt
-        </h4>
-        <div class="space-y-1 text-cortex-text-secondary">
-          <p><strong>Départ prévu :</strong> <span class="font-mono">{{ rental.starts_at }}</span></p>
-          <p><strong>Retour prévu :</strong> <span class="font-mono">{{ rental.ends_at }}</span></p>
-          <p><strong>Durée calendaire :</strong> {{ rental.calendar_days }} jours</p>
-          <p><strong>Jours facturés (règle 7j=3j) :</strong> <strong class="text-cortex-primary-700">{{ rental.billable_days }} jours</strong></p>
-        </div>
-      </div>
+  <div data-test="tab-overview">
+    <div class="cx-two" style="gap: 0 48px">
+      <section aria-labelledby="ov-client">
+        <h3 id="ov-client" class="m-0 mb-3 text-base font-semibold">Client et production</h3>
+        <dl class="cx-dl">
+          <div><dt>Société</dt><dd>{{ rental.customer_name }}</dd></div>
+          <div><dt>Identifiant client</dt><dd class="font-mono">{{ rental.customer_id }}</dd></div>
+          <div><dt>Courriel de contact</dt><dd>{{ rental.customer_contact_email || 'Non renseigné' }}</dd></div>
+          <div><dt>Projet</dt><dd>{{ rental.project_name || 'Non renseigné' }}</dd></div>
+        </dl>
+      </section>
+      <section aria-labelledby="ov-plan">
+        <h3 id="ov-plan" class="m-0 mb-3 text-base font-semibold">Planning</h3>
+        <dl class="cx-dl">
+          <div><dt>Départ prévu</dt><dd>{{ rental.starts_at }}</dd></div>
+          <div><dt>Retour prévu</dt><dd>{{ rental.ends_at }}</dd></div>
+          <div><dt>Durée calendaire</dt><dd>{{ rental.calendar_days }} jours</dd></div>
+          <div><dt>Jours facturés (règle 7 j = 3 j)</dt><dd>{{ rental.billable_days }} jours</dd></div>
+        </dl>
+      </section>
     </div>
-
-    <!-- Notes Card -->
-    <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-2">
-      <h4 class="font-bold text-cortex-text-primary uppercase tracking-wider text-[11px]">
-        Notes Opérationnelles
-      </h4>
-      <p class="text-cortex-text-secondary italic">
-        {{ rental.notes || 'Aucune note opérationnelle enregistrée.' }}
-      </p>
-    </div>
+    <section class="mt-6" aria-labelledby="ov-notes">
+      <h3 id="ov-notes" class="m-0 mb-2 text-base font-semibold">Notes opérationnelles</h3>
+      <p class="m-0 text-sm" style="color: var(--erp-text-2)">{{ rental.notes || 'Aucune note opérationnelle enregistrée.' }}</p>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { RentalTransaction } from '@/types/rental'
 
-defineProps<{
-  rental: RentalTransaction
-}>()
+defineProps<{ rental: RentalTransaction }>()
 </script>

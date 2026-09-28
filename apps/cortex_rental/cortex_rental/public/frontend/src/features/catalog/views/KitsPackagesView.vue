@@ -1,31 +1,28 @@
 <template>
-  <div class="mx-auto max-w-5xl space-y-6" data-test="screen-kits">
+  <div class="cx-page" data-test="screen-kits">
     <CortexPageHeader title="Kits et forfaits" subtitle="Ensembles d'équipements définis comme « Product Bundle » dans ERPNext." :provenance="data?.provenance">
       <template #actions><RefreshButton :loading="loading" @refresh="reload" /></template>
     </CortexPageHeader>
 
-    <CortexErrorBanner v-if="error" :error-message="error" @retry="reload" />
-    <CortexSkeleton v-if="loading && !data" variant="table-row" :count="4" />
-    <CortexEmptyState
-      v-else-if="data && !data.kits.length"
-      icon="archive"
-      title="Aucun kit défini"
-      description="Créez un Product Bundle pour un équipement de location afin de le voir ici."
-    />
-    <ul v-else-if="data" class="divide-y divide-cortex-border border-y border-cortex-border">
-      <li v-for="kit in data.kits" :key="kit.kit_code" class="py-4">
-        <div class="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 class="text-base font-semibold text-cortex-text-primary">{{ kit.kit_name }}</h2>
-          <span class="text-sm text-cortex-text-secondary">{{ kit.category }} · <span class="font-mono">{{ kit.kit_code }}</span></span>
-        </div>
-        <ul class="mt-2 text-sm text-cortex-text-primary">
-          <li v-for="component in kit.components" :key="component.item_code">{{ component.quantity }} × {{ component.item_name }}</li>
-        </ul>
-        <p class="mt-2 text-sm text-cortex-text-secondary">
-          {{ kit.bundle_daily_rate != null ? `${formatCurrency(kit.bundle_daily_rate)} par jour` : 'Tarif du kit: non fourni par l’ERP.' }}
-        </p>
-      </li>
-    </ul>
+    <div v-if="error" class="cx-section"><CortexErrorBanner :error-message="error" @retry="reload" /></div>
+    <div v-if="loading && !data" class="cx-section"><CortexSkeleton variant="table-row" :count="4" /></div>
+    <div v-else-if="data && !data.kits.length" class="cx-empty"><strong>Aucun kit défini</strong>Créez un Product Bundle pour un équipement de location afin de le voir ici.</div>
+    <div v-else-if="data" class="cx-tablewrap">
+      <table class="cx-table">
+        <thead>
+          <tr><th scope="col" class="cx-rownum">#</th><th scope="col">Kit</th><th scope="col">Catégorie</th><th scope="col">Composants</th><th scope="col" class="num">Tarif / jour</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="(kit, index) in data.kits" :key="kit.kit_code">
+            <td class="cx-rownum">{{ index + 1 }}</td>
+            <td><strong>{{ kit.kit_name }}</strong><div class="font-mono text-xs" style="color: var(--erp-muted)">{{ kit.kit_code }}</div></td>
+            <td>{{ kit.category }}</td>
+            <td>{{ kit.components.map((c) => `${c.quantity} × ${c.item_name}`).join(', ') }}</td>
+            <td class="num">{{ kit.bundle_daily_rate != null ? formatCurrency(kit.bundle_daily_rate) : 'Non fourni' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -33,7 +30,6 @@
 import { getCortexApiClient } from '@/api'
 import { formatCurrency } from '@/utils/currency'
 import CortexErrorBanner from '@/design-system/components/states/CortexErrorBanner.vue'
-import CortexEmptyState from '@/design-system/components/states/CortexEmptyState.vue'
 import CortexSkeleton from '@/design-system/components/states/CortexSkeleton.vue'
 import CortexPageHeader from '@/features/common/components/CortexPageHeader.vue'
 import RefreshButton from '@/features/common/components/RefreshButton.vue'

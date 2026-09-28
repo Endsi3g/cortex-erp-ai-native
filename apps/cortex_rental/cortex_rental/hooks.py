@@ -35,6 +35,8 @@ app_include_css = [
 # .bundle.js (docs.frappe.io + frappe/frappe wiki, cross-checked before
 # use — see CHANGELOG.md, eighth wave).
 app_include_js = [
+    # Host for the Vue 3 + Frappe UI screens (built by Vite, see public/frontend and cortex_host.js).
+    "/assets/cortex_rental/js/cortex_host/cortex_host.js",
     "cortex_copilot.bundle.js",
 ]
 

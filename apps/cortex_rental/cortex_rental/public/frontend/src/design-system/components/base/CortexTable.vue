@@ -159,27 +159,25 @@ function handleHeaderClick(col: TableColumn) {
 </template>
 
 <style scoped>
+/* ERPNext report table: grey header, hairline grid, 44px rows, no card frame. */
 .cx-table-container {
   width: 100%;
   overflow-x: auto;
-  border: 1px solid var(--cortex-border, #cbdcd2);
-  border-radius: var(--radius-md, 8px);
-  background-color: var(--cortex-surface, #ffffff);
+  background-color: #fff;
   box-sizing: border-box;
 }
 
 .cx-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--font-sans, Inter, sans-serif);
-  font-size: 13px;
-  color: var(--cortex-text, #08120d);
+  font-family: inherit;
+  font-size: 14px;
+  color: #171717;
   text-align: left;
 }
 
 .cx-table__head {
-  background-color: var(--cortex-surface-subtle, #f1f5f9);
-  border-bottom: 1px solid var(--cortex-border, #cbdcd2);
+  background-color: #f8f8f8;
 }
 
 .cx-table-container--sticky .cx-table__head {
@@ -189,12 +187,12 @@ function handleHeaderClick(col: TableColumn) {
 }
 
 .cx-table__th {
-  padding: 10px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--cortex-text-muted, #436354);
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #ededed;
+  font-size: 14px;
+  font-weight: 400;
+  color: #525252;
   white-space: nowrap;
 }
 
@@ -204,8 +202,8 @@ function handleHeaderClick(col: TableColumn) {
 }
 
 .cx-table__th--sortable:hover {
-  color: var(--cortex-text, #08120d);
-  background-color: var(--cortex-surface-hover, #e3ece6);
+  color: #171717;
+  background-color: #f3f3f3;
 }
 
 .cx-table__th-content {
@@ -215,55 +213,41 @@ function handleHeaderClick(col: TableColumn) {
 }
 
 .cx-table__body .cx-table__row {
-  border-bottom: 1px solid var(--cortex-border, #cbdcd2);
-  transition: background-color var(--motion-fast, 120ms ease);
+  cursor: pointer;
 }
 
-.cx-table__body .cx-table__row:last-child {
-  border-bottom: none;
-}
-
-.cx-table__body .cx-table__row:hover {
-  background-color: var(--cortex-surface-hover, #e3ece6);
-}
-
-.cx-table--striped .cx-table__body .cx-table__row:nth-child(even) {
-  background-color: rgba(242, 247, 244, 0.4);
+.cx-table__body .cx-table__row:hover .cx-table__td {
+  background-color: #fafafa;
 }
 
 .cx-table__td {
-  padding: 12px 14px;
-  font-size: 13px;
-  color: var(--cortex-text-secondary, #264034);
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #ededed;
+  font-size: 14px;
+  color: #171717;
   vertical-align: middle;
-}
-
-.cx-table--compact .cx-table__th {
-  padding: 6px 10px;
-  font-size: 11.5px;
+  white-space: nowrap;
 }
 
 .cx-table--compact .cx-table__td {
-  padding: 7px 10px;
-  font-size: 12.5px;
+  height: 40px;
 }
 
 .cx-table__td--mono {
-  font-family: var(--font-mono, "JetBrains Mono", monospace);
   font-variant-numeric: tabular-nums lining-nums;
-  font-size: 12.5px;
 }
 
 .cx-table__skeleton-cell {
   height: 16px;
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background: linear-gradient(90deg, #f3f3f3 25%, #ededed 50%, #f3f3f3 75%);
   background-size: 200% 100%;
   animation: cx-shimmer 1.5s infinite;
   border-radius: 4px;
 }
 
 .cx-table__empty-td {
-  padding: 32px 16px;
+  padding: 48px 16px;
   text-align: center;
 }
 
@@ -272,11 +256,17 @@ function handleHeaderClick(col: TableColumn) {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: var(--cortex-text-muted, #436354);
+  color: #7c7c7c;
 }
 
 @keyframes cx-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-table__skeleton-cell {
+    animation: none;
+  }
 }
 </style>

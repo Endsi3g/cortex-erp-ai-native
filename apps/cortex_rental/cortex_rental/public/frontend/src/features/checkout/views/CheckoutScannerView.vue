@@ -1,54 +1,26 @@
 <template>
-  <div class="space-y-6 max-w-5xl mx-auto" data-test="screen-checkout-scanner">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-cortex-border">
-      <div>
-        <div class="flex items-center gap-2.5">
-          <h1 class="text-xl font-bold text-cortex-text-primary tracking-tight">
-            {{ t('checkout.title') }}
-          </h1>
-          <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-semibold">
-            Entrepôt & Scanner
-          </span>
-          <span class="px-2 py-0.5 rounded-full bg-cortex-surface-secondary border border-cortex-border text-cortex-text-muted text-[11px] font-mono">
-            Cadence Rapide
-          </span>
-        </div>
-        <p class="text-xs text-cortex-text-secondary mt-1">
-          Validation physique du matériel sortant avec cadence rapide (autofocus 52px) et retour sonore/haptique.
-        </p>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <RouterLink
-          :to="`/app/cortex-rental/${rentalId}`"
-          class="cx-btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 min-h-[44px]"
-        >
-          <ArrowLeft class="w-3.5 h-3.5" />
-          <span>Fiche 360°</span>
-        </RouterLink>
-      </div>
-    </div>
+  <div class="cx-page" data-test="screen-checkout-scanner">
+    <CortexPageHeader :title="t('checkout.title')" subtitle="Validation physique du matériel sortant: champ de scan toujours actif, retour visuel et sonore.">
+      <template #actions>
+        <RouterLink :to="`/app/cortex-rental/${rentalId}`" class="cx-btn-soft">Fiche de location</RouterLink>
+      </template>
+    </CortexPageHeader>
 
     <!-- Error Banner -->
-    <CortexErrorBanner
-      v-if="errorMessage"
-      :error-message="errorMessage"
-      @retry="loadRental"
-    />
+    <div v-if="errorMessage" class="cx-section"><CortexErrorBanner :error-message="errorMessage" @retry="loadRental" /></div>
 
     <!-- Loading Skeleton -->
-    <div v-if="isLoading" class="p-6 bg-cortex-surface rounded-xl border border-cortex-border space-y-4">
+    <div v-if="isLoading" class="cx-section space-y-4">
       <CortexSkeleton :lines="6" />
     </div>
 
-    <div v-else-if="rental" class="space-y-5">
+    <div v-else-if="rental" class="cx-section space-y-5">
       <!-- Rental Context Banner -->
       <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="space-y-0.5">
           <div class="flex items-center gap-2">
             <span class="font-mono font-bold text-sm text-cortex-primary-700">{{ rental.name }}</span>
-            <CortexBadge :state="rental.rental_state === 'Checked Out' ? 'checked_out' : 'contract'" size="sm" />
+            <CortexBadge :variant="rental.rental_state === 'Checked Out' ? 'checked_out' : 'contract'" size="sm" />
           </div>
           <span class="text-xs font-semibold text-cortex-text-primary block">{{ rental.customer_name }}</span>
           <span v-if="rental.project_name" class="text-[11px] text-cortex-text-muted block">{{ rental.project_name }}</span>
@@ -103,7 +75,7 @@
             Scanner Code-barres / Séries
           </span>
           <span class="text-[11px] font-mono text-cortex-text-muted">
-            Champ 52px • Autofocus actif
+            Autofocus actif
           </span>
         </div>
 
@@ -240,7 +212,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, CheckCircle2, Barcode, AlertTriangle, AlertCircle, LogIn } from 'lucide-vue-next'
+import { CheckCircle2, Barcode, AlertTriangle, AlertCircle, LogIn } from 'lucide-vue-next'
+import CortexPageHeader from '@/features/common/components/CortexPageHeader.vue'
 import { getCortexApiClient } from '@/api'
 import type { RentalTransaction } from '@/types/rental'
 import { ScannerFeedback } from '@/utils/scanner'

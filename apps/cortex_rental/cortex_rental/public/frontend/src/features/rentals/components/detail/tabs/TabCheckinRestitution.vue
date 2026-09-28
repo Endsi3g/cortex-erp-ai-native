@@ -1,104 +1,30 @@
 <template>
-  <div class="space-y-4 text-xs" data-test="tab-checkin-restitution">
-    <!-- Restitution Progress Overview -->
-    <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-3">
-      <div class="flex items-center justify-between">
-        <h3 class="font-bold text-cortex-text-primary uppercase tracking-wider text-[11px]">
-          État d'Avancement de la Restitution
-        </h3>
-        <RouterLink
-          :to="`/app/cortex-checkin/${rental.name}`"
-          class="cx-btn-secondary text-[11px] px-3 py-1.5"
-          data-test="open-scanner-from-tab"
-        >
-          Ouvrir Scanner Check-in →
-        </RouterLink>
-      </div>
-
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-        <div class="p-3 rounded-lg bg-cortex-surface-secondary border border-cortex-border text-center">
-          <span class="text-[10px] text-cortex-text-muted block">Éléments Sortis</span>
-          <span class="text-base font-bold font-mono text-purple-700">{{ totalCheckedOut }}</span>
-        </div>
-        <div class="p-3 rounded-lg bg-cortex-surface-secondary border border-cortex-border text-center">
-          <span class="text-[10px] text-cortex-text-muted block">Restitués Conformes</span>
-          <span class="text-base font-bold font-mono text-cortex-primary-700">{{ totalCheckedIn }}</span>
-        </div>
-        <div class="p-3 rounded-lg bg-cortex-surface-secondary border border-cortex-border text-center">
-          <span class="text-[10px] text-cortex-text-muted block">Manquants</span>
-          <span class="text-base font-bold font-mono text-red-600">{{ missingCount }}</span>
-        </div>
-        <div class="p-3 rounded-lg bg-cortex-surface-secondary border border-cortex-border text-center">
-          <span class="text-[10px] text-cortex-text-muted block">Quarantaine / Bris</span>
-          <span class="text-base font-bold font-mono text-amber-600">{{ damageCount }}</span>
-        </div>
-      </div>
+  <div data-test="tab-checkin-restitution">
+    <div class="flex items-center justify-between gap-3">
+      <h3 class="m-0 text-base font-semibold">Avancement de la restitution</h3>
+      <RouterLink :to="`/app/cortex-checkin/${rental.name}`" class="cx-btn-soft" data-test="open-scanner-from-tab">Ouvrir le check-in</RouterLink>
     </div>
-
-    <!-- Anomaly Log Section -->
-    <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-3">
-      <h4 class="font-bold text-cortex-text-primary uppercase tracking-wider text-[11px]">
-        Journal des Anomalies Constatées
-      </h4>
-
-      <div v-if="rental.rental_state === 'Partially Returned'" class="space-y-2.5">
-        <div class="p-3 rounded-lg border border-amber-300 bg-amber-50/40 flex items-start justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-1.5 font-bold text-amber-900">
-              <span>⚠ Élément Manquant : Adaptateur PL vers LPL</span>
-            </div>
-            <p class="text-[11px] text-amber-800 mt-0.5">
-              Accessoire non présent dans la flight case au déchargement du 1er septembre. Reliquat en attente.
-            </p>
-          </div>
-          <span class="px-2 py-0.5 rounded bg-amber-200 text-amber-950 font-mono text-[10px] font-bold">
-            Reliquat actif
-          </span>
-        </div>
-
-        <div class="p-3 rounded-lg border border-red-300 bg-red-50/40 flex items-start justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-1.5 font-bold text-red-900">
-              <span>● Quarantaine : ARRI Alexa 35 (#DEMO-SN-ALX-004)</span>
-            </div>
-            <p class="text-[11px] text-red-800 mt-0.5">
-              Poussière interne constatée sur le filtre OLPF. Envoyé en maintenance service bench B.
-            </p>
-          </div>
-          <span class="px-2 py-0.5 rounded bg-red-200 text-red-950 font-mono text-[10px] font-bold">
-            Service Bench B
-          </span>
-        </div>
-      </div>
-
-      <div v-else class="py-4 text-center text-cortex-text-muted text-xs">
-        Aucune anomalie enregistrée sur cette transaction.
-      </div>
-    </div>
+    <KpiStrip :items="kpis" />
+    <p class="m-0 text-sm" style="color: var(--erp-muted)">
+      Les comptes viennent des numéros de série scannés à la sortie et au retour. Les manquants, dommages et mises en quarantaine sont enregistrés au check-in: consultez l'onglet Journal d'audit ou l'écran de check-in.
+    </p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { RentalTransaction } from '@/types/rental'
+import KpiStrip, { type KpiItem } from '@/features/common/components/KpiStrip.vue'
 
-const props = defineProps<{
-  rental: RentalTransaction
-}>()
+const props = defineProps<{ rental: RentalTransaction }>()
 
-const totalCheckedOut = computed(() => {
-  return props.rental.items.reduce((sum, i) => sum + i.scanned_checkout_serials.length, 0)
-})
-
-const totalCheckedIn = computed(() => {
-  return props.rental.items.reduce((sum, i) => sum + i.scanned_checkin_serials.length, 0)
-})
-
-const missingCount = computed(() => {
-  return props.rental.rental_state === 'Partially Returned' ? 1 : 0
-})
-
-const damageCount = computed(() => {
-  return props.rental.rental_state === 'Partially Returned' ? 1 : 0
-})
+const assigned = computed(() => props.rental.items.reduce((sum, i) => sum + (i.assigned_serials?.length ?? 0), 0))
+const checkedOut = computed(() => props.rental.items.reduce((sum, i) => sum + i.scanned_checkout_serials.length, 0))
+const checkedIn = computed(() => props.rental.items.reduce((sum, i) => sum + i.scanned_checkin_serials.length, 0))
+const kpis = computed<KpiItem[]>(() => [
+  { key: 'assigned', label: 'Séries assignées', value: String(assigned.value) },
+  { key: 'out', label: 'Sorties scannées', value: String(checkedOut.value) },
+  { key: 'in', label: 'Retours scannés', value: String(checkedIn.value), positive: true },
+  { key: 'open', label: 'Encore dehors', value: String(Math.max(0, checkedOut.value - checkedIn.value)) }
+])
 </script>

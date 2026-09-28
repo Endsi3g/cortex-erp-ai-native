@@ -1,11 +1,14 @@
 <template>
-  <div class="mx-auto max-w-2xl space-y-6" data-test="screen-native-erp">
-    <CortexPageHeader :title="title" />
-    <p class="text-base text-cortex-text-primary">{{ description }}</p>
-    <p class="text-sm text-cortex-text-secondary">
-      ERPNext reste le système de référence: cet écran est la vue native, avec ses droits et son historique, plutôt qu'une copie dans Cortex.
-    </p>
-    <a :href="href" class="cx-btn-primary inline-flex min-h-[40px] items-center px-4 text-sm font-medium">{{ cta }}</a>
+  <div class="cx-page" data-test="screen-native-erp">
+    <CortexPageHeader :title="title">
+      <template #actions><a :href="href" class="cx-btn-primary">{{ cta }}</a></template>
+    </CortexPageHeader>
+    <section class="cx-section">
+      <p class="m-0 text-sm">{{ description }}</p>
+      <p class="mt-2 text-sm" style="color: var(--erp-muted)">
+        ERPNext reste le système de référence: cet écran est la vue native, avec ses droits et son historique, plutôt qu'une copie dans Cortex.
+      </p>
+    </section>
   </div>
 </template>
 

@@ -1,7 +1,7 @@
 {
  "charts": [],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Finance</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profit et pertes\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Factures de location\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Propriétaires en consignation\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements aux propriétaires\", \"col\": 3}}]",
- "creation": "2026-09-28 00:00:00.000000",
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Finance</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profit et pertes\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Consignation\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Propriétaires\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Factures de location\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements aux propriétaires\", \"col\": 3}}]",
+ "creation": "2026-09-28 20:30:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -12,7 +12,7 @@
  "is_hidden": 0,
  "label": "Cortex Finance",
  "links": [],
- "modified": "2026-09-28 00:00:00.000000",
+ "modified": "2026-09-28 20:30:00.000000",
  "modified_by": "Administrator",
  "module": "Cortex Rental",
  "name": "Cortex Finance",
@@ -55,15 +55,22 @@
    "doc_view": ""
   },
   {
-   "label": "Factures de location",
-   "link_to": "Sales Invoice",
-   "type": "DocType",
+   "label": "Consignation",
+   "link_to": "cortex-consignment",
+   "type": "Page",
    "color": "Grey",
-   "doc_view": "List"
+   "doc_view": ""
   },
   {
-   "label": "Propriétaires en consignation",
-   "link_to": "Consignment Owner",
+   "label": "Propriétaires",
+   "link_to": "cortex-consignment-owner",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  },
+  {
+   "label": "Factures de location",
+   "link_to": "Sales Invoice",
    "type": "DocType",
    "color": "Grey",
    "doc_view": "List"

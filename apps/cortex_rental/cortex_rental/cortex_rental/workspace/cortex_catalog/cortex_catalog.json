@@ -1,7 +1,7 @@
 {
  "charts": [],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Catalog</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profils d'équipement\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Articles\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Numéros de série\", \"col\": 3}}]",
- "creation": "2026-09-28 00:00:00.000000",
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Catalog</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Équipements\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kits et forfaits\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profils d'équipement\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Articles\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Numéros de série\", \"col\": 3}}]",
+ "creation": "2026-09-28 20:30:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -12,7 +12,7 @@
  "is_hidden": 0,
  "label": "Cortex Catalog",
  "links": [],
- "modified": "2026-09-28 00:00:00.000000",
+ "modified": "2026-09-28 20:30:00.000000",
  "modified_by": "Administrator",
  "module": "Cortex Rental",
  "name": "Cortex Catalog",
@@ -47,6 +47,20 @@
  ],
  "sequence_id": 6.0,
  "shortcuts": [
+  {
+   "label": "Équipements",
+   "link_to": "cortex-equipment",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  },
+  {
+   "label": "Kits et forfaits",
+   "link_to": "cortex-kits",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  },
   {
    "label": "Profils d'équipement",
    "link_to": "Cortex Rental Item Profile",
