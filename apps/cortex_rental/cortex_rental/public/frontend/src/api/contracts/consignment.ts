@@ -11,7 +11,7 @@ export const ConsignmentOwnerSchema = ProvenanceMetaSchema.extend({
   default_commission_percentage: z.number(),
   active_serials_count: z.number(),
   pending_payout_amount: z.number(),
-  currency: z.literal('CAD')
+  currency: z.string()
 })
 
 export type ConsignmentOwner = z.infer<typeof ConsignmentOwnerSchema>
@@ -63,14 +63,14 @@ export type ConsignmentDashboardResponse = z.infer<typeof ConsignmentDashboardRe
 export const OwnerStatementLineSafeSchema = z.object({
   serial_number: z.string(),
   equipment_name: z.string(),
-  rental_start_date: z.string(),
-  rental_end_date: z.string(),
+  rental_start_date: z.string().optional(),
+  rental_end_date: z.string().optional(),
   billable_days: z.number(),
   rate: z.number(),
   discount_amount: z.number(),
   consignment_percentage: z.number(),
   owner_amount: z.number(),
-  invoice_reference: z.string()
+  invoice_reference: z.string().optional()
 }).strict()
 
 export const OwnerStatementSafeSchema = z.object({
@@ -84,7 +84,7 @@ export const OwnerStatementSafeSchema = z.object({
     end: z.string(),
     timezone: z.string()
   }).strict(),
-  currency: z.literal('CAD'),
+  currency: z.string(),
   totals: z.object({
     eligible_net_revenue: z.number(),
     owner_amount_due: z.number()

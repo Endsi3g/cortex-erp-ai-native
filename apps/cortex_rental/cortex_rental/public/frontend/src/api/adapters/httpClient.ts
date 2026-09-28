@@ -1,3 +1,13 @@
+/** Raised when a feature has no server endpoint yet. The UI shows it as "indisponible", never as a saved result. */
+export class CortexUnavailableError extends Error {
+  readonly unavailable = true
+
+  constructor(message: string) {
+    super(message)
+    this.name = 'CortexUnavailableError'
+  }
+}
+
 export interface HttpClientConfig {
   baseUrl?: string
   getCompanyId?: () => string | null

@@ -69,7 +69,7 @@
             <h3 class="text-xs font-semibold">Éléments extraits</h3>
             <p class="text-xs"><span class="text-cortex-text-muted">Client :</span> {{ (selected.source as InboundRequestItem).extracted_fields.customer_name || 'À préciser' }}</p>
             <p class="text-xs"><span class="text-cortex-text-muted">Période :</span> {{ dateRange(selected.source as InboundRequestItem) }}</p>
-            <ul class="space-y-1 text-xs"><li v-for="gear in (selected.source as InboundRequestItem).extracted_fields.equipment_mentions || []" :key="gear.raw_text" class="flex justify-between gap-2"><span>{{ gear.quantity || 1 }} × {{ gear.raw_text }}</span><span :class="confidenceTone(gear.confidence)">{{ Math.round(gear.confidence * 100) }}%</span></li></ul>
+            <ul class="space-y-1 text-xs"><li v-for="gear in (selected.source as InboundRequestItem).extracted_fields.equipment_mentions || []" :key="gear.raw_text" class="flex justify-between gap-2"><span>{{ gear.quantity || 1 }} × {{ gear.raw_text }}</span><span :class="confidenceTone(gear.confidence ?? null)">{{ gear.confidence == null ? 'non évaluée' : `${Math.round(gear.confidence * 100)}%` }}</span></li></ul>
             <p v-if="(selected.source as InboundRequestItem).extracted_fields.missing_fields.length" class="rounded bg-amber-50 p-2 text-xs text-amber-900">À compléter : {{ (selected.source as InboundRequestItem).extracted_fields.missing_fields.join(', ') }}</p>
           </div>
           <div v-if="selected.type === 'approval'" class="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">Cette action attend une personne ayant le rôle approprié. La règle serveur reste l’autorité pour l’approbation.</div>

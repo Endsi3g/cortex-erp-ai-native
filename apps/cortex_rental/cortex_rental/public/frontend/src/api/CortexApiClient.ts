@@ -79,10 +79,14 @@ import type {
   CreateUploadIntentInput,
   UploadIntentResponse,
   RegisterEvidenceInput,
-  MutationResponse
+  MutationResponse,
+  OperationsOverviewResponse
 } from './contracts'
 
 export interface CortexApiClient {
+  // 0. Operations cockpit
+  getOperationsOverview(): Promise<OperationsOverviewResponse>
+
   // 1. Availability & Inventory
   getAvailabilityMatrix(input: AvailabilityMatrixInput): Promise<AvailabilityMatrixResponse>
   checkInventoryAvailability(input: AvailabilityCheckInput): Promise<AvailabilityCheckResponse>

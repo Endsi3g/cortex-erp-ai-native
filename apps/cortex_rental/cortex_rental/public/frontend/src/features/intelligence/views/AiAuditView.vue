@@ -51,9 +51,9 @@ async function load() {
   loading.value = true; error.value = ''
   try {
     const api = getCortexApiClient()
-    const [audit, activity] = await Promise.all([api.listAuditEvents({ page: 1, page_size: 100 }), api.getAgentActivity({ limit: 100 })])
+    const [audit, activity] = await Promise.all([api.listAuditEvents({ page: 1, page_size: 100 }), api.getAgentActivity({ limit: 100 }).catch(() => null)])
     const auditRows = audit.events.map((event: AuditEvent): AuditRow => ({ id: `audit:${event.id}`, timestamp: event.timestamp, actor: event.actor.actor_name || (event.actor.actor_type === 'Agent' ? 'Agent métier' : event.actor.actor_type), actorId: event.actor.actor_id, action: event.action, entity: `${event.entity_type} · ${event.entity_id}`, success: event.policy_execution?.passed !== false, requestId: event.request_id, summary: event.diff_summary, hash: event.evidence_hash_sha256, policy: event.policy_execution?.policy_name }))
-    const runRows = activity.runs.map((run: AgentRunTelemetry): AuditRow => ({ id: `run:${run.run_id}`, timestamp: run.started_at, actor: run.agent_name.replace(/^Cortex\s+/, ''), actorId: run.run_id, action: 'agent.run', entity: 'Exécution agent', success: run.status === 'completed', latency: run.duration_ms, requestId: run.run_id, model: run.model_used, tokens: run.prompt_tokens + run.completion_tokens, cost: `${run.total_cost_cad.toFixed(4)} CAD`, tools: run.tools_invoked }))
+    const runRows = (activity?.runs ?? []).map((run: AgentRunTelemetry): AuditRow => ({ id: `run:${run.run_id}`, timestamp: run.started_at, actor: run.agent_name.replace(/^Cortex\s+/, ''), actorId: run.run_id, action: 'agent.run', entity: 'Exécution agent', success: run.status === 'completed', latency: run.duration_ms, requestId: run.run_id, model: run.model_used, tokens: run.prompt_tokens != null && run.completion_tokens != null ? run.prompt_tokens + run.completion_tokens : undefined, cost: run.total_cost_cad != null ? `${run.total_cost_cad.toFixed(4)} CAD` : undefined, tools: run.tools_invoked }))
     rows.value = [...auditRows, ...runRows].sort((a, b) => b.timestamp.localeCompare(a.timestamp))
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Impossible de charger AI Audit.' }
   finally { loading.value = false }

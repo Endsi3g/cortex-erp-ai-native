@@ -80,7 +80,8 @@ import type {
   CreateUploadIntentInput,
   UploadIntentResponse,
   RegisterEvidenceInput,
-  MutationResponse
+  MutationResponse,
+  OperationsOverviewResponse
 } from '../contracts'
 import { MockStateStore } from './MockStateStore'
 import { LatencySimulator } from './LatencySimulator'
@@ -368,6 +369,38 @@ export class MockCortexApiClient implements CortexApiClient {
   }
 
   // 2. Rentals Lifecycle & Pricing
+  async getOperationsOverview(): Promise<OperationsOverviewResponse> {
+    await LatencySimulator.inject('standard')
+    const rentals = this.store.rentals
+    const count = (...states: string[]) => rentals.filter((r) => states.includes(r.rental_state)).length
+    const counts = {
+      departures_today: count('Reservation', 'Contract'),
+      returns_due_today: count('Checked Out'),
+      overdue_returns: 0,
+      disputed_or_quarantined: count('Disputed', 'Quarantine'),
+      missing_serials: 0,
+      inbound_to_review: 0,
+      exceptions: count('Disputed', 'Quarantine'),
+      pending_approvals: null
+    }
+    return {
+      provenance: 'mock',
+      last_synced_at: new Date().toISOString(),
+      counts,
+      timeline: rentals
+        .filter((r) => ['Reservation', 'Contract', 'Checked Out'].includes(r.rental_state))
+        .slice(0, 8)
+        .map((r) => ({
+          kind: r.rental_state === 'Checked Out' ? ('return' as const) : ('departure' as const),
+          rental_id: r.id,
+          customer: r.customer_name,
+          state: r.rental_state,
+          at: r.starts_at
+        })),
+      as_of: new Date().toISOString()
+    }
+  }
+
   async listRentals(input: ListRentalsInput): Promise<ListRentalsResponse> {
     await LatencySimulator.inject('standard')
     let list = [...this.store.rentals]
