@@ -12,6 +12,7 @@
     "provenance_stale": "Potentially Stale Data"
   },
   "routes": {
+    "operations": "Operations",
     "operations_overview": "Operations Overview",
     "availability_matrix": "Availability Matrix",
     "rentals_list": "Rentals List",

@@ -10,9 +10,7 @@
           <span class="px-2 py-0.5 rounded-full bg-cortex-primary-100 text-cortex-primary-800 text-[11px] font-semibold">
             {{ rentalsStore.rentals.length }} locations
           </span>
-          <span class="px-2 py-0.5 rounded-full bg-cortex-surface-secondary border border-cortex-border text-cortex-text-muted text-[11px] font-mono">
-            DEMO
-          </span>
+          <ProvenanceTag :provenance="rentalsStore.rentals[0]?.provenance" />
         </div>
         <p class="text-xs text-cortex-text-secondary mt-1">
           Master directory des soumissions, réservations, contrats et retours de location.
@@ -163,7 +161,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { RefreshCw, PlusCircle, Search } from 'lucide-vue-next'
 import type { RentalState, RentalTransaction } from '@/types/rental'
@@ -172,9 +170,11 @@ import CortexTable, { type TableColumn } from '@/design-system/components/base/C
 import CortexBadge from '@/design-system/components/base/CortexBadge.vue'
 import CortexErrorBanner from '@/design-system/components/states/CortexErrorBanner.vue'
 import RentalStatusFilterBar from '../components/RentalStatusFilterBar.vue'
+import ProvenanceTag from '@/features/common/components/ProvenanceTag.vue'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const rentalsStore = useRentalsStore()
 
 const searchInput = ref<string>('')
@@ -261,6 +261,9 @@ const handleRowClick = (row: Record<string, any>) => {
 }
 
 onMounted(() => {
+  // Deep links such as /app/cortex-rentals?state=Checked Out from the operations cockpit.
+  const requested = route.query.state
+  if (typeof requested === 'string' && requested) rentalsStore.setStateFilter(requested as RentalState)
   loadRentals()
 })
 </script>

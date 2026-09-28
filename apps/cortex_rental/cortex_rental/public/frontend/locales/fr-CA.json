@@ -12,6 +12,7 @@
     "provenance_stale": "Données potentiellement obsolètes"
   },
   "routes": {
+    "operations": "Opérations",
     "operations_overview": "Aperçu des Opérations",
     "availability_matrix": "Matrice de Disponibilité",
     "rentals_list": "Liste des Locations",
