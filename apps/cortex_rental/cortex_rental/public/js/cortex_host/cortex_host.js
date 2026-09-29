@@ -14,8 +14,8 @@ frappe.provide("cortex_rental");
 	const BASE = "/assets/cortex_rental/frontend/dist-desk";
 	const ENTRY = `${BASE}/cortex-desk.js`;
 	const STYLE = `${BASE}/cortex-desk.css`;
-	// SPA paths that have a dedicated Desk page under another name.
-	const LEGACY_ROUTES = [[/^\/app\/cortex-rental\/new$/, ["cortex-transaction-composer"]]];
+	// SPA paths that live in a Desk page with another name.
+	const ROUTE_ALIASES = [[/^\/app\/cortex-rental\/new$/, ["cortex-transaction-composer"]]];
 	// A Workspace slug always wins over a Page of the same name, and the hub / group workspaces own
 	// `cortex-rental` and `cortex-operations`. The screens behind those SPA paths are registered
 	// under other Page names.
@@ -51,7 +51,7 @@ frappe.provide("cortex_rental");
 	function toDeskRoute(fullPath) {
 		const [pathname, query = ""] = fullPath.split("?");
 		const options = query ? Object.fromEntries(new URLSearchParams(query)) : null;
-		for (const [pattern, route] of LEGACY_ROUTES) {
+		for (const [pattern, route] of ROUTE_ALIASES) {
 			if (pattern.test(pathname)) return { route, options };
 		}
 		const route = pathname
@@ -73,6 +73,7 @@ frappe.provide("cortex_rental");
 		const route = (frappe.get_route && frappe.get_route()) || [];
 		const query = frappe.route_options ? new URLSearchParams(frappe.route_options).toString() : "";
 		frappe.route_options = null;
+		if (route[0] === "cortex-transaction-composer") return `/app/cortex-rental/new${query ? `?${query}` : ""}`;
 		if (SPA_ALIASES[route[0]]) route[0] = SPA_ALIASES[route[0]];
 		return `/app/${route.map(encodeURIComponent).join("/")}${query ? `?${query}` : ""}`;
 	}
@@ -110,11 +111,6 @@ frappe.provide("cortex_rental");
 		$main.empty().append(host);
 
 		const path = currentPath();
-		const legacy = LEGACY_ROUTES.find(([pattern]) => pattern.test(path.split("?")[0]));
-		if (legacy) {
-			navigate(path);
-			return;
-		}
 		try {
 			const bundle = await loadModule();
 			wrapper.__cortexScreen = await bundle.mountCortexScreen(host, { path, navigate });

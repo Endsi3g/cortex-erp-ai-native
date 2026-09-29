@@ -6,7 +6,8 @@ try:
 except ImportError:
     frappe = None
 
-from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
+from cortex_rental.api.v1._shared import envelope, page_args, to_float
+from cortex_rental.permissions.agent_scopes import get_company_context, require_agent_scope, require_human_staff_role
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
 from cortex_rental.services.agent_telemetry import log_tool_call
@@ -74,6 +75,69 @@ def search_customers_handler(query: str, company: str) -> List[Dict[str, Any]]:
     return custs
 
 
+TRANSACTION = "Cortex Rental Transaction"
+OPEN_STATES = ("Reservation", "Contract", "Checked Out", "Partially Returned")
+
+
+def list_customers_handler(company: str, search: str, page: int, page_size: int) -> Dict[str, Any]:
+    """Customers of the tenant with rental activity counted from real transactions.
+
+    Only values ERPNext holds are returned: no risk score, deposit or balance is estimated.
+    """
+    fields = list(_customer_fields())
+    filters: Dict[str, Any] = {}
+    if "disabled" in fields:
+        filters["disabled"] = 0
+    if "cortex_company" in fields:
+        filters["cortex_company"] = company
+    or_filters = None
+    if search and search.strip():
+        token = f"%{search.strip()}%"
+        or_filters = [["name", "like", token], ["customer_name", "like", token]]
+
+    total = len(frappe.get_all("Customer", filters=filters, or_filters=or_filters, pluck="name"))
+    customers = frappe.get_list(
+        "Customer",
+        filters=filters,
+        or_filters=or_filters,
+        fields=fields,
+        order_by="customer_name asc",
+        start=(page - 1) * page_size,
+        page_length=page_size,
+    )
+    rentals = (
+        frappe.get_all(
+            TRANSACTION,
+            filters={"company": company, "customer": ["in", [c.name for c in customers]]},
+            fields=["customer", "rental_state", "starts_at", "grand_total"],
+            limit_page_length=0,
+        )
+        if customers
+        else []
+    )
+    items = []
+    for customer in customers:
+        mine = [r for r in rentals if r.customer == customer.name]
+        starts = [r.starts_at for r in mine if r.starts_at]
+        item = {
+            "id": customer.name,
+            "name": customer.customer_name or customer.name,
+            "rentals_count": len(mine),
+            "open_rentals_count": sum(1 for r in mine if r.rental_state in OPEN_STATES),
+            "billed_total": round(sum(to_float(r.grand_total) for r in mine), 2),
+        }
+        if customer.get("customer_group"):
+            item["customer_group"] = customer.customer_group
+        if customer.get("territory"):
+            item["territory"] = customer.territory
+        if customer.get("custom_insurance_valid_until"):
+            item["insurance_valid_until"] = str(customer.custom_insurance_valid_until)
+        if starts:
+            item["last_rental_start"] = str(max(starts))
+        items.append(item)
+    return {"items": items, "total_count": total, "page": page, "page_size": page_size}
+
+
 def create_customer_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
     name = payload.get("customer_name") or payload.get("name")
     email = payload.get("email")
@@ -116,6 +180,14 @@ if frappe:
         company = get_company_context()
         data = search_customers_handler(query=query, company=company)
         return {"data": data, "meta": {"company": company}}
+
+    @frappe.whitelist(methods=["GET"])
+    def list_customers(search: str = None, page: int = 1, page_size: int = 20):
+        require_human_staff_role()
+        if not frappe.has_permission("Customer", "read"):
+            frappe.throw("Accès refusé aux clients.", frappe.PermissionError)
+        page, page_size = page_args(page, page_size)
+        return envelope(list_customers_handler(get_company_context(), search, page, page_size))
 
     @frappe.whitelist(methods=["POST"])
     @log_tool_call("create_customer_draft", scope="agent:customers:draft")

@@ -526,3 +526,58 @@ a.cx-kpi__value:hover {
   border-color: var(--erp-accent);
   background: #f3faf6;
 }
+
+/* Account tree (P&L): chevron toggles and group rows, like the ERPNext report tree */
+.cx-chevron {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--erp-muted);
+  font-size: 12px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+button.cx-chevron:hover {
+  background: var(--erp-hover, #f3f3f3);
+}
+
+.cx-row--group td {
+  font-weight: 600;
+  background: #fafafa;
+}
+
+.cx-chart {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+}
+
+.cx-chart__axis {
+  stroke: var(--erp-border);
+  stroke-width: 1;
+}
+
+.cx-chart__line {
+  stroke: var(--cortex-primary-600, #087a43);
+  stroke-width: 2;
+}
+
+.cx-chart__dot {
+  fill: var(--cortex-primary-600, #087a43);
+}
+
+.cx-card {
+  padding: 16px;
+  border: 1px solid var(--erp-border);
+  border-radius: 8px;
+  background: #fafafa;
+}

@@ -1,25 +1,17 @@
+// Thin Desk shell: the screen itself is built in public/frontend and mounted by
+// public/js/cortex_host/cortex_host.js.
 frappe.pages["cortex-customers"].on_page_load = function (wrapper) {
 	frappe.ui.make_app_page({
 		parent: wrapper,
-		title: "Clients & Risque Assurance",
+		title: "Clients",
 		single_column: true,
 	});
-
-	if (frappe.boot.developer_mode) {
-		frappe.hot_update = frappe.hot_update || [];
-		frappe.hot_update.push(() => load_cortex_customers(wrapper));
-	}
 };
 
 frappe.pages["cortex-customers"].on_page_show = function (wrapper) {
-	load_cortex_customers(wrapper);
+	cortex_rental.host.mount(wrapper);
 };
 
-async function load_cortex_customers(wrapper) {
-	const $parent = $(wrapper).find(".layout-main-section");
-	$parent.empty();
-	$parent.css({ padding: 0 });
-
-	await frappe.require("cortex_customers.bundle.js");
-	frappe.cortex_customers_app = frappe.ui.setup_cortex_customers($parent.get(0));
-}
+frappe.pages["cortex-customers"].on_page_hide = function (wrapper) {
+	cortex_rental.host.unmount(wrapper);
+};

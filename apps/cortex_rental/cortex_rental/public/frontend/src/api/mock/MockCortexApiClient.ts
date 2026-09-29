@@ -81,7 +81,11 @@ import type {
   UploadIntentResponse,
   RegisterEvidenceInput,
   MutationResponse,
-  OperationsOverviewResponse
+  OperationsOverviewResponse,
+  ListCustomersInput,
+  ListCustomersResponse,
+  ProfitAndLossInput,
+  ProfitAndLossResponse
 } from '../contracts'
 import { MockStateStore } from './MockStateStore'
 import { LatencySimulator } from './LatencySimulator'
@@ -1172,6 +1176,47 @@ export class MockCortexApiClient implements CortexApiClient {
       entity_type: 'unknown',
       display_title: 'Code-barres non répertorié',
       current_status: 'Inconnu'
+    }
+  }
+
+  // 3b. Customers & accounting: labelled mock data, derived from the demo rentals only.
+  async listCustomers(input: ListCustomersInput): Promise<ListCustomersResponse> {
+    await LatencySimulator.inject('standard')
+    const needle = (input.search ?? '').trim().toLowerCase()
+    const items = this.store.customers
+      .filter((customer) => !needle || customer.name.toLowerCase().includes(needle) || customer.id.toLowerCase().includes(needle))
+      .map((customer) => {
+        const mine = this.store.rentals.filter((rental) => rental.customer_id === customer.id)
+        return {
+          id: customer.id,
+          name: customer.name,
+          insurance_valid_until: customer.insurance_valid_until,
+          rentals_count: mine.length,
+          open_rentals_count: mine.filter((rental) => ['reservation', 'contract', 'checked_out', 'partial_return'].includes(rental.rental_state)).length,
+          billed_total: mine.reduce((sum, rental) => sum + (rental.grand_total ?? 0), 0)
+        }
+      })
+    return { provenance: 'mock', last_synced_at: new Date().toISOString(), items, total_count: items.length }
+  }
+
+  async getProfitAndLoss(_input: ProfitAndLossInput): Promise<ProfitAndLossResponse> {
+    await LatencySimulator.inject('heavy')
+    const values = { '2026-01': 12000, '2026-02': 15000 }
+    return {
+      provenance: 'mock',
+      last_synced_at: new Date().toISOString(),
+      company: 'Démonstration',
+      fiscalYear: '2026',
+      totalIncome: 27000,
+      totalExpense: 9000,
+      netProfit: 18000,
+      periods: [
+        { key: '2026-01', label: 'Janv. 2026', income: 12000, expense: 4000, profitLoss: 8000 },
+        { key: '2026-02', label: 'Févr. 2026', income: 15000, expense: 5000, profitLoss: 10000 }
+      ],
+      accounts: [
+        { id: 'Income', name: 'Revenus', depth: 0, type: 'group', total: 27000, values, children: [{ id: 'Rental Income', name: 'Revenus de location', depth: 1, type: 'account', total: 27000, values, children: [] }] }
+      ]
     }
   }
 

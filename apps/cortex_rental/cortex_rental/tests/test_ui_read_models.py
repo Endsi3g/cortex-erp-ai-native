@@ -9,7 +9,7 @@ import unittest
 from datetime import date
 from unittest.mock import MagicMock, patch
 
-from cortex_rental.api.v1 import catalog, consignment, intelligence, operations
+from cortex_rental.api.v1 import catalog, consignment, customers, intelligence, operations
 
 
 class Row(dict):
@@ -253,3 +253,28 @@ class TestConsignation(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCustomers(unittest.TestCase):
+    def test_lists_only_what_erpnext_holds_and_counts_real_rentals(self):
+        rows = [Row(name="C-1", customer_name="Dune 3", customer_group="Commercial", territory=None)]
+        rentals = [
+            Row(customer="C-1", rental_state="Contract", starts_at="2026-09-01 08:00:00", grand_total=100),
+            Row(customer="C-1", rental_state="Returned", starts_at="2026-08-01 08:00:00", grand_total=50.5),
+        ]
+        get_all = MagicMock(side_effect=[["C-1"], rentals])
+        fake = fake_frappe(
+            get_all=get_all,
+            get_list=MagicMock(return_value=rows),
+            db=MagicMock(has_column=lambda doctype, col: col in ("customer_group", "territory")),
+        )
+        customers._customer_fields.cache_clear()
+        with patch.object(customers, "frappe", fake):
+            result = customers.list_customers_handler("CCR", "dune", 1, 20)
+        customers._customer_fields.cache_clear()
+        item = result["items"][0]
+        self.assertEqual(result["total_count"], 1)
+        self.assertEqual((item["rentals_count"], item["open_rentals_count"], item["billed_total"]), (2, 1, 150.5))
+        self.assertEqual(item["last_rental_start"], "2026-09-01 08:00:00")
+        for invented in ("risk_score", "deposit_status", "outstanding_balance", "insurance_valid_until", "territory"):
+            self.assertNotIn(invented, item)

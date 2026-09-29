@@ -1,47 +1,34 @@
 <template>
-  <div class="space-y-4 max-w-7xl mx-auto" data-test="screen-availability-matrix">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-cortex-border">
-      <div>
-        <div class="flex items-center gap-2.5">
-          <h1 class="text-xl font-bold text-cortex-text-primary tracking-tight">
-            {{ t('routes.availability_matrix') }}
-          </h1>
-          <Badge :theme="isSynthetic ? 'gray' : 'green'" variant="subtle">{{ isSynthetic ? 'Données de démo' : 'API ERPNext' }}</Badge>
-        </div>
-        <p class="text-xs text-cortex-text-secondary mt-1">
-          Visualisation temporelle de l'inventaire, verrous de disponibilité et détection de conflits.
-        </p>
-      </div>
+  <div class="cx-page" data-test="screen-availability-matrix">
+    <CortexPageHeader
+      :title="t('routes.availability_matrix')"
+      subtitle="Inventaire dans le temps, verrous de disponibilité et conflits."
+      :provenance="isSynthetic ? 'mock' : 'api'"
+    >
+      <template #actions><RefreshButton :loading="isLoading" @refresh="fetchMatrix" /></template>
+    </CortexPageHeader>
 
-      <!-- Legend -->
-      <AvailabilityLegend />
+    <div class="cx-section"><AvailabilityLegend /></div>
+
+    <div class="cx-section">
+      <AvailabilityToolbar
+        v-model:granularity="granularity"
+        v-model:category="selectedCategory"
+        v-model:search="searchQuery"
+        :date-label="dateLabel"
+        :selected-equipment-codes="selectedEquipmentCodes"
+        @navigate="handleNavigate"
+        @create-quote="handleCreateQuote"
+      />
     </div>
 
-    <!-- Toolbar -->
-    <AvailabilityToolbar
-      v-model:granularity="granularity"
-      v-model:category="selectedCategory"
-      v-model:search="searchQuery"
-      :date-label="dateLabel"
-      :selected-equipment-codes="selectedEquipmentCodes"
-      @navigate="handleNavigate"
-      @create-quote="handleCreateQuote"
-    />
-
-    <!-- Error Banner -->
-    <CortexErrorBanner
-      v-if="errorMessage"
-      :error-message="errorMessage"
-      @retry="fetchMatrix"
-    />
-
-    <!-- Main Grid or Loading Skeleton -->
-    <div v-if="isLoading" class="p-6 bg-cortex-surface rounded-xl border border-cortex-border">
-      <CortexSkeleton :lines="12" />
+    <div v-if="errorMessage" class="cx-section">
+      <CortexErrorBanner :error-message="errorMessage" @retry="fetchMatrix" />
     </div>
 
-    <div v-else class="space-y-4">
+    <div v-if="isLoading" class="cx-section"><CortexSkeleton :lines="12" /></div>
+
+    <div v-else class="cx-section space-y-4">
       <!-- Matrix Grid -->
       <AvailabilityGrid
         :rows="rows"
@@ -63,8 +50,9 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Badge } from 'frappe-ui'
 import { getCortexApiClient } from '@/api'
+import CortexPageHeader from '@/features/common/components/CortexPageHeader.vue'
+import RefreshButton from '@/features/common/components/RefreshButton.vue'
 import { MockCortexApiClient } from '@/api/mock/MockCortexApiClient'
 import type { MatrixEquipmentRow, AvailabilityBlock } from '@/api/contracts/availability'
 import CortexSkeleton from '@/design-system/components/states/CortexSkeleton.vue'

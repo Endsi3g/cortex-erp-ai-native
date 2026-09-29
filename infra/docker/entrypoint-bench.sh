@@ -88,8 +88,17 @@ if [ -d "${BENCH_DIR}/apps/cortex_rental" ]; then
         echo "Building Cortex Desk screens (Vite)..."
         (cd "${FRONTEND_DIR}" && npm ci --no-audit --no-fund && npm run build:desk) || echo "WARNING: Desk screens bundle not built; Cortex pages will show a build hint."
     fi
-    echo "Building cortex_rental frontend bundles..."
-    bench build --app cortex_rental || true
+    # `bench build --app cortex_rental` only compiles this app. Without the Frappe/ERPNext bundles
+    # (website.bundle.css, frappe-web.bundle.js, desk.bundle.*) the portal pages (/login, /me) render
+    # as unstyled HTML and the Desk does not start, so build every app when they are missing.
+    if ls "${SITES_DIR}"/assets/frappe/dist/css/website.bundle.*.css >/dev/null 2>&1 \
+        && ls "${SITES_DIR}"/assets/frappe/dist/js/desk.bundle.*.js >/dev/null 2>&1; then
+        echo "Building cortex_rental frontend bundles..."
+        bench build --app cortex_rental || true
+    else
+        echo "Frappe/ERPNext bundles missing: building all apps..."
+        bench build || echo "WARNING: bench build failed; portal and Desk pages will be unstyled."
+    fi
 fi
 
 # 6. Ensure Procfile exists
