@@ -47,7 +47,7 @@ if frappe:
             "cortex:telemetry:admin": bool(set(roles) & {"System Manager", "Administrator"}),
             "cortex:copilot:access": frappe.has_permission("Cortex Chat Session", "create"),
             "cortex:policies:view": frappe.has_permission("Rental Pricing Rule", "read"),
-            "cortex:team:manage": bool(set(roles) & {"System Manager", "Administrator"}),
+            "cortex:team:manage": bool(set(roles) & {"System Manager", "Administrator", "Cortex System Manager"}),
             "cortex:migration:run": bool(set(roles) & {"System Manager", "Administrator"}),
             "cortex:audit:view": frappe.has_permission("Audit Event", "read"),
         }

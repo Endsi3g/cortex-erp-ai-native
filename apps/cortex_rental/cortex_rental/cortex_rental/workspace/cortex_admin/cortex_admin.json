@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Admin</b></span>\", \"col\": 12}}, {\"id\": \"sc_setup\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Configuration de l'entreprise\", \"col\": 3}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Règles tarifaires\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal d'audit\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Import de données\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Société\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Utilisateurs\", \"col\": 3}}]",
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Admin</b></span>\", \"col\": 12}}, {\"id\": \"sc_setup\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Configuration de l'entreprise\", \"col\": 3}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Règles tarifaires\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal d'audit\", \"col\": 3}}, {\"id\": \"sc_team\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Équipe et rôles\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Import et migration\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Société\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Utilisateurs\", \"col\": 3}}]",
  "creation": "2026-09-28 20:30:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -42,24 +42,21 @@
   },
   {
    "label": "Règles tarifaires",
-   "link_to": "Rental Pricing Rule",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
+   "link_to": "cortex-rental-policy",
+   "type": "Page",
+   "color": "Grey"
   },
   {
    "label": "Journal d'audit",
-   "link_to": "Audit Event",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
+   "link_to": "cortex-audit-event",
+   "type": "Page",
+   "color": "Grey"
   },
   {
-   "label": "Import de données",
-   "link_to": "Data Import",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
+   "label": "Import et migration",
+   "link_to": "cortex-import",
+   "type": "Page",
+   "color": "Grey"
   },
   {
    "label": "Société",
@@ -74,6 +71,13 @@
    "type": "DocType",
    "color": "Grey",
    "doc_view": "List"
+  },
+  {
+   "label": "Équipe et rôles",
+   "link_to": "cortex-team",
+   "type": "Page",
+   "color": "Grey",
+   "name": null
   }
  ],
  "title": "Cortex Admin",

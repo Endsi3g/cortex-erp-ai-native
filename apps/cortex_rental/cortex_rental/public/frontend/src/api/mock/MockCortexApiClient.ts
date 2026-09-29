@@ -89,7 +89,12 @@ import type {
   OnboardingState,
   OnboardingChoices,
   CompanyProfileInput,
-  OnboardingWriteResult
+  OnboardingWriteResult,
+  PricingState,
+  PricingRuleInput,
+  TeamState,
+  ImportsState,
+  AdminWriteResult
 } from '../contracts'
 import { MockStateStore } from './MockStateStore'
 import { LatencySimulator } from './LatencySimulator'
@@ -1285,6 +1290,82 @@ export class MockCortexApiClient implements CortexApiClient {
   async finishOnboarding(): Promise<OnboardingWriteResult> {
     this.onboardingMock.status = 'Completed'
     return { ok: true, state: { ...this.onboardingMock } }
+  }
+
+
+  // 3d. Administration: in-memory, labelled mock state (the server owns the real rules).
+  private pricingMock: PricingState = {
+    provenance: 'mock',
+    last_synced_at: new Date().toISOString(),
+    company: 'Démonstration',
+    rules: [{ name: 'RULE-1', rule_name: '7 jours = 3 jours facturés', calendar_days: 7, billable_days: 3, is_active: true, description: 'Règle par défaut.' }],
+    reference_curve: [{ calendar_days: 1, billable_days: 1 }, { calendar_days: 7, billable_days: 3 }, { calendar_days: 30, billable_days: 10 }],
+    can_edit: true
+  }
+
+  private teamMock: TeamState = {
+    provenance: 'mock',
+    last_synced_at: new Date().toISOString(),
+    company: 'Démonstration',
+    members: [
+      { email: 'proprietaire@example.test', full_name: 'Propriétaire', enabled: true, signed_in: true, last_login: null, is_owner: true, is_you: true, preset: null },
+      { email: 'comptoir@example.test', full_name: 'Personne au comptoir', enabled: true, signed_in: false, last_login: null, is_owner: false, is_you: false, preset: 'counter' }
+    ],
+    presets: [
+      { key: 'manager', label: 'Gestionnaire', description: 'Location, disponibilité, approbations et consignation.' },
+      { key: 'counter', label: 'Comptoir', description: 'Sorties et retours du matériel.' }
+    ],
+    can_manage: true
+  }
+
+  async getPricing(): Promise<PricingState> {
+    await LatencySimulator.inject('standard')
+    return { ...this.pricingMock, rules: [...this.pricingMock.rules] }
+  }
+
+  async savePricingRule(input: PricingRuleInput): Promise<AdminWriteResult<PricingState>> {
+    await LatencySimulator.inject('standard')
+    if (input.billable_days > input.calendar_days) return { ok: false, code: 'billable_exceeds_calendar', message: 'Une règle ne peut pas facturer plus de jours que la durée réelle de location.' }
+    if (input.is_active && this.pricingMock.rules.some((r) => r.is_active && r.calendar_days === input.calendar_days && r.name !== input.name)) return { ok: false, code: 'duplicate_rule', message: `Une règle active existe déjà pour ${input.calendar_days} jours civils.` }
+    const rule = { name: input.name || `RULE-${this.pricingMock.rules.length + 1}`, rule_name: input.rule_name, calendar_days: input.calendar_days, billable_days: input.billable_days, is_active: input.is_active, description: input.description ?? '' }
+    this.pricingMock.rules = input.name ? this.pricingMock.rules.map((r) => (r.name === input.name ? rule : r)) : [...this.pricingMock.rules, rule]
+    return { ok: true, state: await this.getPricing() }
+  }
+
+  async setPricingRuleActive(name: string, active: boolean): Promise<AdminWriteResult<PricingState>> {
+    await LatencySimulator.inject('standard')
+    this.pricingMock.rules = this.pricingMock.rules.map((r) => (r.name === name ? { ...r, is_active: active } : r))
+    return { ok: true, state: await this.getPricing() }
+  }
+
+  async getTeam(): Promise<TeamState> {
+    await LatencySimulator.inject('standard')
+    return { ...this.teamMock, members: this.teamMock.members.map((m) => ({ ...m })) }
+  }
+
+  async setMemberPreset(email: string, preset: string): Promise<AdminWriteResult<TeamState>> {
+    await LatencySimulator.inject('standard')
+    this.teamMock.members = this.teamMock.members.map((m) => (m.email === email && !m.is_owner ? { ...m, preset } : m))
+    return { ok: true, state: await this.getTeam() }
+  }
+
+  async setMemberEnabled(email: string, enabled: boolean): Promise<AdminWriteResult<TeamState>> {
+    await LatencySimulator.inject('standard')
+    const target = this.teamMock.members.find((m) => m.email === email)
+    if (target?.is_you) return { ok: false, code: 'self_locked', message: 'Vous ne pouvez pas désactiver votre propre compte.' }
+    this.teamMock.members = this.teamMock.members.map((m) => (m.email === email ? { ...m, enabled } : m))
+    return { ok: true, state: await this.getTeam() }
+  }
+
+  async getImports(): Promise<ImportsState> {
+    await LatencySimulator.inject('standard')
+    return {
+      provenance: 'mock',
+      last_synced_at: new Date().toISOString(),
+      company: 'Démonstration',
+      targets: [{ doctype: 'Item', label: 'Équipement (articles)', description: 'Catalogue de location : code, nom, groupe, prix.', url: '/app/data-import/new?reference_doctype=Item' }],
+      history: []
+    }
   }
 
   // 4. Consignment & Owner Statements (Strict Anti-PII Guarantee)

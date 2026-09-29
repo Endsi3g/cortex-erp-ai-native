@@ -1,0 +1,36 @@
+{
+ "content": null,
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "module": "Cortex Rental",
+ "name": "cortex-rental-policy",
+ "owner": "Administrator",
+ "page_name": "Cortex Rental Policy",
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Cortex System Manager"
+  },
+  {
+   "role": "Pricing Manager"
+  },
+  {
+   "role": "Rental Manager"
+  },
+  {
+   "role": "Rental Operator"
+  },
+  {
+   "role": "Cortex Finance Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Règles tarifaires"
+}

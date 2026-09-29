@@ -90,7 +90,12 @@ import type {
   OnboardingState,
   OnboardingChoices,
   CompanyProfileInput,
-  OnboardingWriteResult
+  OnboardingWriteResult,
+  PricingState,
+  PricingRuleInput,
+  TeamState,
+  ImportsState,
+  AdminWriteResult
 } from '../contracts'
 import { HttpClient, CortexUnavailableError } from './httpClient'
 import { generateIdempotencyKey } from '@/utils/idempotency'
@@ -325,6 +330,35 @@ export class HttpCortexApiClient implements CortexApiClient {
 
   async finishOnboarding(): Promise<OnboardingWriteResult> {
     return unwrapFrappe(await this.http.post<FrappeResult<OnboardingWriteResult>>('/cortex_rental.api.v1.onboarding.finish_onboarding', {}))
+  }
+
+  // 3d. Administration
+  async getPricing(): Promise<PricingState> {
+    return unwrapFrappe(await this.http.get<FrappeResult<PricingState>>('/cortex_rental.api.v1.administration.get_pricing'))
+  }
+
+  async savePricingRule(input: PricingRuleInput): Promise<AdminWriteResult<PricingState>> {
+    return unwrapFrappe(await this.http.post<FrappeResult<AdminWriteResult<PricingState>>>('/cortex_rental.api.v1.administration.save_pricing_rule', { ...input, is_active: input.is_active ? 1 : 0 }))
+  }
+
+  async setPricingRuleActive(name: string, active: boolean): Promise<AdminWriteResult<PricingState>> {
+    return unwrapFrappe(await this.http.post<FrappeResult<AdminWriteResult<PricingState>>>('/cortex_rental.api.v1.administration.set_pricing_rule_active', { name, active: active ? 1 : 0 }))
+  }
+
+  async getTeam(): Promise<TeamState> {
+    return unwrapFrappe(await this.http.get<FrappeResult<TeamState>>('/cortex_rental.api.v1.administration.get_team'))
+  }
+
+  async setMemberPreset(email: string, preset: string): Promise<AdminWriteResult<TeamState>> {
+    return unwrapFrappe(await this.http.post<FrappeResult<AdminWriteResult<TeamState>>>('/cortex_rental.api.v1.administration.set_member_preset', { email, preset }))
+  }
+
+  async setMemberEnabled(email: string, enabled: boolean): Promise<AdminWriteResult<TeamState>> {
+    return unwrapFrappe(await this.http.post<FrappeResult<AdminWriteResult<TeamState>>>('/cortex_rental.api.v1.administration.set_member_enabled', { email, enabled: enabled ? 1 : 0 }))
+  }
+
+  async getImports(): Promise<ImportsState> {
+    return unwrapFrappe(await this.http.get<FrappeResult<ImportsState>>('/cortex_rental.api.v1.administration.get_imports'))
   }
 
   // 4. Consignment

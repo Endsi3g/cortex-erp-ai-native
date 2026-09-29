@@ -88,7 +88,12 @@ import type {
   OnboardingState,
   OnboardingChoices,
   CompanyProfileInput,
-  OnboardingWriteResult
+  OnboardingWriteResult,
+  PricingState,
+  PricingRuleInput,
+  TeamState,
+  ImportsState,
+  AdminWriteResult
 } from './contracts'
 
 export interface CortexApiClient {
@@ -134,6 +139,15 @@ export interface CortexApiClient {
   inviteTeamMember(input: { email: string; full_name: string; preset: string }): Promise<OnboardingWriteResult>
   completeOnboardingStep(step: string): Promise<OnboardingWriteResult>
   finishOnboarding(): Promise<OnboardingWriteResult>
+
+  // 3d. Administration (pricing rules, team and roles, imports overview)
+  getPricing(): Promise<PricingState>
+  savePricingRule(input: PricingRuleInput): Promise<AdminWriteResult<PricingState>>
+  setPricingRuleActive(name: string, active: boolean): Promise<AdminWriteResult<PricingState>>
+  getTeam(): Promise<TeamState>
+  setMemberPreset(email: string, preset: string): Promise<AdminWriteResult<TeamState>>
+  setMemberEnabled(email: string, enabled: boolean): Promise<AdminWriteResult<TeamState>>
+  getImports(): Promise<ImportsState>
 
   // 4. Consignment & Owner Statements (Anti-PII Leakage)
   listOwners(input: ListOwnersInput): Promise<ListOwnersResponse>
