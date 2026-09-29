@@ -186,9 +186,13 @@ body .cx-auth.cx-auth .password-field {
 
 body .cx-auth.cx-auth .field-icon {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 14px !important;
+  bottom: auto !important;
+  left: 14px !important;
+  width: 16px;
+  height: 16px;
   color: var(--muted-foreground);
+  pointer-events: none;
   stroke: currentColor;
 }
 
@@ -296,7 +300,8 @@ body .cx-auth.cx-auth .login-divider::after {
   content: '';
 }
 
-body .cx-auth.cx-auth .login-button-wrapper + .login-button-wrapper {
+body .cx-auth.cx-auth .login-button-wrapper + .login-button-wrapper,
+body .cx-auth.cx-auth .social-login-buttons + .social-login-buttons {
   margin-top: 12px;
 }
 

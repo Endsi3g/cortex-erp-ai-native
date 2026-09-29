@@ -62,6 +62,11 @@ class TestLoginTemplate(unittest.TestCase):
             self.assertNotIn("ERPNext", text)
         self.assertNotIn("testimonial", self.html.lower())
 
+    def test_social_sign_in_comes_before_the_password_form(self):
+        first_social = self.html.index('class="social-logins')
+        first_form = self.html.index("{{ email_login_body() }}")
+        self.assertLess(first_social, first_form)
+
     def test_inputs_have_visible_labels(self):
         for field in ("login_email", "login_password"):
             self.assertRegex(self.html, rf'<label[^>]*for="{field}"')
@@ -75,6 +80,10 @@ class TestLoginStyles(unittest.TestCase):
         for family in ("Plus Jakarta", "Lora", "IBM Plex"):
             self.assertNotIn(family, self.css)
         self.assertTrue(os.path.exists(os.path.join(APP_DIR, "public", "fonts", "Inter.var.woff2")))
+
+    def test_field_icons_are_pinned_against_frappe_rules(self):
+        block = self.css[self.css.index(".field-icon {") :].split("}", 1)[0]
+        self.assertIn("top: 14px !important", block)
 
     def test_dark_and_adaptive_rules_exist(self):
         self.assertIn("prefers-color-scheme: dark", self.css)
