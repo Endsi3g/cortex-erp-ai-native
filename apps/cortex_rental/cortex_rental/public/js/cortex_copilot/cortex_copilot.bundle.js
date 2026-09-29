@@ -5,13 +5,13 @@
 // Page's own .bundle.js is — see docs/design-system.md's "packaging"
 // note and CHANGELOG.md, ninth wave).
 //
-// frappe.ready() is the real, documented way to defer a global script
-// until the Desk shell (frappe.boot, frappe.session, etc.) is actually
-// up — not just until the DOM parses.
+// `frappe.ready` only exists on website pages, not in the Desk (it threw "frappe.ready is not a
+// function" and the launcher never mounted). The Desk triggers `startup` on `document` once
+// frappe.boot and frappe.session are set, so defer to that.
 import { createApp } from "vue";
 import CortexCopilotPanel from "./CortexCopilotPanel.vue";
 
-frappe.ready(function () {
+function mountCopilot() {
 	if (frappe.session.user === "Guest") return;
 
 	// Purely a UX nicety — don't show the launcher to an identity that
@@ -40,4 +40,10 @@ frappe.ready(function () {
 	const app = createApp(CortexCopilotPanel, { mode: "floating" });
 	app.mount(mountPoint);
 	frappe.cortex_copilot_app = app;
-});
+}
+
+if (frappe.boot && frappe.session && frappe.session.user) {
+	mountCopilot();
+} else {
+	$(document).on("startup", mountCopilot);
+}

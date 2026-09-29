@@ -5,19 +5,25 @@ export const EquipmentItemSchema = ProvenanceMetaSchema.extend({
   item_code: z.string(),
   item_name: z.string(),
   category: z.string(),
-  brand: z.string(),
+  // Not held by the ERP for every item: absent means "non fourni", never an estimate.
+  brand: z.string().optional(),
   daily_rate: z.number(),
-  weekly_rate: z.number(),
-  monthly_rate: z.number(),
-  currency: z.literal('CAD'),
+  weekly_rate: z.number().optional(),
+  monthly_rate: z.number().optional(),
+  currency: z.string(),
   is_serialized: z.boolean(),
   total_fleet_quantity: z.number(),
   available_quantity: z.number(),
   maintenance_quantity: z.number(),
   rented_quantity: z.number(),
   required_accessories: z.array(z.string()),
-  optional_accessories: z.array(z.string()),
-  image_url: z.string().optional()
+  optional_accessories: z.array(z.string()).optional(),
+  image_url: z.string().optional(),
+  serials: z.array(z.object({
+    serial_number: z.string(),
+    status: z.enum(['Available', 'Reserved', 'Checked Out', 'Quarantine', 'Repair', 'Missing', 'Decommissioned']),
+    warehouse: z.string().optional()
+  })).optional()
 })
 
 export type EquipmentItem = z.infer<typeof EquipmentItemSchema>
@@ -27,8 +33,8 @@ export const SerialNumberItemSchema = ProvenanceMetaSchema.extend({
   item_code: z.string(),
   item_name: z.string(),
   status: z.enum(['Available', 'Reserved', 'Checked Out', 'Quarantine', 'Repair', 'Missing', 'Decommissioned']),
-  current_location: z.string(),
-  warehouse: z.string(),
+  current_location: z.string().optional(),
+  warehouse: z.string().optional(),
   is_consigned: z.boolean(),
   owner_id: z.string().optional(),
   owner_name: z.string().optional(),
@@ -43,12 +49,12 @@ export const KitPackageSchema = ProvenanceMetaSchema.extend({
   kit_code: z.string(),
   kit_name: z.string(),
   category: z.string(),
-  bundle_daily_rate: z.number(),
+  bundle_daily_rate: z.number().optional(),
   components: z.array(z.object({
     item_code: z.string(),
     item_name: z.string(),
     quantity: z.number(),
-    is_mandatory: z.boolean()
+    is_mandatory: z.boolean().optional()
   }))
 })
 

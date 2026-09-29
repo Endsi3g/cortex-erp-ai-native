@@ -81,9 +81,10 @@ import type {
   CreateUploadIntentInput,
   UploadIntentResponse,
   RegisterEvidenceInput,
-  MutationResponse
+  MutationResponse,
+  OperationsOverviewResponse
 } from '../contracts'
-import { HttpClient } from './httpClient'
+import { HttpClient, CortexUnavailableError } from './httpClient'
 import { generateIdempotencyKey } from '@/utils/idempotency'
 
 export class HttpCortexApiClient implements CortexApiClient {
@@ -91,6 +92,11 @@ export class HttpCortexApiClient implements CortexApiClient {
 
   constructor(http?: HttpClient) {
     this.http = http || new HttpClient()
+  }
+
+  // 0. Operations cockpit
+  async getOperationsOverview(): Promise<OperationsOverviewResponse> {
+    return unwrapFrappe(await this.http.get<FrappeResult<OperationsOverviewResponse>>('/cortex_rental.api.v1.operations.get_operations_overview'))
   }
 
   // 1. Availability
@@ -277,19 +283,19 @@ export class HttpCortexApiClient implements CortexApiClient {
 
   // 4. Consignment
   async listOwners(input: ListOwnersInput): Promise<ListOwnersResponse> {
-    return this.http.get<ListOwnersResponse>('/consignment/owners', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ListOwnersResponse>>('/cortex_rental.api.v1.consignment.list_owners', input))
   }
 
   async getConsignmentDashboard(input: ConsignmentDashboardInput): Promise<ConsignmentDashboardResponse> {
-    return this.http.get<ConsignmentDashboardResponse>('/consignment/dashboard', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ConsignmentDashboardResponse>>('/cortex_rental.api.v1.consignment.get_consignment_dashboard', input))
   }
 
   async getOwnerStatement(input: OwnerStatementInput): Promise<OwnerStatementResponse> {
-    return this.http.get<OwnerStatementResponse>(`/consignment/statement/${input.owner_id}/${input.period}`)
+    return unwrapFrappe(await this.http.get<FrappeResult<OwnerStatementResponse>>('/cortex_rental.api.v1.consignment.get_owner_statement', input))
   }
 
-  async requestOwnerStatementExport(input: OwnerStatementExportInput): Promise<MutationResponse> {
-    return this.http.post<MutationResponse>('/consignment/export_statement', input)
+  async requestOwnerStatementExport(_input: OwnerStatementExportInput): Promise<MutationResponse> {
+    throw new CortexUnavailableError("L'export du relevé propriétaire (PDF/CSV) n'est pas encore disponible côté serveur.")
   }
 
   // 5. Approvals
@@ -315,86 +321,89 @@ export class HttpCortexApiClient implements CortexApiClient {
 
   // 6. Inbound & Telemetry
   async listInboundRequests(input: ListInboundRequestsInput): Promise<ListInboundRequestsResponse> {
-    return this.http.get<ListInboundRequestsResponse>('/intelligence/inbound', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ListInboundRequestsResponse>>('/cortex_rental.api.v1.intelligence.list_inbound_requests', input))
   }
 
   async getInboundRequest(input: GetInboundRequestInput): Promise<GetInboundRequestResponse> {
-    return this.http.get<GetInboundRequestResponse>(`/intelligence/inbound/${input.id}`)
+    return unwrapFrappe(await this.http.get<FrappeResult<GetInboundRequestResponse>>('/cortex_rental.api.v1.intelligence.get_inbound_request', { id: input.id }))
   }
 
   async listAiDrafts(input: ListAiDraftsInput): Promise<ListAiDraftsResponse> {
-    return this.http.get<ListAiDraftsResponse>('/intelligence/drafts', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ListAiDraftsResponse>>('/cortex_rental.api.v1.intelligence.list_ai_drafts', input))
   }
 
   async getAgentActivity(input: GetAgentActivityInput): Promise<AgentActivityResponse> {
-    return this.http.get<AgentActivityResponse>('/intelligence/activity', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<AgentActivityResponse>>('/cortex_rental.api.v1.intelligence.get_agent_activity', input))
   }
 
-  // 7. Copilot
-  async createCopilotSession(input: CreateCopilotSessionInput): Promise<CreateCopilotSessionResponse> {
-    return this.http.post<CreateCopilotSessionResponse>('/copilot/session', input)
+  // 7. Copilot — served by the Desk Assistant page, which talks to cortex_rental.api.v1.chat directly.
+  async createCopilotSession(_input: CreateCopilotSessionInput): Promise<CreateCopilotSessionResponse> {
+    throw new CortexUnavailableError("L'assistant Cortex se trouve dans la page Assistant du Desk (cortex_rental.api.v1.chat).")
   }
 
-  async sendCopilotMessage(input: SendCopilotMessageInput): Promise<SendCopilotMessageResponse> {
-    return this.http.post<SendCopilotMessageResponse>(`/copilot/session/${input.session_id}/message`, input)
+  async sendCopilotMessage(_input: SendCopilotMessageInput): Promise<SendCopilotMessageResponse> {
+    throw new CortexUnavailableError("L'assistant Cortex se trouve dans la page Assistant du Desk (cortex_rental.api.v1.chat).")
   }
 
-  async getCopilotSession(input: GetCopilotSessionInput): Promise<GetCopilotSessionResponse> {
-    return this.http.get<GetCopilotSessionResponse>(`/copilot/session/${input.session_id}`)
+  async getCopilotSession(_input: GetCopilotSessionInput): Promise<GetCopilotSessionResponse> {
+    throw new CortexUnavailableError("L'assistant Cortex se trouve dans la page Assistant du Desk (cortex_rental.api.v1.chat).")
   }
 
-  async listCopilotSessions(input: ListCopilotSessionsInput): Promise<ListCopilotSessionsResponse> {
-    return this.http.get<ListCopilotSessionsResponse>('/copilot/sessions', input)
+  async listCopilotSessions(_input: ListCopilotSessionsInput): Promise<ListCopilotSessionsResponse> {
+    throw new CortexUnavailableError("L'assistant Cortex se trouve dans la page Assistant du Desk (cortex_rental.api.v1.chat).")
   }
 
-  async pinCopilotContext(input: PinCopilotContextInput): Promise<MutationResponse> {
-    return this.http.post<MutationResponse>(`/copilot/session/${input.session_id}/pin`, input)
+  async pinCopilotContext(_input: PinCopilotContextInput): Promise<MutationResponse> {
+    throw new CortexUnavailableError("L'assistant Cortex se trouve dans la page Assistant du Desk (cortex_rental.api.v1.chat).")
   }
 
-  async clearCopilotContext(input: ClearCopilotContextInput): Promise<MutationResponse> {
-    return this.http.post<MutationResponse>(`/copilot/session/${input.session_id}/clear`, input)
+  async clearCopilotContext(_input: ClearCopilotContextInput): Promise<MutationResponse> {
+    throw new CortexUnavailableError("L'assistant Cortex se trouve dans la page Assistant du Desk (cortex_rental.api.v1.chat).")
   }
 
   // 8. Catalog, Fleet, Policies, Audit & Migration
   async listEquipment(input: ListEquipmentInput): Promise<ListEquipmentResponse> {
-    return this.http.get<ListEquipmentResponse>('/catalog/equipment', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ListEquipmentResponse>>('/cortex_rental.api.v1.catalog.list_equipment', input))
   }
 
   async getEquipment(input: GetEquipmentInput): Promise<GetEquipmentResponse> {
-    return this.http.get<GetEquipmentResponse>(`/catalog/equipment/${input.item_code}`)
+    return unwrapFrappe(await this.http.get<FrappeResult<GetEquipmentResponse>>('/cortex_rental.api.v1.catalog.get_equipment', { item_code: input.item_code }))
   }
 
   async getSerial(input: GetSerialInput): Promise<GetSerialResponse> {
-    return this.http.get<GetSerialResponse>(`/catalog/serial/${input.serial_number}`)
+    return unwrapFrappe(await this.http.get<FrappeResult<GetSerialResponse>>('/cortex_rental.api.v1.catalog.get_serial', { serial_number: input.serial_number }))
   }
 
   async listKits(input: ListKitsInput): Promise<ListKitsResponse> {
-    return this.http.get<ListKitsResponse>('/catalog/kits', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ListKitsResponse>>('/cortex_rental.api.v1.catalog.list_kits', input))
   }
 
-  async listRentalPolicies(input: ListRentalPoliciesInput): Promise<ListRentalPoliciesResponse> {
-    return this.http.get<ListRentalPoliciesResponse>('/policies', input)
+  // Administration screens are the native ERPNext list views (Rental Pricing Rule, Role Permission
+  // Manager, Data Import): the sidebar links there, so no Cortex read model exists for them.
+  async listRentalPolicies(_input: ListRentalPoliciesInput): Promise<ListRentalPoliciesResponse> {
+    throw new CortexUnavailableError('Les règles tarifaires se gèrent dans la liste native « Rental Pricing Rule ».')
   }
 
-  async getTeamRoles(input: GetTeamRolesInput): Promise<TeamRolesResponse> {
-    return this.http.get<TeamRolesResponse>('/team/roles', input)
+  async getTeamRoles(_input: GetTeamRolesInput): Promise<TeamRolesResponse> {
+    throw new CortexUnavailableError('Les rôles et accès se gèrent dans le gestionnaire de permissions ERPNext.')
   }
 
-  async listMigrationBatches(input: ListMigrationBatchesInput): Promise<MigrationBatchesResponse> {
-    return this.http.get<MigrationBatchesResponse>('/migration/batches', input)
+  async listMigrationBatches(_input: ListMigrationBatchesInput): Promise<MigrationBatchesResponse> {
+    throw new CortexUnavailableError("Les imports se gèrent dans « Data Import » d'ERPNext.")
   }
 
   async listAuditEvents(input: ListAuditEventsInput): Promise<ListAuditEventsResponse> {
-    return this.http.get<ListAuditEventsResponse>('/audit/events', input)
+    return unwrapFrappe(await this.http.get<FrappeResult<ListAuditEventsResponse>>('/cortex_rental.api.v1.intelligence.list_audit_events', input))
   }
 
-  // 9. Upload & Evidence
-  async createUploadIntent(input: CreateUploadIntentInput): Promise<UploadIntentResponse> {
-    return this.http.post<UploadIntentResponse>('/upload/intent', input)
+  // 9. Upload & Evidence — private file upload is not exposed by a Cortex endpoint yet;
+  // check-in damage evidence is submitted together with the check-in itself.
+  async createUploadIntent(_input: CreateUploadIntentInput): Promise<UploadIntentResponse> {
+    throw new CortexUnavailableError("Le téléversement de preuves n'est pas encore disponible côté serveur.")
   }
 
-  async registerEvidence(input: RegisterEvidenceInput): Promise<MutationResponse> {
-    return this.http.post<MutationResponse>('/upload/register_evidence', input)
+  async registerEvidence(_input: RegisterEvidenceInput): Promise<MutationResponse> {
+    throw new CortexUnavailableError("L'enregistrement de preuves n'est pas encore disponible côté serveur.")
   }
 }
 

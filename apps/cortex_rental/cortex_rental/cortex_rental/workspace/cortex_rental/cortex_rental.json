@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\": \"cxHdrMain\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Rental</b></span>\", \"col\": 12}}, {\"id\": \"cxHdrQuick\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\">Accès rapide</span>\", \"col\": 12}}, {\"id\": \"cxShAvail\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Disponibilité\", \"col\": 2}}, {\"id\": \"cxShNewTrx\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouvelle transaction\", \"col\": 2}}, {\"id\": \"cxShCheckin\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Check-in & Retours\", \"col\": 2}}, {\"id\": \"cxShTrx\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transactions\", \"col\": 2}}, {\"id\": \"cxShAppr\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Approbations\", \"col\": 2}}, {\"id\": \"cxShPnl\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"P&L Financier\", \"col\": 2}}, {\"id\": \"cxSpacer1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cxHdrCards\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Modules Métiers</b></span>\", \"col\": 12}}, {\"id\": \"cxCardOps\", \"type\": \"card\", \"data\": {\"card_name\": \"Opérations de Location\", \"col\": 4}}, {\"id\": \"cxCardParc\", \"type\": \"card\", \"data\": {\"card_name\": \"Parc & Consignation\", \"col\": 4}}, {\"id\": \"cxCardFin\", \"type\": \"card\", \"data\": {\"card_name\": \"Clients & Facturation\", \"col\": 4}}, {\"id\": \"cxCardIA\", \"type\": \"card\", \"data\": {\"card_name\": \"Supervision & Copilote IA\", \"col\": 4}}, {\"id\": \"cxCardAdmin\", \"type\": \"card\", \"data\": {\"card_name\": \"Société & Audit Immuable\", \"col\": 4}}]",
+ "content": "[{\"id\": \"cxHdrMain\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Rental</b></span>\", \"col\": 12}}, {\"id\": \"cxHdrQuick\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\">Accès rapide</span>\", \"col\": 12}}, {\"id\": \"cxShAvail\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Disponibilité\", \"col\": 2}}, {\"id\": \"cxShNewTrx\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouvelle transaction\", \"col\": 2}}, {\"id\": \"cxShCheckin\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Check-in & Retours\", \"col\": 2}}, {\"id\": \"cxShTrx\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transactions\", \"col\": 2}}, {\"id\": \"cxShAppr\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Approbations\", \"col\": 2}}, {\"id\": \"cxShPnl\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"P&L Financier\", \"col\": 2}}, {\"id\": \"cxShInbound\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Demandes entrantes\", \"col\": 2}}, {\"id\": \"cxSpacer1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cxHdrCards\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Modules Métiers</b></span>\", \"col\": 12}}, {\"id\": \"cxCardOps\", \"type\": \"card\", \"data\": {\"card_name\": \"Opérations de Location\", \"col\": 4}}, {\"id\": \"cxCardParc\", \"type\": \"card\", \"data\": {\"card_name\": \"Parc & Consignation\", \"col\": 4}}, {\"id\": \"cxCardFin\", \"type\": \"card\", \"data\": {\"card_name\": \"Clients & Facturation\", \"col\": 4}}, {\"id\": \"cxCardIA\", \"type\": \"card\", \"data\": {\"card_name\": \"Supervision & Copilote IA\", \"col\": 4}}, {\"id\": \"cxCardAdmin\", \"type\": \"card\", \"data\": {\"card_name\": \"Société & Audit Immuable\", \"col\": 4}}]",
  "creation": "2026-08-30 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -295,7 +295,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-08-30 00:00:00.000000",
+ "modified": "2026-09-28 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Cortex Rental",
  "name": "Cortex Rental",
@@ -374,7 +374,8 @@
    "type": "DocType",
    "color": "Yellow",
    "doc_view": "List",
-   "stats_filter": "{\"status\": \"Pending\"}"
+   "stats_filter": "[[\"Approval Request\", \"status\", \"=\", \"Pending\"]]",
+   "format": "{}"
   },
   {
    "label": "P&L Financier",
@@ -382,6 +383,15 @@
    "type": "Page",
    "color": "Green",
    "doc_view": ""
+  },
+  {
+   "label": "Demandes entrantes",
+   "link_to": "Cortex Inbound Request",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List",
+   "stats_filter": "[[\"Cortex Inbound Request\", \"status\", \"=\", \"Received\"]]",
+   "format": "{}"
   }
  ],
  "title": "Cortex Rental",

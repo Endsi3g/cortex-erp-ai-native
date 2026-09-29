@@ -1,0 +1,73 @@
+{
+ "charts": [],
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Admin</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Règles tarifaires\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal d'audit\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Import de données\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Société\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Utilisateurs\", \"col\": 3}}]",
+ "creation": "2026-09-28 20:30:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "octicon octicon-gear",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Cortex Admin",
+ "links": [],
+ "modified": "2026-09-28 20:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Cortex Rental",
+ "name": "Cortex Admin",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Cortex Rental",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Cortex System Manager"
+  }
+ ],
+ "sequence_id": 7.0,
+ "shortcuts": [
+  {
+   "label": "Règles tarifaires",
+   "link_to": "Rental Pricing Rule",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Journal d'audit",
+   "link_to": "Audit Event",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Import de données",
+   "link_to": "Data Import",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Société",
+   "link_to": "Company",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Utilisateurs",
+   "link_to": "User",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  }
+ ],
+ "title": "Cortex Admin",
+ "type": "Workspace"
+}

@@ -1,34 +1,86 @@
 <template>
-  <section class="mx-auto max-w-[1600px] space-y-4" data-test="screen-ai-audit">
-    <header class="flex flex-wrap items-end justify-between gap-3 border-b border-cortex-border pb-3">
-      <div><h1 class="text-xl font-semibold">AI Audit</h1><p class="mt-1 text-xs text-cortex-text-secondary">Historique des décisions, preuves et exécutions disponibles dans les journaux Cortex.</p></div>
-      <div class="flex items-center gap-2"><Button size="sm" variant="subtle" :loading="loading" @click="load">Actualiser</Button><Button size="sm" variant="subtle" @click="exportCsv">Exporter CSV</Button><Button size="sm" variant="solid" theme="green" @click="printReport">Exporter PDF</Button></div>
-    </header>
-    <div class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-cortex-border bg-white p-2.5 print:hidden">
-      <TabButtons v-model="viewMode" :buttons="modeButtons" aria-label="Type de détails d’audit" />
-      <div class="flex flex-wrap gap-2"><Select v-model="agentFilter" class="min-w-40" size="sm" variant="outline" aria-label="Filtrer par agent" :options="agentOptions" /><Select v-model="actionFilter" class="min-w-40" size="sm" variant="outline" aria-label="Filtrer par action" :options="actionOptions" /><TextInput v-model="dateFilter" type="date" size="sm" variant="outline" aria-label="Filtrer par date" /></div>
+  <div class="cx-page" data-test="screen-ai-audit">
+    <CortexPageHeader title="AI Audit" subtitle="Décisions, preuves et exécutions disponibles dans les journaux Cortex.">
+      <template #actions>
+        <RefreshButton :loading="loading" @refresh="load" />
+        <button type="button" class="cx-btn-soft" @click="exportCsv">Exporter CSV</button>
+        <button type="button" class="cx-btn-soft" @click="printReport">Imprimer / PDF</button>
+      </template>
+    </CortexPageHeader>
+
+    <div class="cx-filters print:hidden">
+      <FilterField label="Type de détails"><select v-model="viewMode" class="cx-field"><option v-for="mode in modes" :key="mode.value" :value="mode.value">{{ mode.label }}</option></select></FilterField>
+      <FilterField label="Agent ou acteur"><select v-model="agentFilter" class="cx-field"><option v-for="o in agentOptions" :key="o.value" :value="o.value">{{ o.label }}</option></select></FilterField>
+      <FilterField label="Action"><select v-model="actionFilter" class="cx-field"><option v-for="o in actionOptions" :key="o.value" :value="o.value">{{ o.label }}</option></select></FilterField>
+      <FilterField label="Date"><input v-model="dateFilter" type="date" class="cx-field" /></FilterField>
     </div>
-    <div v-if="error" class="rounded border border-red-200 bg-red-50 p-3 text-xs text-red-900" role="alert">{{ error }}</div>
-    <div class="overflow-hidden rounded-md border border-cortex-border bg-white">
-      <div class="flex items-center justify-between border-b border-cortex-border bg-cortex-surface-subtle/60 px-3 py-2 text-xs"><span>{{ filtered.length }} événement(s)</span><span class="text-[10px] text-cortex-text-muted">Les données sensibles sont masquées dans les détails.</span></div>
-      <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-left text-xs"><thead class="bg-white text-[10px] uppercase tracking-wide text-cortex-text-muted"><tr><th class="px-3 py-2">Date</th><th class="px-3 py-2">Agent / Acteur</th><th class="px-3 py-2">Action</th><th class="px-3 py-2">Entité</th><th class="px-3 py-2">Résultat</th><th class="px-3 py-2">Latence</th></tr></thead><tbody>
-          <tr v-for="row in filtered" :key="row.id" tabindex="0" class="cursor-pointer border-t border-cortex-border/70 hover:bg-cortex-surface-subtle/60 focus:bg-cortex-primary-50" @click="selected = selected?.id === row.id ? null : row" @keydown.enter="selected = selected?.id === row.id ? null : row" @keydown.space.prevent="selected = selected?.id === row.id ? null : row"><td class="whitespace-nowrap px-3 py-2.5">{{ formatDate(row.timestamp) }}</td><td class="px-3 py-2.5"><div class="font-medium">{{ row.actor }}</div><div class="text-[10px] text-cortex-text-muted">{{ row.actorId }}</div></td><td class="px-3 py-2.5 font-mono text-[11px]">{{ row.action }}</td><td class="px-3 py-2.5">{{ row.entity }}</td><td class="px-3 py-2.5"><Badge :theme="row.success ? 'green' : 'red'" variant="subtle">{{ row.success ? 'Réussi' : 'Échec / refus' }}</Badge></td><td class="px-3 py-2.5 font-mono">{{ row.latency ? `${row.latency} ms` : '—' }}</td></tr>
-          <tr v-if="!loading && filtered.length === 0"><td colspan="6" class="p-12 text-center text-xs text-cortex-text-muted">Aucun événement d’audit.</td></tr>
-        </tbody></table>
+
+    <div v-if="error" class="cx-notice" role="alert">{{ error }}</div>
+
+    <div class="cx-tablewrap">
+      <table class="cx-table">
+        <thead>
+          <tr><th scope="col" class="cx-rownum">#</th><th scope="col">Date</th><th scope="col">Agent / acteur</th><th scope="col">Action</th><th scope="col">Entité</th><th scope="col">Résultat</th><th scope="col" class="num">Latence</th></tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(row, index) in filtered"
+            :key="row.id"
+            tabindex="0"
+            class="cx-clickable"
+            :aria-selected="selected?.id === row.id"
+            @click="selected = selected?.id === row.id ? null : row"
+            @keydown.enter="selected = selected?.id === row.id ? null : row"
+            @keydown.space.prevent="selected = selected?.id === row.id ? null : row"
+          >
+            <td class="cx-rownum">{{ index + 1 }}</td>
+            <td class="whitespace-nowrap">{{ formatDate(row.timestamp) }}</td>
+            <td><div class="font-medium">{{ row.actor }}</div><div class="text-xs" style="color: var(--erp-muted)">{{ row.actorId }}</div></td>
+            <td class="font-mono text-xs">{{ row.action }}</td>
+            <td>{{ row.entity }}</td>
+            <td><span class="cx-tag" :class="row.success ? 'cx-tag--ok' : 'cx-tag--bad'">{{ row.success ? 'Réussi' : 'Échec / refus' }}</span></td>
+            <td class="num">{{ row.latency ? `${row.latency} ms` : '—' }}</td>
+          </tr>
+          <tr v-if="loading"><td colspan="7" class="cx-empty">Chargement du journal…</td></tr>
+          <tr v-else-if="filtered.length === 0"><td colspan="7" class="cx-empty"><strong>Aucun événement d’audit</strong>Aucun événement ne correspond à ces filtres.</td></tr>
+        </tbody>
+      </table>
+      <p class="cx-caption">{{ filtered.length }} événement(s). Les données sensibles sont masquées dans les détails.</p>
+    </div>
+
+    <section v-if="selected" class="cx-section" aria-label="Détail de l’événement d’audit">
+      <div class="flex items-start justify-between gap-3">
+        <div><h2 style="margin: 0">{{ selected.action }}</h2><p class="m-0 mt-1 text-xs" style="color: var(--erp-muted)">Request ID: <span class="font-mono">{{ selected.requestId }}</span></p></div>
+        <button type="button" class="cx-btn-soft cx-btn-icon print:hidden" aria-label="Fermer le détail" @click="selected = null">✕</button>
       </div>
-        <section v-if="selected" class="border-t border-cortex-border bg-[#fbfdfb] p-4" aria-label="Détail de l’événement d’audit"><div class="flex items-start justify-between"><div><h2 class="text-sm font-semibold">{{ selected.action }}</h2><p class="mt-1 text-[10px] text-cortex-text-muted">Request ID : <span class="font-mono">{{ selected.requestId }}</span></p></div><Button class="print:hidden" size="sm" variant="ghost" icon="x" aria-label="Fermer le détail" @click="selected = null" /></div><p v-if="selected.summary" class="mt-3 text-xs">{{ maskSensitive(selected.summary) }}</p><div v-if="selected.hash" class="mt-3 text-xs">Hash SHA-256 : <code class="break-all font-mono">{{ selected.hash }}</code></div><div v-if="selected.tools?.length" class="mt-4"><h3 class="mb-2 text-xs font-semibold">Outils appelés</h3><div v-for="tool in selected.tools" :key="tool.tool_name" class="grid grid-cols-[1fr_auto_auto] gap-4 border-t border-cortex-border py-2 text-xs"><span>{{ tool.tool_name }}</span><span>{{ tool.latency_ms }} ms</span><span>{{ tool.status }}</span></div></div><div v-if="viewMode === 'technical'" class="mt-4 grid grid-cols-2 gap-3 text-xs"><div><span class="text-cortex-text-muted">Modèle</span><p>{{ selected.model || 'Non fourni' }}</p></div><div><span class="text-cortex-text-muted">Tokens</span><p>{{ selected.tokens ?? 'Non fourni' }}</p></div><div><span class="text-cortex-text-muted">Coût</span><p>{{ selected.cost ?? 'Non fourni' }}</p></div><div><span class="text-cortex-text-muted">Policy</span><p>{{ selected.policy || 'Non fournie' }}</p></div></div></section>
-    </div>
-    <p class="text-[10px] text-cortex-text-muted">Les événements affichés proviennent du journal métier et de la télémétrie disponibles via Cortex API. Onyx doit transmettre son identifiant d’exécution et sa latence dans le même flux d’audit.</p>
-  </section>
+      <p v-if="selected.summary" class="mt-3 text-sm">{{ maskSensitive(selected.summary) }}</p>
+      <p v-if="selected.hash" class="mt-3 text-sm">Hash SHA-256: <code class="break-all font-mono">{{ selected.hash }}</code></p>
+      <div v-if="selected.tools?.length" class="mt-4 cx-tablewrap">
+        <table class="cx-table" aria-label="Outils appelés">
+          <thead><tr><th scope="col">Outil</th><th scope="col" class="num">Latence</th><th scope="col">Résultat</th></tr></thead>
+          <tbody><tr v-for="tool in selected.tools" :key="tool.tool_name"><td>{{ tool.tool_name }}</td><td class="num">{{ tool.latency_ms != null ? `${tool.latency_ms} ms` : '—' }}</td><td>{{ tool.status }}</td></tr></tbody>
+        </table>
+      </div>
+      <dl v-if="viewMode === 'technical'" class="cx-dl mt-4">
+        <div><dt>Modèle</dt><dd>{{ selected.model || 'Non fourni' }}</dd></div>
+        <div><dt>Tokens</dt><dd>{{ selected.tokens ?? 'Non fourni' }}</dd></div>
+        <div><dt>Coût</dt><dd>{{ selected.cost ?? 'Non fourni' }}</dd></div>
+        <div><dt>Politique</dt><dd>{{ selected.policy || 'Non fournie' }}</dd></div>
+      </dl>
+    </section>
+
+    <p class="cx-caption" style="padding-bottom: 24px">Les événements proviennent du journal métier et de la télémétrie disponibles via l’API Cortex. Onyx doit transmettre son identifiant d’exécution et sa latence dans le même flux d’audit.</p>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Badge, Button, Select, TabButtons, TextInput } from 'frappe-ui'
 import { getCortexApiClient } from '@/api'
 import type { AgentRunTelemetry, AuditEvent } from '@/api/contracts'
 import { useSessionStore } from '@/stores/session'
+import CortexPageHeader from '@/features/common/components/CortexPageHeader.vue'
+import FilterField from '@/features/common/components/FilterField.vue'
+import RefreshButton from '@/features/common/components/RefreshButton.vue'
 
 interface AuditRow { id: string; timestamp: string; actor: string; actorId: string; action: string; entity: string; success: boolean; latency?: number; requestId: string; summary?: string; hash?: string; model?: string; tokens?: number; cost?: string; policy?: string; tools?: AgentRunTelemetry['tools_invoked'] }
 const session = useSessionStore()
@@ -43,7 +95,6 @@ const dateFilter = ref('')
 const modes = [{ value: 'operational', label: 'Vue opérationnelle' }, { value: 'technical', label: 'Vue technique' }] as const
 const agents = computed(() => [...new Set(rows.value.map(row => row.actor))].sort())
 const actions = computed(() => [...new Set(rows.value.map(row => row.action))].sort())
-const modeButtons = modes.map(mode => ({ label: mode.label, value: mode.value, theme: 'gray' as const, variant: 'subtle' as const }))
 const agentOptions = computed(() => [{ label: 'Tous les agents', value: 'all' }, ...agents.value.map(agent => ({ label: agent, value: agent }))])
 const actionOptions = computed(() => [{ label: 'Toutes les actions', value: 'all' }, ...actions.value.map(action => ({ label: action, value: action }))])
 const filtered = computed(() => rows.value.filter(row => (agentFilter.value === 'all' || row.actor === agentFilter.value) && (actionFilter.value === 'all' || row.action === actionFilter.value) && (!dateFilter.value || row.timestamp.startsWith(dateFilter.value))))
@@ -51,9 +102,9 @@ async function load() {
   loading.value = true; error.value = ''
   try {
     const api = getCortexApiClient()
-    const [audit, activity] = await Promise.all([api.listAuditEvents({ page: 1, page_size: 100 }), api.getAgentActivity({ limit: 100 })])
+    const [audit, activity] = await Promise.all([api.listAuditEvents({ page: 1, page_size: 100 }), api.getAgentActivity({ limit: 100 }).catch(() => null)])
     const auditRows = audit.events.map((event: AuditEvent): AuditRow => ({ id: `audit:${event.id}`, timestamp: event.timestamp, actor: event.actor.actor_name || (event.actor.actor_type === 'Agent' ? 'Agent métier' : event.actor.actor_type), actorId: event.actor.actor_id, action: event.action, entity: `${event.entity_type} · ${event.entity_id}`, success: event.policy_execution?.passed !== false, requestId: event.request_id, summary: event.diff_summary, hash: event.evidence_hash_sha256, policy: event.policy_execution?.policy_name }))
-    const runRows = activity.runs.map((run: AgentRunTelemetry): AuditRow => ({ id: `run:${run.run_id}`, timestamp: run.started_at, actor: run.agent_name.replace(/^Cortex\s+/, ''), actorId: run.run_id, action: 'agent.run', entity: 'Exécution agent', success: run.status === 'completed', latency: run.duration_ms, requestId: run.run_id, model: run.model_used, tokens: run.prompt_tokens + run.completion_tokens, cost: `${run.total_cost_cad.toFixed(4)} CAD`, tools: run.tools_invoked }))
+    const runRows = (activity?.runs ?? []).map((run: AgentRunTelemetry): AuditRow => ({ id: `run:${run.run_id}`, timestamp: run.started_at, actor: run.agent_name.replace(/^Cortex\s+/, ''), actorId: run.run_id, action: 'agent.run', entity: 'Exécution agent', success: run.status === 'completed', latency: run.duration_ms, requestId: run.run_id, model: run.model_used, tokens: run.prompt_tokens != null && run.completion_tokens != null ? run.prompt_tokens + run.completion_tokens : undefined, cost: run.total_cost_cad != null ? `${run.total_cost_cad.toFixed(4)} CAD` : undefined, tools: run.tools_invoked }))
     rows.value = [...auditRows, ...runRows].sort((a, b) => b.timestamp.localeCompare(a.timestamp))
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Impossible de charger AI Audit.' }
   finally { loading.value = false }
@@ -77,11 +128,8 @@ onMounted(load)
 
 <style>
 @media print {
-  body { background: #fff !important; }
-  aside, nav, header button, .print\:hidden { display: none !important; }
-  main { overflow: visible !important; padding: 0 !important; }
-  section { max-width: none !important; }
-  table { font-size: 9pt !important; }
-  tr { break-inside: avoid; }
+  .cx-page .print\:hidden, .cx-page .cx-titlebar .cx-actions { display: none !important; }
+  .cx-table { font-size: 9pt !important; }
+  .cx-table tr { break-inside: avoid; }
 }
 </style>

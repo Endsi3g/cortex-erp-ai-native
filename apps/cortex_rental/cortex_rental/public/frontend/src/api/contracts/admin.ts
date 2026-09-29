@@ -102,6 +102,7 @@ export const AuditEventSchema = z.object({
   }).optional(),
   before_state: z.record(z.unknown()).optional(),
   after_state: z.record(z.unknown()).optional(),
+  policy_decision: z.record(z.unknown()).optional(),
   diff_summary: z.string().optional(),
   evidence_hash_sha256: z.string().optional()
 })

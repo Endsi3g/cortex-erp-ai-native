@@ -1,0 +1,5 @@
+[pre_model_sync]
+
+[post_model_sync]
+cortex_rental.patches.restore_erpnext_workspaces
+cortex_rental.patches.remove_shadowed_pages

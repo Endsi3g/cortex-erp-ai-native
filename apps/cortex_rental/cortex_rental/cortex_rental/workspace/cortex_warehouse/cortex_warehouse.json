@@ -1,0 +1,74 @@
+{
+ "charts": [],
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Warehouse</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Check-in et retours\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Retours et diagnostics\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Parc matériel\", \"col\": 3}}]",
+ "creation": "2026-09-28 20:30:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "octicon octicon-package",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Cortex Warehouse",
+ "links": [],
+ "modified": "2026-09-28 20:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Cortex Rental",
+ "name": "Cortex Warehouse",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Cortex Rental",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Cortex System Manager"
+  },
+  {
+   "role": "Cortex Operations Manager"
+  },
+  {
+   "role": "Cortex Counter Staff"
+  },
+  {
+   "role": "Cortex Inventory Manager"
+  },
+  {
+   "role": "Rental Manager"
+  },
+  {
+   "role": "Rental Operator"
+  }
+ ],
+ "sequence_id": 3.0,
+ "shortcuts": [
+  {
+   "label": "Check-in et retours",
+   "link_to": "cortex-checkin",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  },
+  {
+   "label": "Retours et diagnostics",
+   "link_to": "Cortex Check-In",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Parc matériel",
+   "link_to": "cortex-fleet",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  }
+ ],
+ "title": "Cortex Warehouse",
+ "type": "Workspace"
+}

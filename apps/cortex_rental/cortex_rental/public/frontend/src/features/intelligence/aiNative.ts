@@ -18,6 +18,9 @@ export interface AiWorkItem {
   source: InboundRequestItem | AiDraftItem | ApprovalRequestItem
 }
 
+// Confidence is only judged when the backend recorded one; null stays "non évaluée".
+const isLow = (confidence: number | null): boolean => confidence !== null && confidence < 0.7
+
 export function toAiWorkItem(source: InboundRequestItem | AiDraftItem | ApprovalRequestItem, type: AiWorkType): AiWorkItem {
   if (type === 'inbound') {
     const item = source as InboundRequestItem
@@ -30,8 +33,8 @@ export function toAiWorkItem(source: InboundRequestItem | AiDraftItem | Approval
         : `${item.extracted_fields.equipment_mentions?.length ?? 0} équipement(s) détecté(s)`,
       customer: item.extracted_fields.customer_name || item.sender_name || item.sender_email,
       agent: 'Intake documentaire',
-      state: confidence < 0.7 ? 'low_confidence' : item.status === 'new' ? 'needs_review' : item.status === 'converted' ? 'applied' : item.status === 'dismissed' ? 'dismissed' : 'ready',
-      confidence, priority: confidence < 0.7 ? 'high' : item.extracted_fields.missing_fields.length ? 'normal' : 'low',
+      state: isLow(confidence) ? 'low_confidence' : item.status === 'new' ? 'needs_review' : item.status === 'converted' ? 'applied' : item.status === 'dismissed' ? 'dismissed' : 'ready',
+      confidence, priority: isLow(confidence) ? 'high' : item.extracted_fields.missing_fields.length ? 'normal' : 'low',
       createdAt: item.received_at, source: item
     }
   }
@@ -45,8 +48,8 @@ export function toAiWorkItem(source: InboundRequestItem | AiDraftItem | Approval
       summary: item.draft_type,
       customer: String(item.proposed_payload.customer_name || item.target_name || 'Client à confirmer'),
       agent: 'Assistant devis',
-      state: confidence < 0.7 ? 'low_confidence' : item.status === 'accepted' ? 'validated' : item.status === 'rejected' ? 'rejected' : item.status === 'submitted_approval' ? 'needs_review' : 'ready',
-      confidence, priority: confidence < 0.7 ? 'high' : 'normal',
+      state: isLow(confidence) ? 'low_confidence' : item.status === 'accepted' ? 'validated' : item.status === 'rejected' ? 'rejected' : item.status === 'submitted_approval' ? 'needs_review' : 'ready',
+      confidence, priority: isLow(confidence) ? 'high' : 'normal',
       createdAt: item.created_at, source: item
     }
   }

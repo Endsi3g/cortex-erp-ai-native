@@ -6,13 +6,13 @@ app_email = "architecture@cortex.local"
 app_license = "proprietary"
 required_apps = ["erpnext"]
 
-# Branding — placeholder mark (see docs/design-system.md "Branding
-# Frappe"); `app_logo_url`/`app_icon`/`app_color` are real hooks.py keys
+# Branding — "Return ring" mark (docs/brand/logo-kit/GUIDELINES.md); the logo file is
+# the small-size cut. `app_logo_url`/`app_icon`/`app_color` are real hooks.py keys
 # (verified against docs.frappe.io/framework/user/en/python-api/hooks),
 # not guessed. This does not touch any core Frappe file.
 app_logo_url = "/assets/cortex_rental/images/cortex-logo.svg"
 app_icon = "octicon octicon-briefcase"
-app_color = "#059669"
+app_color = "#047857"
 
 # Includes in <head>
 # ------------------
@@ -29,12 +29,14 @@ app_include_css = [
 ]
 
 # Global floating Cortex Copilot launcher — mounted on every Desk page
-# via frappe.ready() (see cortex_copilot.bundle.js). Verified real
+# on the Desk `startup` event (see cortex_copilot.bundle.js). Verified real
 # pattern: app_include_js can reference a .bundle.js with ESM imports,
 # resolved by the same esbuild pipeline that compiles a Desk Page's own
 # .bundle.js (docs.frappe.io + frappe/frappe wiki, cross-checked before
 # use — see CHANGELOG.md, eighth wave).
 app_include_js = [
+    # Host for the Vue 3 + Frappe UI screens (built by Vite, see public/frontend and cortex_host.js).
+    "/assets/cortex_rental/js/cortex_host/cortex_host.js",
     "cortex_copilot.bundle.js",
 ]
 
@@ -89,12 +91,8 @@ fixtures = [
 ]
 
 # Lifecycle Hooks & Schema Prerequisites
+# Navigation lives in the Workspace JSON files (workspace/*), synced by `bench migrate`.
+# No boot-time database writes and no sidebar filtering: ERPNext workspaces stay visible.
 before_migrate = "cortex_rental.setup.before_migrate"
 after_migrate = "cortex_rental.setup.after_migrate"
 after_install = "cortex_rental.setup.after_install"
-boot_session = "cortex_rental.setup.boot_session"
-
-# Whitelisted Method Overrides
-override_whitelisted_methods = {
-    "frappe.desk.desktop.get_workspace_sidebar_items": "cortex_rental.setup.get_cortex_workspace_sidebar_items",
-}

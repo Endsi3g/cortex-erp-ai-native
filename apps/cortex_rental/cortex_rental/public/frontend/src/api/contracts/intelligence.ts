@@ -9,7 +9,8 @@ export const InboundRequestItemSchema = ProvenanceMetaSchema.extend({
   subject: z.string(),
   raw_body: z.string(),
   received_at: z.string(),
-  overall_confidence: z.number(),
+  // null = the extraction recorded no score: shown as "confiance non évaluée".
+  overall_confidence: z.number().nullable(),
   extracted_fields: z.object({
     customer_name: z.string().optional(),
     start_date: z.string().optional(),
@@ -17,8 +18,8 @@ export const InboundRequestItemSchema = ProvenanceMetaSchema.extend({
     equipment_mentions: z.array(z.object({
       raw_text: z.string(),
       matched_item_code: z.string().optional(),
-      quantity: z.number().optional(),
-      confidence: z.number()
+      quantity: z.number().nullable().optional(),
+      confidence: z.number().nullable().optional()
     })).optional(),
     missing_fields: z.array(z.string())
   }),
@@ -59,7 +60,7 @@ export const AiDraftItemSchema = ProvenanceMetaSchema.extend({
   ai_state: z.enum(['verified', 'extracted', 'proposed', 'needs_confirmation', 'approval_required', 'approved_executed', 'blocked_by_policy']),
   source_evidence_id: z.string(),
   source_evidence_type: z.string(),
-  confidence_score: z.number(),
+  confidence_score: z.number().nullable(),
   proposed_payload: z.record(z.unknown()),
   target_doctype: z.string(),
   target_name: z.string().optional(),
@@ -93,30 +94,31 @@ export type GetAgentActivityInput = z.input<typeof GetAgentActivityInputSchema>
 
 export const AgentRunTelemetrySchema = ProvenanceMetaSchema.extend({
   run_id: z.string(),
-  agent_name: z.enum(['Cortex Intake', 'Cortex Availability', 'Cortex Consignment', 'Cortex Copilot']),
+  agent_name: z.string(),
   started_at: z.string(),
-  ended_at: z.string(),
-  duration_ms: z.number(),
-  model_used: z.enum(['gemini-2.5-pro', 'claude-3-5-sonnet', 'gemini-2.5-flash']),
-  prompt_tokens: z.number(),
-  completion_tokens: z.number(),
-  total_cost_cad: z.number(),
+  ended_at: z.string().optional(),
+  duration_ms: z.number().optional(),
+  model_used: z.string().optional(),
+  prompt_tokens: z.number().optional(),
+  completion_tokens: z.number().optional(),
+  total_cost_cad: z.number().optional(),
   tools_invoked: z.array(z.object({
     tool_name: z.string(),
-    latency_ms: z.number(),
+    latency_ms: z.number().optional(),
     status: z.enum(['success', 'error']),
     error_message: z.string().optional()
   })),
-  status: z.enum(['completed', 'failed', 'gated'])
+  status: z.enum(['completed', 'failed', 'gated', 'running'])
 })
 
 export type AgentRunTelemetry = z.infer<typeof AgentRunTelemetrySchema>
 
 export const AgentActivityResponseSchema = ProvenanceMetaSchema.extend({
   runs: z.array(AgentRunTelemetrySchema),
-  total_runs_today: z.number(),
-  total_cost_today_cad: z.number(),
-  avg_latency_ms: z.number()
+  total_runs: z.number().optional(),
+  total_runs_today: z.number().optional(),
+  total_cost_today_cad: z.number().optional(),
+  avg_latency_ms: z.number().optional()
 })
 
 export type AgentActivityResponse = z.infer<typeof AgentActivityResponseSchema>

@@ -1,0 +1,106 @@
+{
+ "charts": [],
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Operations</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Opérations\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Disponibilité\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouveau devis\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Locations\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Demandes entrantes\", \"col\": 3}}, {\"id\": \"sc5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Clients et risque\", \"col\": 3}}]",
+ "creation": "2026-09-28 20:30:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "octicon octicon-calendar",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Cortex Operations",
+ "links": [],
+ "modified": "2026-09-28 20:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Cortex Rental",
+ "name": "Cortex Operations",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Cortex Rental",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Cortex System Manager"
+  },
+  {
+   "role": "Cortex Operations Manager"
+  },
+  {
+   "role": "Cortex Counter Staff"
+  },
+  {
+   "role": "Cortex Inventory Manager"
+  },
+  {
+   "role": "Cortex Finance Manager"
+  },
+  {
+   "role": "Cortex Consignment Manager"
+  },
+  {
+   "role": "Cortex Account Reviewer"
+  },
+  {
+   "role": "Rental Manager"
+  },
+  {
+   "role": "Rental Operator"
+  }
+ ],
+ "sequence_id": 2.0,
+ "shortcuts": [
+  {
+   "label": "Opérations",
+   "link_to": "cortex-ops-overview",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  },
+  {
+   "label": "Disponibilité",
+   "link_to": "cortex-availability",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  },
+  {
+   "label": "Nouveau devis",
+   "link_to": "cortex-transaction-composer",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  },
+  {
+   "label": "Locations",
+   "link_to": "cortex-rentals",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  },
+  {
+   "label": "Demandes entrantes",
+   "link_to": "Cortex Inbound Request",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List",
+   "stats_filter": "[[\"Cortex Inbound Request\", \"status\", \"=\", \"Received\"]]",
+   "format": "{}"
+  },
+  {
+   "label": "Clients et risque",
+   "link_to": "cortex-customers",
+   "type": "Page",
+   "color": "Grey",
+   "doc_view": ""
+  }
+ ],
+ "title": "Cortex Operations",
+ "type": "Workspace"
+}
