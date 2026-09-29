@@ -9,6 +9,8 @@ The login is **server-rendered Frappe website pages** (Jinja + one CSS file + on
 
 Everything lives in `apps/cortex_rental/cortex_rental/`.
 
+**Two implementations, one design.** `/login` is the server-rendered Frappe page (below); `/cortex/login` and its siblings are Vue + frappe-ui screens in `public/frontend/src/features/auth` (`AuthShell.vue`, `auth.css`, `authApi.ts`, `LoginView`, `SendLinkView`, `RequestAccessView`), served by the standalone app (`npm run build:spa`). Apply every visual or copy change to both, and re-run axe on both.
+
 ## Files
 
 | Concern | File |
@@ -26,7 +28,9 @@ Everything lives in `apps/cortex_rental/cortex_rental/`.
 
 Keep every Frappe element id and class the stock login relies on (`#login_email`, `#login_password`, `.for-login`, `.for-forgot`, `.for-email-login`, `.btn-login`, `.btn-login-option`, `.social-logins`). Frappe's `login.js` binds to them.
 
-## Design rules
+## Design rules (validated with the product owner)
+
+0. Composition: form width 480 px, block raised about 60 px above the geometric centre of the card, logo 12 px above the title, a 15 px lead under the title, back link `← Retour à la connexion` 20 px under the action, primary label `Se connecter`, reset/email-link action `Envoyer le lien`, social buttons `Continuer avec …` above the form, email field neutral until focused (no autofocus), brand panel with a decorative Sortie/Retour/Consignation illustration (no data).
 
 1. **Same font pairing and framework as the app.** Inter (variable) + the Cortex tokens (`--accent #066336`, ink `#171717`, radius `.5rem`). Do not introduce another font family or a second colour system in the default theme.
 2. **Light and dark.** Tokens are defined on `.cx-auth` and redefined under `@media (prefers-color-scheme: dark)`. Swap logos with `.app-logo--light` / `.app-logo--dark`. Social icons that are black (GitHub) are inverted in dark.

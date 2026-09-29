@@ -103,3 +103,20 @@ after_install = "cortex_rental.setup.after_install"
 # public/js/cortex_host/cortex_host.js). The boot hook never writes to the database.
 signup_form_template = ["cortex_rental.auth_hooks.signup_form_path"]
 boot_session = "cortex_rental.auth_hooks.boot_session"
+
+# Standalone Cortex app (Vue 3 + frappe-ui, built into www/cortex.html): every path under /cortex
+# loads the same page so a refresh on /cortex/rental/CR-TRX-2026-00001 still opens the app.
+website_route_rules = [
+    {"from_route": "/cortex/<path:app_path>", "to_route": "cortex"},
+]
+
+# Apps screen entry: with `default_app` set to cortex_rental (see auth_setup.ensure_default_app), Frappe sends a
+# signed-in user to the standalone Cortex app instead of the Desk. The Desk stays available under /app.
+add_to_apps_screen = [
+    {
+        "name": "cortex_rental",
+        "logo": "/assets/cortex_rental/images/cortex-logo.svg",
+        "title": "Cortex",
+        "route": "/cortex",
+    }
+]

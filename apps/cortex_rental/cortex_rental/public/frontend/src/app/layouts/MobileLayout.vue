@@ -22,6 +22,7 @@
         </button>
 
         <LocaleSwitcher />
+        <UserMenu compact />
       </div>
     </header>
 
@@ -55,6 +56,7 @@ import { useNavigationStore } from '@/stores/navigation'
 import CortexLogo from './components/CortexLogo.vue'
 import CompanySelector from './components/CompanySelector.vue'
 import LocaleSwitcher from './components/LocaleSwitcher.vue'
+import UserMenu from './components/UserMenu.vue'
 import AppBottomNav from './components/AppBottomNav.vue'
 import CopilotDrawer from './components/CopilotDrawer.vue'
 import UniversalSearch from './components/UniversalSearch.vue'

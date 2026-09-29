@@ -84,12 +84,11 @@ if frappe:
 
     @frappe.whitelist(methods=["GET"])
     def post_login_route():
-        """Where the browser goes right after a password is set: the setup assistant for an owner, else the Desk."""
+        """Where the browser goes right after a password is set: the setup assistant for an owner, else the app."""
         require_human_staff_role()
         return {"route": onboarding_route(frappe.session.user)}
 
 
 def onboarding_route(user: str) -> str:
-    from cortex_rental.auth_hooks import ONBOARDING_ROUTE
-
-    return ONBOARDING_ROUTE if onboarding.needs_onboarding(user) else "/app"
+    """Standalone app URLs (`/cortex/...`); the Desk pages remain reachable under /app."""
+    return "/cortex/company-setup" if onboarding.needs_onboarding(user) else "/cortex"

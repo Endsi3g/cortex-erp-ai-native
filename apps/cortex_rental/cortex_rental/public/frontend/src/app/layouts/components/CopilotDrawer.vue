@@ -59,7 +59,10 @@
     </div>
 
     <!-- Message Conversation List -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-3.5 bg-cortex-bg">
+    <div class="flex-1 overflow-y-auto p-4 space-y-3.5 bg-cortex-bg" role="log" aria-live="polite">
+      <p v-if="copilotStore.messages.length === 0" class="rounded-xl border border-cortex-border bg-cortex-surface p-3.5 text-xs text-cortex-text-muted">
+        Posez une question sur l'écran ouvert. Les réponses du modèle sont des suggestions : les faits métier restent ceux de Cortex et rien n'est exécuté sans votre confirmation.
+      </p>
       <div
         v-for="msg in copilotStore.messages"
         :key="msg.id"
@@ -116,7 +119,7 @@
       <!-- Streaming Indicator -->
       <div v-if="copilotStore.isStreaming" class="flex items-center gap-2 text-xs text-cortex-text-muted p-2">
         <Loader2 class="w-4 h-4 animate-spin text-cortex-primary-600" />
-        <span>Onyx analyse les politiques et l'inventaire...</span>
+        <span>L'assistant prépare une réponse…</span>
       </div>
     </div>
 
@@ -210,6 +213,7 @@ const getStateStyle = (state: CopilotCanonicalState) => {
       return 'bg-amber-50 border-amber-300 text-amber-900'
     case 'blocked_by_policy':
     case 'failed':
+    case 'service_unavailable':
       return 'bg-red-50 border-red-300 text-red-900'
     default:
       return 'bg-cortex-surface-subtle border-cortex-border text-cortex-text-primary'
@@ -232,6 +236,7 @@ const getStateIcon = (state: CopilotCanonicalState) => {
       return ShieldCheck
     case 'blocked_by_policy':
     case 'failed':
+    case 'service_unavailable':
       return ShieldAlert
     default:
       return Sparkles
@@ -254,6 +259,8 @@ const getStateLabel = (state: CopilotCanonicalState) => {
       return 'Approuvé et exécuté'
     case 'blocked_by_policy':
       return 'Bloqué par policy'
+    case 'service_unavailable':
+      return 'Service indisponible'
     default:
       return state
   }

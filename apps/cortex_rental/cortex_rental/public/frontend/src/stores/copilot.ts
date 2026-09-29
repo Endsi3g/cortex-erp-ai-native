@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { createAiChatSession, sendAiChatMessage } from '@/features/intelligence/aiChatGateway'
 
 export type CopilotCanonicalState =
   | 'idle'
@@ -43,7 +44,9 @@ export const useCopilotStore = defineStore('copilot', () => {
   const isOpen = ref<boolean>(false)
   const isStreaming = ref<boolean>(false)
   const canonicalState = ref<CopilotCanonicalState>('idle')
-  const unapprovedDraftCount = ref<number>(2)
+  // Drafts waiting for review are counted by the AI Inbox, not here: no invented badge.
+  const unapprovedDraftCount = ref<number>(0)
+  const chatSessionId = ref<string>('')
 
   const activeContext = ref<CopilotContext>({
     routeName: 'operations-overview',
@@ -52,15 +55,7 @@ export const useCopilotStore = defineStore('copilot', () => {
     entityId: null
   })
 
-  const messages = ref<CopilotMessage[]>([
-    {
-      id: 'msg-init',
-      sender: 'assistant',
-      content: 'Bonjour ! Je suis le copilote Cortex. Je surveille les conflits de disponibilité et prépare les soumissions.',
-      timestamp: new Date().toISOString(),
-      state: 'verified'
-    }
-  ])
+  const messages = ref<CopilotMessage[]>([])
 
   // Getters
   const hasActiveSuggestions = computed<boolean>(() => {
@@ -95,38 +90,45 @@ export const useCopilotStore = defineStore('copilot', () => {
     canonicalState.value = state
   }
 
+  const contextPage = () => (activeContext.value.routeName.startsWith('rental-detail') ? 'transaction' : 'dashboard')
+
+  // Real call to the authenticated chat gateway. The model answers with suggestions; nothing here executes an action.
   const sendMessage = async (text: string) => {
-    if (!text.trim()) return
+    const content = text.trim()
+    if (!content || isStreaming.value) return
 
-    const userMsgId = `usr-${Date.now()}`
-    messages.value.push({
-      id: userMsgId,
-      sender: 'user',
-      content: text,
-      timestamp: new Date().toISOString()
-    })
-
+    messages.value.push({ id: `usr-${Date.now()}`, sender: 'user', content, timestamp: new Date().toISOString() })
     isStreaming.value = true
     canonicalState.value = 'loading'
 
-    // Simulate backend response
-    setTimeout(() => {
-      isStreaming.value = false
-      canonicalState.value = 'proposed'
-      messages.value.push({
-        id: `ast-${Date.now()}`,
-        sender: 'assistant',
-        content: `Proposition pour [${activeContext.value.entityId || 'Opérations'}] : Analyse de l'inventaire effectuée. Aucun conflit de disponibilité détecté.`,
-        timestamp: new Date().toISOString(),
-        state: 'proposed',
-        confidenceScore: 0.96,
-        evidenceId: 'DEMO-AUD-002'
+    try {
+      const locale = (typeof localStorage !== 'undefined' && localStorage.getItem('cortex_locale') === 'en-CA' ? 'en-CA' : 'fr-CA') as 'fr-CA' | 'en-CA'
+      if (!chatSessionId.value) chatSessionId.value = await createAiChatSession(contextPage(), locale)
+      const reply = await sendAiChatMessage(content, chatSessionId.value, {
+        page: contextPage(),
+        locale,
+        active_doctype: activeContext.value.entityId ? 'Cortex Rental Transaction' : undefined,
+        active_document_name: activeContext.value.entityId ?? undefined
       })
-    }, 450)
+      canonicalState.value = 'proposed'
+      messages.value.push({ id: reply.assistantMessage.id, sender: 'assistant', content: reply.assistantMessage.content, timestamp: new Date().toISOString(), state: 'proposed' })
+    } catch (error) {
+      canonicalState.value = 'service_unavailable'
+      messages.value.push({
+        id: `err-${Date.now()}`,
+        sender: 'assistant',
+        content: error instanceof Error ? error.message : "L'assistant est temporairement indisponible.",
+        timestamp: new Date().toISOString(),
+        state: 'service_unavailable'
+      })
+    } finally {
+      isStreaming.value = false
+    }
   }
 
   const clearHistory = () => {
     messages.value = []
+    chatSessionId.value = ''
   }
 
   return {

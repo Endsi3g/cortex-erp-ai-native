@@ -8,12 +8,12 @@
     <RouterLink
       to="/app/cortex-operations"
       class="flex flex-col items-center justify-center min-w-[56px] min-h-[48px] px-1 py-1 rounded-xl transition-colors group focus:outline-none"
-      :class="isActiveRoute('/app/cortex-operations') ? 'text-cortex-primary-600 font-semibold' : 'text-cortex-text-muted hover:text-cortex-text-primary'"
+      :class="isTab('operations-overview') ? 'text-cortex-primary-600 font-semibold' : 'text-cortex-text-muted hover:text-cortex-text-primary'"
     >
       <div class="relative flex items-center justify-center w-6 h-6">
         <LayoutDashboard class="w-5 h-5" />
         <span
-          v-if="isActiveRoute('/app/cortex-operations')"
+          v-if="isTab('operations-overview')"
           class="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-cortex-primary-600"
         />
       </div>
@@ -26,12 +26,12 @@
     <RouterLink
       to="/app/cortex-rentals"
       class="flex flex-col items-center justify-center min-w-[56px] min-h-[48px] px-1 py-1 rounded-xl transition-colors group focus:outline-none"
-      :class="isActiveRoute('/app/cortex-rentals') || isActiveRoute('/app/cortex-rental') ? 'text-cortex-primary-600 font-semibold' : 'text-cortex-text-muted hover:text-cortex-text-primary'"
+      :class="isTab('rentals-list', undefined) || isTab('rental-detail') ? 'text-cortex-primary-600 font-semibold' : 'text-cortex-text-muted hover:text-cortex-text-primary'"
     >
       <div class="relative flex items-center justify-center w-6 h-6">
         <FileSpreadsheet class="w-5 h-5" />
         <span
-          v-if="isActiveRoute('/app/cortex-rentals') || isActiveRoute('/app/cortex-rental')"
+          v-if="isTab('rentals-list', undefined) || isTab('rental-detail')"
           class="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-cortex-primary-600"
         />
       </div>
@@ -42,14 +42,14 @@
 
     <!-- 3. Scan Check-out -->
     <RouterLink
-      to="/app/cortex-checkout/DEMO-TRX-2026-006"
+      to="/app/cortex-rentals?state=Contract"
       class="flex flex-col items-center justify-center min-w-[56px] min-h-[48px] px-1 py-1 rounded-xl transition-colors group focus:outline-none"
-      :class="isActiveRoute('/app/cortex-checkout') ? 'text-cortex-primary-600 font-semibold' : 'text-cortex-text-muted hover:text-cortex-text-primary'"
+      :class="isTab('rentals-list', 'Contract') || isTab('checkout-scanner') ? 'text-cortex-primary-600 font-semibold' : 'text-cortex-text-muted hover:text-cortex-text-primary'"
     >
       <div class="relative flex items-center justify-center w-6 h-6">
         <LogOut class="w-5 h-5" />
         <span
-          v-if="isActiveRoute('/app/cortex-checkout')"
+          v-if="isTab('rentals-list', 'Contract') || isTab('checkout-scanner')"
           class="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-cortex-primary-600"
         />
       </div>
@@ -60,14 +60,14 @@
 
     <!-- 4. Scan Check-in -->
     <RouterLink
-      to="/app/cortex-checkin/DEMO-TRX-2026-001"
+      to="/app/cortex-rentals?state=Checked%20Out"
       class="flex flex-col items-center justify-center min-w-[56px] min-h-[48px] px-1 py-1 rounded-xl transition-colors group focus:outline-none"
-      :class="isActiveRoute('/app/cortex-checkin') ? 'text-cortex-primary-600 font-semibold' : 'text-cortex-text-muted hover:text-cortex-text-primary'"
+      :class="isTab('rentals-list', 'Checked Out') || isTab('checkin-scanner') ? 'text-cortex-primary-600 font-semibold' : 'text-cortex-text-muted hover:text-cortex-text-primary'"
     >
       <div class="relative flex items-center justify-center w-6 h-6">
         <LogIn class="w-5 h-5" />
         <span
-          v-if="isActiveRoute('/app/cortex-checkin')"
+          v-if="isTab('rentals-list', 'Checked Out') || isTab('checkin-scanner')"
           class="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-cortex-primary-600"
         />
       </div>
@@ -116,7 +116,12 @@ const { t } = useI18n()
 const route = useRoute()
 const copilotStore = useCopilotStore()
 
-const isActiveRoute = (pathPrefix: string): boolean => {
-  return route.path.startsWith(pathPrefix)
+// Tabs are matched on route names (stable across the Desk and standalone URLs). The rentals list is shared by three
+// tabs, told apart by their `state` filter: no state = « Locations », Contract = sorties, Checked Out = retours.
+const isTab = (name: string, state?: string): boolean => {
+  if (route.name !== name) return false
+  if (name !== 'rentals-list') return true
+  const current = typeof route.query.state === 'string' ? route.query.state : undefined
+  return current === state
 }
 </script>

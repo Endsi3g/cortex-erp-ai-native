@@ -45,7 +45,10 @@
     "copilot_sidebar": "Copilot IA (Volet latéral)",
     "login": "Connexion",
     "permission_denied": "Accès Refusé",
-    "not_found": "Page Introuvable"
+    "not_found": "Page Introuvable",
+    "forgot_password": "Mot de passe oublié",
+    "login_link": "Lien de connexion",
+    "request_access": "Demande d'accès"
   },
   "ai_states": {
     "verified": {

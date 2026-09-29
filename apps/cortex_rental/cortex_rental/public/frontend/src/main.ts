@@ -4,6 +4,7 @@ import App from '@/app/App.vue'
 import { router } from '@/app/router'
 import { i18n } from '@/app/i18n'
 import '@/design-system/styles/index.css'
+import '@/app/standalone.css'
 
 export function bootstrapApp() {
   const app = createApp(App)

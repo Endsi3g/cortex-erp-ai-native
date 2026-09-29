@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { i18n, type LocaleType } from '@/app/i18n'
+import { getCsrfToken } from '@/utils/csrf'
 
 export interface UserCompany { id: string; name: string; code: string; is_default?: boolean; timezone?: string; currency?: string }
 export interface UserProfile { id: string; email: string; full_name: string; roles: string[]; permissions: string[]; avatar_url?: string }
@@ -11,6 +12,8 @@ export const useSessionStore = defineStore('session', () => {
   const activeCompanyId = ref('')
   const locale = ref<LocaleType>((typeof localStorage !== 'undefined' && localStorage.getItem('cortex_locale') as LocaleType) || 'fr-CA')
   const isAuthenticated = ref(false)
+  // A company owner with an unfinished setup is offered the guided setup once per browser session.
+  const onboardingNeeded = ref(false)
   const isLoadingSession = ref(false)
   let sessionRequest: Promise<boolean> | null = null
   const activeCompany = computed(() => userCompanies.value.find(c => c.id === activeCompanyId.value) || userCompanies.value[0])
@@ -55,6 +58,7 @@ export const useSessionStore = defineStore('session', () => {
         const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('cortex_active_company_id') : null
         activeCompanyId.value = userCompanies.value.some(c => c.id === saved) ? saved! : context.active_company_id || userCompanies.value[0]?.id || ''
         if (activeCompanyId.value && typeof localStorage !== 'undefined') localStorage.setItem('cortex_active_company_id', activeCompanyId.value)
+        onboardingNeeded.value = context.onboarding?.needed === true
         isAuthenticated.value = true
         return true
       } catch {
@@ -72,8 +76,12 @@ export const useSessionStore = defineStore('session', () => {
     return sessionRequest
   }
   const logout = () => {
-    isAuthenticated.value = false; currentUser.value = null; userCompanies.value = []; activeCompanyId.value = ''
-    void fetch('/api/method/logout', { method: 'POST', credentials: 'include' })
+    isAuthenticated.value = false; onboardingNeeded.value = false; currentUser.value = null; userCompanies.value = []; activeCompanyId.value = ''
+    // Sign out on the server, then reload: the next page load gets a fresh guest session and CSRF token.
+    const csrf = getCsrfToken()
+    void fetch('/api/method/logout', { method: 'POST', credentials: 'include', headers: csrf ? { 'X-Frappe-CSRF-Token': csrf } : {} }).finally(() => {
+      if (typeof window !== 'undefined') window.location.assign('/cortex/login')
+    })
   }
-  return { currentUser, userCompanies, activeCompanyId, locale, isAuthenticated, isLoadingSession, activeCompany, hasMultipleCompanies, userRoles, hasPermission, hasRole, can: hasPermission, switchCompany, setLocale, initializeSession, logout }
+  return { currentUser, userCompanies, activeCompanyId, locale, isAuthenticated, onboardingNeeded, isLoadingSession, activeCompany, hasMultipleCompanies, userRoles, hasPermission, hasRole, can: hasPermission, switchCompany, setLocale, initializeSession, logout }
 })

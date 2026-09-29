@@ -38,7 +38,7 @@
       >
         <ShieldCheck class="w-4 h-4" />
         <span
-          v-if="approvalsStore.pendingCount > 0"
+          v-if="(approvalsStore.pendingCount ?? 0) > 0"
           class="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-full bg-amber-500 text-white shadow-xs"
         >
           {{ approvalsStore.pendingCount }}
@@ -51,30 +51,19 @@
       <!-- Language Toggle FR / EN -->
       <LocaleSwitcher />
 
-      <!-- User Profile Avatar & Role -->
-      <div class="flex items-center gap-2 pl-1 border-l border-cortex-border ml-1">
-        <div class="relative flex items-center justify-center w-8 h-8 rounded-full bg-cortex-ink-900 text-white text-xs font-semibold shadow-xs">
-          {{ userInitials }}
-        </div>
-        <div class="hidden lg:flex flex-col text-left">
-          <span class="text-xs font-semibold text-cortex-text-primary leading-tight">
-            {{ sessionStore.currentUser?.full_name || 'Utilisateur Cortex' }}
-          </span>
-          <span class="text-[10px] text-cortex-text-muted leading-tight">
-            {{ primaryRole }}
-          </span>
-        </div>
+      <!-- Account menu: profile, Desk, sign out -->
+      <div class="pl-1 border-l border-cortex-border ml-1">
+        <UserMenu />
       </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { Menu, PanelLeftClose, ShieldCheck } from 'lucide-vue-next'
-import { useSessionStore } from '@/stores/session'
 import { useNavigationStore } from '@/stores/navigation'
 import { useApprovalsStore } from '@/stores/approvals'
 import CortexBreadcrumbs from './CortexBreadcrumbs.vue'
@@ -82,23 +71,12 @@ import UniversalSearch from './UniversalSearch.vue'
 import CompanySelector from './CompanySelector.vue'
 import CopilotTrigger from './CopilotTrigger.vue'
 import LocaleSwitcher from './LocaleSwitcher.vue'
+import UserMenu from './UserMenu.vue'
 
 const { t } = useI18n()
-const sessionStore = useSessionStore()
 const navigationStore = useNavigationStore()
 const approvalsStore = useApprovalsStore()
-
-const userInitials = computed(() => {
-  const name = sessionStore.currentUser?.full_name || 'Kael Tremblay'
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .substring(0, 2)
-    .toUpperCase()
-})
-
-const primaryRole = computed(() => {
-  return sessionStore.currentUser?.roles[0] || 'Operations Manager'
+onMounted(() => {
+  void approvalsStore.fetchPendingApprovals()
 })
 </script>

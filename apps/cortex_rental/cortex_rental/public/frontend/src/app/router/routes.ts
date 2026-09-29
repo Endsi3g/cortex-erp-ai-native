@@ -449,6 +449,26 @@ export const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('@/features/auth/views/SendLinkView.vue'),
+    props: { kind: 'reset' },
+    meta: { screenId: 0, titleKey: 'routes.forgot_password', priority: 'P0', layout: 'minimal', requiresAuth: false, hideInSidebar: true }
+  },
+  {
+    path: '/login-link',
+    name: 'login-link',
+    component: () => import('@/features/auth/views/SendLinkView.vue'),
+    props: { kind: 'login' },
+    meta: { screenId: 0, titleKey: 'routes.login_link', priority: 'P0', layout: 'minimal', requiresAuth: false, hideInSidebar: true }
+  },
+  {
+    path: '/request-access',
+    name: 'request-access',
+    component: () => import('@/features/auth/views/RequestAccessView.vue'),
+    meta: { screenId: 0, titleKey: 'routes.request_access', priority: 'P0', layout: 'minimal', requiresAuth: false, hideInSidebar: true }
+  },
+  {
     path: '/permission-denied',
     name: 'permission-denied',
     component: () => import('@/features/common/views/PermissionDeniedView.vue'),

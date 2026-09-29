@@ -32,6 +32,9 @@ declare module 'frappe-ui' {
   export const Checkbox: DefineComponent<any, any, any>
   export const DatePicker: DefineComponent<any, any, any>
   export const ListView: DefineComponent<any, any, any>
+  export const FormControl: DefineComponent<any, any, any>
+  export const Alert: DefineComponent<any, any, any>
+  export const Password: DefineComponent<any, any, any>
 }
 
 declare module 'frappe-ui/vite' {

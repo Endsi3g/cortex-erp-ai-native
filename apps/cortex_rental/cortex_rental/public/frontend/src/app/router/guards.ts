@@ -4,17 +4,38 @@ import { useNavigationStore } from '@/stores/navigation'
 import { useCopilotStore } from '@/stores/copilot'
 import { i18n } from '@/app/i18n'
 
+const ONBOARDING_PROMPTED = 'cortex_onboarding_prompted'
+const AUTH_SCREENS = new Set(['login', 'forgot-password', 'login-link', 'request-access'])
+
 export function setupRouterGuards(router: Router) {
   // 1. Authentication & Session Guard
   router.beforeEach(async (to, _from, next) => {
     const sessionStore = useSessionStore()
 
-    if (to.name === 'login') return next()
+    // Sign-in screens: a visitor who already has a session goes straight to the app.
+    if (typeof to.name === 'string' && AUTH_SCREENS.has(to.name)) {
+      if (sessionStore.isAuthenticated || (await sessionStore.initializeSession())) {
+        const redirect = typeof to.query.redirect === 'string' && to.query.redirect.startsWith('/') && !to.query.redirect.startsWith('//') ? to.query.redirect : '/app/cortex-operations'
+        return next(redirect)
+      }
+      return next()
+    }
     if (to.meta.requiresAuth && !sessionStore.isAuthenticated && !(await sessionStore.initializeSession())) {
       return next({
         name: 'login',
         query: { redirect: to.fullPath }
       })
+    }
+    // Guided setup for a company owner (once per browser session; never on the setup screen itself).
+    if (sessionStore.isAuthenticated && sessionStore.onboardingNeeded && to.name !== 'onboarding' && typeof window !== 'undefined') {
+      try {
+        if (!sessionStorage.getItem(ONBOARDING_PROMPTED)) {
+          sessionStorage.setItem(ONBOARDING_PROMPTED, '1')
+          return next('/app/cortex-company-setup')
+        }
+      } catch {
+        // Storage can be unavailable (private mode): skip the prompt rather than loop.
+      }
     }
     next()
   })

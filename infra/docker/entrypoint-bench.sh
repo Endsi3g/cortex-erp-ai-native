@@ -87,6 +87,9 @@ if [ -d "${BENCH_DIR}/apps/cortex_rental" ]; then
     if [ -d "${FRONTEND_DIR}" ] && command -v npm >/dev/null 2>&1; then
         echo "Building Cortex Desk screens (Vite)..."
         (cd "${FRONTEND_DIR}" && npm ci --no-audit --no-fund && npm run build:desk) || echo "WARNING: Desk screens bundle not built; Cortex pages will show a build hint."
+        # Standalone app served at /cortex (frappe-ui Vite plugin): writes dist-spa/ and www/cortex.html.
+        echo "Building the standalone Cortex app (Vite)..."
+        (cd "${FRONTEND_DIR}" && npm run build:spa) || echo "WARNING: standalone app not built; /cortex will return 404 until 'npm run build:spa' succeeds."
     fi
     # `bench build --app cortex_rental` only compiles this app. Without the Frappe/ERPNext bundles
     # (website.bundle.css, frappe-web.bundle.js, desk.bundle.*) the portal pages (/login, /me) render

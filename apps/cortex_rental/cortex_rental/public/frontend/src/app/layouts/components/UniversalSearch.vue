@@ -96,8 +96,11 @@
             </div>
 
             <!-- Empty State -->
+            <p v-if="searching" class="flex items-center gap-2 px-2.5 text-[11px] text-cortex-text-muted" role="status"><Loader2 class="w-3.5 h-3.5 animate-spin" /> Recherche dans Cortex…</p>
+            <p v-else-if="searchFailed" class="px-2.5 text-[11px] text-red-700" role="alert">La recherche sur le serveur est indisponible. Les pages restent accessibles.</p>
+
             <div
-              v-if="filteredGroups.length === 0"
+              v-if="filteredGroups.length === 0 && !searching"
               class="py-12 text-center text-xs text-cortex-text-muted flex flex-col items-center gap-2"
             >
               <FileQuestion class="w-8 h-8 text-cortex-ink-200" />
@@ -122,7 +125,7 @@
                 Fermer
               </span>
             </div>
-            <span class="font-mono text-[10px] text-cortex-primary-700 font-medium">Cortex Server Search</span>
+            <span class="text-[10px] text-cortex-text-muted">Pages, locations et équipement</span>
           </div>
         </div>
       </div>
@@ -137,23 +140,14 @@ withDefaults(defineProps<{
   modalOnly: false
 })
 
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import {
-  Search,
-  X,
-  FileSpreadsheet,
-  Package,
-  Barcode,
-  ShieldCheck,
-  PlusCircle,
-  LogOut,
-  LogIn,
-  CalendarRange,
-  FileQuestion
-} from 'lucide-vue-next'
+import { Search, X, FileSpreadsheet, Package, PlusCircle, FileQuestion, Compass, Loader2 } from 'lucide-vue-next'
+import { getCortexApiClient } from '@/api'
+import { routes } from '@/app/router/routes'
 import { useNavigationStore } from '@/stores/navigation'
+import { useSessionStore } from '@/stores/session'
 
 interface SearchItem {
   id: string
@@ -172,67 +166,96 @@ interface SearchGroup {
 const { t } = useI18n()
 const router = useRouter()
 const navigationStore = useNavigationStore()
+const session = useSessionStore()
 
 const query = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
-const selectedId = ref<string>('act-1')
+const selectedId = ref<string>('')
+const remote = ref<SearchGroup[]>([])
+const searching = ref(false)
+const searchFailed = ref(false)
+let timer: ReturnType<typeof setTimeout> | null = null
+let requestId = 0
 
-const rawGroups: SearchGroup[] = [
-  {
-    title: 'Actions Rapides',
-    items: [
-      { id: 'act-1', label: 'Nouvelle Location (Composer)', sublabel: 'Créer devis ou réservation', to: '/app/cortex-rental/new', icon: PlusCircle, badge: 'P0' },
-      { id: 'act-2', label: 'Scanner Sorties (Check-out)', sublabel: 'Validation matériel sortant', to: '/app/cortex-checkout/DEMO-TRX-2026-006', icon: LogOut, badge: 'Scanner' },
-      { id: 'act-3', label: 'Scanner Retours (Check-in)', sublabel: 'Vérification retours & anomalies', to: '/app/cortex-checkin/DEMO-TRX-2026-001', icon: LogIn, badge: 'Scanner' },
-      { id: 'act-4', label: 'Matrice de Disponibilité', sublabel: 'Vue grille temporelle', to: '/app/cortex-availability', icon: CalendarRange, badge: 'P0' }
-    ]
-  },
-  {
-    title: 'Locations & Transactions',
-    items: [
-      { id: 'trx-1', label: 'Production Nord Inc.', sublabel: 'DEMO-TRX-2026-001 · Checked Out · 4 500,00 $', to: '/app/cortex-rental/DEMO-TRX-2026-001', icon: FileSpreadsheet, badge: 'Checked Out' },
-      { id: 'trx-2', label: 'Studio Lumière Montréal', sublabel: 'DEMO-TRX-2026-002 · Reservation · 7j=3j', to: '/app/cortex-rental/DEMO-TRX-2026-002', icon: FileSpreadsheet, badge: 'Reservation' },
-      { id: 'trx-3', label: 'Trequista Events', sublabel: 'DEMO-TRX-2026-003 · Quote Draft', to: '/app/cortex-rental/DEMO-TRX-2026-003', icon: FileSpreadsheet, badge: 'Quote' }
-    ]
-  },
-  {
-    title: 'Catalogue & Séries',
-    items: [
-      { id: 'itm-1', label: 'ARRI Alexa 35 Camera Package', sublabel: 'DEMO-ITM-ALX35 · 4 unités disponibles', to: '/app/cortex-equipment/DEMO-ITM-ALX35', icon: Package, badge: 'ARRI' },
-      { id: 'itm-2', label: 'RED V-Raptor XL 8K Production Pack', sublabel: 'DEMO-ITM-VRP8K · 2 unités', to: '/app/cortex-equipment/DEMO-ITM-VRP8K', icon: Package, badge: 'RED' },
-      { id: 'sn-1', label: 'SN: DEMO-SN-ALX-001 (ARRI Alexa 35)', sublabel: 'Statut: Sorti · Propriétaire: Minerva', to: '/app/cortex-serial/DEMO-SN-ALX-001', icon: Barcode, badge: 'Série' }
-    ]
-  },
-  {
-    title: 'File d\'Approbation',
-    items: [
-      { id: 'apr-1', label: 'Approbation Contrat · Trequista Events', sublabel: 'DEMO-APR-001 · Assurance requise', to: '/app/cortex-approvals', icon: ShieldCheck, badge: 'Urgent' },
-      { id: 'apr-2', label: 'Remise Dérogatoire 25% · Cooke S4/i', sublabel: 'DEMO-APR-002 · Seuil dépassé', to: '/app/cortex-approvals', icon: ShieldCheck, badge: 'Tarif' }
-    ]
-  }
-]
+// Navigation targets come from the route table (permission-filtered): no record is ever invented here.
+const pages = computed<SearchItem[]>(() =>
+  routes
+    .filter((route) => route.meta && route.meta.requiresAuth && !route.meta.hideInSidebar && !route.path.includes(':') && typeof route.meta.titleKey === 'string')
+    .filter((route) => !route.meta?.requiredPermission || session.hasPermission(route.meta.requiredPermission as string))
+    .map((route) => ({ id: `page:${String(route.name)}`, label: t(route.meta!.titleKey as string), to: route.path, icon: Compass, badge: 'Page' }))
+)
 
-const filteredGroups = computed(() => {
-  if (!query.value.trim()) {
-    return rawGroups
-  }
-  const q = query.value.toLowerCase()
-  return rawGroups
-    .map(group => ({
-      title: group.title,
-      items: group.items.filter(
-        item =>
-          item.label.toLowerCase().includes(q) ||
-          (item.sublabel && item.sublabel.toLowerCase().includes(q)) ||
-          item.id.toLowerCase().includes(q)
-      )
-    }))
-    .filter(group => group.items.length > 0)
+const quickActions = computed<SearchItem[]>(() =>
+  session.hasPermission('cortex:quote:create')
+    ? [{ id: 'act:new-rental', label: t('routes.rental_composer'), sublabel: 'Créer un devis ou une réservation', to: '/app/cortex-rental/new', icon: PlusCircle, badge: 'Action' }]
+    : []
+)
+
+const normalized = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+const filteredGroups = computed<SearchGroup[]>(() => {
+  const q = normalized(query.value.trim())
+  const match = (item: SearchItem) => !q || normalized(item.label).includes(q) || normalized(item.sublabel || '').includes(q)
+  const local: SearchGroup[] = [
+    { title: 'Actions rapides', items: quickActions.value.filter(match) },
+    { title: 'Aller à', items: pages.value.filter(match) }
+  ]
+  return [...remote.value, ...local].filter((group) => group.items.length > 0)
 })
 
-const allFilteredItems = computed<SearchItem[]>(() => {
-  return filteredGroups.value.flatMap(g => g.items)
+const allFilteredItems = computed<SearchItem[]>(() => filteredGroups.value.flatMap((g) => g.items))
+
+async function searchServer(text: string) {
+  const current = ++requestId
+  searching.value = true
+  searchFailed.value = false
+  try {
+    const client = getCortexApiClient()
+    const [rentals, equipment] = await Promise.all([
+      session.hasPermission('cortex:rental:view') ? client.listRentals({ search: text, page: 1, page_size: 5 }) : Promise.resolve(null),
+      session.hasPermission('cortex:catalog:view') ? client.listEquipment({ search: text, page: 1, page_size: 5 }) : Promise.resolve(null)
+    ])
+    if (current !== requestId) return
+    const groups: SearchGroup[] = []
+    if (rentals?.items.length) {
+      groups.push({
+        title: 'Locations',
+        items: rentals.items.map((rental) => ({ id: `rental:${rental.name}`, label: rental.project_name || rental.customer_name, sublabel: `${rental.name} · ${rental.customer_name}`, to: `/app/cortex-rental/${rental.name}`, icon: FileSpreadsheet, badge: rental.rental_state }))
+      })
+    }
+    if (equipment?.items.length) {
+      groups.push({
+        title: 'Équipement',
+        items: equipment.items.map((item) => ({ id: `item:${item.item_code}`, label: item.item_name, sublabel: item.item_code, to: `/app/cortex-equipment/${item.item_code}`, icon: Package, badge: item.category }))
+      })
+    }
+    remote.value = groups
+  } catch {
+    if (current === requestId) {
+      remote.value = []
+      searchFailed.value = true
+    }
+  } finally {
+    if (current === requestId) searching.value = false
+  }
+}
+
+watch(query, (value) => {
+  if (timer) clearTimeout(timer)
+  const text = value.trim()
+  if (text.length < 2) {
+    requestId++
+    remote.value = []
+    searching.value = false
+    searchFailed.value = false
+    return
+  }
+  timer = setTimeout(() => searchServer(text), 250)
 })
+
+watch(allFilteredItems, (items) => {
+  if (!items.some((item) => item.id === selectedId.value)) selectedId.value = items[0]?.id ?? ''
+}, { immediate: true })
 
 const navigateTo = (path: string) => {
   navigationStore.closeUniversalSearch()
@@ -242,20 +265,16 @@ const navigateTo = (path: string) => {
 const navigateResults = (direction: number) => {
   const items = allFilteredItems.value
   if (items.length === 0) return
-
-  const currentIndex = items.findIndex(i => i.id === selectedId.value)
+  const currentIndex = items.findIndex((i) => i.id === selectedId.value)
   let newIndex = currentIndex + direction
   if (newIndex < 0) newIndex = items.length - 1
   if (newIndex >= items.length) newIndex = 0
-
   selectedId.value = items[newIndex].id
 }
 
 const selectActiveResult = () => {
-  const item = allFilteredItems.value.find(i => i.id === selectedId.value)
-  if (item) {
-    navigateTo(item.to)
-  }
+  const item = allFilteredItems.value.find((i) => i.id === selectedId.value)
+  if (item) navigateTo(item.to)
 }
 
 watch(
@@ -263,11 +282,13 @@ watch(
   (open) => {
     if (open) {
       query.value = ''
-      selectedId.value = 'act-1'
-      nextTick(() => {
-        searchInputRef.value?.focus()
-      })
+      remote.value = []
+      nextTick(() => searchInputRef.value?.focus())
     }
   }
 )
+
+onBeforeUnmount(() => {
+  if (timer) clearTimeout(timer)
+})
 </script>

@@ -3,17 +3,13 @@ import { ref } from 'vue'
 import { getCortexApiClient } from '@/api'
 
 export const useApprovalsStore = defineStore('approvals', () => {
-  const pendingCount = ref<number>(4)
-  const pendingApprovalIds = ref<string[]>([
-    'DEMO-APR-001',
-    'DEMO-APR-002',
-    'DEMO-APR-003',
-    'DEMO-APR-004'
-  ])
+  // Unknown (null) until the server has answered: the shell shows no badge rather than an invented count.
+  const pendingCount = ref<number | null>(null)
+  const pendingApprovalIds = ref<string[]>([])
   const isLoading = ref<boolean>(false)
 
   const decrementCount = (id?: string) => {
-    if (pendingCount.value > 0) {
+    if (pendingCount.value !== null && pendingCount.value > 0) {
       pendingCount.value--
     }
     if (id) {
@@ -22,7 +18,7 @@ export const useApprovalsStore = defineStore('approvals', () => {
   }
 
   const incrementCount = () => {
-    pendingCount.value++
+    pendingCount.value = (pendingCount.value ?? 0) + 1
   }
 
   const fetchPendingApprovals = async () => {
@@ -33,7 +29,7 @@ export const useApprovalsStore = defineStore('approvals', () => {
       pendingCount.value = res.total_count
       pendingApprovalIds.value = res.items.map(item => item.id)
     } catch {
-      pendingCount.value = pendingApprovalIds.value.length
+      // Keep the last known value: a failed refresh must not turn into "0 pending".
     } finally {
       isLoading.value = false
     }

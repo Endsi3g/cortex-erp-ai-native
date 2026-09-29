@@ -10,13 +10,15 @@ describe('Navigation Store — Sidebar, Search & Breadcrumbs', () => {
 
   it('N-TEST-1: Toggles and sets sidebar collapse state with persistence', () => {
     const navStore = useNavigationStore()
-    expect(navStore.sidebarCollapsed).toBe(true)
-
-    navStore.toggleSidebar()
+    // Expanded by default (labels visible); collapsed only once the user chose it.
     expect(navStore.sidebarCollapsed).toBe(false)
 
-    navStore.setSidebarCollapsed(true)
+    navStore.toggleSidebar()
     expect(navStore.sidebarCollapsed).toBe(true)
+    expect(localStorage.getItem('cortex_sidebar_collapsed')).toBe('true')
+
+    navStore.setSidebarCollapsed(false)
+    expect(navStore.sidebarCollapsed).toBe(false)
   })
 
   it('N-TEST-2: Manages universal search modal state', () => {

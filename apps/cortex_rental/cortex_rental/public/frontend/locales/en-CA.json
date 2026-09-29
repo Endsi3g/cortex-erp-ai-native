@@ -45,7 +45,10 @@
     "copilot_sidebar": "AI Copilot (Sidebar)",
     "login": "Sign In",
     "permission_denied": "Permission Denied",
-    "not_found": "Page Not Found"
+    "not_found": "Page Not Found",
+    "forgot_password": "Forgot password",
+    "login_link": "Sign-in link",
+    "request_access": "Request access"
   },
   "ai_states": {
     "verified": {

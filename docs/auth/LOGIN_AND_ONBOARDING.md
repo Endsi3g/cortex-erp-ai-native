@@ -40,9 +40,18 @@ Il faut un *Email Account* sortant par défaut et un worker/scheduler actif. San
 
 Le patch `apply_cortex_branding` règle le nom d'application, le logo, la favicon et retire le pied de page « Powered by ». Les gabarits de courriel sont sous `templates/emails/`.
 
+## Application autonome `/cortex` (Vue 3 + frappe-ui)
+
+- **Build et service** : `npm run build:spa` (dossier `public/frontend`) → `dist-spa/` et `www/cortex.html` ; `www/cortex.py` fournit `csrf_token` et `user`, `hooks.website_route_rules` renvoie tout `/cortex/<chemin>` vers cette page. En développement : `bench --site <site> set-config ignore_csrf 1` (site de développement seulement) puis `npm run dev` (le plugin frappe-ui proxifie `/api`, `/assets`, `/login`, `/app`).
+- **Écrans d'accès Vue** : `/cortex/login`, `/cortex/forgot-password`, `/cortex/login-link`, `/cortex/request-access` (`src/features/auth`). Ils utilisent `Button` et `FormControl` de frappe-ui, les mêmes API que les pages Frappe (`login`, `reset_password`, `send_login_link`, `request_access`) et `cortex_rental.api.v1.access.login_options` (invité) pour les boutons Google/GitHub et le lien par courriel. Après une connexion réussie la page est rechargée (nouveau jeton CSRF).
+- **Destination après connexion** : hook `add_to_apps_screen` + `System Settings.default_app = cortex_rental` (patch `set_default_app`, sans écraser un choix existant). Le contexte de session indique `onboarding.needed` : un propriétaire d'entreprise est dirigé une fois par session vers `/cortex/company-setup`.
+- **Deux versions du login** : `/login` (Jinja, servi aussi aux personnes du Desk et aux liens de courriel) et `/cortex/login` (Vue). Un changement de texte, d'espacement ou de couleur se fait dans les deux : `public/css/cortex-login.css` + `www/login.html` d'un côté, `src/features/auth/auth.css` + vues de l'autre.
+
 ## Limites connues
 
 - Textes personnalisés en français seulement (`?lang=en` n'affecte que les chaînes de Frappe).
 - Google/GitHub exigent de vraies clés OAuth.
 - Le thème et le mode sombre de Desk lui-même ne sont pas modifiés ; seules les pages d'authentification suivent `prefers-color-scheme`.
+- Les Pages Desk `cortex-*` existent encore à côté de `/cortex` (suppression à valider).
+- La connexion à deux facteurs n'est pas gérée dans l'écran Vue : un lien renvoie vers `/login`.
 - Après un changement de DocType (`mail_status`, etc.), exécuter `bench migrate`.

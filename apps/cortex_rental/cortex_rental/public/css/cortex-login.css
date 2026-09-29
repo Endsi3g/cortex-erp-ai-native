@@ -110,7 +110,7 @@ body main.container:has(.cx-auth) {
   min-height: 560px;
   align-items: center;
   justify-content: center;
-  padding: 56px 40px;
+  padding: 56px 48px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
@@ -140,7 +140,7 @@ body .cx-auth.cx-auth .page-card-head .app-logo {
   width: auto;
   max-width: 160px;
   height: 40px;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   object-fit: contain;
 }
 
@@ -159,7 +159,7 @@ body .cx-auth.cx-auth .page-card-body {
 }
 
 body .cx-auth.cx-auth .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 /* Fields: filled, 44px, the label is the placeholder (kept for assistive tech). */
@@ -389,15 +389,16 @@ body .cx-auth.cx-auth .page-card-head .indicator {
 
 .cx-auth__eyebrow {
   margin: 0 0 20px;
-  color: rgba(249, 248, 247, 0.7);
+  color: rgba(249, 248, 247, 0.88);
   font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .cx-auth__statement {
-  margin: 0 0 32px;
+  margin: 0 0 40px;
   font-family: var(--font-sans);
   font-size: 34px;
   font-weight: 600;
@@ -565,8 +566,29 @@ body .cx-auth.cx-auth .cx-lead {
 }
 
 body .cx-auth.cx-auth .cx-lead {
-  margin: 0 0 20px;
+  margin: -12px 0 24px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Back link: close to the action it belongs to, with an arrow that says where it goes. */
+body .cx-auth.cx-auth .for-forgot .sign-up-message,
+body .cx-auth.cx-auth .cx-sent .sign-up-message {
+  margin-top: 20px !important;
+  text-align: left !important;
   font-size: 14px;
+}
+
+
+/* Optical centre: the block sits about 60px above the geometric centre of the tall card. */
+@media (min-width: 641px) and (min-height: 760px) {
+  .cx-auth__panel {
+    padding-bottom: 176px;
+  }
+
+  .cx-auth--single .cx-auth__panel {
+    padding-bottom: 56px;
+  }
 }
 
 body .cx-auth.cx-auth .cx-error {

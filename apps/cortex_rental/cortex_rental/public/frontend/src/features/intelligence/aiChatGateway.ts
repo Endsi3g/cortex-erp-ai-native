@@ -1,4 +1,5 @@
 import type { CopilotMessage } from '@/api/contracts'
+import { getCsrfToken } from '@/utils/csrf'
 
 interface FrappeResponse<T> {
   message?: { data?: T }
@@ -23,11 +24,27 @@ interface ChatResponseData {
   blocks: ChatBlock[]
 }
 
+/** Desk pages have `frappe.call`; the standalone app (/cortex) has no Frappe globals and talks to the same endpoints with fetch. */
+async function callFetch<T>(method: string, args: Record<string, string | undefined>): Promise<T> {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(args)) if (value !== undefined) params.set(key, value)
+  const csrf = getCsrfToken()
+  const response = await fetch(`/api/method/${method}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', ...(csrf ? { 'X-Frappe-CSRF-Token': csrf } : {}) },
+    body: params.toString()
+  }).catch(() => null)
+  if (!response) throw new Error('La passerelle Cortex est indisponible. Réessaie dans un instant.')
+  const body = (await response.json().catch(() => null)) as FrappeResponse<T> | null
+  if (!response.ok) throw new Error(response.status === 403 ? 'Votre rôle ne donne pas accès à l’assistant.' : 'La passerelle Cortex est indisponible. Réessaie dans un instant.')
+  if (!body?.message?.data) throw new Error('La passerelle Cortex a retourné une réponse vide.')
+  return body.message.data
+}
+
 function callFrappe<T>(method: string, args: Record<string, string | undefined>): Promise<T> {
   const frappe = (window as Window & { frappe?: FrappeRuntime }).frappe
-  if (!frappe?.call) {
-    return Promise.reject(new Error('La passerelle Cortex n’est pas disponible dans cette page Frappe.'))
-  }
+  if (!frappe?.call) return callFetch<T>(method, args)
 
   return new Promise((resolve, reject) => {
     frappe.call<T>({

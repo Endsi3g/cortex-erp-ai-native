@@ -13,6 +13,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
+import { getCsrfToken } from '@/utils/csrf'
 const props = defineProps<{ isOpen: boolean; rentalId: string; serialNumber: string; itemName: string }>()
 const emit = defineEmits<{ (e: 'close'): void; (e: 'submitted', data: { serialNumber: string; severity: 'minor' | 'major' | 'unusable'; description: string; photoUploadId?: string }): void }>()
 const severities = [{ value: 'minor', label: 'Mineur' }, { value: 'major', label: 'Majeur' }, { value: 'unusable', label: 'Inutilisable' }] as const
@@ -24,7 +25,7 @@ async function uploadEvidence(event: Event) {
   isSubmitting.value = true; errorMessage.value = ''
   try {
     const form = new FormData(); form.append('file', file); form.append('is_private', '1'); form.append('doctype', 'Cortex Rental Transaction'); form.append('docname', props.rentalId)
-    const csrf = (window as Window & { frappe?: { boot?: { csrf_token?: string } } }).frappe?.boot?.csrf_token
+    const csrf = getCsrfToken()
     const response = await fetch('/api/method/upload_file', { method: 'POST', credentials: 'include', headers: csrf ? { 'X-Frappe-CSRF-Token': csrf } : {}, body: form })
     const body = await response.json()
     const fileDoc = body.message
