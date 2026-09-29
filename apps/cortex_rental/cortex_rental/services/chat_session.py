@@ -149,6 +149,38 @@ class ChatSessionService:
         return session.as_dict()
 
     # -----------------------------------------------------------------
+    def get_messages(self, name: str, user: str, limit: int = 200) -> List[Dict[str, Any]]:
+        """Messages of one of the caller's own sessions, oldest first, with the structured blocks parsed."""
+        if not frappe:
+            raise ChatSessionNotFoundError(name)
+        session = frappe.get_doc("Cortex Chat Session", name)
+        if session.user != user:
+            frappe.throw("Unauthorized: this chat session belongs to a different user.", frappe.PermissionError)
+        rows = frappe.get_all(
+            "Cortex Chat Message",
+            filters={"chat_session": name},
+            fields=["name", "sender_type", "content_sanitized", "ui_blocks_json", "created_at"],
+            order_by="created_at asc",
+            limit_page_length=max(1, min(int(limit or 200), 200)),
+        )
+        messages = []
+        for row in rows:
+            try:
+                blocks = frappe.parse_json(row.ui_blocks_json) if row.ui_blocks_json else []
+            except Exception:
+                blocks = []
+            messages.append(
+                {
+                    "id": row.name,
+                    "role": "user" if row.sender_type == "Human" else "assistant",
+                    "text": row.content_sanitized or "",
+                    "blocks": blocks if isinstance(blocks, list) else [],
+                    "created_at": str(row.created_at) if row.created_at else None,
+                }
+            )
+        return messages
+
+    # -----------------------------------------------------------------
     def list_sessions(self, user: str, company: str) -> List[Dict[str, Any]]:
         if not frappe:
             return []

@@ -335,7 +335,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/app/cortex-copilot',
     name: 'copilot-sidebar-view',
-    component: () => import('@/features/copilot/views/FullAssistantView.vue'),
+    component: () => import('@/features/copilot/views/AssistantView.vue'),
     meta: {
       screenId: 19,
       titleKey: 'routes.copilot_sidebar',
@@ -353,7 +353,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/app/cortex-assistant',
     name: 'assistant-full',
-    component: () => import('@/features/copilot/views/FullAssistantView.vue'),
+    component: () => import('@/features/copilot/views/AssistantView.vue'),
     meta: {
       screenId: 20,
       titleKey: 'routes.assistant_full',

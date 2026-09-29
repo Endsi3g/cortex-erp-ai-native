@@ -1,6 +1,6 @@
 <template>
   <div class="cx-page" data-test="screen-ai-audit">
-    <CortexPageHeader title="AI Audit" subtitle="Décisions, preuves et exécutions disponibles dans les journaux Cortex.">
+    <CortexPageHeader :title="title" subtitle="Décisions, preuves et exécutions disponibles dans les journaux Cortex. Le journal est en ajout seulement : rien ne s'y modifie ni ne s'y supprime.">
       <template #actions>
         <RefreshButton :loading="loading" @refresh="load" />
         <button type="button" class="cx-btn-soft" @click="exportCsv">Exporter CSV</button>
@@ -74,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+withDefaults(defineProps<{ title?: string }>(), { title: 'Audit IA' })
 import { computed, onMounted, ref } from 'vue'
 import { getCortexApiClient } from '@/api'
 import type { AgentRunTelemetry, AuditEvent } from '@/api/contracts'
@@ -106,7 +107,7 @@ async function load() {
     const auditRows = audit.events.map((event: AuditEvent): AuditRow => ({ id: `audit:${event.id}`, timestamp: event.timestamp, actor: event.actor.actor_name || (event.actor.actor_type === 'Agent' ? 'Agent métier' : event.actor.actor_type), actorId: event.actor.actor_id, action: event.action, entity: `${event.entity_type} · ${event.entity_id}`, success: event.policy_execution?.passed !== false, requestId: event.request_id, summary: event.diff_summary, hash: event.evidence_hash_sha256, policy: event.policy_execution?.policy_name }))
     const runRows = (activity?.runs ?? []).map((run: AgentRunTelemetry): AuditRow => ({ id: `run:${run.run_id}`, timestamp: run.started_at, actor: run.agent_name.replace(/^Cortex\s+/, ''), actorId: run.run_id, action: 'agent.run', entity: 'Exécution agent', success: run.status === 'completed', latency: run.duration_ms, requestId: run.run_id, model: run.model_used, tokens: run.prompt_tokens != null && run.completion_tokens != null ? run.prompt_tokens + run.completion_tokens : undefined, cost: run.total_cost_cad != null ? `${run.total_cost_cad.toFixed(4)} CAD` : undefined, tools: run.tools_invoked }))
     rows.value = [...auditRows, ...runRows].sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-  } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Impossible de charger AI Audit.' }
+  } catch (cause) { error.value = cause instanceof Error ? cause.message : "Impossible de charger le journal d'audit." }
   finally { loading.value = false }
 }
 function formatDate(value: string) { return new Intl.DateTimeFormat(session.locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }

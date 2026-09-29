@@ -50,7 +50,7 @@ const config: Config = {
           text: {
             primary: '#08120D',
             secondary: '#365345',
-            muted: '#638474',
+            muted: '#4f6f5f',
             inverse: '#FFFFFF'
           },
           status: {

@@ -256,7 +256,7 @@ function handleHeaderClick(col: TableColumn) {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: #7c7c7c;
+  color: #666666;
 }
 
 @keyframes cx-shimmer {

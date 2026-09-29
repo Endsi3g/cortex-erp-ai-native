@@ -122,7 +122,7 @@ def get_state(company: str) -> Dict[str, Any]:
         ],
         "catalog": {
             "equipment_count": frappe.db.count("Cortex Rental Item Profile", {"company": company}),
-            "import_url": "/app/data-import/new?reference_doctype=Item",
+            "import_url": "/app/cortex-import",
             "equipment_url": "/app/cortex-equipment",
         },
         "policies": {

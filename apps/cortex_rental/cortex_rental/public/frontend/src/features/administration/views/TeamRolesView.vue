@@ -35,7 +35,7 @@
           <table class="cx-table">
             <thead><tr><th scope="col">Personne</th><th scope="col">Profil</th><th scope="col">État</th><th scope="col">Dernière connexion</th><th v-if="data.can_manage" scope="col"><span class="sr-only">Actions</span></th></tr></thead>
             <tbody>
-              <tr v-for="m in data.members" :key="m.email" :class="{ 'opacity-60': !m.enabled }">
+              <tr v-for="m in data.members" :key="m.email" :class="{ 'is-disabled': !m.enabled }">
                 <td>{{ m.full_name }}<span v-if="m.is_you" class="cx-tag" style="margin-left: 8px">Vous</span><div class="text-xs" style="color: var(--erp-muted)">{{ m.email }}</div></td>
                 <td>
                   <span v-if="m.is_owner" class="cx-tag cx-tag--ok">Propriétaire</span>
@@ -150,3 +150,8 @@ async function invite() {
   }
 }
 </script>
+
+<style scoped>
+/* A deactivated person stays readable (AA contrast): muted colour, not reduced opacity. */
+.is-disabled td { color: var(--erp-muted, #666666); }
+</style>

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { createAiChatSession, sendAiChatMessage } from '@/features/intelligence/aiChatGateway'
+import { createAiChatSession, sendChatTurn, type ChatBlockData } from '@/features/intelligence/aiChatGateway'
 
 export type CopilotCanonicalState =
   | 'idle'
@@ -34,6 +34,8 @@ export interface CopilotMessage {
   state?: CopilotCanonicalState
   confidenceScore?: number
   evidenceId?: string
+  /** Structured reply blocks from the chat gateway (rendered by ChatBlocks.vue). */
+  blocks?: ChatBlockData[]
   toolCall?: {
     name: string
     params: Record<string, unknown>
@@ -104,14 +106,15 @@ export const useCopilotStore = defineStore('copilot', () => {
     try {
       const locale = (typeof localStorage !== 'undefined' && localStorage.getItem('cortex_locale') === 'en-CA' ? 'en-CA' : 'fr-CA') as 'fr-CA' | 'en-CA'
       if (!chatSessionId.value) chatSessionId.value = await createAiChatSession(contextPage(), locale)
-      const reply = await sendAiChatMessage(content, chatSessionId.value, {
+      const reply = await sendChatTurn(content, chatSessionId.value, {
         page: contextPage(),
         locale,
         active_doctype: activeContext.value.entityId ? 'Cortex Rental Transaction' : undefined,
         active_document_name: activeContext.value.entityId ?? undefined
       })
       canonicalState.value = 'proposed'
-      messages.value.push({ id: reply.assistantMessage.id, sender: 'assistant', content: reply.assistantMessage.content, timestamp: new Date().toISOString(), state: 'proposed' })
+      chatSessionId.value = reply.sessionId
+      messages.value.push({ id: reply.assistant.id, sender: 'assistant', content: '', blocks: reply.assistant.blocks, timestamp: new Date().toISOString(), state: 'proposed' })
     } catch (error) {
       canonicalState.value = 'service_unavailable'
       messages.value.push({

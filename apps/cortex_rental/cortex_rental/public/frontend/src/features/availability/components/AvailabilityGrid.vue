@@ -22,6 +22,7 @@
               :checked="isAllSelected"
               class="rounded border-cortex-border text-cortex-primary-600 focus:ring-cortex-primary-500 w-3.5 h-3.5 cursor-pointer"
               title="Sélectionner tous"
+              aria-label="Sélectionner tous les équipements"
               @change="toggleSelectAll"
             />
             <span class="text-xs font-bold uppercase tracking-wider text-cortex-text-primary">
@@ -74,6 +75,7 @@
                   :checked="selectedEquipmentCodes.includes(virtualRow.item.item_code)"
                   class="rounded border-cortex-border text-cortex-primary-600 focus:ring-cortex-primary-500 w-3.5 h-3.5 cursor-pointer flex-shrink-0"
                   :data-test="`select-item-${virtualRow.item.item_code}`"
+                  :aria-label="`Sélectionner ${virtualRow.item.item_name}`"
                   @change="toggleSelectEquipment(virtualRow.item.item_code)"
                 />
                 <div class="min-w-0">

@@ -1,5 +1,5 @@
 <template>
-  <AiAuditView />
+  <AiAuditView title="Journal d'audit" />
 </template>
 
 <script setup lang="ts">

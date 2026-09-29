@@ -4,7 +4,6 @@
       <!-- Step 1 -->
       <div
         class="flex items-center gap-2 cursor-pointer"
-        :class="{ 'opacity-60': currentStep < 1 }"
         @click="currentStep > 1 && emit('change-step', 1)"
       >
         <span
@@ -26,7 +25,6 @@
       <!-- Step 2 -->
       <div
         class="flex items-center gap-2 cursor-pointer"
-        :class="{ 'opacity-60': currentStep < 2 }"
         @click="currentStep > 2 && emit('change-step', 2)"
       >
         <span
@@ -48,7 +46,6 @@
       <!-- Step 3 -->
       <div
         class="flex items-center gap-2"
-        :class="{ 'opacity-60': currentStep < 3 }"
       >
         <span
           class="flex items-center justify-center w-6 h-6 rounded-full font-bold text-xs"

@@ -22,12 +22,27 @@ from cortex_rental.permissions.agent_scopes import (
     get_company_context,
 )
 from cortex_rental.schemas.chat_schemas import SendMessageRequest
+from cortex_rental.services.onyx_chat_client import OnyxConfigurationError
 from cortex_rental.services.chat_session import (
     ChatSessionService,
     ChatContextPermissionError,
     ChatRateLimitError,
     ChatSessionNotFoundError,
 )
+
+
+def _service() -> ChatSessionService:
+    """The chat service, or a clear message when the model gateway (Onyx) is not configured on this site."""
+    try:
+        return ChatSessionService()
+    except OnyxConfigurationError:
+        if frappe:
+            frappe.throw(
+                "L'assistant IA n'est pas encore configuré sur ce site : un administrateur doit renseigner "
+                "onyx_base_url et onyx_api_key dans la configuration du site.",
+                frappe.ValidationError,
+            )
+        raise
 
 
 def _raise_validation_error(exc: ValidationError) -> None:
@@ -51,7 +66,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
         _raise_validation_error(exc)
         return {}  # unreachable when frappe is available; keeps type-checkers happy
 
-    service = ChatSessionService()
+    service = _service()
     try:
         response = service.send_message(
             user=user,
@@ -81,9 +96,7 @@ if frappe:
         payload = frappe.local.form_dict
         page = payload.get("page") or "dashboard"
         locale = payload.get("locale") or "fr-CA"
-        result = ChatSessionService().create_session(
-            user=frappe.session.user, company=company, page=page, locale=locale
-        )
+        result = _service().create_session(user=frappe.session.user, company=company, page=page, locale=locale)
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
@@ -101,7 +114,19 @@ if frappe:
         if not name:
             frappe.throw("name is required.", frappe.ValidationError)
         try:
-            result = ChatSessionService().get_session(name=name, user=frappe.session.user)
+            result = _service().get_session(name=name, user=frappe.session.user)
+        except ChatSessionNotFoundError:
+            frappe.throw(f"Chat session {name} not found.", frappe.DoesNotExistError)
+        return {"data": result}
+
+    @frappe.whitelist(methods=["GET"])
+    def get_messages():
+        require_human_staff_role()
+        name = frappe.local.form_dict.get("name")
+        if not name:
+            frappe.throw("name is required.", frappe.ValidationError)
+        try:
+            result = _service().get_messages(name=name, user=frappe.session.user)
         except ChatSessionNotFoundError:
             frappe.throw(f"Chat session {name} not found.", frappe.DoesNotExistError)
         return {"data": result}
@@ -110,7 +135,7 @@ if frappe:
     def list_sessions():
         require_human_staff_role()
         company = get_company_context()
-        result = ChatSessionService().list_sessions(user=frappe.session.user, company=company)
+        result = _service().list_sessions(user=frappe.session.user, company=company)
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
@@ -124,7 +149,7 @@ if frappe:
                 "chat_session_id and context_snapshot_id are required.",
                 frappe.ValidationError,
             )
-        ChatSessionService().pin_context(session_name, context_snapshot_name, user=frappe.session.user)
+        _service().pin_context(session_name, context_snapshot_name, user=frappe.session.user)
         return {"data": {"pinned": True}}
 
     @frappe.whitelist(methods=["POST"])
@@ -134,5 +159,5 @@ if frappe:
         session_name = payload.get("chat_session_id")
         if not session_name:
             frappe.throw("chat_session_id is required.", frappe.ValidationError)
-        ChatSessionService().clear_context(session_name, user=frappe.session.user)
+        _service().clear_context(session_name, user=frappe.session.user)
         return {"data": {"pinned": False}}

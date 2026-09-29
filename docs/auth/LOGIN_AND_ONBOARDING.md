@@ -47,6 +47,10 @@ Le patch `apply_cortex_branding` règle le nom d'application, le logo, la favico
 - **Destination après connexion** : hook `add_to_apps_screen` + `System Settings.default_app = cortex_rental` (patch `set_default_app`, sans écraser un choix existant). Le contexte de session indique `onboarding.needed` : un propriétaire d'entreprise est dirigé une fois par session vers `/cortex/company-setup`.
 - **Deux versions du login** : `/login` (Jinja, servi aussi aux personnes du Desk et aux liens de courriel) et `/cortex/login` (Vue). Un changement de texte, d'espacement ou de couleur se fait dans les deux : `public/css/cortex-login.css` + `www/login.html` d'un côté, `src/features/auth/auth.css` + vues de l'autre.
 
+## Administration de l'entreprise
+
+Après la mise en route, le propriétaire gère son entreprise depuis `/cortex/rental-policy` (règles tarifaires), `/cortex/team` (équipe et rôles) et `/cortex/import` (import), aussi disponibles comme Pages Desk. Les règles vivent dans `services/administration.py` : profils de rôles sans droit d'administrateur système, propriétaire non modifiable, on ne peut pas se désactiver soi-même, une seule règle active par durée. Chaque changement est écrit au journal d'audit.
+
 ## Limites connues
 
 - Textes personnalisés en français seulement (`?lang=en` n'affecte que les chaînes de Frappe).

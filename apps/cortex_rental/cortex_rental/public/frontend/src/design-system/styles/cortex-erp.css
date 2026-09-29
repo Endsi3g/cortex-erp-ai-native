@@ -8,7 +8,7 @@
 .cx-page {
   --erp-text: #171717;
   --erp-text-2: #525252;
-  --erp-muted: #7c7c7c;
+  --erp-muted: #666666;
   --erp-border: #ededed;
   --erp-field: #f3f3f3;
   --erp-field-hover: #ededed;
@@ -168,7 +168,7 @@
 select.cx-field {
   appearance: none;
   padding-right: 32px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%237C7C7C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m7 15 5 5 5-5M7 9l5-5 5 5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23666666' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m7 15 5 5 5-5M7 9l5-5 5 5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 14px;
@@ -279,6 +279,8 @@ a.cx-kpi__value:hover {
 }
 
 .cx-tablewrap {
+  /* positioned so visually-hidden (absolute) cells stay inside the scroll container instead of widening the page */
+  position: relative;
   overflow-x: auto;
 }
 

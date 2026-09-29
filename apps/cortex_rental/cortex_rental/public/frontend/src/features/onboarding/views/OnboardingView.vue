@@ -11,7 +11,7 @@
           <strong style="color: var(--erp-text)">{{ state.progress.done }} sur {{ state.progress.total }}</strong> étapes terminées
           <span v-if="remainingLabel"> · {{ remainingLabel }}</span>
         </p>
-        <div class="cx-bar" role="progressbar" :aria-valuenow="state.progress.done" aria-valuemin="0" :aria-valuemax="state.progress.total">
+        <div class="cx-bar" role="progressbar" aria-label="Progression de la configuration" :aria-valuenow="state.progress.done" aria-valuemin="0" :aria-valuemax="state.progress.total">
           <span :style="{ width: `${(state.progress.done / state.progress.total) * 100}%` }" />
         </div>
       </section>
@@ -93,8 +93,8 @@
               <template v-else>Votre catalogue est vide. Importez un fichier ou ajoutez vos premiers équipements ; rien n'est créé à votre place.</template>
             </p>
             <div class="cx-onb__choices">
-              <a class="cx-btn-secondary" :href="state.catalog.import_url">Importer un fichier (CSV, Excel)</a>
-              <a class="cx-btn-secondary" :href="state.catalog.equipment_url">Ouvrir le catalogue</a>
+              <RouterLink class="cx-btn-secondary" to="/app/cortex-import">Importer un fichier (CSV, Excel)</RouterLink>
+              <RouterLink class="cx-btn-secondary" to="/app/cortex-equipment">Ouvrir le catalogue</RouterLink>
             </div>
             <div class="cx-onb__actions">
               <button class="cx-btn-primary" type="button" :disabled="busy" @click="completeStep('catalog')">{{ state.catalog.equipment_count ? 'Continuer' : 'Je le ferai plus tard' }}</button>
@@ -109,7 +109,7 @@
               <li v-for="r in state.policies.rules" :key="r.name"><span>{{ r.rule_name }}<small class="block" style="color: var(--erp-muted)">{{ r.calendar_days }} jours calendaires facturés {{ r.billable_days }}</small></span><span class="cx-tag">Active</span></li>
               <li v-if="!state.policies.rules.length"><span>Aucune règle active : chaque jour est facturé au tarif complet.</span></li>
             </ul>
-            <div class="cx-onb__choices"><a class="cx-btn-secondary" href="/app/rental-pricing-rule">Modifier les règles</a></div>
+            <div class="cx-onb__choices"><RouterLink class="cx-btn-secondary" to="/app/cortex-rental-policy">Modifier les règles</RouterLink></div>
             <div class="cx-onb__actions"><button class="cx-btn-primary" type="button" :disabled="busy" @click="completeStep('policies')">Garder ces règles et continuer</button></div>
           </div>
 
@@ -135,7 +135,7 @@
         <div class="cx-onb__choices">
           <RouterLink class="cx-btn-primary" to="/app/cortex-rental/new">Créer un premier devis</RouterLink>
           <RouterLink class="cx-btn-secondary" to="/app/cortex-equipment">Ajouter du matériel</RouterLink>
-          <RouterLink class="cx-btn-secondary" to="/app/cortex-ops-overview">Ouvrir le tableau de bord</RouterLink>
+          <RouterLink class="cx-btn-secondary" to="/app/cortex-operations">Ouvrir le tableau de bord</RouterLink>
         </div>
       </section>
     </template>

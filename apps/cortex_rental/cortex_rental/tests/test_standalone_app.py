@@ -54,6 +54,43 @@ class TestServing(unittest.TestCase):
         self.assertNotIn("googleapis", _read(FRONTEND, "index.html"))
 
 
+class TestEveryScreenHasADeskPage(unittest.TestCase):
+    """Each routed screen is reachable both at /cortex and as a Desk Page (same Vue screen, mounted by the host)."""
+
+    # Screens reached only through a parent screen, or sharing another page's Desk route.
+    NO_OWN_PAGE = {"cortex-rental", "cortex-owner-statement", "cortex-copilot", "cortex-serial", "cortex-ai-workspace"}
+    ALIASES = {"cortex-operations": "cortex-ops-overview"}
+
+    def _routes(self):
+        source = _read(FRONTEND, "src", "app", "router", "routes.ts")
+        blocks = re.split(r"\n  \{\n", source)
+        found = []
+        for block in blocks:
+            match = re.search(r"path: '/app/(cortex-[a-z-]+)", block)
+            if match and "component:" in block:
+                found.append(match.group(1))
+        return sorted(set(found))
+
+    def test_routes_are_found(self):
+        self.assertGreater(len(self._routes()), 15)
+
+    def test_each_routed_screen_has_a_page(self):
+        pages = os.path.join(APP_DIR, "cortex_rental", "page")
+        missing = []
+        for slug in self._routes():
+            slug = self.ALIASES.get(slug, slug)
+            if slug in self.NO_OWN_PAGE:
+                continue
+            if not os.path.isdir(os.path.join(pages, slug.replace("-", "_"))):
+                missing.append(slug)
+        self.assertEqual(missing, [], f"routed screens without a Desk Page: {missing}")
+
+    def test_admin_pages_are_shortcuts_of_the_administration_workspace(self):
+        workspace = _read(APP_DIR, "cortex_rental", "workspace", "cortex_admin", "cortex_admin.json")
+        for slug in ("cortex-rental-policy", "cortex-team", "cortex-import", "cortex-audit-event"):
+            self.assertIn(slug, workspace)
+
+
 class TestSafeRedirect(unittest.TestCase):
     def test_same_site_paths_are_kept(self):
         self.assertEqual(safe_redirect("/cortex/rentals"), "/cortex/rentals")
@@ -79,7 +116,7 @@ class TestShellShowsNoInventedData(unittest.TestCase):
 
     def test_copilot_calls_the_gateway_instead_of_simulating_a_reply(self):
         source = _read(FRONTEND, "src", "stores", "copilot.ts")
-        self.assertIn("sendAiChatMessage", source)
+        self.assertIn("sendChatTurn", source)
         self.assertNotIn("Simulate", source)
         self.assertNotIn("confidenceScore: 0.96", source)
 

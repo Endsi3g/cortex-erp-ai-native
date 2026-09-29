@@ -30,7 +30,7 @@
 
       <template #cell-customer="{ row }">
         <div class="font-medium">{{ row.customer_name }}</div>
-        <div v-if="row.project_name" style="color: #7c7c7c; font-size: 13px">{{ row.project_name }}</div>
+        <div v-if="row.project_name" style="color: #666666; font-size: 13px">{{ row.project_name }}</div>
       </template>
 
       <template #cell-dates="{ row }">{{ formatDateRange(row.starts_at, row.ends_at) }}</template>

@@ -91,7 +91,8 @@
             </span>
           </div>
 
-          <p class="leading-relaxed whitespace-pre-wrap">
+          <ChatBlocks v-if="msg.blocks?.length" :blocks="msg.blocks" />
+          <p v-else class="leading-relaxed whitespace-pre-wrap">
             {{ msg.content }}
           </p>
 
@@ -178,6 +179,7 @@ import {
   ShieldCheck,
   ShieldAlert
 } from 'lucide-vue-next'
+import ChatBlocks from '@/features/copilot/components/ChatBlocks.vue'
 import { useCopilotStore, type CopilotCanonicalState } from '@/stores/copilot'
 
 const { t } = useI18n()

@@ -121,9 +121,9 @@
 
       <!-- Equipment Items List with Touch Buttons >=44px -->
       <div class="p-4 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs space-y-3" data-test="items-checklist">
-        <h3 class="text-xs font-bold text-cortex-text-primary uppercase tracking-wider border-b border-cortex-border pb-2">
+        <h2 class="text-xs font-bold text-cortex-text-primary uppercase tracking-wider border-b border-cortex-border pb-2">
           {{ t('checkout.items_to_checkout') }} ({{ rental.items.length }})
-        </h3>
+        </h2>
 
         <div class="divide-y divide-cortex-border">
           <div

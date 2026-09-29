@@ -66,9 +66,9 @@
     <div class="flex flex-wrap items-center gap-2 justify-between lg:justify-end">
       <!-- Date Navigation -->
       <div class="flex flex-wrap items-center gap-1">
-        <Button size="sm" variant="outline" icon="chevron-left" aria-label="Période précédente" @click="emit('navigate', 'prev')" />
+        <Button size="sm" variant="outline" icon="chevron-left" label="Période précédente" @click="emit('navigate', 'prev')" />
         <Button size="sm" variant="outline" @click="emit('navigate', 'today')">Aujourd’hui</Button>
-        <Button size="sm" variant="outline" icon="chevron-right" aria-label="Période suivante" @click="emit('navigate', 'next')" />
+        <Button size="sm" variant="outline" icon="chevron-right" label="Période suivante" @click="emit('navigate', 'next')" />
         <span class="text-xs font-semibold text-cortex-text-primary ml-1.5">
           {{ dateLabel }}
         </span>
