@@ -152,7 +152,7 @@ export class HttpCortexApiClient implements CortexApiClient {
           start_date: block.starts_at,
           end_date: block.ends_at,
           is_conflict: item.has_conflict,
-          ...(item.has_conflict ? { conflict_reason: 'Le service ERPNext signale un conflit de capacité sur cette ligne; vérifie les périodes exactes.' } : {})
+          ...(item.has_conflict ? { conflict_reason: 'Le serveur signale un conflit de capacité sur cette ligne; vérifie les périodes exactes.' } : {})
         }))
       }))
     }
@@ -395,18 +395,18 @@ export class HttpCortexApiClient implements CortexApiClient {
     return unwrapFrappe(await this.http.get<FrappeResult<ListKitsResponse>>('/cortex_rental.api.v1.catalog.list_kits', input))
   }
 
-  // Administration screens are the native ERPNext list views (Rental Pricing Rule, Role Permission
+  // Administration screens are the native list views (Rental Pricing Rule, Role Permission
   // Manager, Data Import): the sidebar links there, so no Cortex read model exists for them.
   async listRentalPolicies(_input: ListRentalPoliciesInput): Promise<ListRentalPoliciesResponse> {
     throw new CortexUnavailableError('Les règles tarifaires se gèrent dans la liste native « Rental Pricing Rule ».')
   }
 
   async getTeamRoles(_input: GetTeamRolesInput): Promise<TeamRolesResponse> {
-    throw new CortexUnavailableError('Les rôles et accès se gèrent dans le gestionnaire de permissions ERPNext.')
+    throw new CortexUnavailableError('Les rôles et accès se gèrent dans le gestionnaire de permissions.')
   }
 
   async listMigrationBatches(_input: ListMigrationBatchesInput): Promise<MigrationBatchesResponse> {
-    throw new CortexUnavailableError("Les imports se gèrent dans « Data Import » d'ERPNext.")
+    throw new CortexUnavailableError("Les imports se gèrent dans « Data Import ».")
   }
 
   async listAuditEvents(input: ListAuditEventsInput): Promise<ListAuditEventsResponse> {

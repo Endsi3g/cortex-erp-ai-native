@@ -264,7 +264,7 @@ export const initialRentals: RentalTransaction[] = [
         is_consigned: false
       }
     ],
-    notes: 'Completed and synchronized with ERPNext Sales Invoice SINV-2026-0042.',
+    notes: 'Completed and synchronized with Sales Invoice SINV-2026-0042.',
     created_at: '2026-08-10T10:00:00Z',
     updated_at: '2026-08-23T09:00:00Z'
   },

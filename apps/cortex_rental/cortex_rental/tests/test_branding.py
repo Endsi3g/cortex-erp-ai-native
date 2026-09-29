@@ -32,3 +32,38 @@ class TestBranding(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNoErpnextInVisibleText(unittest.TestCase):
+    """The product name is Cortex: screens, labels and messages never name the underlying ERP.
+
+    Code, module names, field names and `required_apps` keep `erpnext` (it is the system of record).
+    """
+
+    def test_screens_locales_and_doctype_labels_do_not_name_erpnext(self):
+        import glob
+        import re
+
+        root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        patterns = [
+            "public/frontend/src/features/**/*.vue",
+            "public/frontend/src/api/adapters/*.ts",
+            "public/frontend/src/api/mock/**/*.ts",
+            "public/frontend/locales/*.json",
+            "cortex_rental/page/*/*.json",
+            "cortex_rental/workspace/*/*.json",
+            "translations/*.csv",
+            "fixtures/*.json",
+        ]
+        offenders = []
+        for pattern in patterns:
+            for path in glob.glob(os.path.join(root, pattern), recursive=True):
+                with open(path, encoding="utf-8") as handle:
+                    if re.search(r"erp\s?next", handle.read(), re.IGNORECASE):
+                        offenders.append(os.path.relpath(path, root))
+        for path in glob.glob(os.path.join(root, "cortex_rental", "doctype", "*", "*.json")):
+            with open(path, encoding="utf-8") as handle:
+                labels = re.findall(r'"label":\s*"([^"]*)"', handle.read())
+            if any(re.search(r"erp\s?next", label, re.IGNORECASE) for label in labels):
+                offenders.append(os.path.relpath(path, root))
+        self.assertEqual(offenders, [])

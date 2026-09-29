@@ -1,7 +1,7 @@
 <template>
   <NativeErpView
     title="Import et migration"
-    description="Les imports depuis un ancien système passent par « Data Import » d'ERPNext, avec validation et journal d'erreurs."
+    description="Les imports depuis un ancien système passent par « Data Import », avec validation et journal d'erreurs."
     href="/app/data-import"
     cta="Ouvrir Data Import"
   />

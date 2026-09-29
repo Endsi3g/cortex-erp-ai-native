@@ -1,6 +1,6 @@
 /* Desk build stylesheet: scoped under .cortex-root by postcss/scope-cortex-root.cjs.
  *
- * 1. Tailwind's preflight, scoped: neutralises the ERPNext/Bootstrap defaults that would otherwise
+ * 1. Tailwind's preflight, scoped: neutralises the Desk/Bootstrap defaults that would otherwise
  *    leak into Cortex screens (link colours, heading and list margins, table and form styles).
  * 2. Frappe UI theme + utilities (its blue accent is re-pointed at the Cortex green below).
  * 3. Cortex design-system styles.
@@ -39,7 +39,7 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* ERPNext focus and control accents (grey/blue rings, box-shadows) replaced by the Cortex ring. */
+/* Desk focus and control accents (grey/blue rings, box-shadows) replaced by the Cortex ring. */
 .cortex-root a,
 .cortex-root button,
 .cortex-root input,
@@ -69,7 +69,7 @@
   font-family: inherit;
 }
 
-/* ERPNext gives table cells their own padding; Cortex tables set theirs with utilities. */
+/* The Desk gives table cells their own padding; Cortex tables set theirs with utilities. */
 .cortex-root :is(th, td) {
   padding: 0;
 }

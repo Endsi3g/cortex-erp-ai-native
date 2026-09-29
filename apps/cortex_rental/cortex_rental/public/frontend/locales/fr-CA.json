@@ -188,7 +188,7 @@
     "next_action_contract": "Démarrer Sortie (Check-out)",
     "next_action_checkout": "Démarrer Retour (Check-in)",
     "next_action_partial": "Poursuivre le retour (Check-in)",
-    "next_action_invoiced": "Facture validée ERPNext"
+    "next_action_invoiced": "Facture validée"
   },
   "checkout": {
     "title": "Sortie de Matériel (Check-out)",

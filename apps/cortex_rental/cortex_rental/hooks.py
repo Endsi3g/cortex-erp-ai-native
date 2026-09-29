@@ -1,7 +1,7 @@
 app_name = "cortex_rental"
 app_title = "Cortex Rental"
 app_publisher = "Cortex AI-Native ERP Team"
-app_description = "AI-Native Rental, Availability & Consignment Management for Frappe & ERPNext"
+app_description = "AI-Native Rental, Availability & Consignment Management"
 app_email = "architecture@cortex.local"
 app_license = "proprietary"
 required_apps = ["erpnext"]

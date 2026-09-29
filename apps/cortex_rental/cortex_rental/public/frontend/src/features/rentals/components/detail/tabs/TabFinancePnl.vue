@@ -1,7 +1,7 @@
 <template>
   <div data-test="tab-finance-pnl">
     <p class="cx-notice" style="margin: 0 0 16px">
-      <span><strong>Règle tarifaire 7 jours = 3 jours.</strong> Pour {{ rental.calendar_days }} jours calendaires, {{ rental.billable_days }} jours sont facturés. Le serveur recalcule le prix et les taxes; ces montants viennent du devis ERPNext.</span>
+      <span><strong>Règle tarifaire 7 jours = 3 jours.</strong> Pour {{ rental.calendar_days }} jours calendaires, {{ rental.billable_days }} jours sont facturés. Le serveur recalcule le prix et les taxes; ces montants viennent du devis.</span>
     </p>
     <h3 class="m-0 mb-3 text-base font-semibold">Facturation client</h3>
     <div class="cx-tablewrap" style="max-width: 640px">

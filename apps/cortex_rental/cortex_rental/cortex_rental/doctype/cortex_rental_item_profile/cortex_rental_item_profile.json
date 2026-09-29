@@ -19,7 +19,7 @@
     {
       "fieldname": "item_code",
       "fieldtype": "Link",
-      "label": "ERPNext Item Code",
+      "label": "Item Code",
       "options": "Item",
       "reqd": 1,
       "unique": 1,

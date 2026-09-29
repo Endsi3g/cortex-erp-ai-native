@@ -159,7 +159,7 @@ function handleHeaderClick(col: TableColumn) {
 </template>
 
 <style scoped>
-/* ERPNext report table: grey header, hairline grid, 44px rows, no card frame. */
+/* report table: grey header, hairline grid, 44px rows, no card frame. */
 .cx-table-container {
   width: 100%;
   overflow-x: auto;

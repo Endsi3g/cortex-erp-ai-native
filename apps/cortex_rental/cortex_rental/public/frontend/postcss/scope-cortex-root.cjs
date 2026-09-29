@@ -1,6 +1,6 @@
 /**
  * Confines every rule of the Desk build under `.cortex-root` so Cortex styles cannot change the
- * ERPNext Desk (navbar, sidebar, forms). Tailwind utilities are already scoped by `important`;
+ * Desk (navbar, sidebar, forms). Tailwind utilities are already scoped by `important`;
  * this plugin scopes the rest (frappe-ui base layer, Cortex design-system CSS) and leaves
  * at-rules such as @font-face and @keyframes untouched.
  */

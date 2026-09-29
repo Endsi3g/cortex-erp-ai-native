@@ -129,7 +129,7 @@
       <div>
         <div class="font-bold text-cortex-text-primary">Règle de Supervision R5 — SAS d'Approbation Humaine</div>
         <p class="text-cortex-text-muted mt-0.5">
-          Les agents IA ne peuvent en aucun cas auto-valider une demande. Cette validation exécutera les mutations en base, déclenchera les écritures ERPNext et générera un événement d'audit immuable.
+          Les agents IA ne peuvent en aucun cas auto-valider une demande. Cette validation exécutera les mutations en base, déclenchera les écritures comptables et générera un événement d'audit immuable.
         </p>
       </div>
     </div>

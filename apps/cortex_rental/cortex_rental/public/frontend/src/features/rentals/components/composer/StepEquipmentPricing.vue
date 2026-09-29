@@ -1,13 +1,13 @@
 <template>
   <div class="space-y-5" data-test="step-equipment-pricing">
     <div class="rounded-xl border border-cortex-border bg-cortex-surface p-4 space-y-3">
-      <label class="block text-xs font-bold uppercase tracking-wider">Catalogue locatif ERPNext</label>
+      <label class="block text-xs font-bold uppercase tracking-wider">Catalogue locatif</label>
       <div class="flex gap-2"><input v-model="query" type="search" class="min-w-0 flex-1 rounded-lg border border-cortex-border px-3 py-2 text-xs" placeholder="Rechercher un équipement…" @input="searchCatalog" /><button type="button" class="cx-btn-secondary px-3 text-xs" :disabled="!selectedCode" @click="addItem">Ajouter</button></div>
       <p v-if="catalogLoading" class="text-xs text-cortex-text-muted">Recherche dans le catalogue de l’entreprise…</p>
       <div v-if="catalog.length" class="max-h-40 overflow-auto divide-y divide-cortex-border rounded-lg border border-cortex-border">
         <button v-for="item in catalog" :key="item.item_code" type="button" class="flex w-full items-center justify-between px-3 py-2 text-left text-xs hover:bg-cortex-surface-secondary" :class="selectedCode === item.item_code ? 'bg-cortex-primary-50' : ''" @click="selectedCode = item.item_code"><span>{{ item.item_name }} <span class="text-cortex-text-muted">· {{ item.item_code }}</span></span><span>{{ money(item.daily_rate) }}/jour</span></button>
       </div>
-      <p v-else-if="!catalogLoading" class="text-xs text-cortex-text-muted">Aucun résultat. Le tarif affiché vient du profil locatif ERPNext.</p>
+      <p v-else-if="!catalogLoading" class="text-xs text-cortex-text-muted">Aucun résultat. Le tarif affiché vient du profil locatif.</p>
     </div>
 
     <div class="rounded-xl border border-cortex-border bg-cortex-surface p-4 space-y-3">
@@ -28,11 +28,11 @@
     </div>
 
     <div class="rounded-xl border border-cortex-border bg-cortex-surface-secondary p-4 text-xs space-y-2">
-      <div class="flex justify-between"><span>Estimation hors taxes (tarifs ERPNext)</span><span>{{ pricing ? money(pricing.subtotal) : '—' }}</span></div>
-      <div class="flex justify-between"><span>Taxes</span><span>{{ pricing ? (pricing.tax_amount ? money(pricing.tax_amount) : 'calculées lors de la création du devis ERPNext') : '—' }}</span></div>
+      <div class="flex justify-between"><span>Estimation hors taxes (tarifs du catalogue)</span><span>{{ pricing ? money(pricing.subtotal) : '—' }}</span></div>
+      <div class="flex justify-between"><span>Taxes</span><span>{{ pricing ? (pricing.tax_amount ? money(pricing.tax_amount) : 'calculées lors de la création du devis') : '—' }}</span></div>
       <div v-if="pricing" class="border-t pt-2 flex justify-between font-bold"><span>Estimation actuelle</span><span>{{ money(pricing.grand_total) }}</span></div>
       <p v-if="pricingError" class="text-amber-800">{{ pricingError }}</p>
-      <p v-else class="text-[11px] text-cortex-text-muted">Montant indicatif calculé par Cortex. Les taxes officielles viennent du modèle de taxes ERPNext associé.</p>
+      <p v-else class="text-[11px] text-cortex-text-muted">Montant indicatif calculé par Cortex. Les taxes officielles viennent du modèle de taxes associé.</p>
     </div>
 
     <div class="flex justify-between border-t border-cortex-border pt-3"><button type="button" class="cx-btn-secondary px-3 py-2 text-xs" @click="emit('prev')">Précédent</button><button type="button" class="cx-btn-primary px-4 py-2 text-xs" :disabled="!lines.length || !pricing || checking" data-test="step2-next-btn" @click="emit('next')">Vérifier le devis</button></div>
@@ -69,7 +69,7 @@ watch(() => [props.lines, props.startsAt, props.endsAt] as const, () => { if (re
       const repriced = props.lines.map(line => ({ ...line, dailyRate: price.lines.find(p => p.item_code === line.itemCode)?.daily_rate ?? line.dailyRate }))
       if (repriced.some((line, index) => line.dailyRate !== props.lines[index]?.dailyRate)) emit('update:lines', repriced)
     }
-  } catch (error) { if (current === sequence) { pricingError.value = error instanceof Error ? error.message : 'Prix ERPNext indisponibles'; availabilityError.value = 'Vérification impossible. Ne considérez pas cet équipement comme réservé.' } }
+  } catch (error) { if (current === sequence) { pricingError.value = error instanceof Error ? error.message : 'Prix indisponibles'; availabilityError.value = 'Vérification impossible. Ne considérez pas cet équipement comme réservé.' } }
   finally { if (current === sequence) checking.value = false }
 }, 300) }, { deep: true, immediate: true })
 </script>

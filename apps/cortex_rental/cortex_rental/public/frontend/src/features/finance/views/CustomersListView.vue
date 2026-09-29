@@ -1,8 +1,8 @@
 <template>
   <div class="cx-page" data-test="screen-customers">
-    <CortexPageHeader title="Clients" subtitle="Clients ERPNext avec l'activité de location comptée sur les transactions." :provenance="data?.provenance">
+    <CortexPageHeader title="Clients" subtitle="Clients avec l'activité de location comptée sur les transactions." :provenance="data?.provenance">
       <template #actions>
-        <a class="cx-btn-secondary" href="/app/customer">Liste ERPNext</a>
+        <a class="cx-btn-secondary" href="/app/customer">Liste complète</a>
         <RefreshButton :loading="loading" @refresh="reload" />
       </template>
     </CortexPageHeader>

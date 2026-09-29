@@ -121,14 +121,14 @@
     {
       "fieldname": "erpnext_quotation",
       "fieldtype": "Link",
-      "label": "ERPNext Quotation",
+      "label": "Quotation",
       "options": "Quotation",
       "read_only": 1
     },
     {
       "fieldname": "erpnext_sales_order",
       "fieldtype": "Link",
-      "label": "ERPNext Sales Order",
+      "label": "Sales Order",
       "options": "Sales Order",
       "read_only": 1
     },

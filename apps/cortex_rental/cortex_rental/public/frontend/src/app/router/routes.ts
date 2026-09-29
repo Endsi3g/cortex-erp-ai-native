@@ -133,7 +133,7 @@ export const routes: RouteRecordRaw[] = [
   { path: '/app/cortex-fleet', name: 'fleet-legacy', redirect: { name: 'equipment-list' } },
   { path: '/app/cortex-supervision', name: 'supervision-legacy', redirect: { name: 'ai-inbox', query: { type: 'approval' } } },
 
-  // Customers and profit & loss: read-only, from ERPNext.
+  // Customers and profit & loss: read-only, from the ERP.
   {
     path: '/app/cortex-customers',
     name: 'customers-list',

@@ -1,6 +1,6 @@
 <template>
   <div class="cx-page" data-test="screen-operations-overview">
-    <CortexPageHeader title="Opérations" subtitle="Départs, retours et exceptions du jour, calculés depuis ERPNext." :provenance="data?.provenance">
+    <CortexPageHeader title="Opérations" subtitle="Départs, retours et exceptions du jour, calculés depuis les transactions." :provenance="data?.provenance">
       <template #actions>
         <RefreshButton :loading="loading" @refresh="reload" />
         <RouterLink to="/app/cortex-rental/new" class="cx-btn-primary">Nouveau devis</RouterLink>

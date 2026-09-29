@@ -6,7 +6,7 @@
     <section class="cx-section">
       <p class="m-0 text-sm">{{ description }}</p>
       <p class="mt-2 text-sm" style="color: var(--erp-muted)">
-        ERPNext reste le système de référence: cet écran est la vue native, avec ses droits et son historique, plutôt qu'une copie dans Cortex.
+        Cet écran est la vue native, avec ses droits et son historique, plutôt qu'une copie dans Cortex.
       </p>
     </section>
   </div>

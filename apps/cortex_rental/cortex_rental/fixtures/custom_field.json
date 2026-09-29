@@ -10,7 +10,7 @@
     "insert_after": "customer_name",
     "reqd": 1,
     "in_standard_filter": 1,
-    "description": "Owning Company/tenant for this Customer record within Cortex. Required because core ERPNext Customer is not natively Company-scoped; Cortex enforces tenant isolation on top of it via this field."
+    "description": "Owning Company/tenant for this Customer record within Cortex. Required because the core Customer is not natively Company-scoped; Cortex enforces tenant isolation on top of it via this field."
   },
   {
     "doctype": "Custom Field",
@@ -23,6 +23,6 @@
     "default": "Active",
     "insert_after": "status",
     "in_standard_filter": 1,
-    "description": "Cortex-specific rental availability status, distinct from ERPNext's native Serial No status. A unit in Quarantine/Under Repair/Missing/Decommissioned is excluded from AvailabilityService's fleet count even if the ERPNext status is still Active."
+    "description": "Cortex-specific rental availability status, distinct from the native Serial No status. A unit in Quarantine/Under Repair/Missing/Decommissioned is excluded from AvailabilityService's fleet count even if the native status is still Active."
   }
 ]

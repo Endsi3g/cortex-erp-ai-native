@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-// ERPNext report title bar: title on the left, actions on the right (see cortex-erp.css).
+// report title bar: title on the left, actions on the right (see cortex-erp.css).
 import ProvenanceTag from './ProvenanceTag.vue'
 
 defineProps<{ title: string; subtitle?: string; provenance?: string | null }>()

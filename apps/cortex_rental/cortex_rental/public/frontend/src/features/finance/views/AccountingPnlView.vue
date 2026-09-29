@@ -1,8 +1,8 @@
 <template>
   <div class="cx-page" data-test="screen-accounting-pnl">
-    <CortexPageHeader title="État des résultats" subtitle="Rapport « Profit and Loss Statement » d'ERPNext, sans recalcul." :provenance="data?.provenance">
+    <CortexPageHeader title="État des résultats" subtitle="Rapport « Profit and Loss Statement », sans recalcul." :provenance="data?.provenance">
       <template #actions>
-        <a class="cx-btn-secondary" href="/app/query-report/Profit%20and%20Loss%20Statement">Ouvrir le rapport ERPNext</a>
+        <a class="cx-btn-secondary" href="/app/query-report/Profit%20and%20Loss%20Statement">Ouvrir le rapport détaillé</a>
         <RefreshButton :loading="loading" @refresh="reload" />
       </template>
     </CortexPageHeader>
@@ -31,7 +31,7 @@
     <div v-else-if="data?.reportError" class="cx-section">
       <div class="cx-notice" role="alert">
         <div>
-          <strong>Le rapport ERPNext n'a pas pu être produit.</strong>
+          <strong>Le rapport n'a pas pu être produit.</strong>
           <p class="m-0 mt-1">{{ data.reportError }}</p>
           <p class="m-0 mt-1">Aucun montant n'est affiché : ce n'est pas un résultat de zéro.</p>
         </div>

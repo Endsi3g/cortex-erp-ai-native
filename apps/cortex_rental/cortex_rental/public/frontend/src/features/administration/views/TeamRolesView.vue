@@ -1,7 +1,7 @@
 <template>
   <NativeErpView
     title="Équipe et rôles"
-    description="Les utilisateurs, rôles Cortex et permissions se gèrent dans les écrans natifs d'ERPNext."
+    description="Les utilisateurs, rôles Cortex et permissions se gèrent dans les écrans natifs."
     href="/app/user"
     cta="Ouvrir les utilisateurs"
   />

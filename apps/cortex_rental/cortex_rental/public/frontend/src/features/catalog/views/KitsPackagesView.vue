@@ -1,6 +1,6 @@
 <template>
   <div class="cx-page" data-test="screen-kits">
-    <CortexPageHeader title="Kits et forfaits" subtitle="Ensembles d'équipements définis comme « Product Bundle » dans ERPNext." :provenance="data?.provenance">
+    <CortexPageHeader title="Kits et forfaits" subtitle="Ensembles d'équipements définis comme « Product Bundle »." :provenance="data?.provenance">
       <template #actions><RefreshButton :loading="loading" @refresh="reload" /></template>
     </CortexPageHeader>
 

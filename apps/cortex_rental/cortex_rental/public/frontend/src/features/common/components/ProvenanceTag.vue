@@ -16,7 +16,7 @@ import { computed } from 'vue'
 const props = defineProps<{ provenance?: string | null }>()
 
 const labels: Record<string, { label: string; hint: string }> = {
-  mock: { label: 'Données simulées', hint: 'Mode Mock: aucune donnée ERPNext réelle.' },
+  mock: { label: 'Données simulées', hint: 'Mode Mock: aucune donnée réelle.' },
   demo: { label: 'Données de démonstration', hint: 'Jeu de données synthétique.' },
   stale: { label: 'Données périmées', hint: 'La dernière synchronisation est ancienne.' }
 }

@@ -188,7 +188,7 @@
     "next_action_contract": "Start Check-out",
     "next_action_checkout": "Start Check-in",
     "next_action_partial": "Continue Check-in",
-    "next_action_invoiced": "Invoice verified in ERPNext"
+    "next_action_invoiced": "Invoice verified"
   },
   "checkout": {
     "title": "Equipment Check-out",

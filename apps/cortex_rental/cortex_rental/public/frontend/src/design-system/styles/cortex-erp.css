@@ -1,5 +1,5 @@
 /**
- * Cortex screens — ERPNext report standard (the "Profit and Loss Statement" reference).
+ * Cortex screens — report standard (the "Profit and Loss Statement" reference).
  *
  * White page, a 56px title bar with the actions on the right, soft grey buttons and filled fields
  * (no outlines), a centred KPI strip, then a full-width table with a grey header. One accent: the
@@ -527,7 +527,7 @@ a.cx-kpi__value:hover {
   background: #f3faf6;
 }
 
-/* Account tree (P&L): chevron toggles and group rows, like the ERPNext report tree */
+/* Account tree (P&L): chevron toggles and group rows, like the report tree */
 .cx-chevron {
   display: inline-flex;
   width: 20px;

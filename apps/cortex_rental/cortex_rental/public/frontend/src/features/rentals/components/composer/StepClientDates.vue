@@ -6,8 +6,8 @@
       <div v-if="customerQuery && customers.length" class="max-h-48 overflow-auto rounded-lg border border-cortex-border bg-white">
         <button v-for="cust in customers" :key="cust.id" type="button" class="block w-full px-3 py-2 text-left text-xs hover:bg-cortex-surface-secondary" @click="selectCustomer(cust)">{{ cust.name }} <span class="text-cortex-text-muted">· {{ cust.id }}</span></button>
       </div>
-      <p v-if="customersLoading" class="text-[11px] text-cortex-text-muted">Recherche des clients dans ERPNext…</p>
-      <p v-if="modelValue.customerId" class="text-[11px] text-cortex-primary-700">Client ERPNext sélectionné : {{ modelValue.customerName }} · assurance {{ selectedCustomer?.insurance_valid === true ? 'valide' : selectedCustomer?.insurance_valid === false ? 'à corriger' : 'à vérifier' }}</p>
+      <p v-if="customersLoading" class="text-[11px] text-cortex-text-muted">Recherche des clients…</p>
+      <p v-if="modelValue.customerId" class="text-[11px] text-cortex-primary-700">Client sélectionné : {{ modelValue.customerName }} · assurance {{ selectedCustomer?.insurance_valid === true ? 'valide' : selectedCustomer?.insurance_valid === false ? 'à corriger' : 'à vérifier' }}</p>
       <p v-else class="text-[11px] text-amber-700">Sélectionnez un client existant. Aucun client de démonstration n’est proposé.</p>
     </div>
 

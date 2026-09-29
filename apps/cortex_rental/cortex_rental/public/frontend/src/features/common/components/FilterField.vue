@@ -6,6 +6,6 @@
 </template>
 
 <script setup lang="ts">
-// Filled field whose visible label is its placeholder (ERPNext report filters); the label stays for assistive tech.
+// Filled field whose visible label is its placeholder (report filters); the label stays for assistive tech.
 defineProps<{ label: string }>()
 </script>
