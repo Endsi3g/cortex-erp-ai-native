@@ -20,7 +20,8 @@
   --input: #f3f3f3;
   --muted: #f8f8f8;
   --accent: #066336;
-  --border: #ededed;
+  --border: #e5e7eb;
+  --input-border: #d4d4d8;
   --radius: 0.5rem;
   --popover: #ffffff;
   --primary: #066336;
@@ -30,6 +31,7 @@
   --destructive: #b3191f;
   --muted-foreground: #525252;
   --link: #066336;
+  --focus-ring: rgba(6, 99, 54, 0.2);
   --danger-text: #b3191f;
   --accent-foreground: #ffffff;
   --font-sans: InterVar, Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -46,6 +48,7 @@
     --muted: #17201b;
     --accent: #066336;
     --border: #26322c;
+    --input-border: #3a4a41;
     --popover: #0f1512;
     --primary: #34d399;
     --secondary: #17201b;
@@ -53,6 +56,7 @@
     --foreground: #f5f7f6;
     --muted-foreground: #b4bfb9;
     --link: #6ee7b7;
+    --focus-ring: rgba(52, 211, 153, 0.3);
     --danger-text: #ff9a9e;
   }
 }
@@ -72,11 +76,19 @@ body:has(.cx-auth) {
   box-sizing: border-box;
 }
 
+/* Frappe wraps the page in `main.container` (max-width, side padding, vertical margin): the layout owns the whole viewport. */
+body main.container:has(.cx-auth) {
+  max-width: none;
+  margin: 0 !important;
+  padding: 0;
+}
+
 .cx-auth {
   display: grid;
   min-height: 100vh;
-  gap: 24px;
-  padding: 12px;
+  min-height: 100dvh;
+  gap: 16px;
+  padding: 16px;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
@@ -98,15 +110,16 @@ body:has(.cx-auth) {
   min-height: 560px;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
+  padding: 56px 40px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
+  box-shadow: 0 1px 2px rgba(16, 24, 20, 0.04);
 }
 
 .cx-auth__form {
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
 }
 
 body .cx-auth.cx-auth .page-card {
@@ -127,7 +140,7 @@ body .cx-auth.cx-auth .page-card-head .app-logo {
   width: auto;
   max-width: 160px;
   height: 40px;
-  margin: 0 0 24px;
+  margin: 0 0 16px;
   object-fit: contain;
 }
 
@@ -158,7 +171,7 @@ body .cx-auth.cx-auth .password-field:has(.field-icon) .form-control {
 body .cx-auth.cx-auth .form-control {
   height: 44px !important;
   padding: 0 14px !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid var(--input-border) !important;
   border-radius: var(--radius) !important;
   background: var(--input) !important;
   color: var(--foreground) !important;
@@ -172,11 +185,10 @@ body .cx-auth.cx-auth .form-control::placeholder {
 }
 
 body .cx-auth.cx-auth .form-control:focus {
-  border-color: var(--accent);
-  outline: 2px solid var(--ring);
-  outline-offset: 1px;
+  border-color: var(--accent) !important;
+  outline: 0;
   background: var(--card) !important;
-  box-shadow: none;
+  box-shadow: 0 0 0 3px var(--focus-ring) !important;
 }
 
 body .cx-auth.cx-auth .email-field,
@@ -347,7 +359,7 @@ body .cx-auth.cx-auth .page-card-head .indicator {
   .cx-auth__aside {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: center;
     padding: 64px;
   }
 }
@@ -372,7 +384,7 @@ body .cx-auth.cx-auth .page-card-head .indicator {
 
 .cx-auth__aside-inner {
   position: relative;
-  max-width: 460px;
+  max-width: 520px;
 }
 
 .cx-auth__eyebrow {
@@ -387,7 +399,7 @@ body .cx-auth.cx-auth .page-card-head .indicator {
 .cx-auth__statement {
   margin: 0 0 32px;
   font-family: var(--font-sans);
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: var(--letter-spacing);
@@ -397,13 +409,95 @@ body .cx-auth.cx-auth .page-card-head .indicator {
   margin: 0;
   padding: 0;
   list-style: none;
-  color: rgba(249, 248, 247, 0.78);
-  font-size: 14px;
+  color: rgba(249, 248, 247, 0.92);
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .cx-auth__points li {
-  padding: 10px 0;
-  border-top: 1px solid rgba(249, 248, 247, 0.16);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(249, 248, 247, 0.18);
+}
+
+.cx-auth__points li svg {
+  flex: none;
+  margin-top: 2px;
+  color: #6ee7b7;
+}
+
+/* Abstract product illustration: three flow cards, decorative only (no data, hidden from assistive tech). */
+.cx-auth__illustration {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 36px;
+}
+
+.cx-flow {
+  display: grid;
+  grid-template-columns: 36px auto 1fr 10px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid rgba(249, 248, 247, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(6px);
+}
+
+.cx-flow--in {
+  margin-left: 28px;
+}
+
+.cx-flow--own {
+  margin-left: 56px;
+}
+
+.cx-flow__icon {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(110, 231, 183, 0.18);
+  color: #6ee7b7;
+}
+
+.cx-flow__label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cx-flow__bars {
+  display: grid;
+  gap: 6px;
+}
+
+.cx-flow__bars i {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(249, 248, 247, 0.22);
+}
+
+.cx-flow__bars i:last-child {
+  width: 60%;
+}
+
+.cx-flow__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6ee7b7;
+}
+
+@media (max-height: 820px) {
+  .cx-auth__illustration {
+    display: none;
+  }
 }
 
 /* Logo: dark symbol on light, reversed symbol on dark */
@@ -810,13 +904,6 @@ body .cx-auth.cx-auth .password-field .form-control {
 
 /* ---- Adaptive layout: phone, tablet, desktop, wide ------------------------------------------- */
 @media (max-width: 640px) {
-  /* Frappe wraps the page in `main.container` (24px side padding, vertical margin): drop it so the card is full-bleed. */
-  body main.container:has(.cx-auth) {
-    max-width: none;
-    margin: 0 !important;
-    padding: 0;
-  }
-
   .cx-auth {
     gap: 0;
     padding: 0;

@@ -67,6 +67,29 @@ class TestLoginTemplate(unittest.TestCase):
         first_form = self.html.index("{{ email_login_body() }}")
         self.assertLess(first_social, first_form)
 
+    def test_consistent_french_copy_and_no_autofocus_on_the_email_field(self):
+        for text in (
+            "Se connecter à",
+            "Continuer avec",
+            "Recevoir un lien de connexion",
+            "Adresse courriel",
+            "Mot de passe oublié ?",
+            "Se connecter</button>",
+        ):
+            self.assertIn(text, self.html)
+        self.assertNotIn("Login with", self.html.replace('_("Login with LDAP")', ""))
+        login_email = self.html[self.html.index('id="login_email"') : self.html.index("field-icon email-icon")]
+        self.assertNotIn("autofocus", login_email)
+
+    def test_brand_panel_illustration_is_decorative(self):
+        block = self.html[self.html.index("cx-auth__illustration") :].split("</div>\n\t\t<ul", 1)[0]
+        self.assertIn(
+            'aria-hidden="true"',
+            self.html[self.html.index("cx-auth__illustration") - 40 : self.html.index("cx-auth__illustration") + 60],
+        )
+        visible = re.sub(r"<svg.*?</svg>|<[^>]+>", " ", block, flags=re.S)
+        self.assertNotRegex(visible, r"\d")  # no invented figures or names
+
     def test_inputs_have_visible_labels(self):
         for field in ("login_email", "login_password"):
             self.assertRegex(self.html, rf'<label[^>]*for="{field}"')
