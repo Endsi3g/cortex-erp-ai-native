@@ -128,6 +128,25 @@ export const routes: RouteRecordRaw[] = [
     }
   },
 
+  // Legacy Desk pages (cortex-checkin, cortex-fleet, cortex-supervision) now host the screens above.
+  { path: '/app/cortex-checkin', name: 'checkin-picker', redirect: { path: '/app/cortex-rentals', query: { state: 'checked_out' } } },
+  { path: '/app/cortex-fleet', name: 'fleet-legacy', redirect: { name: 'equipment-list' } },
+  { path: '/app/cortex-supervision', name: 'supervision-legacy', redirect: { name: 'ai-inbox', query: { type: 'approval' } } },
+
+  // Customers and profit & loss: read-only, from ERPNext.
+  {
+    path: '/app/cortex-customers',
+    name: 'customers-list',
+    component: () => import('@/features/finance/views/CustomersListView.vue'),
+    meta: { screenId: 0, titleKey: 'routes.customers', priority: 'P1', layout: 'app', requiresAuth: true, requiredPermission: 'cortex:rental:view', category: 'finance', iconName: 'Users' }
+  },
+  {
+    path: '/app/cortex-accounting-pnl',
+    name: 'accounting-pnl',
+    component: () => import('@/features/finance/views/AccountingPnlView.vue'),
+    meta: { screenId: 0, titleKey: 'routes.accounting_pnl', priority: 'P1', layout: 'app', requiresAuth: true, category: 'finance', iconName: 'Scale' }
+  },
+
   // Approval Queue now lives as a filtered view in AI Inbox.
   {
     path: '/app/cortex-approvals',

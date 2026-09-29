@@ -1,45 +1,21 @@
 <template>
-  <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-    <!-- Top Navigation / Breadcrumbs -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <router-link
-          to="/app/cortex-rentals"
-          class="p-2 rounded-xl border border-cortex-border bg-cortex-surface hover:bg-cortex-surface-muted text-cortex-text-secondary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-          aria-label="Retour aux locations"
-        >
-          <ArrowLeft class="w-5 h-5" />
-        </router-link>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-xl font-bold text-cortex-text-primary">
-              {{ $t('checkin.title', 'Check-in — Retour Matériel & Diagnostic') }}
-            </h1>
-            <span class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-purple-100 text-purple-800">
-              F11
-            </span>
-          </div>
-          <p class="text-xs text-cortex-text-muted mt-0.5">
-            {{ $t('checkin.subtitle', 'Contrôle retour item par item, retours partiels et anomalies 1-clic') }}
-          </p>
-        </div>
-      </div>
+  <div class="cx-page space-y-6" data-test="screen-checkin-scanner">
+    <CortexPageHeader
+      :title="$t('checkin.title', 'Check-in — Retour Matériel & Diagnostic')"
+      :subtitle="$t('checkin.subtitle', 'Contrôle retour item par item, retours partiels et anomalies.')"
+    >
+      <template #actions><router-link to="/app/cortex-rentals" class="cx-btn-secondary">Toutes les locations</router-link></template>
+    </CortexPageHeader>
 
-      <!-- Quick Switch Rental Dropdown -->
-      <div class="flex items-center gap-2">
-        <label for="rental-picker" class="text-xs font-medium text-cortex-text-muted hidden sm:inline">
-          Dossier :
-        </label>
-        <select
-          id="rental-picker"
-          v-model="selectedRentalId"
-          class="px-3 py-2 text-xs font-mono font-semibold rounded-xl border border-cortex-border bg-cortex-surface text-cortex-text-primary focus:ring-2 focus:ring-cortex-primary/30 min-h-[44px]"
-          @change="handleSwitchRental"
-        >
+    <form class="cx-filters" @submit.prevent>
+      <FilterField label="Dossier">
+        <select id="rental-picker" v-model="selectedRentalId" class="cx-field" @change="handleSwitchRental">
           <option v-for="option in eligibleRentals" :key="option.id" :value="option.id">{{ option.id }} · {{ option.customer_name }}</option>
         </select>
-      </div>
-    </div>
+      </FilterField>
+    </form>
+
+    <div class="cx-section space-y-6">
 
     <!-- Loading State -->
     <div v-if="isLoading" class="p-12 text-center text-cortex-text-muted bg-cortex-surface rounded-2xl border border-cortex-border">
@@ -353,6 +329,7 @@
       @close="showDiffModal = false"
       @confirm="handleConfirmCloseReturn"
     />
+    </div>
   </div>
 </template>
 
@@ -361,7 +338,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   AlertTriangle,
-  ArrowLeft,
   ArrowRight,
   CheckCircle2,
   Loader2,
@@ -371,6 +347,8 @@ import { getCortexApiClient } from '@/api'
 import type { RentalTransaction, RentalLineItem } from '@/api/contracts'
 import { ScannerFeedback, sanitizeBarcodeInput } from '@/utils/scanner'
 import CortexScannerInput from '@/design-system/components/base/CortexScannerInput.vue'
+import CortexPageHeader from '@/features/common/components/CortexPageHeader.vue'
+import FilterField from '@/features/common/components/FilterField.vue'
 import DamageEvidenceModal from '../components/DamageEvidenceModal.vue'
 import ReturnDiffSummary from '../components/ReturnDiffSummary.vue'
 

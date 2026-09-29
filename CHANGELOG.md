@@ -1,5 +1,11 @@
 # Changelog — Cortex Security & Correctness Remediation
 
+## Unreleased
+
+- All Desk pages now mount the same Vue 3 + Frappe UI bundle (`npm run build:desk`). The legacy esbuild pages (availability, check-in, composer, customers, fleet, supervision, P&L) are removed; `cortex-customers`, `cortex-fleet` and `cortex-supervision` showed hard-coded demo data and are replaced by real read models (`customers.list_customers`, equipment list, AI Inbox approvals).
+- The profit-and-loss screen reads ERPNext's report and shows an explicit error when it fails instead of zeros (`reportError`).
+- Fixes unstyled `/login` and `/me` pages: `bench build --app cortex_rental` alone does not build Frappe's website and desk bundles; `entrypoint-bench.sh` now runs a full `bench build` when they are missing.
+
 ## v0.5.0 — 2026-09-23
 
 This release establishes the ERPNext-first, AI-native Cortex workspace and documents the implementation contract for future product and AI agents in `docs/frontend/CORTEX_UI_HANDOFF_V2.md`.

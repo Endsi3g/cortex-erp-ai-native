@@ -17,6 +17,8 @@
     "availability_matrix": "Matrice de Disponibilité",
     "rentals_list": "Liste des Locations",
     "rental_composer": "Compositeur de Transaction",
+    "customers": "Clients",
+    "accounting_pnl": "État des résultats",
     "rental_detail": "Détail de Transaction",
     "checkout_scanner": "Sortie d'Équipement (Check-out)",
     "checkin_scanner": "Retour Matériel (Check-in)",

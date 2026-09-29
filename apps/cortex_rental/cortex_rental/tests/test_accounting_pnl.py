@@ -98,6 +98,31 @@ DATA = [
 
 
 class TestTransformPnlReport(unittest.TestCase):
+    def test_labels_as_emitted_by_erpnext_15_are_recognised(self):
+        # Quoted totals, `Profit for the year` and an empty separator row, as returned by a real bench.
+        data = [
+            {"account": "Income - CCR", "account_name": "Income", "indent": 0.0, "jan": 100.0, "total": 100.0},
+            {"account": "Sales - CCR", "account_name": "Sales", "indent": 1.0, "jan": 100.0, "total": 100.0},
+            {
+                "account": "'Total Income (Credit)'",
+                "account_name": "'Total Income (Credit)'",
+                "jan": 100.0,
+                "total": 100.0,
+            },
+            {},
+            {
+                "account": "'Total Expense (Debit)'",
+                "account_name": "'Total Expense (Debit)'",
+                "jan": 40.0,
+                "total": 40.0,
+            },
+            {"account": "'Profit for the year'", "account_name": "'Profit for the year'", "jan": 60.0, "total": 60.0},
+        ]
+        report = transform_pnl_report([{"fieldname": "jan", "label": "Jan"}], data)
+        self.assertEqual((report["totalIncome"], report["totalExpense"], report["netProfit"]), (100.0, 40.0, 60.0))
+        self.assertEqual([node["name"] for node in report["accounts"]], ["Income"])
+        self.assertEqual(report["periods"][0]["profitLoss"], 60.0)
+
     def test_kpi_totals_come_from_total_rows(self):
         report = transform_pnl_report(COLUMNS, DATA)
         self.assertEqual(report["totalIncome"], 2000000)

@@ -15,19 +15,8 @@ APP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MODULE_DIR = os.path.join(APP_DIR, "cortex_rental")
 ROUTES = os.path.join(APP_DIR, "public", "frontend", "src", "app", "router", "routes.ts")
 
-# Pages that existed before the Vue 3 + Frappe UI host and keep their own implementation.
-LEGACY_PAGES = {
-    "cortex-availability",
-    "cortex-checkin",
-    "cortex-transaction-composer",
-    "cortex-customers",
-    "cortex-fleet",
-    "cortex-supervision",
-    "cortex-accounting-pnl",
-    "cortex-assistant",
-}
-# SPA routes that are not Desk Pages: the router redirects them, the sidebar links to the native
-# ERPNext list, or they are legacy names handled by the host.
+# The Copilot page keeps its own bundle: it mounts the Copilot panel, not a routed screen.
+LEGACY_PAGES = {"cortex-assistant"}
 # A Workspace slug wins over a Page with the same name, so these SPA paths live in Pages with
 # another name; cortex_host.js maps between the two.
 PAGE_ALIASES = {"cortex-operations": "cortex-ops-overview", "cortex-rental": "cortex-rental-detail"}
@@ -86,6 +75,31 @@ class TestDeskHosting(unittest.TestCase):
             self.assertIn(f'frappe.pages["{name}"].on_page_show', script)
             self.assertIn("cortex_rental.host.mount(wrapper)", script)
             self.assertTrue(os.path.exists(os.path.join(folder, "__init__.py")), name)
+
+    def test_hosted_pages_do_not_load_an_esbuild_bundle(self):
+        for name, folder in _desk_pages().items():
+            if name in LEGACY_PAGES:
+                continue
+            with open(os.path.join(folder, f"{os.path.basename(folder)}.js"), encoding="utf-8") as handle:
+                self.assertNotIn("frappe.require", handle.read(), name)
+        self.assertEqual(
+            sorted(os.listdir(os.path.join(APP_DIR, "public", "js"))),
+            ["cortex_assistant", "cortex_copilot", "cortex_host", "cortex_shared"],
+        )
+
+    def test_composer_page_is_reached_from_the_spa_composer_path(self):
+        host = _read("public", "js", "cortex_host", "cortex_host.js")
+        self.assertIn("cortex-transaction-composer", host)
+        self.assertIn("/app/cortex-rental/new", host)
+
+    def test_entrypoint_builds_frappe_bundles_when_missing(self):
+        # `bench build --app cortex_rental` alone leaves /login and /me unstyled (website.bundle.css 404).
+        path = os.path.join(APP_DIR, "..", "..", "..", "infra", "docker", "entrypoint-bench.sh")
+        with open(path, encoding="utf-8") as handle:
+            script = handle.read()
+        self.assertIn("website.bundle", script)
+        self.assertIn("desk.bundle", script)
+        self.assertRegex(script, r"\n\s+bench build( \|\||\n)")
 
     def test_no_page_shares_its_name_with_a_workspace(self):
         slugs = set()

@@ -82,7 +82,11 @@ import type {
   UploadIntentResponse,
   RegisterEvidenceInput,
   MutationResponse,
-  OperationsOverviewResponse
+  OperationsOverviewResponse,
+  ListCustomersInput,
+  ListCustomersResponse,
+  ProfitAndLossInput,
+  ProfitAndLossResponse
 } from '../contracts'
 import { HttpClient, CortexUnavailableError } from './httpClient'
 import { generateIdempotencyKey } from '@/utils/idempotency'
@@ -279,6 +283,19 @@ export class HttpCortexApiClient implements CortexApiClient {
       display_title: String(result.item_name || transaction?.customer_name || result.scan_code || input.barcode),
       current_status: String(transaction ? 'Checked Out' : result.type || 'unknown'),
       ...(transaction?.name ? { associated_rental_id: String(transaction.name) } : {}) }
+  }
+
+  // 3b. Customers & accounting
+  async listCustomers(input: ListCustomersInput): Promise<ListCustomersResponse> {
+    return unwrapFrappe(await this.http.get<FrappeResult<ListCustomersResponse>>('/cortex_rental.api.v1.customers.list_customers', input))
+  }
+
+  async getProfitAndLoss(input: ProfitAndLossInput): Promise<ProfitAndLossResponse> {
+    const query: Record<string, string> = {}
+    for (const [key, value] of Object.entries(input)) {
+      if (value !== undefined && value !== '') query[key] = typeof value === 'boolean' ? (value ? '1' : '0') : String(value)
+    }
+    return unwrapFrappe(await this.http.get<FrappeResult<ProfitAndLossResponse>>('/cortex_rental.api.v1.accounting.get_profit_and_loss', query))
   }
 
   // 4. Consignment

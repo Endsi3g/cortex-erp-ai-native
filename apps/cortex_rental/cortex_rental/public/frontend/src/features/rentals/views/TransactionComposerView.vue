@@ -1,38 +1,21 @@
 <template>
-  <div class="space-y-6 max-w-6xl mx-auto" data-test="screen-transaction-composer">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-cortex-border">
-      <div>
-        <div class="flex items-center gap-2.5">
-          <h1 class="text-xl font-bold text-cortex-text-primary tracking-tight">
-            {{ t('routes.rental_composer') }}
-          </h1>
-          <span class="px-2 py-0.5 rounded-full bg-cortex-primary-100 text-cortex-primary-800 text-[11px] font-semibold">
-            Assistant 3 Étapes
-          </span>
-        </div>
-        <p class="text-xs text-cortex-text-secondary mt-1">
-          Création pas-à-pas d'un devis ou réservation avec application de la règle tarifaire 7j = 3j.
-        </p>
-      </div>
+  <div class="cx-page" data-test="screen-transaction-composer">
+    <CortexPageHeader
+      :title="t('routes.rental_composer')"
+      subtitle="Devis ou réservation en trois étapes ; le montant est calculé par le serveur (règle 7 j = 3 j)."
+      :provenance="isMock ? 'mock' : 'api'"
+    >
+      <template #actions><RouterLink to="/app/cortex-rentals" class="cx-btn-secondary">Toutes les locations</RouterLink></template>
+    </CortexPageHeader>
 
-      <RouterLink
-        to="/app/cortex-rentals"
-        class="cx-btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
-      >
-        <ArrowLeft class="w-3.5 h-3.5" />
-        <span>Retour aux Locations</span>
-      </RouterLink>
+    <div class="cx-section">
+      <ComposerStepper
+        :current-step="currentStep"
+        @change-step="currentStep = $event"
+      />
     </div>
 
-    <!-- Stepper Navigation -->
-    <ComposerStepper
-      :current-step="currentStep"
-      @change-step="currentStep = $event"
-    />
-
-    <!-- Wizard Main Area with Lateral Summary -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <div class="cx-section grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       <!-- Active Step Component (2 Cols) -->
       <div class="lg:col-span-2">
         <!-- Step 1: Client & Dates -->
@@ -63,13 +46,15 @@
 
       <!-- Lateral Summary Drawer (1 Col) -->
       <div class="lg:col-span-1">
-        <div class="sticky top-4 rounded-xl border border-cortex-border bg-cortex-surface p-4 text-xs space-y-2">
-          <h2 class="font-bold uppercase tracking-wider">Résumé</h2>
-          <p>Client : <strong>{{ step1Data.customerName || 'À sélectionner' }}</strong></p>
-          <p>Période : {{ step1Data.startsAt || '—' }} → {{ step1Data.endsAt || '—' }}</p>
-          <p>Articles : {{ totalEquipmentCount }}</p>
-          <p class="border-t pt-2 text-cortex-text-muted">Le montant confirmé est calculé par le serveur lors de la vérification.</p>
-        </div>
+        <aside class="cx-card" aria-labelledby="composer-summary">
+          <h2 id="composer-summary" class="m-0 mb-2 text-sm font-semibold">Résumé</h2>
+          <dl class="cx-dl" style="grid-template-columns: 1fr">
+            <div><dt>Client</dt><dd>{{ step1Data.customerName || 'À sélectionner' }}</dd></div>
+            <div><dt>Période</dt><dd>{{ step1Data.startsAt || '—' }} → {{ step1Data.endsAt || '—' }}</dd></div>
+            <div><dt>Articles</dt><dd>{{ totalEquipmentCount }}</dd></div>
+          </dl>
+          <p class="cx-caption" style="padding: 8px 0 0">Le montant confirmé est calculé par le serveur lors de la vérification.</p>
+        </aside>
       </div>
     </div>
   </div>
@@ -79,8 +64,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft } from 'lucide-vue-next'
 import { getCortexApiClient } from '@/api'
+import { MockCortexApiClient } from '@/api/mock/MockCortexApiClient'
+import CortexPageHeader from '@/features/common/components/CortexPageHeader.vue'
 import ComposerStepper from '../components/composer/ComposerStepper.vue'
 import StepClientDates, { type ComposerStep1Data } from '../components/composer/StepClientDates.vue'
 import StepEquipmentPricing, { type ComposerLineItem } from '../components/composer/StepEquipmentPricing.vue'
@@ -90,6 +76,7 @@ const { t } = useI18n()
 const route = useRoute()
 
 const currentStep = ref<number>(1)
+const isMock = getCortexApiClient() instanceof MockCortexApiClient
 
 const step1Data = ref<ComposerStep1Data>({
   customerId: '',

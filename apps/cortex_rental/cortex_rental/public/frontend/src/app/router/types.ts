@@ -12,6 +12,7 @@ export type NavigationCategory =
   | 'supervision'
   | 'intelligence'
   | 'catalog'
+  | 'finance'
   | 'admin'
 
 export interface CortexRouteMeta extends Record<string | number | symbol, unknown> {

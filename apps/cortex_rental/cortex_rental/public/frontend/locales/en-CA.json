@@ -17,6 +17,8 @@
     "availability_matrix": "Availability Matrix",
     "rentals_list": "Rentals List",
     "rental_composer": "Transaction Composer",
+    "customers": "Customers",
+    "accounting_pnl": "Profit and Loss",
     "rental_detail": "Rental Transaction Detail",
     "checkout_scanner": "Check-out Scanner",
     "checkin_scanner": "Check-in Scanner",

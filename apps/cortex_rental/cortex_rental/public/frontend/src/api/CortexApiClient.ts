@@ -80,7 +80,11 @@ import type {
   UploadIntentResponse,
   RegisterEvidenceInput,
   MutationResponse,
-  OperationsOverviewResponse
+  OperationsOverviewResponse,
+  ListCustomersInput,
+  ListCustomersResponse,
+  ProfitAndLossInput,
+  ProfitAndLossResponse
 } from './contracts'
 
 export interface CortexApiClient {
@@ -114,6 +118,10 @@ export interface CortexApiClient {
   addDamageEvidence(input: AddDamageEvidenceInput): Promise<MutationResponse>
   completePartialReturn(input: CompletePartialReturnInput): Promise<MutationResponse>
   lookupScan(input: LookupScanInput): Promise<LookupScanResponse>
+
+  // 3b. Customers & accounting (read-only)
+  listCustomers(input: ListCustomersInput): Promise<ListCustomersResponse>
+  getProfitAndLoss(input: ProfitAndLossInput): Promise<ProfitAndLossResponse>
 
   // 4. Consignment & Owner Statements (Anti-PII Leakage)
   listOwners(input: ListOwnersInput): Promise<ListOwnersResponse>

@@ -59,7 +59,20 @@ _NON_PERIOD_FIELDS = {
 # dedicated "is this a total" flag — matched by name here.
 _TOTAL_INCOME_PREFIX = "total income"
 _TOTAL_EXPENSE_PREFIX = "total expense"
-_NET_PROFIT_NAMES = {"net profit", "net loss", "net profit / loss", "net profit/loss"}
+# Verified on ERPNext 15.121.1: the report quotes its total labels (`'Total Income (Credit)'`) and
+# names the result row `'Profit for the year'` / `'Loss for the year'`.
+_NET_PROFIT_NAMES = {
+    "net profit",
+    "net loss",
+    "net profit / loss",
+    "net profit/loss",
+    "profit for the year",
+    "loss for the year",
+}
+
+
+def _clean(label: str) -> str:
+    return label.strip().strip("'\"").strip().lower()
 
 
 def _build_pnl_filters(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
@@ -117,15 +130,15 @@ def _row_label(row: Dict[str, Any]) -> str:
 
 
 def _is_total_income_row(label: str) -> bool:
-    return label.strip().lower().startswith(_TOTAL_INCOME_PREFIX)
+    return _clean(label).startswith(_TOTAL_INCOME_PREFIX)
 
 
 def _is_total_expense_row(label: str) -> bool:
-    return label.strip().lower().startswith(_TOTAL_EXPENSE_PREFIX)
+    return _clean(label).startswith(_TOTAL_EXPENSE_PREFIX)
 
 
 def _is_net_profit_row(label: str) -> bool:
-    return label.strip().lower() in _NET_PROFIT_NAMES
+    return _clean(label) in _NET_PROFIT_NAMES
 
 
 def _build_account_tree(rows: List[Dict[str, Any]], period_cols: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -142,6 +155,8 @@ def _build_account_tree(rows: List[Dict[str, Any]], period_cols: List[Dict[str, 
     stack: List[Tuple[int, Dict[str, Any]]] = []
 
     for row in rows:
+        if not (row.get("account") or _row_label(row)):
+            continue  # ERPNext emits empty separator rows between sections
         depth = int(row.get("indent") or 0)
         node = {
             "id": row.get("account") or _row_label(row),
@@ -243,13 +258,16 @@ if frappe:
             result = execute(frappe._dict(filters))
             columns, data = result[0], result[1] or []
             report = transform_pnl_report(columns, data)
-        except Exception:
+        except Exception as exc:
+            # Never present a failed report as a real zero: the screen shows this message instead.
+            frappe.log_error(title="Cortex P&L report failed")
             report = {
                 "totalIncome": 0.0,
                 "totalExpense": 0.0,
                 "netProfit": 0.0,
                 "periods": [],
                 "accounts": [],
+                "reportError": f"{type(exc).__name__}: {exc}"[:300],
             }
         report["company"] = company
         report["fiscalYear"] = filters.get("from_fiscal_year") or filters.get("period_start_date")
