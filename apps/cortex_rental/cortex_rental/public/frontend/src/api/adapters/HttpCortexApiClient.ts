@@ -86,7 +86,11 @@ import type {
   ListCustomersInput,
   ListCustomersResponse,
   ProfitAndLossInput,
-  ProfitAndLossResponse
+  ProfitAndLossResponse,
+  OnboardingState,
+  OnboardingChoices,
+  CompanyProfileInput,
+  OnboardingWriteResult
 } from '../contracts'
 import { HttpClient, CortexUnavailableError } from './httpClient'
 import { generateIdempotencyKey } from '@/utils/idempotency'
@@ -296,6 +300,31 @@ export class HttpCortexApiClient implements CortexApiClient {
       if (value !== undefined && value !== '') query[key] = typeof value === 'boolean' ? (value ? '1' : '0') : String(value)
     }
     return unwrapFrappe(await this.http.get<FrappeResult<ProfitAndLossResponse>>('/cortex_rental.api.v1.accounting.get_profit_and_loss', query))
+  }
+
+  // 3c. Company onboarding
+  async getOnboarding(): Promise<OnboardingState> {
+    return unwrapFrappe(await this.http.get<FrappeResult<OnboardingState>>('/cortex_rental.api.v1.onboarding.get_onboarding'))
+  }
+
+  async listOnboardingChoices(): Promise<OnboardingChoices> {
+    return unwrapFrappe(await this.http.get<FrappeResult<OnboardingChoices>>('/cortex_rental.api.v1.onboarding.list_choices'))
+  }
+
+  async saveCompanyProfile(input: CompanyProfileInput): Promise<OnboardingWriteResult> {
+    return unwrapFrappe(await this.http.post<FrappeResult<OnboardingWriteResult>>('/cortex_rental.api.v1.onboarding.save_company_profile', input))
+  }
+
+  async inviteTeamMember(input: { email: string; full_name: string; preset: string }): Promise<OnboardingWriteResult> {
+    return unwrapFrappe(await this.http.post<FrappeResult<OnboardingWriteResult>>('/cortex_rental.api.v1.onboarding.invite_team_member', input))
+  }
+
+  async completeOnboardingStep(step: string): Promise<OnboardingWriteResult> {
+    return unwrapFrappe(await this.http.post<FrappeResult<OnboardingWriteResult>>('/cortex_rental.api.v1.onboarding.complete_step', { step }))
+  }
+
+  async finishOnboarding(): Promise<OnboardingWriteResult> {
+    return unwrapFrappe(await this.http.post<FrappeResult<OnboardingWriteResult>>('/cortex_rental.api.v1.onboarding.finish_onboarding', {}))
   }
 
   // 4. Consignment

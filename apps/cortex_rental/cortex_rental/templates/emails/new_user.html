@@ -1,0 +1,5 @@
+<p>Bonjour {{ first_name | e }}{% if last_name %} {{ last_name | e }}{% endif %},</p>
+{% set site_link = "<a href='" + site_url + "'>" + site_url + "</a>" %}
+<p>Un compte a été créé pour vous sur {{ site_link }}. Identifiant : <strong>{{ user }}</strong>.</p>
+<p style="margin:24px 0"><a style="display:inline-block;padding:12px 22px;background:#066336;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px" href="{{ link }}" rel="nofollow">Terminer mon inscription</a></p>
+<p style="color:#595959;font-size:13px">Lien à copier-coller : <a href="{{ link }}">{{ link }}</a></p>

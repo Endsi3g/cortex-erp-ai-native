@@ -84,7 +84,11 @@ import type {
   ListCustomersInput,
   ListCustomersResponse,
   ProfitAndLossInput,
-  ProfitAndLossResponse
+  ProfitAndLossResponse,
+  OnboardingState,
+  OnboardingChoices,
+  CompanyProfileInput,
+  OnboardingWriteResult
 } from './contracts'
 
 export interface CortexApiClient {
@@ -122,6 +126,14 @@ export interface CortexApiClient {
   // 3b. Customers & accounting (read-only)
   listCustomers(input: ListCustomersInput): Promise<ListCustomersResponse>
   getProfitAndLoss(input: ProfitAndLossInput): Promise<ProfitAndLossResponse>
+
+  // 3c. Company onboarding (guided setup)
+  getOnboarding(): Promise<OnboardingState>
+  listOnboardingChoices(): Promise<OnboardingChoices>
+  saveCompanyProfile(input: CompanyProfileInput): Promise<OnboardingWriteResult>
+  inviteTeamMember(input: { email: string; full_name: string; preset: string }): Promise<OnboardingWriteResult>
+  completeOnboardingStep(step: string): Promise<OnboardingWriteResult>
+  finishOnboarding(): Promise<OnboardingWriteResult>
 
   // 4. Consignment & Owner Statements (Anti-PII Leakage)
   listOwners(input: ListOwnersInput): Promise<ListOwnersResponse>

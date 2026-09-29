@@ -82,10 +82,9 @@ class TestDeskHosting(unittest.TestCase):
                 continue
             with open(os.path.join(folder, f"{os.path.basename(folder)}.js"), encoding="utf-8") as handle:
                 self.assertNotIn("frappe.require", handle.read(), name)
-        self.assertEqual(
-            sorted(os.listdir(os.path.join(APP_DIR, "public", "js"))),
-            ["cortex_assistant", "cortex_copilot", "cortex_host", "cortex_shared"],
-        )
+        js_dir = os.path.join(APP_DIR, "public", "js")
+        folders = sorted(name for name in os.listdir(js_dir) if os.path.isdir(os.path.join(js_dir, name)))
+        self.assertEqual(folders, ["cortex_assistant", "cortex_copilot", "cortex_host", "cortex_shared"])
 
     def test_composer_page_is_reached_from_the_spa_composer_path(self):
         host = _read("public", "js", "cortex_host", "cortex_host.js")
@@ -108,6 +107,14 @@ class TestDeskHosting(unittest.TestCase):
                 slugs.add(json.load(handle)["title"].lower().replace(" ", "-"))
         self.assertTrue(slugs)
         self.assertFalse(slugs & set(_desk_pages()), "a Workspace would hide the Page with the same slug")
+
+    def test_no_page_shares_its_name_with_a_doctype_route(self):
+        # /app/<slug> opens the DocType list before any Page: cortex-onboarding hid the setup assistant.
+        slugs = set()
+        for path in glob.glob(os.path.join(MODULE_DIR, "doctype", "*", "*.json")):
+            with open(path, encoding="utf-8") as handle:
+                slugs.add(json.load(handle)["name"].lower().replace(" ", "-"))
+        self.assertFalse(slugs & set(_desk_pages()), sorted(slugs & set(_desk_pages())))
 
     def test_host_maps_the_aliased_pages(self):
         host = _read("public", "js", "cortex_host", "cortex_host.js")

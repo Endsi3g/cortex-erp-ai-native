@@ -150,7 +150,8 @@ class TestWorkspaceNavigation(unittest.TestCase):
 class TestNavigationHooks(unittest.TestCase):
     def test_boot_hook_does_not_write_or_hide_workspaces(self):
         hooks = _read("hooks.py")
-        self.assertNotIn("boot_session", hooks)
+        # A read-only boot flag is allowed (onboarding); the old hook wrote to tabWorkspace.
+        self.assertNotIn("setup_cortex_sidebar", hooks)
         self.assertNotIn("get_workspace_sidebar_items", hooks)
         setup = _read("setup.py")
         self.assertNotIn("tabWorkspace", setup)

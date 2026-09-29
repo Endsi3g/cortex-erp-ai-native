@@ -1,0 +1,192 @@
+{
+  "actions": [],
+  "creation": "2026-09-29 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "full_name",
+    "email",
+    "company_name",
+    "job_title",
+    "team_size",
+    "status",
+    "col1",
+    "verification_sent_on",
+    "expires_on",
+    "verified_on",
+    "token_hash",
+    "resend_count",
+    "mail_status",
+    "section_decision",
+    "decided_by",
+    "decided_on",
+    "rejection_reason",
+    "col2",
+    "company",
+    "user",
+    "section_meta",
+    "ip_address"
+  ],
+  "fields": [
+    {
+      "fieldname": "full_name",
+      "fieldtype": "Data",
+      "label": "Nom complet",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "email",
+      "fieldtype": "Data",
+      "label": "Courriel",
+      "options": "Email",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "company_name",
+      "fieldtype": "Data",
+      "label": "Entreprise",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "job_title",
+      "fieldtype": "Data",
+      "label": "Fonction"
+    },
+    {
+      "fieldname": "team_size",
+      "fieldtype": "Select",
+      "label": "Taille de l'équipe",
+      "options": "\n1\n2-10\n11-50\n51+"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Statut",
+      "options": "Pending Verification\nPending Approval\nProvisioned\nRejected\nExpired",
+      "default": "Pending Verification",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "col1",
+      "fieldtype": "Column Break",
+      "label": ""
+    },
+    {
+      "fieldname": "verification_sent_on",
+      "fieldtype": "Datetime",
+      "label": "Lien envoyé le",
+      "read_only": 1
+    },
+    {
+      "fieldname": "expires_on",
+      "fieldtype": "Datetime",
+      "label": "Le lien expire le",
+      "read_only": 1
+    },
+    {
+      "fieldname": "verified_on",
+      "fieldtype": "Datetime",
+      "label": "Courriel vérifié le",
+      "read_only": 1
+    },
+    {
+      "fieldname": "token_hash",
+      "fieldtype": "Data",
+      "label": "Empreinte du jeton",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "resend_count",
+      "fieldtype": "Int",
+      "label": "Renvois",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "mail_status",
+      "fieldtype": "Small Text",
+      "label": "État du courriel de vérification",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_decision",
+      "fieldtype": "Section Break",
+      "label": "Décision"
+    },
+    {
+      "fieldname": "decided_by",
+      "fieldtype": "Link",
+      "label": "Décidé par",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "decided_on",
+      "fieldtype": "Datetime",
+      "label": "Décidé le",
+      "read_only": 1
+    },
+    {
+      "fieldname": "rejection_reason",
+      "fieldtype": "Small Text",
+      "label": "Motif du refus"
+    },
+    {
+      "fieldname": "col2",
+      "fieldtype": "Column Break",
+      "label": ""
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Entreprise créée",
+      "options": "Company",
+      "read_only": 1
+    },
+    {
+      "fieldname": "user",
+      "fieldtype": "Link",
+      "label": "Utilisateur créé",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_meta",
+      "fieldtype": "Section Break",
+      "label": "Origine"
+    },
+    {
+      "fieldname": "ip_address",
+      "fieldtype": "Data",
+      "label": "Adresse IP",
+      "read_only": 1
+    }
+  ],
+  "modified": "2026-09-29 12:00:00.000000",
+  "module": "Cortex Rental",
+  "name": "Cortex Signup Request",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "autoname": "format:ACC-REQ-{YYYY}-{#####}",
+  "title_field": "company_name",
+  "track_changes": 1,
+  "search_fields": "full_name,email,company_name"
+}

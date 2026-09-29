@@ -112,6 +112,10 @@ def cortex_check_in_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Cortex Check-In")
 
 
+def cortex_onboarding_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Onboarding")
+
+
 def _own_chat_session_condition(user: str) -> str:
     """
     Chat is personal, not just Company-scoped: two staff at the same

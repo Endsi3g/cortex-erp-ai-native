@@ -1,0 +1,27 @@
+{
+ "content": null,
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "module": "Cortex Rental",
+ "name": "cortex-company-setup",
+ "owner": "Administrator",
+ "page_name": "Cortex Company Setup",
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Cortex System Manager"
+  },
+  {
+   "role": "Rental Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Configuration"
+}

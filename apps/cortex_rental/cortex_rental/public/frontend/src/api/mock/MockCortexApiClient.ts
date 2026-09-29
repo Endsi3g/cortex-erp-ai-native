@@ -85,7 +85,11 @@ import type {
   ListCustomersInput,
   ListCustomersResponse,
   ProfitAndLossInput,
-  ProfitAndLossResponse
+  ProfitAndLossResponse,
+  OnboardingState,
+  OnboardingChoices,
+  CompanyProfileInput,
+  OnboardingWriteResult
 } from '../contracts'
 import { MockStateStore } from './MockStateStore'
 import { LatencySimulator } from './LatencySimulator'
@@ -1218,6 +1222,69 @@ export class MockCortexApiClient implements CortexApiClient {
         { id: 'Income', name: 'Revenus', depth: 0, type: 'group', total: 27000, values, children: [{ id: 'Rental Income', name: 'Revenus de location', depth: 1, type: 'account', total: 27000, values, children: [] }] }
       ]
     }
+  }
+
+  // 3c. Company onboarding: labelled mock state, kept in memory for the session only.
+  private onboardingMock: OnboardingState = {
+    provenance: 'mock',
+    last_synced_at: new Date().toISOString(),
+    company: 'Démonstration',
+    status: 'In Progress',
+    is_owner: true,
+    steps: [
+      { key: 'profile', title: "Profil de l'entreprise", done: false, optional: false, current: true },
+      { key: 'team', title: 'Équipe', done: false, optional: true, current: false },
+      { key: 'catalog', title: 'Catalogue', done: false, optional: true, current: false },
+      { key: 'policies', title: 'Règles de location', done: false, optional: true, current: false }
+    ],
+    progress: { done: 0, total: 4 },
+    profile: { company_name: 'Démonstration', country: 'Canada', default_currency: 'CAD', tax_id: '', phone_no: '', website: '', time_zone: 'America/Toronto', language: 'fr' },
+    team: [],
+    role_presets: [
+      { key: 'manager', label: 'Gestionnaire', description: 'Location, disponibilité, approbations et consignation.' },
+      { key: 'counter', label: 'Comptoir', description: 'Sorties et retours du matériel.' }
+    ],
+    catalog: { equipment_count: 0, import_url: '/app/data-import/new?reference_doctype=Item', equipment_url: '/app/cortex-equipment' },
+    policies: { rules: [{ name: 'R1', rule_name: '7 jours = 3 jours facturés', calendar_days: 7, billable_days: 3 }] }
+  }
+
+  private markOnboarding(step: string): OnboardingState {
+    const state = this.onboardingMock
+    state.steps = state.steps.map((s) => (s.key === step ? { ...s, done: true } : s))
+    const next = state.steps.find((s) => !s.done)
+    state.steps = state.steps.map((s) => ({ ...s, current: s === next }))
+    state.progress = { done: state.steps.filter((s) => s.done).length, total: state.steps.length }
+    return { ...state }
+  }
+
+  async getOnboarding(): Promise<OnboardingState> {
+    await LatencySimulator.inject('standard')
+    return { ...this.onboardingMock }
+  }
+
+  async listOnboardingChoices(): Promise<OnboardingChoices> {
+    return { provenance: 'mock', last_synced_at: new Date().toISOString(), countries: ['Canada', 'France', 'United States'], currencies: ['CAD', 'EUR', 'USD'], languages: [{ name: 'fr', label: 'Français' }, { name: 'en', label: 'English' }] }
+  }
+
+  async saveCompanyProfile(input: CompanyProfileInput): Promise<OnboardingWriteResult> {
+    await LatencySimulator.inject('standard')
+    this.onboardingMock.profile = { ...this.onboardingMock.profile, ...input, tax_id: input.tax_id ?? '', phone_no: input.phone_no ?? '', website: input.website ?? '', time_zone: input.time_zone ?? 'America/Toronto', language: input.language ?? 'fr' }
+    return { ok: true, state: this.markOnboarding('profile') }
+  }
+
+  async inviteTeamMember(input: { email: string; full_name: string; preset: string }): Promise<OnboardingWriteResult> {
+    await LatencySimulator.inject('standard')
+    this.onboardingMock.team = [...this.onboardingMock.team, { email: input.email, full_name: input.full_name, enabled: true, signed_in: false }]
+    return { ok: true, email: input.email, email_sent: true }
+  }
+
+  async completeOnboardingStep(step: string): Promise<OnboardingWriteResult> {
+    return { ok: true, state: this.markOnboarding(step) }
+  }
+
+  async finishOnboarding(): Promise<OnboardingWriteResult> {
+    this.onboardingMock.status = 'Completed'
+    return { ok: true, state: { ...this.onboardingMock } }
   }
 
   // 4. Consignment & Owner Statements (Strict Anti-PII Guarantee)

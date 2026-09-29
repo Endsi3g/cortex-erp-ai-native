@@ -128,6 +128,14 @@ export const routes: RouteRecordRaw[] = [
     }
   },
 
+  // Guided company setup, shown after the first login of a company owner.
+  {
+    path: '/app/cortex-company-setup',
+    name: 'onboarding',
+    component: () => import('@/features/onboarding/views/OnboardingView.vue'),
+    meta: { screenId: 0, titleKey: 'routes.onboarding', priority: 'P1', layout: 'app', requiresAuth: true, category: 'admin', iconName: 'ListChecks' }
+  },
+
   // Legacy Desk pages (cortex-checkin, cortex-fleet, cortex-supervision) now host the screens above.
   { path: '/app/cortex-checkin', name: 'checkin-picker', redirect: { path: '/app/cortex-rentals', query: { state: 'checked_out' } } },
   { path: '/app/cortex-fleet', name: 'fleet-legacy', redirect: { name: 'equipment-list' } },

@@ -1,6 +1,6 @@
 <template>
   <div class="rounded-xl border border-cortex-border bg-cortex-surface p-4 shadow-2xs" data-test="composer-stepper">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-wrap items-center justify-between gap-y-3">
       <!-- Step 1 -->
       <div
         class="flex items-center gap-2 cursor-pointer"
@@ -21,7 +21,7 @@
         </span>
       </div>
 
-      <div class="h-0.5 flex-1 bg-cortex-border mx-3" />
+      <div class="hidden h-0.5 flex-1 bg-cortex-border mx-3 sm:block" />
 
       <!-- Step 2 -->
       <div
@@ -43,7 +43,7 @@
         </span>
       </div>
 
-      <div class="h-0.5 flex-1 bg-cortex-border mx-3" />
+      <div class="hidden h-0.5 flex-1 bg-cortex-border mx-3 sm:block" />
 
       <!-- Step 3 -->
       <div

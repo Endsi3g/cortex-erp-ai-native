@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 p-3 rounded-xl border border-cortex-border bg-cortex-surface shadow-2xs" data-test="availability-toolbar">
     <!-- Left: Granularity & Category -->
-    <div class="flex flex-wrap items-center gap-2.5">
+    <div class="flex min-w-0 flex-wrap items-center gap-2.5">
       <!-- Granularity Toggle -->
       <div class="inline-flex rounded-lg border border-cortex-border bg-cortex-surface-secondary p-0.5" role="group" data-test="granularity-toggle">
         <button
@@ -34,19 +34,21 @@
       </div>
 
       <!-- Category Filter -->
-      <Select
-        :model-value="category"
-        class="min-w-40"
-        size="sm"
-        variant="outline"
-        data-test="category-filter"
-        aria-label="Filtrer par catégorie"
-        :options="categoryOptions"
-        @update:model-value="emit('update:category', String($event || 'all'))"
-      />
+      <div class="min-w-0 max-w-full flex-1 overflow-hidden sm:flex-none">
+        <Select
+          :model-value="category"
+          class="min-w-0 flex-1 sm:flex-none sm:min-w-40"
+          size="sm"
+          variant="outline"
+          data-test="category-filter"
+          aria-label="Filtrer par catégorie"
+          :options="categoryOptions"
+          @update:model-value="emit('update:category', String($event || 'all'))"
+        />
+      </div>
 
       <!-- Search Input -->
-      <div class="min-w-[180px]">
+      <div class="min-w-0 flex-1 sm:flex-none sm:min-w-[180px]">
         <TextInput
           :model-value="search"
           type="search"
@@ -61,9 +63,9 @@
     </div>
 
     <!-- Right: Date Navigation & Create Quote CTA -->
-    <div class="flex items-center gap-2 justify-between lg:justify-end">
+    <div class="flex flex-wrap items-center gap-2 justify-between lg:justify-end">
       <!-- Date Navigation -->
-      <div class="flex items-center gap-1">
+      <div class="flex flex-wrap items-center gap-1">
         <Button size="sm" variant="outline" icon="chevron-left" aria-label="Période précédente" @click="emit('navigate', 'prev')" />
         <Button size="sm" variant="outline" @click="emit('navigate', 'today')">Aujourd’hui</Button>
         <Button size="sm" variant="outline" icon="chevron-right" aria-label="Période suivante" @click="emit('navigate', 'next')" />

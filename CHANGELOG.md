@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- New two-panel sign-in (`/login`) in the app's own font and tokens (Inter, Cortex green), light and dark, adaptive from 320 to 1920 px, with inline errors, a busy state and visible labels. Frappe's « Powered by » footer credit is removed. axe-core reports no violations in either scheme on login, forgot password, access request, verification and new-password pages.
+- Enterprise access flow: two-step access request → email verification (single-use, hashed token) → manual or automatic approval (`Cortex Access Settings`) → provisioning of Company, owner user (never `System Manager`), company-scoped permissions and default 7-for-3 pricing rule → new-password page → guided company setup at `/app/cortex-company-setup` (profile, team invitations, catalog, rental rules). Complete forgot-password flow with anti-enumeration and a resend cooldown. Branded email templates.
+- Google and GitHub sign-in buttons appear only when the corresponding Social Login Key is enabled with real OAuth credentials (see `docs/auth/LOGIN_AND_ONBOARDING.md`). Apple is not implemented.
+- Adds the `cortex-login` agent skill (`.claude/skills/cortex-login`) and unit tests for the access rules, auth pages and onboarding contract.
+- Known: `shellResponsiveChallenge.spec.ts` reports an unhandled `fetch` to `localhost:3000` (logout) when run without a backend; it is present on the base branch too.
 - All Desk pages now mount the same Vue 3 + Frappe UI bundle (`npm run build:desk`). The legacy esbuild pages (availability, check-in, composer, customers, fleet, supervision, P&L) are removed; `cortex-customers`, `cortex-fleet` and `cortex-supervision` showed hard-coded demo data and are replaced by real read models (`customers.list_customers`, equipment list, AI Inbox approvals).
 - The profit-and-loss screen reads ERPNext's report and shows an explicit error when it fails instead of zeros (`reportError`).
 - Fixes unstyled `/login` and `/me` pages: `bench build --app cortex_rental` alone does not build Frappe's website and desk bundles; `entrypoint-bench.sh` now runs a full `bench build` when they are missing.

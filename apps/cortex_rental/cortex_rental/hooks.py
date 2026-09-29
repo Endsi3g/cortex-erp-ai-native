@@ -74,6 +74,7 @@ permission_query_conditions = {
     "Cortex Evidence Reference": "cortex_rental.permissions.cortex_evidence_reference_query_conditions",
     "Cortex Extraction Run": "cortex_rental.permissions.cortex_extraction_run_query_conditions",
     "Cortex Check-In": "cortex_rental.permissions.cortex_check_in_query_conditions",
+    "Cortex Onboarding": "cortex_rental.permissions.cortex_onboarding_query_conditions",
     "Cortex Chat Session": "cortex_rental.permissions.cortex_chat_session_query_conditions",
     "Cortex Chat Message": "cortex_rental.permissions.cortex_chat_message_query_conditions",
     "Cortex Chat Context Snapshot": "cortex_rental.permissions.cortex_chat_context_snapshot_query_conditions",
@@ -96,3 +97,9 @@ fixtures = [
 before_migrate = "cortex_rental.setup.before_migrate"
 after_migrate = "cortex_rental.setup.after_migrate"
 after_install = "cortex_rental.setup.after_install"
+
+# Login experience: access-request form on the login page, and a read-only boot flag that sends a
+# company owner with an unfinished setup to the onboarding assistant (see auth_hooks.py and
+# public/js/cortex_host/cortex_host.js). The boot hook never writes to the database.
+signup_form_template = ["cortex_rental.auth_hooks.signup_form_path"]
+boot_session = "cortex_rental.auth_hooks.boot_session"

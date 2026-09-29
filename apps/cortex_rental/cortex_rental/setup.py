@@ -182,3 +182,6 @@ def after_migrate() -> None:
 
 def after_install() -> None:
     ensure_prerequisites()
+    from cortex_rental.auth_setup import run_all
+
+    run_all()

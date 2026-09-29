@@ -1,0 +1,872 @@
+/* Cortex sign-in pages (login, access request, verification, password): same tokens, font and
+ * geometry as the app screens (design-system/styles/cortex-erp.css): Inter, ink #171717, Cortex green
+ * for the one primary action, 8px radius, filled fields. Scoped to `.cx-auth`.
+ *
+ * The app uses a single font pairing, so the auth pages do too. Alternative brand token sets and how to
+ * apply them are described in .claude/skills/cortex-login/SKILL.md.
+ */
+/* One family across the whole app: Inter (variable), the same file the Desk screens use. */
+@font-face {
+  font-family: 'InterVar';
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+  src: url('/assets/cortex_rental/fonts/Inter.var.woff2') format('woff2');
+}
+
+.cx-auth {
+  --card: #ffffff;
+  --ring: #087a43;
+  --input: #f3f3f3;
+  --muted: #f8f8f8;
+  --accent: #066336;
+  --border: #ededed;
+  --radius: 0.5rem;
+  --popover: #ffffff;
+  --primary: #066336;
+  --secondary: #f3f3f3;
+  --background: #ffffff;
+  --foreground: #171717;
+  --destructive: #b3191f;
+  --muted-foreground: #525252;
+  --link: #066336;
+  --danger-text: #b3191f;
+  --accent-foreground: #ffffff;
+  --font-sans: InterVar, Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: InterVar, Inter, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --letter-spacing: -0.015em;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cx-auth {
+    --card: #0f1512;
+    --ring: #34d399;
+    --input: #17201b;
+    --muted: #17201b;
+    --accent: #066336;
+    --border: #26322c;
+    --popover: #0f1512;
+    --primary: #34d399;
+    --secondary: #17201b;
+    --background: #08120d;
+    --foreground: #f5f7f6;
+    --muted-foreground: #b4bfb9;
+    --link: #6ee7b7;
+    --danger-text: #ff9a9e;
+  }
+}
+
+body:has(.cx-auth) {
+  background: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:has(.cx-auth) {
+    background: #08120d;
+  }
+}
+
+.cx-auth,
+.cx-auth * {
+  box-sizing: border-box;
+}
+
+.cx-auth {
+  display: grid;
+  min-height: 100vh;
+  gap: 24px;
+  padding: 12px;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (min-width: 1024px) {
+  .cx-auth {
+    grid-template-columns: 0.94fr 1.06fr;
+  }
+}
+
+/* Left: form panel */
+.cx-auth__panel {
+  display: flex;
+  min-height: 560px;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.cx-auth__form {
+  width: 100%;
+  max-width: 420px;
+}
+
+body .cx-auth.cx-auth .page-card {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body .cx-auth.cx-auth .page-card-head {
+  padding: 0;
+  text-align: left;
+}
+
+body .cx-auth.cx-auth .page-card-head .app-logo {
+  width: auto;
+  max-width: 160px;
+  height: 40px;
+  margin: 0 0 24px;
+  object-fit: contain;
+}
+
+body .cx-auth.cx-auth .page-card-head h1,
+body .cx-auth.cx-auth .page-card-head h4 {
+  margin: 0 0 24px;
+  color: var(--foreground);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: var(--letter-spacing);
+}
+
+body .cx-auth.cx-auth .page-card-body {
+  padding: 0 !important;
+}
+
+body .cx-auth.cx-auth .form-group {
+  margin-bottom: 16px;
+}
+
+/* Fields: filled, 44px, the label is the placeholder (kept for assistive tech). */
+body .cx-auth.cx-auth .email-field:has(.field-icon) .form-control,
+body .cx-auth.cx-auth .password-field:has(.field-icon) .form-control {
+  padding-left: 40px !important;
+}
+
+body .cx-auth.cx-auth .form-control {
+  height: 44px !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  background: var(--input) !important;
+  color: var(--foreground) !important;
+  font-family: inherit;
+  font-size: 14px;
+  box-shadow: none !important;
+}
+
+body .cx-auth.cx-auth .form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+body .cx-auth.cx-auth .form-control:focus {
+  border-color: var(--accent);
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+  background: var(--card) !important;
+  box-shadow: none;
+}
+
+body .cx-auth.cx-auth .email-field,
+body .cx-auth.cx-auth .password-field {
+  position: relative;
+}
+
+body .cx-auth.cx-auth .field-icon {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  color: var(--muted-foreground);
+  stroke: currentColor;
+}
+
+body .cx-auth.cx-auth .toggle-password {
+  position: absolute;
+  top: 0;
+  right: 14px;
+  display: flex;
+  height: 44px;
+  align-items: center;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body .cx-auth.cx-auth .toggle-password:hover {
+  color: var(--foreground);
+}
+
+body .cx-auth.cx-auth .forgot-password-message {
+  margin: 0;
+  text-align: right;
+  font-size: 13px;
+}
+
+body .cx-auth.cx-auth a {
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+body .cx-auth.cx-auth a:hover {
+  color: var(--foreground);
+}
+
+body .cx-auth.cx-auth a:focus-visible,
+body .cx-auth.cx-auth button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Buttons */
+body .cx-auth.cx-auth .page-card-actions {
+  padding: 8px 0 0 !important;
+}
+
+body .cx-auth.cx-auth .btn {
+  height: 44px;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: var(--letter-spacing);
+  text-decoration: none;
+  box-shadow: none;
+}
+
+body .cx-auth.cx-auth .btn-primary {
+  border: 1px solid var(--accent) !important;
+  background: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+body .cx-auth.cx-auth .btn-primary:hover,
+body .cx-auth.cx-auth .btn-primary:focus {
+  border-color: #044d2a;
+  background: #044d2a;
+  color: var(--accent-foreground);
+}
+
+body .cx-auth.cx-auth .btn-default,
+body .cx-auth.cx-auth .btn-login-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--border) !important;
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+}
+
+body .cx-auth.cx-auth .btn-default:hover,
+body .cx-auth.cx-auth .btn-login-option:hover {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+}
+
+body .cx-auth.cx-auth .login-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+body .cx-auth.cx-auth .login-divider::before,
+body .cx-auth.cx-auth .login-divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  content: '';
+}
+
+body .cx-auth.cx-auth .login-button-wrapper + .login-button-wrapper {
+  margin-top: 12px;
+}
+
+body .cx-auth.cx-auth .social-logins,
+body .cx-auth.cx-auth .social-login-buttons,
+body .cx-auth.cx-auth .login-button-wrapper {
+  width: 100%;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+body .cx-auth.cx-auth .login-button-wrapper .btn {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+}
+
+body .cx-auth.cx-auth .sign-up-message {
+  margin: 20px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  text-align: left;
+}
+
+body .cx-auth.cx-auth .indicator,
+body .cx-auth.cx-auth .page-card-head .indicator {
+  color: var(--danger-text);
+}
+
+/* Right: brand panel (flutes and grain are CSS; no remote image, no invented testimonial) */
+.cx-auth__aside {
+  position: relative;
+  display: none;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, #08120d 0%, #0b2a1b 55%, #066336 100%);
+  color: #f9f8f7;
+}
+
+@media (min-width: 1024px) {
+  .cx-auth__aside {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 64px;
+  }
+}
+
+.cx-auth__flutes {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(115deg, rgba(110, 231, 183, 0.22), transparent 55%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.09) 0 1px, rgba(0, 0, 0, 0.14) 1px 22px, transparent 22px 26px);
+  filter: blur(0.4px);
+  pointer-events: none;
+}
+
+.cx-auth__flutes::after {
+  position: absolute;
+  inset: 0;
+  opacity: 0.1;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  content: '';
+}
+
+.cx-auth__aside-inner {
+  position: relative;
+  max-width: 460px;
+}
+
+.cx-auth__eyebrow {
+  margin: 0 0 20px;
+  color: rgba(249, 248, 247, 0.7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cx-auth__statement {
+  margin: 0 0 32px;
+  font-family: var(--font-sans);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: var(--letter-spacing);
+}
+
+.cx-auth__points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: rgba(249, 248, 247, 0.78);
+  font-size: 14px;
+}
+
+.cx-auth__points li {
+  padding: 10px 0;
+  border-top: 1px solid rgba(249, 248, 247, 0.16);
+}
+
+/* Logo: dark symbol on light, reversed symbol on dark */
+.cx-auth .app-logo--dark {
+  display: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cx-auth .app-logo--light {
+    display: none !important;
+  }
+
+  .cx-auth .app-logo--dark {
+    display: block !important;
+  }
+}
+
+/* Frappe gives the form a 50px side margin and the input a bottom margin; the panel already pads. */
+body .cx-auth.cx-auth .form-signin {
+  margin: 0 !important;
+  max-width: none !important;
+}
+
+body .cx-auth.cx-auth .form-control {
+  margin-bottom: 0 !important;
+}
+
+body .cx-auth.cx-auth .text-muted,
+body .cx-auth.cx-auth .text-normal,
+body .cx-auth.cx-auth small,
+body .cx-auth.cx-auth .toggle-password,
+body .cx-auth.cx-auth .login-divider,
+body .cx-auth.cx-auth .sign-up-message {
+  color: var(--muted-foreground) !important;
+}
+
+body .cx-auth.cx-auth .toggle-password:hover {
+  color: var(--foreground) !important;
+}
+
+body .cx-auth.cx-auth .forgot-password-message a {
+  color: var(--link) !important;
+}
+
+/* ---- Labels, hints, errors ------------------------------------------------------------------ */
+body .cx-auth.cx-auth .form-label {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+body .cx-auth.cx-auth .cx-optional {
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+
+body .cx-auth.cx-auth .cx-hint,
+body .cx-auth.cx-auth .cx-lead {
+  margin: 8px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+body .cx-auth.cx-auth .cx-lead {
+  margin: 0 0 20px;
+  font-size: 14px;
+}
+
+body .cx-auth.cx-auth .cx-error {
+  margin: 6px 0 0;
+  color: var(--danger-text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+body .cx-auth.cx-auth [aria-invalid='true'] {
+  border-color: var(--danger-text) !important;
+}
+
+/* ---- Inline alert (replaces messages written into the button) ------------------------------- */
+body .cx-auth.cx-auth .cx-alert {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+body .cx-auth.cx-auth .cx-alert[hidden] {
+  display: none;
+}
+
+body .cx-auth.cx-auth .cx-alert--error {
+  border-color: var(--danger-text);
+  color: var(--danger-text);
+}
+
+body .cx-auth.cx-auth .cx-alert--success {
+  border-color: var(--link);
+  color: var(--foreground);
+}
+
+/* ---- Progress (two-step request) ------------------------------------------------------------ */
+body .cx-auth.cx-auth .cx-progress {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+body .cx-auth.cx-auth .cx-progress li {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 3px solid var(--border);
+}
+
+body .cx-auth.cx-auth .cx-progress li span {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--muted);
+  font-size: 12px;
+}
+
+body .cx-auth.cx-auth .cx-progress li.is-current,
+body .cx-auth.cx-auth .cx-progress li.is-done {
+  border-top-color: var(--accent);
+  color: var(--foreground);
+}
+
+body .cx-auth.cx-auth .cx-progress li.is-current span,
+body .cx-auth.cx-auth .cx-progress li.is-done span {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* ---- Choice group, checkbox, honeypot, actions ---------------------------------------------- */
+body .cx-auth.cx-auth .cx-choice {
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+body .cx-auth.cx-auth .cx-choice legend {
+  padding: 0;
+}
+
+body .cx-auth.cx-auth .cx-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+body .cx-auth.cx-auth .cx-choice legend {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+body .cx-auth.cx-auth .cx-choice label {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+body .cx-auth.cx-auth .cx-choice label:has(input:checked) {
+  border-color: var(--accent);
+  outline: 1px solid var(--accent);
+}
+
+body .cx-auth.cx-auth .cx-check label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+body .cx-auth.cx-auth input[type='checkbox'],
+body .cx-auth.cx-auth input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+
+body .cx-auth.cx-auth .cx-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+body .cx-auth.cx-auth .cx-actions {
+  display: flex;
+  gap: 12px;
+}
+
+body .cx-auth.cx-auth .cx-actions .btn {
+  flex: 1;
+}
+
+body .cx-auth.cx-auth .cx-actions .btn-primary {
+  flex: 2;
+}
+
+body .cx-auth.cx-auth .cx-actions--stack {
+  flex-direction: column;
+  margin-top: 20px;
+}
+
+/* ---- "Check your email" confirmation -------------------------------------------------------- */
+body .cx-auth.cx-auth .cx-sent[hidden] {
+  display: none;
+}
+
+body .cx-auth.cx-auth .cx-sent {
+  outline: none;
+}
+
+body .cx-auth.cx-auth .cx-sent__icon {
+  margin-bottom: 12px;
+  color: var(--link);
+}
+
+body .cx-auth.cx-auth .cx-sent h2 {
+  margin: 0 0 8px;
+  color: var(--foreground);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+body .cx-auth.cx-auth .cx-sent p {
+  margin: 0 0 12px;
+  color: var(--foreground);
+}
+
+body .cx-auth.cx-auth .cx-next-steps {
+  margin: 16px 0;
+  padding-left: 20px;
+  color: var(--foreground);
+  font-size: 14px;
+}
+
+body .cx-auth.cx-auth .cx-next-steps li {
+  padding: 4px 0;
+}
+
+/* ---- Busy button ---------------------------------------------------------------------------- */
+body .cx-auth.cx-auth .btn.is-busy {
+  position: relative;
+  opacity: 0.85;
+  cursor: progress;
+}
+
+body .cx-auth.cx-auth .btn.is-busy::after {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 10px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: cx-spin 0.7s linear infinite;
+  content: '';
+}
+
+@keyframes cx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body .cx-auth.cx-auth .btn.is-busy::after {
+    animation-duration: 2s;
+  }
+}
+
+body .cx-auth.cx-auth .btn:disabled:not(.is-busy) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---- Social sign-in (Google, GitHub) --------------------------------------------------------- */
+body .cx-auth.cx-auth .btn-login-option img {
+  width: 18px;
+  height: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+  body .cx-auth.cx-auth .btn-github img {
+    filter: invert(1);
+  }
+}
+
+/* ---- Verification / status card (www/cortex-verify.html, update-password) ---------------------- */
+.cx-auth--single {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cx-auth--single .cx-auth__panel {
+  width: 100%;
+  max-width: 520px;
+  min-height: 0;
+}
+
+body .cx-auth.cx-auth button.toggle-password {
+  min-width: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+}
+
+body .cx-auth.cx-auth .btn {
+  min-height: 44px;
+  height: auto !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 44px;
+}
+
+body .cx-auth.cx-auth a.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+body .cx-auth.cx-auth .sign-up-message {
+  margin-top: 24px !important;
+}
+
+/* Password strength meter */
+body .cx-auth.cx-auth .cx-meter {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+
+body .cx-auth.cx-auth .cx-meter span {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+body .cx-auth.cx-auth .cx-meter span.is-on {
+  background: var(--muted-foreground);
+}
+
+body .cx-auth.cx-auth .cx-meter span.is-ok {
+  background: var(--link);
+}
+
+body .cx-auth.cx-auth .cx-meter span.is-bad {
+  background: var(--danger-text);
+}
+
+body .cx-auth.cx-auth .cx-auth__title {
+  margin: 0 0 12px;
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: var(--letter-spacing);
+}
+
+body .cx-auth.cx-auth .password-field .form-control {
+  padding-right: 88px !important;
+}
+
+/* ---- Adaptive layout: phone, tablet, desktop, wide ------------------------------------------- */
+@media (max-width: 640px) {
+  /* Frappe wraps the page in `main.container` (24px side padding, vertical margin): drop it so the card is full-bleed. */
+  body main.container:has(.cx-auth) {
+    max-width: none;
+    margin: 0 !important;
+    padding: 0;
+  }
+
+  .cx-auth {
+    gap: 0;
+    padding: 0;
+  }
+
+  .cx-auth__panel {
+    min-height: 100vh;
+    padding: 32px 20px 40px;
+    border: 0;
+    border-radius: 0;
+    align-items: flex-start;
+  }
+
+  body .cx-auth.cx-auth .cx-actions {
+    flex-direction: column-reverse;
+  }
+
+  body .cx-auth.cx-auth .cx-actions .btn,
+  body .cx-auth.cx-auth .cx-actions .btn-primary {
+    flex: none;
+    width: 100%;
+  }
+
+  body .cx-auth.cx-auth .cx-auth__title,
+  body .cx-auth.cx-auth .page-card-head h1 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 380px) {
+  body .cx-auth.cx-auth .cx-choice {
+    grid-template-columns: 1fr;
+  }
+
+  body .cx-auth.cx-auth .cx-progress li {
+    font-size: 12px;
+  }
+}
+
+/* Short landscape screens: do not centre vertically, let the page scroll from the top. */
+@media (max-height: 560px) {
+  .cx-auth__panel {
+    align-items: flex-start;
+  }
+}
+
+/* Wide screens: keep the form readable and the brand panel balanced. */
+@media (min-width: 1600px) {
+  .cx-auth {
+    max-width: 1720px;
+    margin: 0 auto;
+  }
+
+  .cx-auth__aside {
+    padding: 80px;
+  }
+}
+

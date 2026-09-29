@@ -120,4 +120,21 @@ frappe.provide("cortex_rental");
 	}
 
 	cortex_rental.host = { mount, unmount, toDeskRoute };
+
+	// A company owner with an unfinished setup lands on the assistant once per browser session, only
+	// from the Desk home: any other destination (or a later visit) is left alone.
+	$(document).on("startup", function () {
+		const pending = frappe.boot && frappe.boot.cortex_onboarding;
+		if (!pending) return;
+		let seen = false;
+		try {
+			seen = sessionStorage.getItem("cortex_onboarding_prompted") === "1";
+		} catch (e) {}
+		const path = window.location.pathname.replace(/\/+$/, "");
+		if (seen || !["/app", "/app/home"].includes(path)) return;
+		try {
+			sessionStorage.setItem("cortex_onboarding_prompted", "1");
+		} catch (e) {}
+		frappe.set_route(pending.route);
+	});
 })();
