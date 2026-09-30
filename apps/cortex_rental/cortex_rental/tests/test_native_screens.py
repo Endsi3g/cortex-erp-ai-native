@@ -226,6 +226,31 @@ class TestDoctypePermissions(unittest.TestCase):
         self.assertEqual(self._perms("audit_event")["Rental Manager"].get("read"), 1)
 
 
+class TestReportAndPrintRights(unittest.TestCase):
+    """Found by the stress test: managers could not run reports, export or print contracts."""
+
+    def test_managers_can_report_export_and_print_rentals(self):
+        path = os.path.join(MODULE_DIR, "doctype", "cortex_rental_transaction", "cortex_rental_transaction.json")
+        with open(path, encoding="utf-8") as handle:
+            perms = {p["role"]: p for p in json.load(handle)["permissions"]}
+        for role in ("Rental Manager", "Cortex Operations Manager"):
+            for right in ("report", "export", "print"):
+                self.assertEqual(perms[role].get(right), 1, f"{role}:{right}")
+        self.assertEqual(perms["Cortex Counter Staff"].get("print"), 1)
+
+    def test_customer_permissions_are_granted_to_cortex_roles(self):
+        from cortex_rental import setup
+
+        self.assertIn("Rental Manager", setup.CUSTOMER_EDITORS)
+        self.assertIn("Cortex Counter Staff", setup.CUSTOMER_EDITORS)
+        self.assertTrue(set(setup.CUSTOMER_EDITORS).isdisjoint(setup.CUSTOMER_READERS))
+
+    def test_customer_activity_report_does_not_require_customer_rights(self):
+        path = os.path.join(MODULE_DIR, "report", "activité_des_clients", "activité_des_clients.json")
+        with open(path, encoding="utf-8") as handle:
+            self.assertEqual(json.load(handle)["ref_doctype"], "Cortex Rental Transaction")
+
+
 class TestFrenchTranslations(unittest.TestCase):
     def test_translation_file_is_well_formed_and_names_doctypes(self):
         import csv

@@ -2,7 +2,7 @@
  "doctype": "Report",
  "name": "Activité des clients",
  "report_name": "Activité des clients",
- "ref_doctype": "Customer",
+ "ref_doctype": "Cortex Rental Transaction",
  "report_type": "Script Report",
  "is_standard": "Yes",
  "module": "Cortex Rental",

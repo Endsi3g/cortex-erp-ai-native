@@ -215,21 +215,33 @@
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 1
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Rental Manager",
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 0
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Rental Operator",
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 0
+      "delete": 0,
+      "print": 1,
+      "email": 1
     },
     {
       "role": "Agent Service Account",
@@ -243,35 +255,53 @@
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 0
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Cortex Counter Staff",
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 0
+      "delete": 0,
+      "print": 1,
+      "email": 1
     },
     {
       "role": "Cortex Finance Manager",
       "read": 1,
       "write": 0,
       "create": 0,
-      "delete": 0
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Cortex Account Reviewer",
       "read": 1,
       "write": 0,
       "create": 0,
-      "delete": 0
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "share": 1
     },
     {
       "role": "Cortex Inventory Manager",
       "read": 1,
       "write": 0,
       "create": 0,
-      "delete": 0
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "share": 1
     }
   ]
 }

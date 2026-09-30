@@ -559,13 +559,23 @@ def integrity():
             fleet[p.item_code] = frappe.db.count("Serial No", {"item_code": p.item_code, "company": COMPANY})
         else:
             fleet[p.item_code] = p.total_quantity
-    usage = defaultdict(float)
+    # Balayage à la minute : à égalité, les fins passent avant les débuts (un retour à 9 h libère l'unité pour un départ à 9 h).
+    by_item = defaultdict(list)
     for line in lines:
-        d = line.starts_at.date()
-        while d <= line.ends_at.date():
-            usage[(line.item_code, d)] += line.qty
-            d += timedelta(days=1)
-    over = [(k, v, fleet.get(k[0])) for k, v in usage.items() if v > (fleet.get(k[0]) or 0)]
+        by_item[line.item_code].append(line)
+    over = []
+    for code, rows_for_item in by_item.items():
+        events = []
+        for line in rows_for_item:
+            events.append((line.starts_at, 1, line.qty))
+            events.append((line.ends_at, 0, -line.qty))
+        events.sort(key=lambda e: (e[0], e[1]))
+        current = 0
+        for moment, _kind, qty in events:
+            current += qty
+            if current > (fleet.get(code) or 0):
+                over.append(((code, moment.date()), current, fleet.get(code)))
+                break
     findings["surreservations_jour_article"] = len(over)
     findings["surreservations_exemples"] = [(k[0], str(k[1]), v, f) for k, v, f in over[:5]]
     # 2. états incohérents

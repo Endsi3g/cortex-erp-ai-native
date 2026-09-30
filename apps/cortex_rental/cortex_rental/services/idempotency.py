@@ -84,9 +84,10 @@ def with_idempotency(
     try:
         record.insert()
     except frappe.DuplicateEntryError:
-        # A concurrent retry raced us to the same key; return the winner's
-        # recorded response rather than the (possibly duplicate) result of
-        # this execution.
+        # A concurrent retry raced us to the same key. Our handler already wrote its own result in this
+        # transaction: discard it so the request commits nothing, then answer with the winner's recorded response
+        # (visible now, since the insert above waited for the winner's commit).
+        frappe.db.rollback()
         winner = frappe.db.get_value("Cortex Idempotency Record", name, "response_snapshot")
         return json.loads(winner) if winner else result
 

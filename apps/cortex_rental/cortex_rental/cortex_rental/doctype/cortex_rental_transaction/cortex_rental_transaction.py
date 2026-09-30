@@ -15,7 +15,7 @@ from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.transaction_state import TransactionStateService
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.availability import AvailabilityService
-from cortex_rental.services.locking import reservation_lock
+from cortex_rental.services.locking import ReservationLockError, reservation_lock
 
 # States that block inventory (PRD §4). Confirming into one of these
 # must happen under the per-item reservation lock, with a fresh
@@ -169,8 +169,18 @@ class CortexRentalTransaction(Document):
         from contextlib import ExitStack
 
         with ExitStack() as locks:
-            for code in item_codes:
-                locks.enter_context(reservation_lock(self.company, code))
+            try:
+                for code in item_codes:
+                    locks.enter_context(reservation_lock(self.company, code))
+            except ReservationLockError:
+                frappe.throw(
+                    "Un autre utilisateur confirme ce matériel en ce moment. Réessayez dans quelques secondes.",
+                    frappe.ValidationError,
+                )
+            # Nouvelle lecture cohérente : sans cela, l'instantané de transaction pris avant le verrou ne voit pas
+            # la réservation validée par celui qui vient de libérer le verrou.
+            if not frappe.flags.in_test:
+                frappe.db.commit()  # nosemgrep
 
             item_requests = [{"item_id": item.item_code, "quantity": item.qty} for item in (self.items or [])]
             checks = AvailabilityService().check(
@@ -193,6 +203,9 @@ class CortexRentalTransaction(Document):
 
             self.rental_state = new_state
             self.save()
+            # Le verrou ne doit être relâché qu'après la validation en base, sinon le suivant relit l'ancien état.
+            if not frappe.flags.in_test:
+                frappe.db.commit()  # nosemgrep
 
     def _assign_serials_under_lock(self):
         """Allocate real serials atomically when a quote becomes a reservation."""

@@ -102,32 +102,53 @@
     {
       "create": 1,
       "read": 1,
-      "role": "System Manager"
+      "role": "System Manager",
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "read": 1,
-      "role": "Auditor"
+      "role": "Auditor",
+      "report": 1,
+      "export": 1,
+      "share": 1
     },
     {
       "role": "Rental Manager",
       "read": 1,
       "write": 0,
       "create": 0,
-      "delete": 0
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Cortex Operations Manager",
       "read": 1,
       "write": 0,
       "create": 0,
-      "delete": 0
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Cortex Account Reviewer",
       "read": 1,
       "write": 0,
       "create": 0,
-      "delete": 0
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "share": 1
     }
   ],
   "sort_field": "creation",

@@ -176,12 +176,45 @@ def before_migrate() -> None:
     ensure_prerequisites()
 
 
+# Les rôles Cortex doivent lire les clients de leur société (liste, rapports, fiches de location). Le filtre par
+# société reste imposé par `customer_query_conditions`; ici on n'ajoute que les droits de base.
+CUSTOMER_EDITORS = ("Rental Manager", "Cortex Operations Manager", "Cortex Counter Staff")
+CUSTOMER_READERS = (
+    "Rental Operator",
+    "Cortex Finance Manager",
+    "Cortex Consignment Manager",
+    "Cortex Account Reviewer",
+    "Auditor",
+)
+
+
+def ensure_customer_permissions() -> None:
+    """Accorde aux rôles Cortex l'accès aux clients (idempotent, exécuté à l'installation et à chaque migration)."""
+    if not frappe or not getattr(frappe, "db", None) or not frappe.db.exists("DocType", "Customer"):
+        return
+    from frappe.permissions import add_permission, update_permission_property
+
+    def grant(role: str, rights: tuple) -> None:
+        if not frappe.db.exists("Role", role):
+            return
+        add_permission("Customer", role, 0)
+        for right in rights:
+            update_permission_property("Customer", role, 0, right, 1)
+
+    for role in CUSTOMER_EDITORS:
+        grant(role, ("read", "write", "create", "report", "export", "print", "email"))
+    for role in CUSTOMER_READERS:
+        grant(role, ("read", "report", "export", "print"))
+
+
 def after_migrate() -> None:
     ensure_prerequisites()
+    ensure_customer_permissions()
 
 
 def after_install() -> None:
     ensure_prerequisites()
+    ensure_customer_permissions()
     from cortex_rental.auth_setup import run_all
 
     run_all()
