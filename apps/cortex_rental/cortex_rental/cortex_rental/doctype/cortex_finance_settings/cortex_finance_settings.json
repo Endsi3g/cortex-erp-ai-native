@@ -3,7 +3,7 @@
   "creation": "2026-09-30 23:00:00.000000",
   "doctype": "DocType",
   "engine": "InnoDB",
-  "modified": "2026-09-30 23:00:00.000000",
+  "modified": "2026-10-01 01:00:00.000000",
   "modified_by": "Administrator",
   "module": "Cortex Rental",
   "name": "Cortex Finance Settings",
@@ -31,7 +31,15 @@
     "late_fee_grace_minutes",
     "cb_late",
     "late_fee_percent",
-    "late_fee_cap_days"
+    "late_fee_cap_days",
+    "sb_accounts",
+    "acct_receivable",
+    "acct_cash",
+    "acct_deposits",
+    "acct_tps",
+    "acct_tvq",
+    "acct_revenue",
+    "acct_late_fees"
   ],
   "fields": [
     {
@@ -145,6 +153,54 @@
       "default": "0",
       "precision": "2",
       "depends_on": "late_fee_enabled"
+    },
+    {
+      "fieldname": "sb_accounts",
+      "fieldtype": "Section Break",
+      "label": "Plan de comptes (pour les écritures comptables)",
+      "description": "Format « numéro - nom ». Votre comptable peut les adapter à son plan comptable."
+    },
+    {
+      "fieldname": "acct_receivable",
+      "fieldtype": "Data",
+      "label": "Comptes clients",
+      "default": "1100 - Comptes clients"
+    },
+    {
+      "fieldname": "acct_cash",
+      "fieldtype": "Data",
+      "label": "Encaisse et banque",
+      "default": "1000 - Encaisse et banque"
+    },
+    {
+      "fieldname": "acct_deposits",
+      "fieldtype": "Data",
+      "label": "Acomptes clients (passif)",
+      "default": "2400 - Acomptes clients"
+    },
+    {
+      "fieldname": "acct_tps",
+      "fieldtype": "Data",
+      "label": "TPS à remettre",
+      "default": "2310 - TPS à remettre"
+    },
+    {
+      "fieldname": "acct_tvq",
+      "fieldtype": "Data",
+      "label": "TVQ à remettre",
+      "default": "2320 - TVQ à remettre"
+    },
+    {
+      "fieldname": "acct_revenue",
+      "fieldtype": "Data",
+      "label": "Revenus de location",
+      "default": "4000 - Revenus de location"
+    },
+    {
+      "fieldname": "acct_late_fees",
+      "fieldtype": "Data",
+      "label": "Frais de retard",
+      "default": "4100 - Frais de retard"
     }
   ],
   "permissions": [

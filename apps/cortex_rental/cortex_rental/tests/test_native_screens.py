@@ -299,6 +299,9 @@ class TestScriptReports(unittest.TestCase):
                 "Relevé propriétaire",
                 "Créances par client",
                 "Taxes perçues",
+                "Journal comptable",
+                "Balance de vérification",
+                "Utilisation IA",
             },
         )
         for name, report in reports.items():

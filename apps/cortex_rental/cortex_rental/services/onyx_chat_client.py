@@ -53,6 +53,7 @@ class OnyxChatClient(ABC):
         persona_id: str,
         allowed_tool_ids: List[str],
         context: Dict[str, Any],
+        history: Optional[List[Dict[str, Any]]] = None,
     ) -> OnyxChatResult:
         raise NotImplementedError
 
@@ -65,6 +66,7 @@ class MockOnyxChatClient(OnyxChatClient):
         persona_id: str,
         allowed_tool_ids: List[str],
         context: Dict[str, Any],
+        history: Optional[List[Dict[str, Any]]] = None,
     ) -> OnyxChatResult:
         lowered = message.lower()
         mock_id = f"mock-onyx-{abs(hash((message, persona_id))) % 10_000_000}"
@@ -196,6 +198,7 @@ class HttpOnyxChatClient(OnyxChatClient):
         persona_id: str,
         allowed_tool_ids: List[str],
         context: Dict[str, Any],
+        history: Optional[List[Dict[str, Any]]] = None,
     ) -> OnyxChatResult:
         config = self._config()
         persona_map = config.get("persona_ids") or {}

@@ -16,3 +16,4 @@ cortex_rental.patches.set_quebec_formats
 cortex_rental.patches.sync_system_defaults
 cortex_rental.patches.create_finance_settings
 cortex_rental.patches.set_cortex_help_menu
+cortex_rental.patches.backfill_journal_entries

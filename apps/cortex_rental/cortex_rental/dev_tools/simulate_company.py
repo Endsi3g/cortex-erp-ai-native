@@ -416,6 +416,10 @@ def backdate_invoices(name, sim_day):
             name,
         ),
     )
+    frappe.db.sql(
+        "UPDATE `tabCortex Journal Entry` SET posting_date=%s WHERE rental_transaction=%s AND source_type='Invoice' AND posting_date=CURDATE()",
+        (sim_day, name),
+    )
 
 
 def pay_invoice(invoice, amount, sim_day, rng, kind="Payment"):
@@ -617,6 +621,61 @@ def percentile(values, q):
     return round(ordered[min(len(ordered) - 1, int(len(ordered) * q))], 1)
 
 
+def ledger_integrity():
+    """Comptabilité : écritures équilibrées, comptes recoupés avec les factures et les paiements."""
+
+    def q(sql):
+        return frappe.db.sql(sql, COMPANY)[0][0]
+
+    out = {"nombre": frappe.db.count("Cortex Journal Entry", {"company": COMPANY})}
+    out["desequilibrees"] = q(
+        "SELECT COUNT(*) FROM `tabCortex Journal Entry` WHERE company=%s AND ABS(total_debit - total_credit) > 0.005"
+    )
+    out["debits_moins_credits"] = float(
+        q(
+            "SELECT COALESCE(SUM(l.debit - l.credit),0) FROM `tabCortex Journal Entry Line` l "
+            "JOIN `tabCortex Journal Entry` j ON j.name=l.parent WHERE j.company=%s"
+        )
+    )
+
+    def account(number, column):
+        return float(
+            frappe.db.sql(
+                f"SELECT COALESCE(SUM(l.{column}),0) FROM `tabCortex Journal Entry Line` l "
+                "JOIN `tabCortex Journal Entry` j ON j.name=l.parent WHERE j.company=%s AND l.account_number=%s",
+                (COMPANY, number),
+            )[0][0]
+        )
+
+    receivable = account("1100", "debit") - account("1100", "credit")
+    invoices = float(
+        q("SELECT COALESCE(SUM(balance),0) FROM `tabCortex Rental Invoice` WHERE company=%s AND status<>'Cancelled'")
+    )
+    out["clients_grand_livre"] = round(receivable, 2)
+    out["clients_selon_factures"] = round(invoices, 2)
+    out["ecart_clients"] = round(receivable - invoices, 2)
+    paid = float(q("SELECT COALESCE(SUM(signed_amount),0) FROM `tabCortex Rental Payment` WHERE company=%s"))
+    out["ecart_encaisse"] = round(account("1000", "debit") - account("1000", "credit") - paid, 2)
+    taxes = float(
+        q(
+            "SELECT COALESCE(SUM(tps_amount+tvq_amount),0) FROM `tabCortex Rental Invoice` WHERE company=%s AND status<>'Cancelled'"
+        )
+    )
+    collected = (
+        account("2310", "credit") + account("2320", "credit") - account("2310", "debit") - account("2320", "debit")
+    )
+    out["ecart_taxes"] = round(collected - taxes, 2)
+    out["factures_sans_ecriture"] = q(
+        "SELECT COUNT(*) FROM `tabCortex Rental Invoice` i WHERE i.company=%s AND NOT EXISTS "
+        "(SELECT 1 FROM `tabCortex Journal Entry` j WHERE j.source_doctype='Cortex Rental Invoice' AND j.source_name=i.name AND j.source_type='Invoice')"
+    )
+    out["paiements_sans_ecriture"] = q(
+        "SELECT COUNT(*) FROM `tabCortex Rental Payment` p WHERE p.company=%s AND NOT EXISTS "
+        "(SELECT 1 FROM `tabCortex Journal Entry` j WHERE j.source_doctype='Cortex Rental Payment' AND j.source_name=p.name)"
+    )
+    return out
+
+
 def finance_integrity():
     """Contrôles financiers : soldes, taxes, une facture finale par location close, acompte présent, rapprochement."""
     out = {}
@@ -672,6 +731,7 @@ def finance_integrity():
              (SELECT COALESCE(SUM(i.total),0) FROM `tabCortex Rental Invoice` i WHERE i.rental_transaction=t.name AND i.status<>'Cancelled')
              - t.grand_total - COALESCE((SELECT SUM(l.amount)*1.14975 FROM `tabCortex Rental Invoice Line` l JOIN `tabCortex Rental Invoice` i ON i.name=l.parent WHERE i.rental_transaction=t.name AND i.invoice_type='Final' AND l.description LIKE 'Frais de retard%%'),0)) > 0.06"""
     )
+    out["ecritures"] = ledger_integrity()
     out["frais_de_retard_factures"] = float(
         q(
             "SELECT COALESCE(SUM(l.amount),0) FROM `tabCortex Rental Invoice Line` l JOIN `tabCortex Rental Invoice` i ON i.name=l.parent WHERE i.company=%s AND l.description LIKE 'Frais de retard%%'"
@@ -805,7 +865,12 @@ def purge():
         "DELETE l FROM `tabCortex Rental Invoice Line` l JOIN `tabCortex Rental Invoice` i ON i.name = l.parent WHERE i.company = %s",
         COMPANY,
     )
+    frappe.db.sql(
+        "DELETE l FROM `tabCortex Journal Entry Line` l JOIN `tabCortex Journal Entry` j ON j.name = l.parent WHERE j.company = %s",
+        COMPANY,
+    )
     for doctype in (
+        "Cortex Journal Entry",
         "Cortex Rental Payment",
         "Cortex Rental Invoice",
         "Cortex Check-In",

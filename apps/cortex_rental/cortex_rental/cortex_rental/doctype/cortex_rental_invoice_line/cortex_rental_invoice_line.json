@@ -3,7 +3,7 @@
   "creation": "2026-09-30 23:00:00.000000",
   "doctype": "DocType",
   "engine": "InnoDB",
-  "modified": "2026-09-30 23:00:00.000000",
+  "modified": "2026-10-01 01:00:00.000000",
   "modified_by": "Administrator",
   "module": "Cortex Rental",
   "name": "Cortex Rental Invoice Line",
@@ -20,7 +20,8 @@
     "qty",
     "days",
     "rate",
-    "amount"
+    "amount",
+    "line_kind"
   ],
   "fields": [
     {
@@ -61,6 +62,13 @@
       "fieldtype": "Currency",
       "label": "Amount",
       "in_list_view": 1
+    },
+    {
+      "fieldname": "line_kind",
+      "fieldtype": "Select",
+      "label": "Line Kind",
+      "options": "Rental\nLate Fee\nDeposit\nDeposit Credit",
+      "default": "Rental"
     }
   ],
   "permissions": []

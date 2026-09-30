@@ -108,8 +108,10 @@ def _issue(tx, invoice_type: str, lines: List[Dict[str, Any]], settings: Dict[st
     )
     doc.flags.from_billing = True
     doc.insert(ignore_permissions=True)
+    from cortex_rental.services import ledger
     from cortex_rental.services.audit import AuditService
 
+    ledger.post_invoice(doc)
     AuditService.record_mutation(
         company=tx.company,
         action="cortex.invoice.issued",
@@ -133,6 +135,7 @@ def create_deposit_invoice(tx):
     lines = [
         {
             "description": f"Acompte de {percent:g} % — location {tx.name}",
+            "line_kind": "Deposit",
             "qty": 1,
             "days": 1,
             "rate": amount,
@@ -178,6 +181,7 @@ def create_final_invoice(tx):
         lines.append(
             {
                 "description": label,
+                "line_kind": "Rental",
                 "item_code": item.item_code,
                 "qty": flt(item.qty),
                 "days": flt(item.billable_days),
@@ -190,6 +194,7 @@ def create_final_invoice(tx):
         lines.append(
             {
                 "description": f"Frais de retard : {days} jour(s) supplémentaire(s)",
+                "line_kind": "Late Fee",
                 "qty": 1,
                 "days": days,
                 "rate": fee,
@@ -205,6 +210,7 @@ def create_final_invoice(tx):
         lines.append(
             {
                 "description": f"Moins : acompte facturé ({deposit.name})",
+                "line_kind": "Deposit Credit",
                 "qty": 1,
                 "days": 1,
                 "rate": -flt(deposit.subtotal),
@@ -221,6 +227,9 @@ def cancel_unpaid_deposits(tx) -> None:
     ):
         if flt(frappe.db.get_value(INVOICE, name, "amount_paid")) == 0:
             frappe.db.set_value(INVOICE, name, {"status": "Cancelled", "balance": 0})
+            from cortex_rental.services import ledger
+
+            ledger.post_reversal(frappe.get_doc(INVOICE, name))
 
 
 def on_transition(tx, new_state: str) -> None:

@@ -39,19 +39,19 @@ class _ModelNotNeeded:
 
 
 def _service(model: bool = False) -> ChatSessionService:
-    """The chat service. Only sending a message needs the model gateway (Onyx); reading history never does.
+    """The chat service. Only sending a message needs the model; reading history never does.
 
-    When Onyx is missing, sending answers with a clear message instead of a server error.
+    When the engine is missing its configuration, sending answers with a clear message instead of a server error.
     """
     if not model:
         return ChatSessionService(onyx_client=_ModelNotNeeded())
     try:
         return ChatSessionService()
-    except OnyxConfigurationError:
+    except OnyxConfigurationError as exc:
         if frappe:
             frappe.throw(
-                "L'assistant IA n'est pas encore configuré sur ce site : un administrateur doit renseigner "
-                "onyx_base_url et onyx_api_key dans la configuration du site.",
+                "L'assistant IA n'est pas encore configuré sur ce site : un administrateur doit saisir la clé API "
+                f"dans les réglages de l'IA. ({exc})",
                 frappe.ValidationError,
             )
         raise
@@ -92,6 +92,10 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
             frappe.throw(str(exc), frappe.PermissionError)
         raise
     except ChatRateLimitError as exc:
+        if frappe:
+            frappe.throw(str(exc), frappe.ValidationError)
+        raise
+    except OnyxConfigurationError as exc:
         if frappe:
             frappe.throw(str(exc), frappe.ValidationError)
         raise

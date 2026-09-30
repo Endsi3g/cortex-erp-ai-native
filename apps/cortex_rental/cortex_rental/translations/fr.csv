@@ -1973,3 +1973,16 @@ Issue,Problème
 Suggestion,Suggestion
 Urgent,Urgent
 Resolved,Résolue
+Cortex Journal Entry,Écriture comptable
+Cortex Journal Entry Line,Ligne d'écriture
+Posting Date,Date de l'écriture
+Source Type,Type de source
+Source Document Type,Type de document source
+Account Number,Numéro de compte
+Account Name,Nom du compte
+Total Debit,Total des débits
+Total Credit,Total des crédits
+Reversal,Inversion
+Line Kind,Nature de la ligne
+Late Fee,Frais de retard
+Deposit Credit,Acompte appliqué

@@ -1,5 +1,7 @@
 # Décision : moteur IA maison léger ou Onyx ?
 
+> **Statut (2026-09-30) :** décision prise et passerelle construite (`services/ai/`, Gemini, modèle configurable, budget par société) — voir `docs/adr/ADR-006-passerelle-ia-et-ecritures.md`. Les étapes 1 à 4 du § 5 sont faites; le § 8 est partiellement répondu (fournisseur : Gemini; plafond : à déterminer).
+
 > Question posée : vaut-il mieux créer un système IA complet dans Cortex, ou continuer avec Onyx (avec sa pile) ?
 > Réponse courte : **remplacer Onyx par une passerelle IA maison, mince, dans l'application Frappe existante.**
 > Garder la façade MCP seulement pour des agents externes. Réintroduire un moteur de recherche documentaire (Onyx ou autre)
@@ -74,7 +76,7 @@ erreurs de sérialisation. Les deux partagent le même registre d'outils pour ne
 1. Introduire `AIGateway` derrière l'interface `OnyxChatClient` existante (même signature) : `chat_session.py` ne change pas.
 2. Implémenter un premier adaptateur (un seul fournisseur) + 4 outils de lecture + 1 outil de proposition.
 3. Ajouter les tests : permissions par rôle, refus d'écriture directe, audit, idempotence, panne du fournisseur.
-4. Basculer par paramètre du site (`cortex_ai_engine = gateway | onyx | mock`), garder Onyx désactivé mais présent une version.
+4. Basculer par paramètre du site (`cortex_chat_provider = gateway | onyx | mock`, défaut `gateway`), garder Onyx désactivé mais présent une version.
 5. Retirer `infra/onyx` et les identifiants numériques quand la passerelle est stable.
 6. Mesurer : latence p50/p95, taux d'outils refusés par permission, coût par conversation.
 

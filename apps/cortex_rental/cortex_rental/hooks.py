@@ -82,6 +82,8 @@ permission_query_conditions = {
     "Cortex Rental Payment": "cortex_rental.permissions.cortex_rental_payment_query_conditions",
     "Cortex Finance Settings": "cortex_rental.permissions.cortex_finance_settings_query_conditions",
     "Cortex Support Request": "cortex_rental.permissions.cortex_support_request_query_conditions",
+    "Cortex Journal Entry": "cortex_rental.permissions.cortex_journal_entry_query_conditions",
+    "Cortex AI Usage": "cortex_rental.permissions.cortex_ai_usage_query_conditions",
     "Customer": "cortex_rental.permissions.customer_query_conditions",
     "Cortex Idempotency Record": "cortex_rental.permissions.cortex_idempotency_record_query_conditions",
     "Cortex Agent Run": "cortex_rental.permissions.cortex_agent_run_query_conditions",

@@ -63,7 +63,7 @@ Anciennes routes `/app/cortex-*` (Pages Desk) : supprimées ; le patch `remove_s
 
 | Destination | Construction | Rôle |
 |---|---|---|
-| Accueil Cortex | Page `cortex-home` | Conversation avec l’assistant (Onyx via `chat.*`), point de départ |
+| Accueil Cortex | Page `cortex-home` | Conversation avec l’assistant (passerelle IA interne via `chat.*`), point de départ |
 | Boîte d’entrée IA | Liste *Cortex Inbound Request* + liste rapide du workspace IA | Documents entrants à traiter |
 | Approbations | Liste/formulaire *Approval Request* (boutons Approuver/Refuser côté serveur) | Décisions humaines |
 | Journal d’audit | Liste *Audit Event* (lecture seule) | Traçabilité |
@@ -135,6 +135,8 @@ Les éléments d’interface de l’accueil IA sont des composants Vue 3 compil�
 
 ## Intégration IA et sécurité technique
 
+**Moteur actuel (ADR-006) :** passerelle IA interne `services/ai/` (Gemini, modèle et clé dans *Cortex AI Settings*, budget mensuel par société dans *Cortex AI Usage*, outils de lecture sous les droits de la personne connectée, propositions sans écriture). Onyx reste sélectionnable par `cortex_chat_provider = onyx` mais n'est plus le défaut; les puces Onyx ci-dessous ne valent que dans ce cas.
+
 Flux attendu : Vue → API Frappe authentifiée → service Cortex → (a) Onyx pour orchestration et langage, (b) MCP privé pour outils autorisés → API métier Frappe/ERPNext. Onyx et Ollama ne parlent jamais directement à MariaDB. ERPNext garde les calculs et états canoniques.
 
 - L’URL Onyx, le jeton serveur et la configuration Ollama sont stockés côté serveur (config Frappe ou gestionnaire de secrets), jamais dans le JavaScript servi, le bundle, le stockage du navigateur ou la télémétrie publique.
@@ -153,9 +155,10 @@ Flux attendu : Vue → API Frappe authentifiée → service Cortex → (a) Onyx 
 
 - **Vérifié :** redirection d’arrivée vers l’Accueil ; accueil sans violation axe WCAG 2.1 AA et sans débordement dès 320 px ; les 7 workspaces rendent onboarding, graphique, cartes de nombres, raccourcis et listes rapides avec les vraies données ; grille de disponibilité (équipements × jours, détail par cellule) branchée sur `availability.get_matrix` ; liste, Kanban, calendrier/Gantt et formulaire de *Location* ; retour de matériel enregistré de bout en bout depuis le dialogue natif ; les cinq rapports s’exécutent.
 - **Accessibilité et écrans étroits :** `public/js/cortex_a11y.js` ajoute les noms accessibles que Frappe omet (boutons-icônes, cases de liste, filtres, grilles, menus déroulants) et `cortex-a11y.css` corrige les contrastes (gris « muted » de Frappe, calendrier) et le débordement des widgets à 320–375 px ; 0 violation axe WCAG 2.1 AA sur l'accueil, les 7 workspaces, la grille, la liste, le formulaire, le Kanban, le calendrier, le Gantt, les rapports et les approbations. Ces correctifs s'appliquent aussi aux écrans ERPNext d'origine ; ils sont ajoutés par script après rendu, donc un nouvel écran Frappe peut demander une règle de plus.
-- **Limites honnêtes :** Onyx n'est pas configuré sur le bench (`onyx_base_url`, `onyx_api_key`) : l'accueil affiche alors le message de configuration renvoyé par le serveur au lieu d'une réponse. Les libellés d'ERPNext non traduits par Frappe restent en anglais. Un site vide affiche des zéros et des graphiques vides (pas de données de démonstration inventées). La grille de disponibilité est indicative (elle déduit « parc − quantités bloquantes du jour » des réservations renvoyées par le serveur) ; la vérification qui fait foi reste celle du serveur à la réservation. Sous 900 px, les tables de formulaire défilent horizontalement dans leur cadre.
+- **Limites honnêtes :** aucune clé API du modèle n'est saisie sur le bench (*Cortex AI Settings*) : l'accueil affiche alors le message de configuration renvoyé par le serveur au lieu d'une réponse; l'identifiant `gemini-3.8-flash` est à confirmer chez le fournisseur; les appels réels n'ont pas été testés (fournisseur simulé). Le plafond de coût est à déterminer (0 = aucun plafond). Les libellés d'ERPNext non traduits par Frappe restent en anglais. Un site vide affiche des zéros et des graphiques vides (pas de données de démonstration inventées). La grille de disponibilité est indicative (elle déduit « parc − quantités bloquantes du jour » des réservations renvoyées par le serveur) ; la vérification qui fait foi reste celle du serveur à la réservation. Sous 900 px, les tables de formulaire défilent horizontalement dans leur cadre.
 - **Non reconstruit :** les écrans à deux colonnes de l’AI Workspace, le scan par caméra (le champ Code-barres de Frappe accepte un lecteur ou la saisie), les équipes/assignations.
-- **À recetter :** parcours contrat → facturation → envoi client, droits réels par rôle, intégrations comptables, conversation et outils Cortex→Onyx→MCP. Ne qualifie pas le produit de prêt pour la production.
+- **Écritures comptables (vérifié sur 91 jours) :** journal à partie double par société (542 écritures, 0 déséquilibrée, écarts clients/encaisse/taxes à 0), rapports *Journal comptable* et *Balance de vérification*; le grand livre d'ERPNext n'est pas alimenté.
+- **À recetter :** parcours contrat → facturation → envoi client, droits réels par rôle, export vers le logiciel du comptable, conversation avec un vrai modèle (clé requise) et ses outils. Ne qualifie pas le produit de prêt pour la production.
 
 ## Definition of Done pour une évolution
 

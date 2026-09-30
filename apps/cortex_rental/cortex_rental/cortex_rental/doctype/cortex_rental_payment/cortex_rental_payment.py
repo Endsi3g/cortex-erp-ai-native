@@ -2,7 +2,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from cortex_rental.services import billing
+from cortex_rental.services import billing, ledger
 from cortex_rental.services.audit import AuditService
 
 
@@ -14,6 +14,7 @@ class CortexRentalPayment(Document):
 
     def after_insert(self):
         billing.refresh_invoice(self.invoice)
+        ledger.post_payment(self)
         AuditService.record_mutation(
             company=self.company,
             action="cortex.payment.recorded",

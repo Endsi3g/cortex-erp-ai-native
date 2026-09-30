@@ -27,7 +27,6 @@ la clôture); **les frais de retard sont décidés par chaque société**.
 ## Conséquences
 
 - Positif : chaque société voit uniquement ses chiffres; aucun rôle ERPNext large à accorder; les taux sont configurables.
-- À décider : **journalisation comptable** (écritures dans ERPNext) quand un comptable externe ou un export l'exigera. Le
-  modèle est prêt (factures et paiements complets); il manque le plan comptable par société et les comptes de revenus.
+- **Journalisation comptable : faite côté Cortex** (ADR-006, `Cortex Journal Entry`, plan de comptes par société). Reste à décider : alimenter aussi le grand livre d'ERPNext si un comptable l'exige.
 - Hors périmètre ici : dépôt de garantie distinct de l'acompte, notes de crédit, relances automatiques, envoi de la facture par courriel.
 - Les factures émises sont des instantanés : changer les taux ne les modifie pas.
