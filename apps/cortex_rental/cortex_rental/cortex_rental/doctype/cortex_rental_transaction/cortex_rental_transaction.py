@@ -15,6 +15,7 @@ from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.transaction_state import TransactionStateService
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.availability import AvailabilityService
+from cortex_rental.services import billing
 from cortex_rental.services.locking import ReservationLockError, reservation_lock
 
 # States that block inventory (PRD §4). Confirming into one of these
@@ -75,8 +76,15 @@ class CortexRentalTransaction(Document):
                 subtotal += item.amount
 
         self.subtotal = round(subtotal, 2)
-        tax_rate = float(self.tax_rate or 0.0)
-        self.tax_amount = round(self.subtotal * (tax_rate / 100.0), 2)
+        if frappe and getattr(frappe, "db", None):
+            # Taxes de la société (TPS/TVQ par défaut), calculées par le serveur : jamais fournies par le navigateur.
+            settings = billing.get_settings(self.company)
+            self.tps_amount, self.tvq_amount = billing.compute_taxes(self.subtotal, settings)
+            self.tax_rate = billing.combined_rate(settings)
+            self.tax_amount = round(self.tps_amount + self.tvq_amount, 2)
+        else:
+            tax_rate = float(self.tax_rate or 0.0)
+            self.tax_amount = round(self.subtotal * (tax_rate / 100.0), 2)
         self.grand_total = round(self.subtotal + self.tax_amount, 2)
 
     @staticmethod
@@ -143,6 +151,8 @@ class CortexRentalTransaction(Document):
         else:
             self.rental_state = new_state
             self.save()
+            if frappe:
+                billing.on_transition(self, new_state)
 
         # Synchronize with ERPNext documents
         TransactionStateService.sync_with_erpnext(self)
@@ -203,6 +213,7 @@ class CortexRentalTransaction(Document):
 
             self.rental_state = new_state
             self.save()
+            billing.on_transition(self, new_state)
             # Le verrou ne doit être relâché qu'après la validation en base, sinon le suivant relit l'ancien état.
             if not frappe.flags.in_test:
                 frappe.db.commit()  # nosemgrep

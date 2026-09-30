@@ -297,6 +297,8 @@ class TestScriptReports(unittest.TestCase):
                 "Activité des clients",
                 "Versements de consignation",
                 "Relevé propriétaire",
+                "Créances par client",
+                "Taxes perçues",
             },
         )
         for name, report in reports.items():

@@ -150,6 +150,21 @@ def provision():
         tp.create_company(COMPANY)
         log(f"Société créée : {COMPANY}")
     tp.ensure_default_pricing_rule(COMPANY)
+    from cortex_rental.services import billing
+
+    billing.ensure_settings(COMPANY)
+    frappe.db.set_value(
+        "Cortex Finance Settings",
+        COMPANY,
+        {
+            "late_fee_enabled": 1,
+            "late_fee_grace_minutes": 60,
+            "late_fee_percent": 100,
+            "late_fee_cap_days": 3,
+            "tps_number": "123456789 RT0001",
+            "tvq_number": "1234567890 TQ0001",
+        },
+    )
     people = [
         (OWNER, "Simone Propriétaire", "manager"),
         (MANAGER, "Marc Gestionnaire", "manager"),
@@ -331,6 +346,10 @@ def progress_rental(rng, record, sim_day, today, stats, schedule):
         timed("devis.annuler", doc.transition_to, "Cancelled", "Matériel indisponible")
         return
     EVENTS["reservation"] += 1
+    backdate_invoices(name, sim_day)
+    deposit = deposit_invoice_of(name)
+    if deposit and rng.random() < 0.92:
+        pay_invoice(deposit.name, deposit.total, sim_day, rng)
     frappe.db.set_value(
         "Cortex Rental Transaction",
         name,
@@ -371,6 +390,47 @@ def progress_rental(rng, record, sim_day, today, stats, schedule):
             reason="Dossier incomplet",
         )
         EVENTS["contrat_refuse"] += 1
+
+
+def backdate_invoices(name, sim_day):
+    """Les factures sont émises « aujourd'hui » par le serveur : on les date du jour simulé pour les vues financières."""
+    due_days = int(frappe.db.get_value("Cortex Finance Settings", COMPANY, "invoice_due_days") or 0)
+    frappe.db.sql(
+        "UPDATE `tabCortex Rental Invoice` SET issue_date=%s, due_date=%s, creation=%s WHERE rental_transaction=%s AND issue_date=CURDATE()",
+        (
+            sim_day,
+            sim_day + timedelta(days=due_days),
+            datetime.combine(sim_day, datetime.min.time()) + timedelta(hours=10),
+            name,
+        ),
+    )
+
+
+def pay_invoice(invoice, amount, sim_day, rng, kind="Payment"):
+    from cortex_rental.api.v1 import billing
+
+    as_user(rng.choice(COUNTERS))
+    frappe.local.form_dict = frappe._dict()
+    timed(
+        "paiement.enregistrer",
+        billing.record_payment,
+        invoice=invoice,
+        amount=amount,
+        method=rng.choice(["Card", "Card", "Card", "Bank Transfer", "Cash", "Cheque"]),
+        paid_on=str(sim_day),
+        reference=f"SIM-{rng.randint(1000, 9999)}",
+        kind=kind,
+    )
+    EVENTS["paiement" if kind == "Payment" else "remboursement"] += 1
+
+
+def deposit_invoice_of(name):
+    return frappe.db.get_value(
+        "Cortex Rental Invoice",
+        {"rental_transaction": name, "invoice_type": "Deposit", "status": ["!=", "Cancelled"]},
+        ["name", "total"],
+        as_dict=True,
+    )
 
 
 def do_checkout(name, record, rng, schedule):
@@ -454,6 +514,11 @@ def do_checkin(name, rng, schedule, sim_day, consigned):
         "retour.enregistrer", process_checkin, COMPANY, frappe.session.user, name, items, "auto", "Simulation"
     )
     EVENTS["retour"] += 1
+    ends_on = frappe.db.get_value("Cortex Rental Transaction", name, "ends_at").date()
+    returned_at = datetime.combine(sim_day, datetime.min.time()) + timedelta(
+        hours=8, minutes=30 if sim_day <= ends_on else 120
+    )
+    frappe.db.set_value("Cortex Check-In", {"transaction": name}, "checked_in_at", returned_at, update_modified=False)
     if (
         result.get("transaction_fully_returned")
         or frappe.db.get_value("Cortex Rental Transaction", name, "rental_state") == "Returned"
@@ -462,12 +527,32 @@ def do_checkin(name, rng, schedule, sim_day, consigned):
             schedule[sim_day + timedelta(days=rng.choice([2, 3, 5, 7]))].append(("cloture", name, None))
 
 
-def do_close(name):
+def do_close(name, sim_day=None, rng=None, schedule=None):
     as_user(MANAGER)
     doc = frappe.get_doc("Cortex Rental Transaction", name)
     if doc.rental_state == "Returned":
         timed("cloture", doc.transition_to, "Closed", "Dossier clôturé")
         EVENTS["cloture"] += 1
+        backdate_invoices(name, sim_day)
+        final = frappe.db.get_value(
+            "Cortex Rental Invoice",
+            {"rental_transaction": name, "invoice_type": "Final", "status": ["!=", "Cancelled"]},
+            ["name", "total"],
+            as_dict=True,
+        )
+        if final and final.total > 0:
+            EVENTS["facture_finale"] += 1
+            roll = rng.random()
+            if roll < 0.80:
+                schedule[sim_day + timedelta(days=rng.choice([0, 1, 3, 7, 14]))].append(
+                    ("paiement", final.name, final.total)
+                )
+            elif roll < 0.90:
+                schedule[sim_day + timedelta(days=rng.choice([5, 10]))].append(
+                    ("paiement", final.name, round(final.total * 0.5, 2))
+                )
+            else:
+                EVENTS["facture_impayee"] += 1
 
 
 # ------------------------------------------------------------------ main loop
@@ -500,7 +585,9 @@ def simulate(seed, days):
                 elif kind == "retour":
                     do_checkin(name, rng, schedule, sim_day, None)
                 elif kind == "cloture":
-                    do_close(name)
+                    do_close(name, sim_day, rng, schedule)
+                elif kind == "paiement":
+                    pay_invoice(name, record, sim_day, rng)
             except Exception:
                 frappe.db.rollback()
         # un retard de retour reporté au-delà d'aujourd'hui reste « Sorti » : c'est voulu
@@ -516,6 +603,72 @@ def percentile(values, q):
         return None
     ordered = sorted(values)
     return round(ordered[min(len(ordered) - 1, int(len(ordered) * q))], 1)
+
+
+def finance_integrity():
+    """Contrôles financiers : soldes, taxes, une facture finale par location close, acompte présent, rapprochement."""
+    out = {}
+    q = lambda sql, *a: frappe.db.sql(sql, a or COMPANY)[0][0]  # noqa: E731
+    out["factures"] = dict(
+        frappe.db.sql(
+            "SELECT invoice_type, COUNT(*) FROM `tabCortex Rental Invoice` WHERE company=%s GROUP BY invoice_type",
+            COMPANY,
+        )
+    )
+    out["par_statut"] = dict(
+        frappe.db.sql(
+            "SELECT status, COUNT(*) FROM `tabCortex Rental Invoice` WHERE company=%s GROUP BY status", COMPANY
+        )
+    )
+    out["total_facture"] = float(
+        q("SELECT COALESCE(SUM(total),0) FROM `tabCortex Rental Invoice` WHERE company=%s AND status<>'Cancelled'")
+    )
+    out["total_encaisse"] = float(
+        q("SELECT COALESCE(SUM(signed_amount),0) FROM `tabCortex Rental Payment` WHERE company=%s")
+    )
+    out["solde_a_recevoir"] = float(
+        q("SELECT COALESCE(SUM(balance),0) FROM `tabCortex Rental Invoice` WHERE company=%s AND status<>'Cancelled'")
+    )
+    out["tps_percue"] = float(
+        q("SELECT COALESCE(SUM(tps_amount),0) FROM `tabCortex Rental Invoice` WHERE company=%s AND status<>'Cancelled'")
+    )
+    out["tvq_percue"] = float(
+        q("SELECT COALESCE(SUM(tvq_amount),0) FROM `tabCortex Rental Invoice` WHERE company=%s AND status<>'Cancelled'")
+    )
+    out["solde_incoherent"] = q(
+        "SELECT COUNT(*) FROM `tabCortex Rental Invoice` WHERE company=%s AND status<>'Cancelled' AND ABS(balance - (total - amount_paid)) > 0.01"
+    )
+    out["paye_incoherent"] = q(
+        """SELECT COUNT(*) FROM `tabCortex Rental Invoice` i WHERE i.company=%s AND ABS(i.amount_paid - COALESCE((SELECT SUM(signed_amount) FROM `tabCortex Rental Payment` p WHERE p.invoice=i.name),0)) > 0.01"""
+    )
+    out["taxes_incoherentes"] = q(
+        "SELECT COUNT(*) FROM `tabCortex Rental Invoice` WHERE company=%s AND (ABS(tax_amount - (tps_amount + tvq_amount)) > 0.01 OR ABS(total - (subtotal + tax_amount)) > 0.01 OR ABS(tps_amount - ROUND(subtotal*0.05,2)) > 0.011 OR ABS(tvq_amount - ROUND(subtotal*0.09975,2)) > 0.011)"
+    )
+    out["locations_totaux_incoherents"] = q(
+        "SELECT COUNT(*) FROM `tabCortex Rental Transaction` WHERE company=%s AND ABS(grand_total - (subtotal + tps_amount + tvq_amount)) > 0.01"
+    )
+    out["closes_sans_facture_finale"] = q(
+        """SELECT COUNT(*) FROM `tabCortex Rental Transaction` t WHERE t.company=%s AND t.rental_state='Closed' AND t.subtotal > 0
+           AND NOT EXISTS (SELECT 1 FROM `tabCortex Rental Invoice` i WHERE i.rental_transaction=t.name AND i.invoice_type='Final' AND i.status<>'Cancelled')"""
+    )
+    out["reservees_sans_acompte"] = q(
+        """SELECT COUNT(*) FROM `tabCortex Rental Transaction` t WHERE t.company=%s AND t.rental_state IN ('Reservation','Contract','Checked Out','Returned','Closed') AND t.subtotal > 0
+           AND NOT EXISTS (SELECT 1 FROM `tabCortex Rental Invoice` i WHERE i.rental_transaction=t.name AND i.invoice_type='Deposit' AND i.status<>'Cancelled')"""
+    )
+    out["rapprochement_acompte_final_vs_location"] = q(
+        """SELECT COUNT(*) FROM `tabCortex Rental Transaction` t WHERE t.company=%s AND t.rental_state='Closed' AND t.subtotal > 0 AND ABS(
+             (SELECT COALESCE(SUM(i.total),0) FROM `tabCortex Rental Invoice` i WHERE i.rental_transaction=t.name AND i.status<>'Cancelled')
+             - t.grand_total - COALESCE((SELECT SUM(l.amount)*1.14975 FROM `tabCortex Rental Invoice Line` l JOIN `tabCortex Rental Invoice` i ON i.name=l.parent WHERE i.rental_transaction=t.name AND i.invoice_type='Final' AND l.description LIKE 'Frais de retard%%'),0)) > 0.06"""
+    )
+    out["frais_de_retard_factures"] = float(
+        q(
+            "SELECT COALESCE(SUM(l.amount),0) FROM `tabCortex Rental Invoice Line` l JOIN `tabCortex Rental Invoice` i ON i.name=l.parent WHERE i.company=%s AND l.description LIKE 'Frais de retard%%'"
+        )
+    )
+    out["factures_en_retard_de_paiement"] = q(
+        "SELECT COUNT(*) FROM `tabCortex Rental Invoice` WHERE company=%s AND status IN ('Issued','Partially Paid') AND due_date < CURDATE()"
+    )
+    return out
 
 
 def integrity():
@@ -609,6 +762,7 @@ def integrity():
     findings["commandes_client"] = frappe.db.count("Sales Order", {"company": COMPANY})
     findings["factures_vente"] = frappe.db.count("Sales Invoice", {"company": COMPANY})
     findings["versements_consignation"] = frappe.db.count("Consignment Payout", {"company": COMPANY})
+    findings["finance"] = finance_integrity()
     findings["taxes_calculees"] = frappe.db.sql(
         "SELECT COUNT(*) FROM `tabCortex Rental Transaction` WHERE company=%s AND tax_amount > 0", COMPANY
     )[0][0]
@@ -635,7 +789,13 @@ def purge():
             f"DELETE i FROM `tab{doctype}` i JOIN `tabCortex Check-In` c ON c.name = i.parent WHERE c.company = %s",
             COMPANY,
         )
+    frappe.db.sql(
+        "DELETE l FROM `tabCortex Rental Invoice Line` l JOIN `tabCortex Rental Invoice` i ON i.name = l.parent WHERE i.company = %s",
+        COMPANY,
+    )
     for doctype in (
+        "Cortex Rental Payment",
+        "Cortex Rental Invoice",
         "Cortex Check-In",
         "Cortex Rental Transaction",
         "Approval Request",

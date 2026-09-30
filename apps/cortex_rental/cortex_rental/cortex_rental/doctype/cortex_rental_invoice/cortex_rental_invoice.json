@@ -1,0 +1,271 @@
+{
+  "actions": [],
+  "creation": "2026-09-30 23:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "modified": "2026-09-30 23:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "name": "Cortex Rental Invoice",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1,
+  "autoname": "format:FAC-{YYYY}-{#####}",
+  "field_order": [
+    "company",
+    "customer",
+    "rental_transaction",
+    "cb_head",
+    "invoice_type",
+    "status",
+    "issue_date",
+    "due_date",
+    "sb_lines",
+    "lines",
+    "sb_totals",
+    "subtotal",
+    "tps_amount",
+    "tvq_amount",
+    "cb_totals",
+    "tax_amount",
+    "total",
+    "amount_paid",
+    "balance",
+    "sb_tax_ids",
+    "tps_number",
+    "tvq_number",
+    "sb_notes",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Customer",
+      "options": "Customer",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "rental_transaction",
+      "fieldtype": "Link",
+      "label": "Rental",
+      "options": "Cortex Rental Transaction",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "cb_head",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "invoice_type",
+      "fieldtype": "Select",
+      "label": "Invoice Type",
+      "options": "Deposit\nFinal",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Issued\nPartially Paid\nPaid\nCancelled",
+      "default": "Issued",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "issue_date",
+      "fieldtype": "Date",
+      "label": "Issue Date",
+      "reqd": 1,
+      "default": "Today",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "due_date",
+      "fieldtype": "Date",
+      "label": "Due Date",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "sb_lines",
+      "fieldtype": "Section Break",
+      "label": "Lignes"
+    },
+    {
+      "fieldname": "lines",
+      "fieldtype": "Table",
+      "label": "Lines",
+      "options": "Cortex Rental Invoice Line"
+    },
+    {
+      "fieldname": "sb_totals",
+      "fieldtype": "Section Break",
+      "label": "Totaux"
+    },
+    {
+      "fieldname": "subtotal",
+      "fieldtype": "Currency",
+      "label": "Subtotal",
+      "read_only": 1
+    },
+    {
+      "fieldname": "tps_amount",
+      "fieldtype": "Currency",
+      "label": "TPS",
+      "read_only": 1
+    },
+    {
+      "fieldname": "tvq_amount",
+      "fieldtype": "Currency",
+      "label": "TVQ",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cb_totals",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "tax_amount",
+      "fieldtype": "Currency",
+      "label": "Tax Amount",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total",
+      "fieldtype": "Currency",
+      "label": "Total",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "amount_paid",
+      "fieldtype": "Currency",
+      "label": "Amount Paid",
+      "read_only": 1
+    },
+    {
+      "fieldname": "balance",
+      "fieldtype": "Currency",
+      "label": "Balance",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "sb_tax_ids",
+      "fieldtype": "Section Break",
+      "label": "Numéros de taxes (copiés à l'émission)",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "tps_number",
+      "fieldtype": "Data",
+      "label": "Numéro de TPS",
+      "read_only": 1
+    },
+    {
+      "fieldname": "tvq_number",
+      "fieldtype": "Data",
+      "label": "Numéro de TVQ",
+      "read_only": 1
+    },
+    {
+      "fieldname": "sb_notes",
+      "fieldtype": "Section Break",
+      "label": "Remarques",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    }
+  ],
+  "title_field": "customer",
+  "search_fields": "customer,rental_transaction,invoice_type",
+  "links": [
+    {
+      "link_doctype": "Cortex Rental Payment",
+      "link_fieldname": "invoice"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
+    },
+    {
+      "role": "Cortex Finance Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "write": 1
+    },
+    {
+      "role": "Rental Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "write": 1
+    },
+    {
+      "role": "Cortex Operations Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1
+    },
+    {
+      "role": "Cortex Account Reviewer",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1
+    },
+    {
+      "role": "Cortex Counter Staff",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1
+    },
+    {
+      "role": "Rental Operator",
+      "read": 1
+    },
+    {
+      "role": "Auditor",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

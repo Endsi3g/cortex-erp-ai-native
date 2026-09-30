@@ -107,3 +107,20 @@ a[role="button"][data-toggle="dropdown"]:focus-visible,
 		overflow-x: auto !important;
 	}
 }
+
+/* Guide de démarrage : emplacement de la vidéo (16:9), à droite de la description. */
+.cx-video-placeholder {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	aspect-ratio: 16 / 9;
+	max-width: 420px;
+	margin-top: 12px;
+	border: 1px dashed #8a8a8a;
+	border-radius: 10px;
+	background: #f4f4f5;
+	color: #52525b;
+	font-size: 13px;
+}

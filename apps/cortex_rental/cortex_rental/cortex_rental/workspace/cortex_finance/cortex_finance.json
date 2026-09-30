@@ -2,7 +2,7 @@
  "docstatus": 0,
  "idx": 0,
  "creation": "2026-09-30 08:04:00.000000",
- "modified": "2026-09-30 09:00:00.000000",
+ "modified": "2026-09-30 23:30:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "module": "Cortex Rental",
@@ -19,11 +19,15 @@
  "hide_custom": 0,
  "indicator_color": "",
  "restrict_to_domain": "",
- "content": "[{\"id\": \"a61015cb42\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Profit and Loss\", \"col\": 12}}, {\"id\": \"160d5bd57a\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Facturé ce mois\", \"col\": 3}}, {\"id\": \"a0a18c1695\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Encaissé ce mois\", \"col\": 3}}, {\"id\": \"340f531eea\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Solde à recevoir\", \"col\": 3}}, {\"id\": \"14b17b26b6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Versements à payer\", \"col\": 3}}, {\"id\": \"a87caa1486\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"2e2cd6a00e\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"b28b26be1d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Factures de vente\", \"col\": 3}}, {\"id\": \"a9f8f3bf72\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Paiements\", \"col\": 3}}, {\"id\": \"3c4dcd558d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements de consignation\", \"col\": 3}}, {\"id\": \"2c388c2925\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Propriétaires\", \"col\": 3}}, {\"id\": \"8c903a6736\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements par propriétaire\", \"col\": 3}}, {\"id\": \"8afe39b374\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Relevé propriétaire\", \"col\": 3}}, {\"id\": \"f5211a8c30\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"État des résultats\", \"col\": 3}}, {\"id\": \"75002f9dd5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Grand livre\", \"col\": 3}}, {\"id\": \"487798fcd2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"7f07b08f4f\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"6ec1147100\", \"type\": \"card\", \"data\": {\"card_name\": \"Consignation\", \"col\": 4}}, {\"id\": \"48e33b8ac4\", \"type\": \"card\", \"data\": {\"card_name\": \"Comptabilité\", \"col\": 4}}]",
+ "content": "[{\"id\": \"748ea93b35\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Facturé ce mois\", \"col\": 3}}, {\"id\": \"b61f658372\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Encaissé ce mois\", \"col\": 3}}, {\"id\": \"19c22c034d\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Solde à recevoir\", \"col\": 3}}, {\"id\": \"4ed3a3a8ca\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Factures en retard\", \"col\": 3}}, {\"id\": \"8851441324\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"TPS perçue ce mois\", \"col\": 4}}, {\"id\": \"77da72c7e6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"TVQ perçue ce mois\", \"col\": 4}}, {\"id\": \"81aca2b337\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Versements à payer\", \"col\": 4}}, {\"id\": \"130221a56c\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"df5db1d2a7\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Facturé par mois\", \"col\": 6}}, {\"id\": \"1ef05d8380\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Encaissements par mois\", \"col\": 6}}, {\"id\": \"075b92c5af\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"e5478ce646\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"75b4b87763\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Factures\", \"col\": 3}}, {\"id\": \"11003f7df2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Paiements\", \"col\": 3}}, {\"id\": \"fe7b96bb18\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Réglages financiers\", \"col\": 3}}, {\"id\": \"496ce3a9e5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Créances par client\", \"col\": 3}}, {\"id\": \"39479b0606\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Taxes perçues\", \"col\": 3}}, {\"id\": \"9b1943bce7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements de consignation\", \"col\": 3}}, {\"id\": \"f0efa20c22\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Propriétaires\", \"col\": 3}}, {\"id\": \"5643ec374d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Relevé propriétaire\", \"col\": 3}}, {\"id\": \"764999a763\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"1814cf6893\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"099acaa456\", \"type\": \"card\", \"data\": {\"card_name\": \"Facturation\", \"col\": 4}}, {\"id\": \"4071a55954\", \"type\": \"card\", \"data\": {\"card_name\": \"Consignation\", \"col\": 4}}]",
  "charts": [
   {
-   "chart_name": "Profit and Loss",
-   "label": "Profit and Loss"
+   "chart_name": "Facturé par mois",
+   "label": "Facturé par mois"
+  },
+  {
+   "chart_name": "Encaissements par mois",
+   "label": "Encaissements par mois"
   }
  ],
  "number_cards": [
@@ -40,6 +44,18 @@
    "label": "Solde à recevoir"
   },
   {
+   "number_card_name": "Factures en retard",
+   "label": "Factures en retard"
+  },
+  {
+   "number_card_name": "TPS perçue ce mois",
+   "label": "TPS perçue ce mois"
+  },
+  {
+   "number_card_name": "TVQ perçue ce mois",
+   "label": "TVQ perçue ce mois"
+  },
+  {
    "number_card_name": "Versements à payer",
    "label": "Versements à payer"
   }
@@ -47,18 +63,42 @@
  "quick_lists": [],
  "shortcuts": [
   {
-   "label": "Factures de vente",
-   "link_to": "Sales Invoice",
+   "label": "Factures",
+   "link_to": "Cortex Rental Invoice",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#b45309",
+   "stats_filter": "[[\"Cortex Rental Invoice\", \"status\", \"in\", [\"Issued\", \"Partially Paid\"]]]"
+  },
+  {
+   "label": "Paiements",
+   "link_to": "Cortex Rental Payment",
    "type": "DocType",
    "doc_view": "List",
    "color": "#066336"
   },
   {
-   "label": "Paiements",
-   "link_to": "Payment Entry",
+   "label": "Réglages financiers",
+   "link_to": "Cortex Finance Settings",
    "type": "DocType",
    "doc_view": "List",
    "color": "#066336"
+  },
+  {
+   "label": "Créances par client",
+   "link_to": "Créances par client",
+   "type": "Report",
+   "doc_view": "",
+   "color": "#066336",
+   "report_ref_doctype": "Cortex Rental Invoice"
+  },
+  {
+   "label": "Taxes perçues",
+   "link_to": "Taxes perçues",
+   "type": "Report",
+   "doc_view": "",
+   "color": "#066336",
+   "report_ref_doctype": "Cortex Rental Invoice"
   },
   {
    "label": "Versements de consignation",
@@ -76,39 +116,80 @@
    "color": "#066336"
   },
   {
-   "label": "Versements par propriétaire",
-   "link_to": "Versements de consignation",
-   "type": "Report",
-   "doc_view": "",
-   "color": "#066336",
-   "report_ref_doctype": "Consignment Payout"
-  },
-  {
    "label": "Relevé propriétaire",
    "link_to": "Relevé propriétaire",
    "type": "Report",
    "doc_view": "",
    "color": "#066336",
    "report_ref_doctype": "Consignment Payout"
-  },
-  {
-   "label": "État des résultats",
-   "link_to": "Profit and Loss Statement",
-   "type": "Report",
-   "doc_view": "",
-   "color": "#066336",
-   "report_ref_doctype": "GL Entry"
-  },
-  {
-   "label": "Grand livre",
-   "link_to": "General Ledger",
-   "type": "Report",
-   "doc_view": "",
-   "color": "#066336",
-   "report_ref_doctype": "GL Entry"
   }
  ],
  "links": [
+  {
+   "type": "Card Break",
+   "label": "Facturation",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 5,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Factures",
+   "link_to": "Cortex Rental Invoice",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Paiements",
+   "link_to": "Cortex Rental Payment",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Réglages financiers",
+   "link_to": "Cortex Finance Settings",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Créances par client",
+   "link_to": "Créances par client",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "Cortex Rental Invoice"
+  },
+  {
+   "type": "Link",
+   "label": "Taxes perçues",
+   "link_to": "Taxes perçues",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "Cortex Rental Invoice"
+  },
   {
    "type": "Card Break",
    "label": "Consignation",
@@ -162,60 +243,6 @@
    "link_count": 0,
    "dependencies": "",
    "report_ref_doctype": "Consignment Payout"
-  },
-  {
-   "type": "Card Break",
-   "label": "Comptabilité",
-   "hidden": 0,
-   "is_query_report": 0,
-   "link_count": 4,
-   "onboard": 0
-  },
-  {
-   "type": "Link",
-   "label": "Factures de vente",
-   "link_to": "Sales Invoice",
-   "link_type": "DocType",
-   "hidden": 0,
-   "onboard": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "dependencies": ""
-  },
-  {
-   "type": "Link",
-   "label": "Paiements",
-   "link_to": "Payment Entry",
-   "link_type": "DocType",
-   "hidden": 0,
-   "onboard": 0,
-   "is_query_report": 0,
-   "link_count": 0,
-   "dependencies": ""
-  },
-  {
-   "type": "Link",
-   "label": "État des résultats",
-   "link_to": "Profit and Loss Statement",
-   "link_type": "Report",
-   "hidden": 0,
-   "onboard": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "dependencies": "",
-   "report_ref_doctype": "GL Entry"
-  },
-  {
-   "type": "Link",
-   "label": "Grand livre",
-   "link_to": "General Ledger",
-   "link_type": "Report",
-   "hidden": 0,
-   "onboard": 0,
-   "is_query_report": 1,
-   "link_count": 0,
-   "dependencies": "",
-   "report_ref_doctype": "GL Entry"
   }
  ],
  "custom_blocks": [],

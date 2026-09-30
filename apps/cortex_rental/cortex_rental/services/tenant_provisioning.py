@@ -80,6 +80,10 @@ def create_company(company_name: str, country: str = DEFAULT_COUNTRY, currency: 
     )
     company.insert(ignore_permissions=True)
     ensure_default_pricing_rule(company.name)
+    if frappe.db.exists("DocType", "Cortex Finance Settings"):
+        from cortex_rental.services import billing
+
+        billing.ensure_settings(company.name)
     return company.name
 
 

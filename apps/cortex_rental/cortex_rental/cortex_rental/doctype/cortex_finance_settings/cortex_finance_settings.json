@@ -1,0 +1,181 @@
+{
+  "actions": [],
+  "creation": "2026-09-30 23:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "modified": "2026-09-30 23:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "name": "Cortex Finance Settings",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1,
+  "autoname": "field:company",
+  "field_order": [
+    "company",
+    "sb_tax",
+    "apply_taxes",
+    "tps_rate",
+    "tvq_rate",
+    "cb_tax",
+    "tps_number",
+    "tvq_number",
+    "sb_billing",
+    "deposit_percent",
+    "cb_billing",
+    "invoice_due_days",
+    "sb_late",
+    "late_fee_enabled",
+    "late_fee_grace_minutes",
+    "cb_late",
+    "late_fee_percent",
+    "late_fee_cap_days"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "sb_tax",
+      "fieldtype": "Section Break",
+      "label": "Taxes de vente"
+    },
+    {
+      "fieldname": "apply_taxes",
+      "fieldtype": "Check",
+      "label": "Appliquer les taxes",
+      "default": "1",
+      "description": "Décochez seulement si la société n'est pas inscrite aux fichiers de taxes."
+    },
+    {
+      "fieldname": "tps_rate",
+      "fieldtype": "Float",
+      "label": "TPS (%)",
+      "default": "5",
+      "precision": "3"
+    },
+    {
+      "fieldname": "tvq_rate",
+      "fieldtype": "Float",
+      "label": "TVQ (%)",
+      "default": "9.975",
+      "precision": "3"
+    },
+    {
+      "fieldname": "cb_tax",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "tps_number",
+      "fieldtype": "Data",
+      "label": "Numéro de TPS"
+    },
+    {
+      "fieldname": "tvq_number",
+      "fieldtype": "Data",
+      "label": "Numéro de TVQ"
+    },
+    {
+      "fieldname": "sb_billing",
+      "fieldtype": "Section Break",
+      "label": "Acompte et paiement"
+    },
+    {
+      "fieldname": "deposit_percent",
+      "fieldtype": "Float",
+      "label": "Acompte à la réservation (%)",
+      "default": "30",
+      "precision": "2",
+      "description": "0 = aucune facture d'acompte. Calculé sur le sous-total, taxes ajoutées."
+    },
+    {
+      "fieldname": "cb_billing",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "invoice_due_days",
+      "fieldtype": "Int",
+      "label": "Échéance des factures (jours)",
+      "default": "0",
+      "description": "0 = payable à l'émission."
+    },
+    {
+      "fieldname": "sb_late",
+      "fieldtype": "Section Break",
+      "label": "Frais de retard (décidés par la société)"
+    },
+    {
+      "fieldname": "late_fee_enabled",
+      "fieldtype": "Check",
+      "label": "Facturer les retards",
+      "default": "0",
+      "description": "Désactivé par défaut : la société choisit sa règle."
+    },
+    {
+      "fieldname": "late_fee_grace_minutes",
+      "fieldtype": "Int",
+      "label": "Délai de grâce (minutes)",
+      "default": "60",
+      "depends_on": "late_fee_enabled"
+    },
+    {
+      "fieldname": "cb_late",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "late_fee_percent",
+      "fieldtype": "Float",
+      "label": "Frais par jour de retard (% du tarif journalier)",
+      "default": "100",
+      "precision": "2",
+      "depends_on": "late_fee_enabled"
+    },
+    {
+      "fieldname": "late_fee_cap_days",
+      "fieldtype": "Float",
+      "label": "Plafond (jours facturables, 0 = aucun)",
+      "default": "0",
+      "precision": "2",
+      "depends_on": "late_fee_enabled"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1
+    },
+    {
+      "role": "Cortex Finance Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Rental Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1
+    },
+    {
+      "role": "Cortex Operations Manager",
+      "read": 1
+    },
+    {
+      "role": "Cortex Counter Staff",
+      "read": 1
+    }
+  ],
+  "title_field": "company"
+}

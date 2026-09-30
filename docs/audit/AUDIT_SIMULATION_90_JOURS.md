@@ -12,9 +12,8 @@ Date : 2026-09-30 · Environnement : site de développement `cortex.local` (Frap
    supérieur à la quantité sortie) une fois les défauts ci-dessous corrigés.
 3. La simulation et les tests de charge ont révélé **9 défauts réels**, dont 3 graves (double réservation de la dernière
    unité, approbations impossibles pour un vrai gestionnaire, numéros de série attribués sans tenir compte des dates). **Tous corrigés et testés.**
-4. Le **flux principal est sain pour la logistique** (devis → réservation → contrat → sortie → retour → clôture) mais
-   **incomplet pour l'argent** : aucune facture, aucune taxe (TPS/TVQ), aucun frais de retard, aucun versement de
-   consignation n'est produit. C'est le plus gros trou du produit.
+4. Le **flux principal est sain pour la logistique** (devis → réservation → contrat → sortie → retour → clôture). Le trou
+   principal, l'argent (aucune facture, taxe ni frais de retard), a été **comblé le 2026-09-30** (§ 7, P0). Reste : versements de consignation automatiques.
 5. Performance : correcte pour un plateau (p50 < 150 ms sauf la liste des locations, ~150–300 ms à cause de requêtes en
    cascade). Le serveur de développement à un seul processus plafonne à ~10 requêtes/s ; il faut mesurer avec Gunicorn avant la production.
 6. L'interface est propre et en français (aucun texte anglais détecté dans 46 captures, zéro débordement horizontal),
@@ -103,12 +102,34 @@ formats québécois (1 782,50), valeurs d'état en anglais dans l'historique d'u
 
 ## 7. Ce qu'il faut **améliorer**, par priorité
 
-### P0 — le flux d'argent (le plus gros écart avec une vraie entreprise)
-1. **Taxes** : `tax_rate` est forcé à 0 à la création (`create_quote_draft`). Un loueur québécois doit appliquer TPS 5 % + TVQ 9,975 % (modèle de taxes ERPNext, calcul côté serveur, arrondi par ligne).
-2. **Facturation** : aucun devis, bon de commande ni facture ERPNext n'a été créé en 91 jours (`tabQuotation`, `tabSales Order`, `tabSales Invoice` = 0 ligne). Il faut : facture à la clôture (ou acompte à la confirmation), paiement (`Payment Entry`), et lien retour sur la location.
-3. **Dépôt de garantie** : aujourd'hui une simple case « Paiement ou dépôt prêt ». Il faut un montant, un statut (autorisé / encaissé / remboursé) et une retenue en cas de dommage.
-4. **Frais de retard et dommages** : 25 retours en retard et des séries « manquantes » (5) ou « en réparation » (4) n'entraînent aucun frais. Règle à définir (jour supplémentaire au tarif plein, plafond, dommages à la valeur de remplacement).
-5. **Consignation** : zéro versement produit malgré des équipements consignés ; le calcul par propriétaire doit se déclencher à la clôture.
+### P0 — le flux d'argent : **traité le 2026-09-30** (voir `docs/adr/ADR-005-facturation-cortex.md`)
+Décisions du propriétaire du produit : vues financières maison, acompte **et** facture finale, frais de retard décidés par la société.
+
+| Constat initial | Maintenant |
+| --- | --- |
+| Taxes forcées à 0 | TPS 5 % + TVQ 9,975 % calculées par le serveur, par société (`Cortex Finance Settings`), champs TPS/TVQ sur la location |
+| Aucune facture | Facture d'acompte à la réservation (30 % par défaut, modifiable) et facture finale à la clôture, moins l'acompte déjà facturé |
+| Case « paiement prêt » sans montant | L'acompte payé en totalité remplit le prérequis du contrat ; paiements complets avec solde et état |
+| Aucun frais de retard | Règle par société (désactivée par défaut) : délai de grâce, % du tarif journalier, plafond |
+| Cartes financières sur ERPNext (toujours à 0, inaccessibles au propriétaire) | Cartes, graphiques et rapports Cortex (*Créances par client*, *Taxes perçues*) filtrés par société |
+
+Nouvelle simulation de 91 jours avec facturation (mêmes règles, frais de retard activés à 100 % du tarif, plafond 3 jours) :
+
+| Mesure | Résultat |
+| --- | --- |
+| Factures émises | 218 acomptes + 73 finales |
+| Paiements enregistrés | 252 (92 % des acomptes payés le jour même ; 80 % des finales payées, 10 % à moitié, 10 % impayées) |
+| Facturé / encaissé / à recevoir | 269 780 $ / 206 120 $ / 63 661 $ |
+| TPS / TVQ perçues | 11 732 $ / 23 406 $ |
+| Frais de retard facturés | 16 703 $ (26 retours en retard) |
+| Factures échues et non payées | 45 |
+| Soldes incohérents, taxes incohérentes, totaux de location incohérents | **0 / 0 / 0** |
+| Locations closes sans facture finale, réservées sans acompte, écart de rapprochement | **0 / 0 / 0** |
+| Latences | réservation p50 51 ms / p95 219 ms (avec facture d'acompte) ; paiement p50 37 ms ; clôture p50 69 ms (avec facture finale) |
+
+Tests de concurrence rejoués après l'ajout de la facturation : dernière unité 12 tentatives → 1 réussite ; approbation simultanée → 1 décision ; idempotence → 1 location.
+
+Reste ouvert dans ce chantier : dépôt de garantie distinct de l'acompte, notes de crédit, relances automatiques, envoi de la facture par courriel, écritures dans le grand livre ERPNext (à décider, voir l'ADR).
 
 ### P1 — robustesse
 6. **Liste des locations** : requêtes en cascade (client, profil, séries, retours pour chaque ligne). Créer un point d'accès « résumé » (1 requête) ; nécessaire aussi pour le mobile.

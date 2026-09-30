@@ -377,8 +377,13 @@ def nettoyer():
     noms = frappe.get_all(
         "Cortex Rental Transaction", filters={"company": COMPANY, "starts_at": [">=", limite]}, pluck="name"
     )
+    frappe.flags.dev_cleanup = True  # seul ce script de développement peut supprimer factures et paiements
     for nom in noms:
-        for doctype, champ in (("Approval Request", "entity_id"),):  # le journal d'audit est immuable
+        for doctype, champ in (
+            ("Cortex Rental Payment", "rental_transaction"),
+            ("Cortex Rental Invoice", "rental_transaction"),
+            ("Approval Request", "entity_id"),
+        ):  # le journal d'audit est immuable
             for lien in frappe.get_all(doctype, filters={champ: nom}, pluck="name"):
                 frappe.delete_doc(doctype, lien, force=True, ignore_permissions=True)
         frappe.delete_doc("Cortex Rental Transaction", nom, force=True, ignore_permissions=True)
