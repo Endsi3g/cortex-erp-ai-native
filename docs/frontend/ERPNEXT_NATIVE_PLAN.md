@@ -36,7 +36,7 @@ L'historique Git garde tout le code retiré. Les API Python (`api/v1/*`, service
 | Sortie / retour (scanners) | Formulaire *Cortex Check-In* et dialogue de scan avec champ **Code-barres** natif ; validation serveur (`api/v1/checkout|checkin`) |
 | Clients | Liste native *Customer* + rapport d'activité de location |
 | Catalogue, séries, kits | Listes/formulaires natifs *Cortex Rental Item Profile*, *Item*, *Serial No*, *Product Bundle* + rapport de disponibilité |
-| Consignation | Workspace *Consignation* + rapports *Relevé propriétaire* et *Versements* |
+| Consignation | Section du workspace *Finance* + rapports *Relevé propriétaire* et *Versements de consignation* |
 | Approbations, demandes entrantes, brouillons IA | Workspace *IA* : listes rapides + **Liste** *Approval Request*, *Cortex Inbound Request*, *Cortex Extraction Run* avec actions de décision côté serveur |
 | Audit | **Rapport** *Journal d'audit* (lecture seule) |
 | États financiers | Rapports natifs ERPNext (*Profit and Loss Statement*, *General Ledger*…) dans le workspace *Finance* |
@@ -53,8 +53,7 @@ Chaque workspace = **bloc d'intégration** (si utile) → **graphique principal*
 | **Opérations** | Départs 7 j · Retours 7 j · En retard · À préparer | Locations par mois | Locations, Calendrier, Gantt, Kanban |
 | **Entrepôt** | Sorties du jour · Retours du jour · Mis en quarantaine · Dommages ouverts | Retours par état | Sortie, Retour, Séries |
 | **Catalogue** | Équipements · Séries actives · Kits · Valeur de remplacement | Équipements par catégorie | Profils, Articles, Séries, Kits |
-| **Finance** | Facturé (mois) · Acomptes · Solde à recevoir · Versements dus | Revenus par mois | P&L, Grand livre, Factures, Versements |
-| **Consignation** | Propriétaires · Versements calculés · Approuvés · Payés | Versements par mois | Propriétaires, Versements, Relevés |
+| **Finance** (inclut la consignation) | Facturé (mois) · Acomptes · Solde à recevoir · Versements dus | Revenus par mois, P&L | P&L, Grand livre, Factures, Versements, Relevés propriétaire |
 | **IA** | Demandes à traiter · Brouillons à réviser · Approbations · Exécutions d'agents | Décisions par jour | Boîte, Approbations, Audit |
 | **Administration** | Utilisateurs actifs · Invitations en attente · Règles actives · Imports récents | — | Règles, Équipe, Import, Journal d'audit |
 
@@ -84,7 +83,7 @@ Feuille `cortex-motion.css` (chargée dans le Desk) : entrée douce du contenu d
 | Phase | Contenu | Critère de sortie |
 | --- | --- | --- |
 | **P0** | Ce plan ; retrait complet de Vite, `/cortex`, hôte et Pages coquilles ; mise à jour d'`AGENTS.md`, du handoff, de la CI, de l'entrypoint | Plus aucune référence à Vite/Frappe UI ; tests verts ; l'erreur « bundle absent » ne peut plus se produire |
-| **P1** | Number Cards, Dashboard Charts, Module Onboarding, 8 workspaces façon Accounting | Chaque workspace rend graphique + cartes + raccourcis avec de vraies données ; capture comparée à *Accounting* |
+| **P1** | Number Cards, Dashboard Charts, Module Onboarding, 7 workspaces (hub + 6 groupes) façon Accounting | Chaque workspace rend graphique + cartes + raccourcis avec de vraies données ; capture comparée à *Accounting* |
 | **P2** | Vues natives (liste, kanban, calendrier, Gantt, formulaire) et rapports à script | Chaque ancien écran a son équivalent natif, permissions vérifiées |
 | **P3** | Accueil IA, redirection d'arrivée | Première page après connexion = Accueil ; conversation réelle ou message de configuration honnête |
 | **P4** | Grille de disponibilité, scan sortie/retour, animations | Parcours *réserver → sortir → retourner* faisable sans quitter le Desk |
@@ -96,3 +95,14 @@ Feuille `cortex-motion.css` (chargée dans le Desk) : entrée douce du contenu d
 - Les cartes et graphiques dépendent des données : un site vide affiche des zéros ou des graphiques vides ; c'est voulu (pas de démonstration inventée). Des données de démonstration existent pour les tests de bench.
 - Onyx doit être configuré (`onyx_base_url`, `onyx_api_key`) pour la conversation réelle.
 - Les libellés ERPNext non traduits (Selling, Stock…) restent en anglais tant que la traduction n'est pas ajoutée.
+
+## 10. État d'avancement (2026-09-30)
+
+| Phase | État |
+| --- | --- |
+| P0 retrait de Vite | Fait (code, infra, tests, docs). |
+| P1 workspaces | Fait : hub + 6 groupes, 26 cartes, 9 graphiques, onboarding ; vérifiés sur bench. |
+| P2 vues natives | Fait pour *Location* (liste, Kanban, calendrier/Gantt, formulaire avec actions), *Approval Request* (décision), listes d'état des autres DocTypes et 5 rapports. Reste : formulaires dédiés des autres DocTypes, règles de prix dans les contrôleurs. |
+| P3 accueil IA | Fait ; la réponse réelle dépend de la configuration d'Onyx. |
+| P4 scan et grille | Sortie par champ Code-barres (lecteur ou saisie) faite ; la grille interactive est remplacée par le rapport *Disponibilité du parc*. |
+| P5 vérification | axe/adaptatif de l'accueil faits ; natifs Frappe : violations identiques à ERPNext d'origine. |

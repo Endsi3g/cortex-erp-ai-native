@@ -9,7 +9,7 @@ The login is **server-rendered Frappe website pages** (Jinja + one CSS file + on
 
 Everything lives in `apps/cortex_rental/cortex_rental/`.
 
-**Two implementations, one design.** `/login` is the server-rendered Frappe page (below); `/cortex/login` and its siblings are Vue + frappe-ui screens in `public/frontend/src/features/auth` (`AuthShell.vue`, `auth.css`, `authApi.ts`, `LoginView`, `SendLinkView`, `RequestAccessView`), served by the standalone app (`npm run build:spa`). Apply every visual or copy change to both, and re-run axe on both.
+**One implementation.** The Vue `/cortex/login` screens and the standalone app were retired on 2026-09-30 (Cortex is native ERPNext). `/login` is the only set of access screens, so a visual or copy change is made once, here.
 
 ## Files
 

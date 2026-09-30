@@ -13,8 +13,8 @@ Ce document décrit ce qui est réellement implémenté dans `apps/cortex_rental
    - `Automatic after email verification` : provisionnement immédiat après vérification.
 4. **Provisionnement** (`services/tenant_provisioning.py`) : Company, utilisateur (jamais `System Manager`), rôles du propriétaire, *User Permission* sur la Company, règle de tarification par défaut (7 jours civils = 3 jours facturables), fiche *Cortex Onboarding*.
 5. **Mot de passe** : courriel de bienvenue → `/update-password?key=…` (politique de robustesse de Frappe, limitation de débit).
-6. **Connexion** → redirection automatique vers `/app/cortex-company-setup` tant que la mise en route n'est pas terminée (`boot_session` + gestionnaire `startup` dans `cortex_host.js`, une fois par session).
-7. **Mise en route** (`/app/cortex-company-setup`) : profil de l'entreprise, équipe (invitations avec préréglages de rôles), catalogue, règles de location. Seul le propriétaire peut écrire ; toute écriture passe par `api/v1/onboarding.py`.
+6. **Connexion** → arrivée sur l'**Accueil Cortex** (`/app/cortex-home`, `public/js/cortex_desk.js` + `frappe.boot.cortex_home`). Tant que la mise en route n'est pas terminée, l'accueil affiche une carte « Terminez la mise en route » qui mène au workspace *Cortex Rental*.
+7. **Mise en route** : bloc d'intégration natif (*Module Onboarding* « Bienvenue dans Cortex », six étapes : profil de l'entreprise, équipe, matériel, règle tarifaire, première location, assistant). Les écritures passent par des formulaires ERPNext et `api/v1/onboarding.py` (seul le propriétaire écrit).
 
 ## Mot de passe oublié
 
@@ -40,22 +40,17 @@ Il faut un *Email Account* sortant par défaut et un worker/scheduler actif. San
 
 Le patch `apply_cortex_branding` règle le nom d'application, le logo, la favicon et retire le pied de page « Powered by ». Les gabarits de courriel sont sous `templates/emails/`.
 
-## Application autonome `/cortex` (Vue 3 + frappe-ui)
+## Destination après connexion
 
-- **Build et service** : `npm run build:spa` (dossier `public/frontend`) → `dist-spa/` et `www/cortex.html` ; `www/cortex.py` fournit `csrf_token` et `user`, `hooks.website_route_rules` renvoie tout `/cortex/<chemin>` vers cette page. En développement : `bench --site <site> set-config ignore_csrf 1` (site de développement seulement) puis `npm run dev` (le plugin frappe-ui proxifie `/api`, `/assets`, `/login`, `/app`).
-- **Écrans d'accès Vue** : `/cortex/login`, `/cortex/forgot-password`, `/cortex/login-link`, `/cortex/request-access` (`src/features/auth`). Ils utilisent `Button` et `FormControl` de frappe-ui, les mêmes API que les pages Frappe (`login`, `reset_password`, `send_login_link`, `request_access`) et `cortex_rental.api.v1.access.login_options` (invité) pour les boutons Google/GitHub et le lien par courriel. Après une connexion réussie la page est rechargée (nouveau jeton CSRF).
-- **Destination après connexion** : hook `add_to_apps_screen` + `System Settings.default_app = cortex_rental` (patch `set_default_app`, sans écraser un choix existant). Le contexte de session indique `onboarding.needed` : un propriétaire d'entreprise est dirigé une fois par session vers `/cortex/company-setup`.
-- **Deux versions du login** : `/login` (Jinja, servi aussi aux personnes du Desk et aux liens de courriel) et `/cortex/login` (Vue). Un changement de texte, d'espacement ou de couleur se fait dans les deux : `public/css/cortex-login.css` + `www/login.html` d'un côté, `src/features/auth/auth.css` + vues de l'autre.
+Plus d'application autonome : Cortex vit dans le Desk ERPNext. Le hook `boot_session` (lecture seule) place `cortex_home` dans `frappe.boot` ; `public/js/cortex_desk.js` envoie une personne qui arrive sur `/app` ou `/app/home` vers `/app/cortex-home`, une seule fois par chargement. Le patch `clear_default_app` retire l'ancien réglage `default_app`. Les pages `/login`, `/cortex-verify` et `/update-password` (Jinja) sont la seule version des écrans d'accès : un changement de texte, d'espacement ou de couleur se fait dans `public/css/cortex-login.css` + `www/login.html`.
 
 ## Administration de l'entreprise
 
-Après la mise en route, le propriétaire gère son entreprise depuis `/cortex/rental-policy` (règles tarifaires), `/cortex/team` (équipe et rôles) et `/cortex/import` (import), aussi disponibles comme Pages Desk. Les règles vivent dans `services/administration.py` : profils de rôles sans droit d'administrateur système, propriétaire non modifiable, on ne peut pas se désactiver soi-même, une seule règle active par durée. Chaque changement est écrit au journal d'audit.
+Après la mise en route, le propriétaire gère son entreprise depuis le workspace *Administration* (règles tarifaires, équipe et rôles, import). Les règles vivent dans `services/administration.py` : profils de rôles sans droit d'administrateur système, propriétaire non modifiable, on ne peut pas se désactiver soi-même, une seule règle active par durée. Chaque changement est écrit au journal d'audit.
 
 ## Limites connues
 
-- Textes personnalisés en français seulement (`?lang=en` n'affecte que les chaînes de Frappe).
+- Français seulement : `translations/fr.csv` + patch `set_french_default` (langue du site et des utilisateurs sans choix explicite).
 - Google/GitHub exigent de vraies clés OAuth.
 - Le thème et le mode sombre de Desk lui-même ne sont pas modifiés ; seules les pages d'authentification suivent `prefers-color-scheme`.
-- Les Pages Desk `cortex-*` existent encore à côté de `/cortex` (suppression à valider).
-- La connexion à deux facteurs n'est pas gérée dans l'écran Vue : un lien renvoie vers `/login`.
 - Après un changement de DocType (`mail_status`, etc.), exécuter `bench migrate`.

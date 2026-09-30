@@ -1,17 +1,17 @@
 # Cortex UI handoff v2 — ERPNext-first, AI-native
 
 **Statut :** contrat produit canonique pour l’interface Cortex et les agents de développement.  
-**Version :** 2.1 · 2026-09-23  
-**Socle :** ERPNext + Frappe Framework, Vue 3 et Frappe UI.  
+**Version :** 3.0 · 2026-09-30  
+**Socle :** ERPNext + Frappe Framework v15, constructions natives (workspaces, cartes, graphiques, rapports, listes, formulaires) et bundler intégré de Frappe pour l’accueil IA. **Plus de Vite, de Frappe UI ni de SPA `/cortex`** (décision du 2026-09-30 ; plan : [`ERPNEXT_NATIVE_PLAN.md`](ERPNEXT_NATIVE_PLAN.md)).  
 **Principe :** *Cortex suggère, l’humain décide.*
 
 > Les instructions de ce fichier priment sur les descriptions frontend antérieures de `HANDOFF.md`. Elles ne remplacent pas les règles de sécurité métier déjà codées. Quand la documentation et le code divergent, ne prétends jamais qu’une fonction est opérationnelle : vérifie l’endpoint et décris l’écart.
 
 ## Mandat pour tout agent
 
-Traite ce document comme le contrat produit commun avant de modifier un écran, un flux IA ou le shell. Conserve ERPNext/Frappe comme système de référence et les API métier Frappe comme seule voie d’écriture. Utilise Frappe UI en priorité pour les primitives Vue, puis les composants Cortex déjà présents. Évite de créer un système parallèle, des données métier fictives, une action simulée présentée comme réelle, ou des appels LLM depuis le navigateur.
+Traite ce document comme le contrat produit commun avant de modifier un écran, un flux IA ou le shell. Conserve ERPNext/Frappe comme système de référence et les API métier Frappe comme seule voie d’écriture. Construis d’abord avec les constructions natives de Frappe/ERPNext ; n’écris du Vue (bundle Frappe, `*.bundle.js`) que pour l’accueil IA et les dialogues qu’aucune construction native ne couvre. Évite de créer un système parallèle, des données métier fictives, une action simulée présentée comme réelle, ou des appels LLM depuis le navigateur.
 
-Avant tout changement : inspecte l’écran concerné, ses contrats TypeScript, l’adaptateur API, les permissions et le service métier. Toute action doit traverser les autorisations Frappe et le service de domaine compétent. Toute suggestion visible doit distinguer fait vérifié, inférence, brouillon, erreur et indisponibilité du service.
+Avant tout changement : inspecte l’écran concerné (workspace, rapport, script de liste/formulaire), l’API `cortex_rental.api.v1.*`, les permissions et le service métier. Toute action doit traverser les autorisations Frappe et le service de domaine compétent. Toute suggestion visible doit distinguer fait vérifié, inférence, brouillon, erreur et indisponibilité du service.
 
 ## Positionnement et invariants
 
@@ -26,9 +26,9 @@ Cortex est l’ERP d’une vraie société de location de caméras et d’équip
 - L’interface reste utile lorsque le fournisseur IA est lent ou indisponible : elle doit afficher clairement le statut et permettre de poursuivre le travail non-IA.
 - Le contexte envoyé à un agent est limité au contexte métier et aux preuves nécessaires. Ne journalise pas de données sensibles brutes par défaut.
 
-## Direction visuelle : référence ERPNext
+## Direction visuelle : référence ERPNext (workspace *Accounting*)
 
-Recrée le langage de la capture Profit and Loss fournie : interface de travail dense, claire, neutre, immédiatement lisible, conçue pour les opérations d’entreprise.
+Le modèle est le workspace *Accounting* d’ERPNext : bloc d’intégration, graphique principal, rangée de cartes de nombres, raccourcis avec compteurs, cartes de liens. Une liste de liens sans données (ancien « Modules Métiers ») est refusée. Reprends le langage de la capture Profit and Loss fournie : interface de travail dense, claire, neutre, immédiatement lisible, conçue pour les opérations d’entreprise.
 
 - Rail vertical gauche étroit, icônes seules en état replié, séparateurs de groupes fins et sélection vert pâle.
 - Barre supérieure blanche d’environ 56 px, recherche centrée, commandes et identité utilisateur à droite.
@@ -44,19 +44,27 @@ L’AI Workspace peut reprendre une composition conversationnelle à la Claude, 
 
 ## Shell et navigation
 
-> **Décision du 2026-09-29 (remplace celle du 2026-09-28) :** Cortex est une application autonome Vue 3 + Frappe UI servie par Frappe sur `/cortex` (guide « Frontend » de frappe-ui : plugin Vite `frappeui({ frontendRoute: '/cortex' })`, `www/cortex.py` pour les données de démarrage, `website_route_rules` pour que tout chemin `/cortex/...` charge la même page, `createWebHistory('/cortex')`). `npm run build:spa` écrit `public/frontend/dist-spa/` et `www/cortex.html` (ni l'un ni l'autre n'est versionné : l'entrypoint Docker et `make build-spa` les produisent). Les URL sont courtes (`/cortex/rentals`) ; les chemins canoniques `/app/cortex-*` des écrans sont réécrits par le routeur autonome. Le hook `add_to_apps_screen` et le réglage système `default_app = cortex_rental` (patch `set_default_app`) envoient une personne connectée vers `/cortex`. Le Desk (`/app`) reste disponible pour l'administration, et les Pages Desk `cortex-*` (bundle `dist-desk`, `cortex_host.js`) sont **conservées** en attendant validation : leur suppression est une étape distincte. Connexion, mot de passe oublié et demande d'accès existent en deux versions : pages Frappe rendues côté serveur (`/login`, utilisées par le Desk et les liens de courriel) et écrans Vue de `/cortex/login` (`src/features/auth`). Les fonctions d'assistant du shell autonome (recherche, copilote, compteur d'approbations) lisent les vraies API : aucune donnée de démonstration. Voir aussi [`UI_REBUILD_PLAN.md`](UI_REBUILD_PLAN.md).
+> **Décision du 2026-09-30 (remplace celles du 2026-09-28 et du 2026-09-29) :** Cortex est **100 % ERPNext natif**. Le projet Vite/Vue, la SPA `/cortex`, le hôte `cortex_host` et les 26 Pages Desk « coquilles » sont supprimés (l’historique Git les conserve).
 
-Le shell est partagé par les pages Cortex : sidebar repliable, topbar, recherche universelle, sélection d’entreprise, notifications et profil. L’état replié est l’état initial privilégié pour retrouver le rail ERPNext de la référence; la préférence de l’utilisateur est persistée. Ne duplique pas le shell dans les vues.
+- **Première page après la connexion : l’Accueil Cortex** (Page Desk `cortex-home`, bundle `cortex_home.bundle.js`) : salutation, saisie « Que puis-je faire pour vous ? », suggestions selon les rôles, raccourcis, conversations récentes (`chat.list_sessions`), carte de mise en route si elle est inachevée. Le hook `boot_session` expose `frappe.boot.cortex_home` (lecture seule) et `public/js/cortex_desk.js` redirige, une fois par chargement, l’arrivée sur `/app` ou `/app/home`. Les liens directs ne sont jamais redirigés.
+- **Espaces de travail** (hub *Cortex Rental* et six groupes : Opérations, Entrepôt, Catalogue, Finance, IA, Administration) : structure *Accounting*, compteurs réels filtrés par société, graphiques, listes rapides, onboarding natif (*Module Onboarding*).
+- **Écrans métier natifs :** liste avec indicateurs d’état français, Kanban (*Locations par état*), calendrier et Gantt des locations, formulaire avec actions (réserver, demander le contrat, sortie par scan, retour, décision d’approbation), rapports à script (*Disponibilité du parc*, *Prochains départs et retours*, *Activité des clients*, *Versements de consignation*, *Relevé propriétaire*).
+- **Langue :** français seulement. `translations/fr.csv` complète les traductions de Frappe/ERPNext ; le patch `set_french_default` règle la langue du site et des utilisateurs qui n’en avaient pas choisi une autre.
+- **Animations :** `public/css/cortex-motion.css` (150–250 ms, désactivées sous `prefers-reduced-motion`).
+- Connexion, demande d’accès, mot de passe oublié : pages Jinja de Frappe (`/login`, `/cortex-verify`, `/update-password`). Voir `docs/auth/LOGIN_AND_ONBOARDING.md`.
 
-Navigation IA canonique :
+Anciennes routes `/app/cortex-*` (Pages Desk) : supprimées ; le patch `remove_shell_pages` retire les enregistrements orphelins.
 
-| Destination | Route frontend | Rôle |
+## Écrans IA
+
+| Destination | Construction | Rôle |
 |---|---|---|
-| AI Inbox | `/app/cortex-ai-inbox` | Travail à traiter : suggestions, approbations, documents entrants |
-| AI Workspace | `/app/cortex-ai-workspace/:itemId?` | Source, brouillon, preuves, conversation et prochaine action |
-| AI Audit | `/app/cortex-ai-audit` | Décisions, acteurs, latence et événements traçables |
+| Accueil Cortex | Page `cortex-home` | Conversation avec l’assistant (Onyx via `chat.*`), point de départ |
+| Boîte d’entrée IA | Liste *Cortex Inbound Request* + liste rapide du workspace IA | Documents entrants à traiter |
+| Approbations | Liste/formulaire *Approval Request* (boutons Approuver/Refuser côté serveur) | Décisions humaines |
+| Journal d’audit | Liste *Audit Event* (lecture seule) | Traçabilité |
 
-Les anciennes routes approvals/incoming/drafts redirigent vers l’Inbox avec leur filtre. Ne maintiens pas des files concurrentes.
+Les sections « AI Inbox », « AI Workspace » et « AI Audit » ci-dessous décrivent le **comportement attendu** ; les écrans à deux colonnes (source / travail IA) ne sont pas encore reconstruits en natif : ne prétends pas qu’ils existent.
 
 ## AI Inbox
 
@@ -117,22 +125,15 @@ Chaque suggestion expose en langage métier : résumé, confiance avec explicati
 
 Points d’entrée : insight priorisé sur le dashboard; « Explain availability » sur les conflits; aide de parsing dans le composer; classification d’incident au check-in; synthèse client; résumé de contrat; alertes et explications P&L. Chaque point d’entrée transmet uniquement le contexte visible et autorisé.
 
-## Composants Vue et Frappe UI
+## Composants
 
-Frappe UI est le premier choix pour les contrôles accessibles, menus, dialogues, badges, champs et commandes. Réutilise le design system `src/design-system/components/ai` et complète-le sans rompre ses contrats :
-
-- `AiStatusBadge` pour l’état, le niveau disponible et l’indication de données synthétiques.
-- `AiCard` pour suggestion, risque, politique, approbation et résultat d’audit.
-- `AiProvenanceCard` pour origine API, temps réel, mock/démo, fraîcheur et référence de preuve.
-- À factoriser lorsque le contrat le justifie : `CortexAISuggestionCard`, `CortexAIConfidence`, `CortexAIEvidenceList`, `CortexAIValidationFooter`, `CortexAIContextPanel`, `CortexAIDiffView`, `CortexAIActionTray`, `CortexAIInboxList` et `CortexAIAuditTable`.
-
-Un composant partagé reçoit un statut et des données explicites, ne fait pas d’appel API caché, n’infère pas la confiance, n’exécute pas une action sur simple rendu et expose les interactions via événements typés.
+Les éléments d’interface de l’accueil IA sont des composants Vue 3 compilés par le bundler de Frappe (`public/js/cortex_home`, `public/js/cortex_copilot`). Les blocs de réponse (`verified_fact`, `assistant_text`, `extracted_data`, `proposal`, `approval_required`, `risk`, `missing_information`, `tool_progress`, `error`) sont rendus par `CopilotConversation.vue`. Un composant reçoit un statut et des données explicites, ne fait pas d’appel API caché, n’infère pas la confiance, n’exécute pas une action sur simple rendu.
 
 ## Intégration IA et sécurité technique
 
 Flux attendu : Vue → API Frappe authentifiée → service Cortex → (a) Onyx pour orchestration et langage, (b) MCP privé pour outils autorisés → API métier Frappe/ERPNext. Onyx et Ollama ne parlent jamais directement à MariaDB. ERPNext garde les calculs et états canoniques.
 
-- L’URL Onyx, le jeton serveur et la configuration Ollama sont stockés côté serveur (config Frappe ou gestionnaire de secrets), jamais dans une variable `VITE_*`, le bundle, le stockage du navigateur ou la télémétrie publique.
+- L’URL Onyx, le jeton serveur et la configuration Ollama sont stockés côté serveur (config Frappe ou gestionnaire de secrets), jamais dans le JavaScript servi, le bundle, le stockage du navigateur ou la télémétrie publique.
 - Le serveur résout compagnie, utilisateur, agent, permissions, contexte, outils et modèle. Le client ne peut imposer aucun de ces choix.
 - Liste d’outils explicite, vide si aucun outil n’est accordé. MCP applique de nouveau les scopes, l’entreprise et les règles d’approbation.
 - Les outils métier reçoivent les identifiants nécessaires, pas un prompt libre faisant office de politique.
@@ -144,19 +145,12 @@ Flux attendu : Vue → API Frappe authentifiée → service Cortex → (a) Onyx 
 
 ## Niveau de vérité de l’implémentation
 
-Les pages et actions doivent indiquer leur provenance réelle. Mock, fixture, API backend et service IA sont des modes différents. Le mode Mock ne devient pas « production » parce qu’il passe le build.
+État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :
 
-État vérifié le 2026-09-23 :
-
-- La stack de développement fonctionne dans Docker : Vite sur `localhost:5173`, Frappe/ERPNext sur `localhost:8000`, Onyx Lite sur `localhost:3000`, et Ollama sur l’hôte Windows. Le frontend est en mode API réelle par défaut; les mocks ne sont activés que par configuration explicite.
-- L’authentification Cortex utilise la session Frappe/ERPNext, distincte du compte Onyx. L’initialisation de session est mutualisée entre les gardes et limitée à 8 secondes afin qu’une API indisponible ne bloque pas le rendu de la page de connexion. Un utilisateur Guest reçoit normalement `403` sur l’endpoint de contexte et est redirigé vers `/login`.
-- Les pages d'accès (`/login`, demande d'accès, vérification, mot de passe oublié/nouveau) sont des pages web Frappe rendues côté serveur avec la même police (Inter) et les mêmes jetons que l'application ; elles ne font pas partie du bundle Vue. Après création d'un compte entreprise, le propriétaire est redirigé vers `/app/cortex-company-setup` (écran Vue « Configurer votre entreprise », écritures via `api/v1/onboarding.py`, propriétaire seulement). Détails, limites (OAuth réel requis, courriel sortant requis) : `docs/auth/LOGIN_AND_ONBOARDING.md`.
-- Vite pré-bundle `feather-icons` et `debug`, deux dépendances CommonJS importées par Frappe UI / Socket.IO, pour éviter les erreurs d’exports ESM dans le navigateur.
-- Le compositeur utilise les clients, l’équipement, la disponibilité, l’aperçu de prix et la création de transactions côté Frappe; les totaux fiscaux du devis ERPNext restent la référence. Les numéros de série de réservation sont attribués sous verrou côté serveur. Les scans de sortie, retours partiels/complets, dommages et preuves privées utilisent les services Frappe disponibles; les preuves sont liées à la clôture et hachées côté serveur.
-- Les routes AI Inbox/Workspace/Audit existent. Le compte Onyx, `qwen3:8b`, le fournisseur Ollama et la configuration serveur Frappe sont en place localement. La connexion Onyx et l’API du modèle ont été vérifiées séparément; le parcours complet de conversation et d’outil depuis l’interface Cortex reste à recetter. Onyx Lite n’offre pas l’indexation RAG ni les connecteurs du déploiement complet.
-- Ne qualifie pas l’ensemble du produit de prêt pour la production : les parcours contrat, facturation et envoi client, les droits réels par rôle, l’expérience d’équipe/assignation, les opérations documentaires complètes et les intégrations comptables doivent encore être vérifiés contre leurs contrats métier. Les fonctions absentes restent explicitement indisponibles plutôt que simulées.
-- La comparaison visuelle pixel-perfect avec la capture P&L n’a pas été validée par une revue de captures fiable. Elle doit rester un élément de recette, même si le shell et les pages suivent les tokens et la structure de la référence.
-- Validation locale : build TypeScript/Vite, compilation Python, tests ciblés de session/route et appels HTTP Docker réussis. Lors de la dernière suite frontend complète, 250/251 tests ont passé; le test séquentiel d’import de toutes les vues a dépassé le délai de 180 s sous charge, puis a réussi isolément. Ne présente pas cette suite complète comme entièrement verte.
+- **Vérifié :** redirection d’arrivée vers l’Accueil ; accueil sans violation axe WCAG 2.1 AA et sans débordement dès 320 px ; les 7 workspaces rendent onboarding, graphique, cartes de nombres, raccourcis et listes rapides avec les vraies données ; liste, Kanban, calendrier/Gantt et formulaire de *Location* ; retour de matériel enregistré de bout en bout depuis le dialogue natif ; les cinq rapports s’exécutent.
+- **Limites honnêtes :** Onyx n’est pas configuré sur le bench (`onyx_base_url`, `onyx_api_key`) : l’accueil affiche alors le message de configuration renvoyé par le serveur au lieu d’une réponse. Les pages natives de Frappe (workspaces, listes) présentent des violations axe propres à Frappe (boutons sans nom, `aria-allowed-attr`), identiques sur les workspaces ERPNext d’origine ; elles ne sont pas corrigées ici. Les libellés d’ERPNext non traduits par Frappe restent en anglais. Un site vide affiche des zéros et des graphiques vides (pas de données de démonstration inventées).
+- **Non reconstruit :** la grille de disponibilité interactive (le rapport *Disponibilité du parc* la remplace), les écrans à deux colonnes de l’AI Workspace, le scan par caméra (le champ Code-barres de Frappe accepte un lecteur ou la saisie), les équipes/assignations.
+- **À recetter :** parcours contrat → facturation → envoi client, droits réels par rôle, intégrations comptables, conversation et outils Cortex→Onyx→MCP. Ne qualifie pas le produit de prêt pour la production.
 
 ## Definition of Done pour une évolution
 
@@ -164,6 +158,6 @@ Les pages et actions doivent indiquer leur provenance réelle. Mock, fixture, AP
 2. Le comportement en succès, erreur, chargement, état vide, confiance faible, API indisponible et permission refusée est visible et honnête.
 3. Aucune action métier n’est appliquée par le seul fait d’avoir rendu ou validé une suggestion.
 4. Les sources, preuves et différences proposées sont consultables.
-5. L’interface respecte ce langage ERPNext et fonctionne au clavier / sur écran étroit.
-6. Le build frontend et les contrôles backend pertinents passent; les vérifications live sont identifiées comme telles, distinctes des mocks.
+5. L’interface respecte ce langage ERPNext, est en français, et fonctionne au clavier / sur écran étroit.
+6. `bench build`, `ruff` et les tests Python pertinents passent; les vérifications live sont identifiées comme telles, distinctes des mocks.
 7. Documentation, endpoint et code racontent la même chose.

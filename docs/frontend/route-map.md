@@ -1,5 +1,7 @@
 # Cortex ERP AI-Native — Canonical 24 Screens Route Map
 
+> **Obsolète (2026-09-30) :** ce document décrit l'ancienne interface Vite/Vue/Frappe UI, retirée. La référence actuelle est [`ERPNEXT_NATIVE_PLAN.md`](ERPNEXT_NATIVE_PLAN.md) et [`CORTEX_UI_HANDOFF_V2.md`](CORTEX_UI_HANDOFF_V2.md). Il est conservé pour l'historique.
+
 This document defines the authoritative 24 canonical screens for Cortex ERP. No screen may change its ID, canonical route, or priority without updating this table.
 
 | ID | Screen Name (FR / EN) | Canonical Route | Priority | Primary Role & Responsibility | Key UI Components | Primary User Role | Maturity Gate |

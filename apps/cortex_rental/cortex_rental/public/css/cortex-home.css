@@ -200,7 +200,7 @@ body[data-route="cortex-home"] #page-cortex-home .page-head {
 }
 .ch-prompts {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
 	gap: 10px;
 }
 .ch-prompt {
@@ -224,7 +224,7 @@ body[data-route="cortex-home"] #page-cortex-home .page-head {
 }
 .ch-tiles {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
 	gap: 10px;
 }
 .ch-tile {

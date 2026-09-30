@@ -1,5 +1,7 @@
 # Cortex Check-in Scanner & Réception Matérielle
 
+> **Obsolète (2026-09-30) :** ce document décrit l'ancienne interface Vite/Vue/Frappe UI, retirée. La référence actuelle est [`ERPNEXT_NATIVE_PLAN.md`](ERPNEXT_NATIVE_PLAN.md) et [`CORTEX_UI_HANDOFF_V2.md`](CORTEX_UI_HANDOFF_V2.md). Il est conservé pour l'historique.
+
 `/app/cortex-checkin` — le troisième écran métier majeur de Cortex (après Disponibilité et Transaction Composer), dédié à la réception en entrepôt/comptoir, à la numérisation ultra-rapide des équipements retournés, au diagnostic technique d'avarie et à la clôture de contrat.
 
 ---

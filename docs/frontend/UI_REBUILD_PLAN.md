@@ -1,5 +1,7 @@
 # Plan de reconstruction UI — pages Desk ERPNext + Frappe UI
 
+> **Obsolète (2026-09-30) :** ce document décrit l'ancienne interface Vite/Vue/Frappe UI, retirée. La référence actuelle est [`ERPNEXT_NATIVE_PLAN.md`](ERPNEXT_NATIVE_PLAN.md) et [`CORTEX_UI_HANDOFF_V2.md`](CORTEX_UI_HANDOFF_V2.md). Il est conservé pour l'historique.
+
 **Statut :** plan d'implémentation, à valider. Aucun code applicatif n'est modifié par ce document.
 **Date :** 2026-09-28 · **Auteur de la demande :** Kael Belceus
 **Contrat parent :** [`CORTEX_UI_HANDOFF_V2.md`](CORTEX_UI_HANDOFF_V2.md) (prime sur ce plan en cas de conflit)

@@ -39,6 +39,7 @@ app_include_css = [
 app_include_js = [
     "cortex_copilot.bundle.js",
     "/assets/cortex_rental/js/cortex_desk.js",
+    "/assets/cortex_rental/js/cortex_views.js",
 ]
 
 # DocType Events (Audit logging & validation hooks)

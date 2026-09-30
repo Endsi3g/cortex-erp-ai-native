@@ -7,6 +7,7 @@ the product owner asked for (an Accounting-style workspace) and the removal of V
 import glob
 import json
 import os
+import unicodedata
 import unittest
 
 APP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -155,6 +156,19 @@ class TestWorkspacesFollowTheAccountingLayout(unittest.TestCase):
             self.assertIn(name, steps)
 
 
+class TestFrenchTranslations(unittest.TestCase):
+    def test_translation_file_is_well_formed_and_names_doctypes(self):
+        import csv
+
+        with open(os.path.join(APP_DIR, "translations", "fr.csv"), encoding="utf-8", newline="") as handle:
+            rows = list(csv.reader(handle))
+        self.assertTrue(all(len(row) == 2 and row[0] and row[1] for row in rows))
+        keys = [row[0] for row in rows]
+        self.assertEqual(len(keys), len(set(keys)), "duplicate translation keys")
+        for doctype in ("Cortex Rental Transaction", "Approval Request", "Consignment Payout", "Rental Pricing Rule"):
+            self.assertIn(doctype, keys)
+
+
 class TestScriptReports(unittest.TestCase):
     def test_each_report_ships_python_javascript_and_roles(self):
         reports = _docs("report")
@@ -183,6 +197,8 @@ class TestScriptReports(unittest.TestCase):
                 ),
             )
             base = os.path.basename(folder)
+            # Frappe imports `report.<scrub(name)>.<scrub(name)>`: the folder must match exactly (accents included).
+            self.assertEqual(base, unicodedata.normalize("NFC", name.replace(" ", "_").replace("-", "_").lower()))
             self.assertEqual((report["report_type"], report["is_standard"]), ("Script Report", "Yes"), name)
             self.assertTrue(report["roles"], name)
             for ext in ("py", "js"):

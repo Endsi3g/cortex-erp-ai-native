@@ -1,5 +1,7 @@
 # Cortex Copilot Panel
 
+> **Obsolète (2026-09-30) :** ce document décrit l'ancienne interface Vite/Vue/Frappe UI, retirée. La référence actuelle est [`ERPNEXT_NATIVE_PLAN.md`](ERPNEXT_NATIVE_PLAN.md) et [`CORTEX_UI_HANDOFF_V2.md`](CORTEX_UI_HANDOFF_V2.md). Il est conservé pour l'historique.
+
 A floating, non-modal chat panel mounted on every Desk page, plus a
 detached full-page version at `/app/cortex-assistant`. Built against
 the **real** `cortex_rental.api.v1.chat` endpoints from the seventh

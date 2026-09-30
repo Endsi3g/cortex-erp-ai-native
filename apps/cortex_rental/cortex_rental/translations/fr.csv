@@ -4,3 +4,196 @@ Cortex Finance,Cortex Finance
 Cortex AI,Cortex IA
 Cortex Catalog,Cortex Catalogue
 Cortex Admin,Cortex Administration
+Approval Request,Demande d'approbation
+Audit Event,Événement d'audit
+Consignment Owner,Propriétaire en consignation
+Consignment Payout,Versement de consignation
+Cortex Access Settings,Paramètres d'accès Cortex
+Cortex Agent Run,Exécution d'agent
+Cortex Agent Tool Call,Appel d'outil d'agent
+Cortex Chat Context Snapshot,Contexte de conversation
+Cortex Chat Message,Message de conversation
+Cortex Chat Session,Conversation Cortex
+Cortex Check-In,Retour de matériel
+Cortex Check-In Item,Ligne de retour
+Cortex Evidence Reference,Pièce justificative
+Cortex Extraction Run,Extraction de document
+Cortex Idempotency Record,Enregistrement d'idempotence
+Cortex Inbound Request,Demande entrante
+Cortex Onboarding,Mise en route Cortex
+Cortex Rental Item Profile,Profil d'équipement
+Cortex Rental Transaction,Location
+Cortex Rental Transaction Item,Ligne de location
+Cortex Signup Request,Demande d'accès
+Rental Pricing Rule,Règle tarifaire
+Active Filters (JSON),Filtres actifs (JSON)
+Actor ID,ID de l'acteur
+Actor Type,Type d'acteur
+After State (JSON),État après (JSON)
+Agent ID,ID de l'agent
+Agent Profile,Profil d'agent
+Agent Run,Exécution d'agent
+Allow Third-Party Consignment,Autoriser la consignation tierce
+Assigned Serial No,N° de série attribué
+Assigned Serial Numbers,N° de série attribués
+Base Daily Rate ($),Tarif journalier de base ($)
+Before State (JSON),État avant (JSON)
+Billable Days,Jours facturables
+Calculation Snapshot (JSON),Détail du calcul (JSON)
+Calendar Days,Jours civils
+Chat Session,Conversation
+Checked In At,Reçu le
+Checked In By,Reçu par
+Consignment %,Consignation (%)
+Content (sanitized),Contenu (nettoyé)
+Context Hash,Empreinte du contexte
+Created By Actor,Créé par
+Created Rental Transaction,Location créée
+Customer Account Ready,Compte client prêt
+Daily Rate,Tarif journalier
+Damage Severity,Gravité des dommages
+Damage Type,Type de dommage
+Decided At,Décidé le
+Decided By,Décidé par
+Decision Reason,Motif de la décision
+Disposition,Destination
+Duration (ms),Durée (ms)
+Ends At,Fin
+Entity ID,ID de l'élément
+Error/Denial Message,Message d'erreur ou de refus
+Estimated Cost (USD),Coût estimé (USD)
+Estimated Repair Cost,Coût de réparation estimé
+Evidence (JSON),Pièces (JSON)
+Evidence IDs (JSON),ID des pièces (JSON)
+Evidence Reference IDs,ID des pièces justificatives
+Evidence References (JSON list of Cortex Evidence Reference names),Pièces justificatives (liste JSON)
+Expected Quantity,Quantité attendue
+Extracted At,Extrait le
+"Extracted Payload (JSON, per intake_extraction_schema.json)",Données extraites (JSON)
+Finalize Mode,Mode de clôture
+Idempotency Key,Clé d'idempotence
+Inbound Request,Demande entrante
+Input Tokens,Jetons en entrée
+Insurance Validated,Assurance validée
+Internal Notes,Notes internes
+Is Serialized Unit,Article sérialisé
+Last Context Hash,Dernière empreinte du contexte
+Last Message At,Dernier message
+Last Seen At,Dernière activité
+Locale,Langue
+MIME Type,Type MIME
+Mandatory Kit Accessories (JSON / Comma-separated),Accessoires obligatoires du kit
+Model Name,Nom du modèle
+Model Provider,Fournisseur du modèle
+Model Used,Modèle utilisé
+Onyx Chat Session ID,ID de conversation Onyx
+Onyx Message ID,ID de message Onyx
+Output Tokens,Jetons en sortie
+Overall Confidence,Confiance globale
+Owner Name,Nom du propriétaire
+Owner Payout Amount,Versement au propriétaire
+Owner Type,Type de propriétaire
+Payload Hash (SHA-256),Empreinte des données (SHA-256)
+Payment / Deposit Ready,Paiement ou dépôt prêt
+Permissions Snapshot (JSON),Permissions (JSON)
+Pinned Context Snapshot,Contexte épinglé
+Policy Decision (JSON),Décision de politique (JSON)
+Prep / Turnaround Hours,Heures de préparation
+Processed By (Agent / User),Traité par (agent ou personne)
+Project Name,Nom du projet
+Proposed Payload (JSON),Changement proposé (JSON)
+Rate Multiplier,Multiplicateur de tarif
+Raw Payload,Données brutes
+Recorded Response (JSON),Réponse enregistrée (JSON)
+Rental Category,Catégorie de location
+Rental Items,Matériel loué
+Rental State,État de la location
+Rental Transaction,Location
+Replacement Value ($),Valeur de remplacement ($)
+Request/Run ID,ID de demande ou d'exécution
+Requested By ID,Demandé par (ID)
+Requested By Type,Type de demandeur
+Required Scope,Portée requise
+Required Security Deposit ($),Dépôt de garantie requis ($)
+Retention Until,Conservé jusqu'au
+Returned Items,Matériel retourné
+Returned Quantity,Quantité reçue
+Review Required,Révision requise
+Routing Reason,Motif d'acheminement
+SHA-256 Hash,Empreinte SHA-256
+Scan Notes,Notes de balayage
+Scanned Checkout Serial Numbers,N° de série balayés à la sortie
+Scanned Clean,Balayé sans anomalie
+Schema Version,Version du schéma
+Selected Item Codes (JSON),Articles sélectionnés (JSON)
+Selected Serial Nos (JSON),N° de série sélectionnés (JSON)
+Sender ID,ID de l'expéditeur
+Sender Type,Type d'expéditeur
+Short Code,Code court
+Source Channel,Canal d'origine
+Starts At,Début
+Structured Extracted Data,Données extraites structurées
+Text Excerpt,Extrait du texte
+Tool Call Count,Nombre d'appels d'outils
+Tool Name,Nom de l'outil
+Total Fleet Quantity (non-serialized only),Quantité totale du parc (non sérialisé)
+Transaction Item Row (name),Ligne de location (nom)
+UI Blocks (JSON),Blocs d'affichage (JSON)
+Validation Errors (JSON),Erreurs de validation (JSON)
+Validation Status,Validation
+Visible Date Range (JSON),Période visible (JSON)
+API Intake,Interface (API)
+Agent,Agent
+Automatic after email verification,Automatique après vérification du courriel
+Blocking,Bloquant
+Cable / Connector,Câbles et connecteurs
+Calculated,Calculé
+Camera Bodies,Boîtiers de caméra
+Checked Out,Sorti
+Cinema Lenses,Objectifs cinéma
+Co-Investment,Co-investissement
+Cosmetic,Esthétique
+Disputed,Litige
+Electronic Failure,Panne électronique
+Functional,Fonctionnel
+Grip & Rigging,Machinerie et rigging
+House,Interne
+Liquid / Moisture,Liquide ou humidité
+Missing,Manquant
+Missing Parts,Pièces manquantes
+Monitors & Wireless Video,Moniteurs et vidéo sans fil
+Optical Scratch,Rayure optique
+PDF Upload,Dépôt de PDF
+Partial Return,Retour partiel
+Physical / Impact,Choc ou dommage physique
+Power & Batteries,Alimentation et batteries
+Processed,Traitée
+Provisioned,Créé
+Reservation,Réservation
+Return to Stock,Retour en stock
+Settle With Loss,Régler avec perte
+Third-Party,Tiers
+Web Portal,Portail Web
+Write-off,Radiation
+Quote,Devis
+Quarantine,Quarantaine
+Repair,Réparation
+Lighting,Éclairage
+Good,Bon état
+Damaged,Endommagé
+Contract,Contrat
+Returned,Retourné
+Full Return,Retour complet
+Approved,Approuvée
+Human,Personne
+Denied,Refusé
+Running,En cours
+Paid,Payé
+Manual,Manuel
+Default Payout %,Versement par défaut (%)
+Paid At,Payé le
+Audio,Audio
+Net Amount,Montant net
+Gross Amount,Montant brut
+Discount Amount,Montant de la remise
+Tax Amount,Montant des taxes

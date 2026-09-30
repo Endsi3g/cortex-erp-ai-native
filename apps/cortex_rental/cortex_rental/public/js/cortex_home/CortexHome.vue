@@ -203,7 +203,7 @@ defineExpose({ refresh });
 					v-model="text"
 					class="ch-input"
 					rows="1"
-					placeholder="Demandez à Cortex : disponibilité, location, facture, approbation…"
+					placeholder="Demandez à Cortex…"
 					:disabled="sending"
 					@input="resize"
 					@keydown="onKeydown"
