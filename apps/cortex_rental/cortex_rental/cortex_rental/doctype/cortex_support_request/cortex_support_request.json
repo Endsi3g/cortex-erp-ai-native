@@ -1,0 +1,166 @@
+{
+  "actions": [],
+  "autoname": "format:SUP-{YYYY}-{#####}",
+  "creation": "2026-09-30 23:55:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "modified": "2026-09-30 23:55:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "name": "Cortex Support Request",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1,
+  "title_field": "subject",
+  "field_order": [
+    "subject",
+    "category",
+    "priority",
+    "status",
+    "cb",
+    "company",
+    "requested_by",
+    "page_url",
+    "sb",
+    "description"
+  ],
+  "fields": [
+    {
+      "fieldname": "subject",
+      "fieldtype": "Data",
+      "label": "Subject",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Select",
+      "label": "Category",
+      "options": "Question\nIssue\nSuggestion",
+      "default": "Question",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "priority",
+      "fieldtype": "Select",
+      "label": "Priority",
+      "options": "Low\nNormal\nUrgent",
+      "default": "Normal",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Open\nIn Progress\nResolved",
+      "default": "Open",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "cb",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "read_only": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "requested_by",
+      "fieldtype": "Data",
+      "label": "Demandé par",
+      "read_only": 1
+    },
+    {
+      "fieldname": "page_url",
+      "fieldtype": "Data",
+      "label": "Page concernée",
+      "read_only": 1
+    },
+    {
+      "fieldname": "sb",
+      "fieldtype": "Section Break",
+      "label": "Détails"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Description",
+      "reqd": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "email": 1,
+      "share": 1
+    },
+    {
+      "role": "Rental Manager",
+      "read": 1,
+      "create": 1,
+      "write": 1
+    },
+    {
+      "role": "Cortex Operations Manager",
+      "read": 1,
+      "create": 1,
+      "write": 0
+    },
+    {
+      "role": "Cortex Counter Staff",
+      "read": 1,
+      "create": 1,
+      "write": 0
+    },
+    {
+      "role": "Cortex Finance Manager",
+      "read": 1,
+      "create": 1,
+      "write": 0
+    },
+    {
+      "role": "Cortex Inventory Manager",
+      "read": 1,
+      "create": 1,
+      "write": 0
+    },
+    {
+      "role": "Cortex Consignment Manager",
+      "read": 1,
+      "create": 1,
+      "write": 0
+    },
+    {
+      "role": "Cortex Account Reviewer",
+      "read": 1,
+      "create": 1,
+      "write": 0
+    },
+    {
+      "role": "Rental Operator",
+      "read": 1,
+      "create": 1,
+      "write": 0
+    },
+    {
+      "role": "Cortex System Manager",
+      "read": 1,
+      "create": 1,
+      "write": 1
+    }
+  ]
+}

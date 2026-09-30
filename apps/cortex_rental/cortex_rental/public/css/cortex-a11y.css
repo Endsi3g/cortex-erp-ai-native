@@ -124,3 +124,20 @@ a[role="button"][data-toggle="dropdown"]:focus-visible,
 	color: #52525b;
 	font-size: 13px;
 }
+
+/* Téléphone : cartes de nombres et raccourcis sur deux colonnes (moins de défilement). */
+@media (max-width: 768px) {
+	#page-Workspaces .codex-editor__redactor {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 8px;
+	}
+	#page-Workspaces .codex-editor__redactor > .ce-block {
+		flex: 1 1 100%;
+		min-width: 0;
+	}
+	#page-Workspaces .codex-editor__redactor > .ce-block:has(.number-widget-box),
+	#page-Workspaces .codex-editor__redactor > .ce-block:has(.shortcut-widget-box) {
+		flex: 1 1 calc(50% - 4px);
+	}
+}

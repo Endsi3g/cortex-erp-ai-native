@@ -51,7 +51,7 @@ class AuditService:
         Record a state mutation into the append-only audit log.
         """
         actor = cls.actor_from_request()
-        return log_audit_event(
+        event = log_audit_event(
             company=company,
             actor_type=actor["actor_type"],
             actor_id=actor["actor_id"],
@@ -64,6 +64,29 @@ class AuditService:
             policy_decision=policy_decision,
             request_id=request_id,
         )
+        cls._announce(company, actor, action, entity_type, entity_id)
+        return event
+
+    @staticmethod
+    def _announce(company: str, actor: Dict[str, str], action: str, entity_type: str, entity_id: str) -> None:
+        """Prévient l'équipe en temps réel d'une vraie action humaine ; ne bloque jamais l'opération."""
+        if not frappe or actor.get("actor_type") != "Human":
+            return
+        try:
+            from cortex_rental.services import team_activity
+
+            if team_activity.action_text(action):
+                team_activity.publish_company_activity(
+                    company,
+                    {
+                        "actor": actor["actor_id"],
+                        "text": team_activity.action_text(action),
+                        "entity_type": entity_type,
+                        "entity_id": entity_id,
+                    },
+                )
+        except Exception:
+            pass
 
     @classmethod
     def record_read(cls, action: str, metadata: Optional[Dict[str, Any]] = None, company: Optional[str] = None) -> None:

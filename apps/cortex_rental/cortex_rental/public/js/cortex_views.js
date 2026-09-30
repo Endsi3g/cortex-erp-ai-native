@@ -37,3 +37,29 @@ cortex.call = function (method, args, opts) {
 		.call(Object.assign({ method: `cortex_rental.api.v1.${method}`, args }, opts || {}))
 		.then((r) => r.message);
 };
+
+// Date et heure courtes (« 24 sept., 09:00 ») pour que les colonnes des listes ne soient plus tronquées.
+cortex.shortDateTime = function (value) {
+	if (!value) return "";
+	const m = moment(frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(value) : value);
+	return m.isValid() ? m.locale("fr").format("D MMM, HH:mm") : value;
+};
+
+// Renomme le bouton principal d'une liste (« Ajouter Location » devient « Nouvelle location »).
+cortex.renamePrimary = function (listview, label) {
+	const apply = () => $(listview.page.btn_primary).find("span").first().text(label);
+	apply();
+	window.setTimeout(apply, 250);
+};
+
+cortex.INVOICE_STATES = {
+	Issued: [__("Émise"), "blue"],
+	"Partially Paid": [__("Partiellement payée"), "orange"],
+	Paid: [__("Payée"), "green"],
+	Cancelled: [__("Annulée"), "gray"],
+};
+cortex.SUPPORT_STATES = {
+	Open: [__("Ouverte"), "orange"],
+	"In Progress": [__("En cours"), "blue"],
+	Resolved: [__("Résolue"), "green"],
+};

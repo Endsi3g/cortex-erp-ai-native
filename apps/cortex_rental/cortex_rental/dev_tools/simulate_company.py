@@ -22,7 +22,17 @@ import frappe
 COMPANY = "Simulation Plateau Montréal"
 PASSWORD = "Sim-Pass-2026!"
 OWNER = "sim.owner@cortex.test"
+PROPRIO = "sim.proprio@cortex.test"  # propriétaire complet : rôle « Cortex System Manager » et tous les rôles Cortex
 MANAGER = "sim.manager@cortex.test"
+OWNER_ROLES = [
+    "Cortex System Manager",
+    "Rental Manager",
+    "Cortex Operations Manager",
+    "Cortex Finance Manager",
+    "Cortex Inventory Manager",
+    "Cortex Consignment Manager",
+    "Cortex Account Reviewer",
+]
 COUNTERS = ["sim.comptoir1@cortex.test", "sim.comptoir2@cortex.test"]
 METRICS_PATH = "/tmp/cortex_sim_metrics.json"
 LOG_PATH = "/tmp/cortex_sim.log"
@@ -167,6 +177,7 @@ def provision():
     )
     people = [
         (OWNER, "Simone Propriétaire", "manager"),
+        (PROPRIO, "Paul Propriétaire", "owner"),
         (MANAGER, "Marc Gestionnaire", "manager"),
         (COUNTERS[0], "Camille Comptoir", "counter"),
         (COUNTERS[1], "Louis Comptoir", "counter"),
@@ -175,7 +186,8 @@ def provision():
 
     for email, name, preset in people:
         if not frappe.db.exists("User", email):
-            tp.create_user(email, name, COMPANY, tp.ROLE_PRESETS[preset]["roles"])
+            roles = OWNER_ROLES if preset == "owner" else tp.ROLE_PRESETS[preset]["roles"]
+            tp.create_user(email, name, COMPANY, roles)
         update_password(email, PASSWORD)
     frappe.db.commit()
 

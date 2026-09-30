@@ -106,6 +106,46 @@ body[data-route^="Workspaces"] .codex-editor__redactor > .ce-block,
 	animation: cx-fade var(--cx-base) var(--cx-ease) both;
 }
 
+/* Finitions : boutons, menus, listes, cartes kanban, onglets. */
+.btn,
+.dropdown-item,
+.list-row,
+.kanban-card,
+.nav-link,
+.form-control,
+.indicator-pill {
+	transition: background-color var(--cx-fast) var(--cx-ease), border-color var(--cx-fast) var(--cx-ease),
+		box-shadow var(--cx-fast) var(--cx-ease), color var(--cx-fast) var(--cx-ease),
+		transform var(--cx-fast) var(--cx-ease);
+}
+.btn:active:not(:disabled) {
+	transform: scale(0.98);
+}
+.dropdown-menu.show {
+	animation: cx-menu var(--cx-fast) var(--cx-ease) both;
+	transform-origin: top right;
+}
+@keyframes cx-menu {
+	from {
+		opacity: 0;
+		transform: translateY(-4px) scale(0.98);
+	}
+}
+.kanban-card-wrapper .kanban-card:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+.list-row-container:hover .list-row {
+	background-color: var(--cortex-surface-subtle, #f4f4f5);
+}
+.modal.show .modal-dialog {
+	animation: cx-rise var(--cx-base) var(--cx-ease) both;
+}
+.form-layout .form-section,
+.form-layout .form-dashboard-section {
+	animation: cx-fade var(--cx-base) var(--cx-ease) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,

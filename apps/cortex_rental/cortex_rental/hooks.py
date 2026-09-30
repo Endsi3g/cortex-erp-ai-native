@@ -28,6 +28,7 @@ app_include_css = [
     "/assets/cortex_rental/css/cortex-utilities.css",
     "/assets/cortex_rental/css/cortex-home.css",
     "/assets/cortex_rental/css/cortex-motion.css",
+    "/assets/cortex_rental/css/cortex-nav.css",
     "/assets/cortex_rental/css/cortex-a11y.css",
 ]
 
@@ -40,6 +41,7 @@ app_include_css = [
 app_include_js = [
     "cortex_copilot.bundle.js",
     "/assets/cortex_rental/js/cortex_desk.js",
+    "/assets/cortex_rental/js/cortex_nav.js",
     "/assets/cortex_rental/js/cortex_views.js",
     "/assets/cortex_rental/js/cortex_a11y.js",
     "/assets/cortex_rental/js/cortex_i18n.js",
@@ -78,6 +80,7 @@ permission_query_conditions = {
     "Cortex Rental Invoice": "cortex_rental.permissions.cortex_rental_invoice_query_conditions",
     "Cortex Rental Payment": "cortex_rental.permissions.cortex_rental_payment_query_conditions",
     "Cortex Finance Settings": "cortex_rental.permissions.cortex_finance_settings_query_conditions",
+    "Cortex Support Request": "cortex_rental.permissions.cortex_support_request_query_conditions",
     "Customer": "cortex_rental.permissions.customer_query_conditions",
     "Cortex Idempotency Record": "cortex_rental.permissions.cortex_idempotency_record_query_conditions",
     "Cortex Agent Run": "cortex_rental.permissions.cortex_agent_run_query_conditions",

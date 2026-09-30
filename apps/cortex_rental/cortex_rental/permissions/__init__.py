@@ -52,6 +52,10 @@ def consignment_payout_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Consignment Payout")
 
 
+def cortex_support_request_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex Support Request")
+
+
 def cortex_rental_invoice_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Cortex Rental Invoice")
 
