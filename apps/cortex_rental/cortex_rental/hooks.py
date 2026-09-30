@@ -42,7 +42,11 @@ app_include_js = [
     "/assets/cortex_rental/js/cortex_desk.js",
     "/assets/cortex_rental/js/cortex_views.js",
     "/assets/cortex_rental/js/cortex_a11y.js",
+    "/assets/cortex_rental/js/cortex_i18n.js",
 ]
+
+# Visitors who are not signed in get French pages (see auth_hooks.french_for_guests).
+before_request = ["cortex_rental.auth_hooks.french_for_guests"]
 
 # DocType Events (Audit logging & validation hooks)
 # ------------------------------------------------

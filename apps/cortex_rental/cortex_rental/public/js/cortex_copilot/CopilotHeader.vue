@@ -2,7 +2,7 @@
 import { ICONS } from "../cortex_shared/CortexIcons.js";
 
 defineProps({
-	title: { type: String, default: "Cortex Copilot" },
+	title: { type: String, default: "Copilote Cortex" },
 	subtitle: { type: String, default: "" },
 	detachHref: { type: String, default: "" },
 	closable: { type: Boolean, default: true },
@@ -30,7 +30,7 @@ defineEmits(["close", "detach"]);
 				v-if="closable"
 				class="cx-btn"
 				title="Fermer (Échap)"
-				aria-label="Fermer le panneau Cortex Copilot"
+				aria-label="Fermer le panneau du copilote Cortex"
 				@click="$emit('close')"
 			>
 				<span class="cx-icon-sm" v-html="ICONS.x"></span>

@@ -245,15 +245,15 @@ class HttpOnyxChatClient(OnyxChatClient):
         except urllib.error.HTTPError as exc:
             # Avoid returning arbitrary upstream HTML/body content (which may
             # include private details) to the user-facing error message.
-            raise RuntimeError(f"Onyx returned HTTP {exc.code}.") from exc
+            raise RuntimeError(f"L'assistant a répondu avec l'erreur HTTP {exc.code}.") from exc
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-            raise RuntimeError("Onyx could not complete the chat request.") from exc
+            raise RuntimeError("L'assistant n'a pas pu terminer la demande de conversation.") from exc
 
         answer = result.get("answer_citationless") or result.get("answer")
         if result.get("error_msg"):
-            raise RuntimeError("Onyx could not complete the chat request.")
+            raise RuntimeError("L'assistant n'a pas pu terminer la demande de conversation.")
         if not isinstance(answer, str) or not answer.strip():
-            raise RuntimeError("Onyx returned an empty response.")
+            raise RuntimeError("L'assistant a renvoyé une réponse vide.")
 
         citation_info = result.get("citation_info") or []
         source_ids = [

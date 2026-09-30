@@ -43,20 +43,20 @@
       "in_list_view": 1,
       "label": "Page",
       "reqd": 1,
-      "description": "One of AgentRouter.PAGE_TO_AGENT's keys (availability, transaction, checkin, consignment, approvals, dashboard)."
+      "description": "Une des pages connues de l'aiguilleur d'agents (disponibilité, location, retour, consignation, approbations, tableau de bord)."
     },
     {
       "fieldname": "reference_doctype",
       "fieldtype": "Link",
       "label": "Reference DocType",
       "options": "DocType",
-      "description": "e.g. Cortex Rental Transaction. Real Link to core Frappe's DocType meta, not a free-text guess."
+      "description": "Par exemple Location. Lien réel vers le type de document de Frappe, pas un texte libre."
     },
     {
       "fieldname": "reference_name",
       "fieldtype": "Data",
       "label": "Reference Document Name",
-      "description": "The target record's name — Data, not a dynamic Link, since reference_doctype is itself variable (same pattern as Approval Request's entity_type/entity_id)."
+      "description": "Nom de l'enregistrement visé (texte, et non lien dynamique, puisque le type de document varie)."
     },
     {
       "fieldname": "selected_item_codes_json",
@@ -87,14 +87,14 @@
       "fieldtype": "Code",
       "label": "Permissions Snapshot (JSON)",
       "options": "JSON",
-      "description": "The permission scope strings resolved for this request at the time of the snapshot — informational/audit only, never re-read as a live authorization source (every real check re-runs against Frappe permissions at call time)."
+      "description": "Portées de permission résolues pour cette demande au moment de la capture : pour information et audit seulement, jamais relues comme autorisation."
     },
     {
       "fieldname": "context_hash",
       "fieldtype": "Data",
       "in_list_view": 1,
       "label": "Context Hash",
-      "description": "sha256 of the resolved (server-validated) context, not the raw client-submitted one."
+      "description": "Empreinte SHA-256 du contexte validé par le serveur, et non de celui envoyé par le client."
     },
     {
       "fieldname": "created_at",

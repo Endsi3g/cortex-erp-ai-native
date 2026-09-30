@@ -22,5 +22,5 @@ class CortexAgentRun(Document):
 
     def on_trash(self):
         if frappe:
-            frappe.throw("Cortex Agent Run records cannot be deleted.", frappe.PermissionError)
-        raise PermissionError("Cortex Agent Run records cannot be deleted.")
+            frappe.throw("Les exécutions d'agent ne peuvent pas être supprimées.", frappe.PermissionError)
+        raise PermissionError("Les exécutions d'agent ne peuvent pas être supprimées.")

@@ -71,13 +71,13 @@
       "fieldname": "assigned_serials",
       "fieldtype": "Small Text",
       "label": "Assigned Serial Numbers",
-      "description": "JSON list of individual serials allocated under the reservation lock."
+      "description": "Liste JSON des numéros de série attribués sous le verrou de réservation."
     },
     {
       "fieldname": "scanned_checkout_serials",
       "fieldtype": "Small Text",
       "label": "Scanned Checkout Serial Numbers",
-      "description": "JSON list of serials physically verified by warehouse staff before checkout."
+      "description": "Liste JSON des numéros de série vérifiés physiquement par l'entrepôt avant la sortie."
     },
     {
       "fieldname": "returned_qty",
@@ -85,7 +85,7 @@
       "label": "Returned Quantity",
       "default": "0.0",
       "read_only": 1,
-      "description": "Running total returned across all Cortex Check-In records referencing this line. Set only by services/checkin.py."
+      "description": "Total reçu sur tous les retours de matériel qui visent cette ligne. Défini uniquement par le service de retour."
     }
   ]
 }

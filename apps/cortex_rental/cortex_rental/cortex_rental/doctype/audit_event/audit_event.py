@@ -21,15 +21,19 @@ class AuditEvent(Document):
     def before_save(self):
         if hasattr(self, "is_new") and not self.is_new():
             if frappe:
-                frappe.throw("Audit events are strictly immutable and cannot be modified.", frappe.PermissionError)
+                frappe.throw(
+                    "Les événements d'audit sont immuables et ne peuvent pas être modifiés.", frappe.PermissionError
+                )
             else:
-                raise PermissionError("Audit events are strictly immutable.")
+                raise PermissionError("Les événements d'audit sont immuables.")
 
     def on_trash(self):
         if frappe:
-            frappe.throw("Audit events are permanent and cannot be deleted.", frappe.PermissionError)
+            frappe.throw(
+                "Les événements d'audit sont permanents et ne peuvent pas être supprimés.", frappe.PermissionError
+            )
         else:
-            raise PermissionError("Audit events cannot be deleted.")
+            raise PermissionError("Les événements d'audit ne peuvent pas être supprimés.")
 
 
 def log_audit_event(

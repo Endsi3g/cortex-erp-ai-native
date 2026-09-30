@@ -143,7 +143,7 @@ class ChatSessionService:
         session = frappe.get_doc("Cortex Chat Session", name)
         if session.user != user and "System Manager" not in frappe.get_roles(user):
             frappe.throw(
-                "Unauthorized: this chat session belongs to a different user.",
+                "Non autorisé : cette conversation appartient à une autre personne.",
                 frappe.PermissionError,
             )
         return session.as_dict()
@@ -155,7 +155,7 @@ class ChatSessionService:
             raise ChatSessionNotFoundError(name)
         session = frappe.get_doc("Cortex Chat Session", name)
         if session.user != user:
-            frappe.throw("Unauthorized: this chat session belongs to a different user.", frappe.PermissionError)
+            frappe.throw("Non autorisé : cette conversation appartient à une autre personne.", frappe.PermissionError)
         rows = frappe.get_all(
             "Cortex Chat Message",
             filters={"chat_session": name},
@@ -200,7 +200,7 @@ class ChatSessionService:
         session = frappe.get_doc("Cortex Chat Session", session_name)
         if session.user != user:
             frappe.throw(
-                "Unauthorized: this chat session belongs to a different user.",
+                "Non autorisé : cette conversation appartient à une autre personne.",
                 frappe.PermissionError,
             )
         session.pinned_context = context_snapshot_name
@@ -212,7 +212,7 @@ class ChatSessionService:
         session = frappe.get_doc("Cortex Chat Session", session_name)
         if session.user != user:
             frappe.throw(
-                "Unauthorized: this chat session belongs to a different user.",
+                "Non autorisé : cette conversation appartient à une autre personne.",
                 frappe.PermissionError,
             )
         session.pinned_context = None
@@ -344,7 +344,7 @@ class ChatSessionService:
                 owner = frappe.db.get_value("Cortex Chat Session", chat_session_id, "user")
                 if owner != user:
                     frappe.throw(
-                        "Unauthorized: this chat session belongs to a different user.",
+                        "Non autorisé : cette conversation appartient à une autre personne.",
                         frappe.PermissionError,
                     )
                 return chat_session_id

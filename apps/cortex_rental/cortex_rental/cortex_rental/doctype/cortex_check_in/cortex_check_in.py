@@ -1,3 +1,5 @@
+from cortex_rental.labels import state_label
+
 try:
     import frappe
     from frappe.model.document import Document
@@ -28,6 +30,6 @@ class CortexCheckIn(Document):
             rental_state = frappe.db.get_value("Cortex Rental Transaction", self.transaction, "rental_state")
             if rental_state not in ("Checked Out",):
                 frappe.throw(
-                    f"Cannot check in against a transaction in state [{rental_state}]; it must be Checked Out.",
+                    f"Impossible d'enregistrer un retour pour une location à l'état « {state_label(rental_state)} » ; elle doit être à l'état « Sorti ».",
                     frappe.ValidationError,
                 )

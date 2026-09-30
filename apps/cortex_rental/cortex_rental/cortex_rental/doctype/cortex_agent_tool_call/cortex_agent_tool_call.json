@@ -45,7 +45,7 @@
       "fieldname": "scope",
       "fieldtype": "Data",
       "label": "Required Scope",
-      "description": "The agent:*:* scope string checked for this call, e.g. agent:quote:draft."
+      "description": "Portée agent:*:* vérifiée pour cet appel, par exemple agent:quote:draft."
     },
     {
       "default": "Success",
@@ -72,7 +72,7 @@
       "fieldname": "error_message",
       "fieldtype": "Small Text",
       "label": "Error/Denial Message",
-      "description": "Only the exception message — never raw request/response payloads, documents or PII (PRD §7)."
+      "description": "Seulement le message d'erreur : jamais les données brutes de la requête ou de la réponse, les documents ou les renseignements personnels."
     }
   ],
   "module": "Cortex Rental",

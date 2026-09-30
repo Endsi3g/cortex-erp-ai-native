@@ -46,7 +46,7 @@ if frappe:
         if isinstance(payload.get("items"), str):
             payload["items"] = frappe.parse_json(payload["items"])
         if not payload.get("starts_at") or not payload.get("ends_at"):
-            frappe.throw("Rental start and end dates are required.", frappe.ValidationError)
+            frappe.throw("Les dates de début et de fin de la location sont obligatoires.", frappe.ValidationError)
         results = check_availability_handler(payload, company)
         return {
             "provenance": "api",
@@ -78,7 +78,7 @@ if frappe:
             as_dict=True,
         )
         if not source:
-            frappe.throw("Item is unavailable for this company.", frappe.PermissionError)
+            frappe.throw("Cet équipement n'est pas disponible pour cette société.", frappe.PermissionError)
         alternatives = frappe.get_all(
             "Cortex Rental Item Profile",
             filters={
@@ -141,7 +141,7 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     starts_at = payload.get("starts_at")
     ends_at = payload.get("ends_at")
     if not starts_at or not ends_at:
-        raise ValueError("starts_at and ends_at are required.")
+        raise ValueError("Les dates de début et de fin sont obligatoires.")
 
     search = (payload.get("search") or "").strip().lower()
     category = payload.get("category") or None

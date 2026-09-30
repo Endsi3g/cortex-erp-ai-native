@@ -36,11 +36,11 @@ class ConsignmentPayout(Document):
                 if key in snapshot:
                     if frappe:
                         frappe.throw(
-                            f"Forbidden renter identity field [{key}] detected in owner payout snapshot.",
+                            f"Le champ d'identité du locataire « {key} » est interdit dans le relevé du propriétaire.",
                             frappe.ValidationError,
                         )
                     else:
-                        raise ValueError(f"Forbidden renter identity field [{key}].")
+                        raise ValueError(f"Champ d'identité du locataire interdit : « {key} ».")
 
     def before_save(self):
         if getattr(self, "status", None) == "Paid" and hasattr(self, "is_new") and not self.is_new():

@@ -106,7 +106,7 @@ def preview_pricing_handler(payload: Dict[str, Any], company: str) -> Dict[str, 
     starts_at = payload.get("starts_at")
     ends_at = payload.get("ends_at")
     if not starts_at or not ends_at:
-        raise ValueError("starts_at and ends_at are required.")
+        raise ValueError("Les dates de début et de fin sont obligatoires.")
 
     lines = payload.get("lines") or []
     calendar_days, billable_days = PricingService.compute_billable_days(starts_at, ends_at, company)

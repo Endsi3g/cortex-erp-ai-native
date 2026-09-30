@@ -22,10 +22,10 @@ class CortexExtractionRun(Document):
     def before_save(self):
         if hasattr(self, "is_new") and not self.is_new():
             if frappe:
-                frappe.throw("Cortex Extraction Run records are immutable.", frappe.PermissionError)
-            raise PermissionError("Cortex Extraction Run records are immutable.")
+                frappe.throw("Les extractions de document sont immuables.", frappe.PermissionError)
+            raise PermissionError("Les extractions de document sont immuables.")
 
     def on_trash(self):
         if frappe:
-            frappe.throw("Cortex Extraction Run records cannot be deleted.", frappe.PermissionError)
-        raise PermissionError("Cortex Extraction Run records cannot be deleted.")
+            frappe.throw("Les extractions de document ne peuvent pas être supprimées.", frappe.PermissionError)
+        raise PermissionError("Les extractions de document ne peuvent pas être supprimées.")

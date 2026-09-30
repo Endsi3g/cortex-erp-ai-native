@@ -260,20 +260,20 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
 
 
 def _ensure_pricing_rules(company: str) -> None:
-    existing = frappe.db.get_value("Rental Pricing Rule", {"company": company, "rule_name": "7 Days for 3"}, "name")
+    existing = frappe.db.get_value("Rental Pricing Rule", {"company": company, "rule_name": "7 jours pour 3"}, "name")
     if not existing:
         doc = frappe.get_doc(
             {
                 "doctype": "Rental Pricing Rule",
                 "company": company,
-                "rule_name": "7 Days for 3",
+                "rule_name": "7 jours pour 3",
                 "min_days": 7,
                 "billable_multiplier": 3.0 / 7.0,
                 "is_active": 1,
             }
         )
         doc.insert(ignore_permissions=True)
-        print("  + Created Pricing Rule: 7 Days for 3")
+        print("  + Created Règle tarifaire : 7 jours pour 3")
 
 
 def _ensure_transactions(company: str, customer: str, items: List[Dict[str, Any]]) -> List[str]:

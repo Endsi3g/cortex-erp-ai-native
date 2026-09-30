@@ -32,7 +32,7 @@ function onKeydown(e) {
 			:placeholder="placeholder"
 			:disabled="disabled"
 			rows="2"
-			aria-label="Message pour Cortex Copilot"
+			aria-label="Message pour le copilote Cortex"
 			@keydown="onKeydown"
 		></textarea>
 		<button class="cx-btn cx-btn-primary" :disabled="disabled || !text.trim()" @click="submit">

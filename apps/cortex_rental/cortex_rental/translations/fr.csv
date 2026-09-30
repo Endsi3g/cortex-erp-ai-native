@@ -197,3 +197,1661 @@ Net Amount,Montant net
 Gross Amount,Montant brut
 Discount Amount,Montant de la remise
 Tax Amount,Montant des taxes
+"# Account Settings
+
+In ERPNext, Accounting features are configurable as per your business needs. Accounts Settings is the place to define some of your accounting preferences like:
+
+ - Credit Limit and over billing settings
+ - Taxation preferences
+ - Deferred accounting preferences
+","# Paramètres de comptabilité
+
+Dans Cortex, les fonctions de comptabilité se configurent selon les besoins de votre entreprise. Les paramètres de comptabilité permettent de définir vos préférences, par exemple :
+
+ - Limite de crédit et facturation excédentaire
+ - Préférences de taxation
+ - Préférences de comptabilité différée
+
+"
+"# Account Settings
+
+This is a crucial piece of configuration. There are various account settings in ERPNext to restrict and configure actions in the Accounting module.
+
+The following settings are avaialble for you to configure
+
+1. Account Freezing 
+2. Credit and Overbilling
+3. Invoicing and Tax Automations
+4. Balance Sheet configurations
+
+There's much more, you can check it all out in this step","# Paramètres de comptabilité
+
+Il s'agit d'une configuration essentielle. Plusieurs paramètres du module Comptabilité permettent de restreindre et de configurer les actions.
+
+Vous pouvez configurer les paramètres suivants :
+
+1. Gel des comptes
+2. Crédit et facturation excédentaire
+3. Automatisations de facturation et de taxes
+4. Configuration du bilan
+
+Il y en a bien d'autres : vous pouvez tous les consulter à cette étape."
+"# Add an Existing Asset
+
+If you are just starting with ERPNext, you will need to enter Assets you already possess. You can add them as existing fixed assets in ERPNext. Please note that you will have to make a Journal Entry separately updating the opening balance in the fixed asset account.","# Ajouter un actif existant
+
+Si vous débutez avec Cortex, vous devrez saisir les actifs que vous possédez déjà. Vous pouvez les ajouter comme immobilisations existantes. Notez que vous devrez faire séparément une écriture de journal pour mettre à jour le solde d'ouverture du compte d'immobilisations."
+"# All about sales invoice
+
+A Sales Invoice is a bill that you send to your Customers against which the Customer makes the payment. Sales Invoice is an accounting transaction. On submission of Sales Invoice, the system updates the receivable and books income against a Customer Account.","# Tout sur la facture de vente
+
+Une facture de vente est la facture que vous envoyez à vos clients et pour laquelle ils effectuent le paiement. C'est une opération comptable. À la validation de la facture de vente, le système met à jour les comptes clients et comptabilise le revenu sur le compte du client."
+"# All about sales invoice
+
+A Sales Invoice is a bill that you send to your Customers against which the Customer makes the payment. Sales Invoice is an accounting transaction. On submission of Sales Invoice, the system updates the receivable and books income against a Customer Account.
+
+Here's the flow of how a sales invoice is generally created
+
+
+![Sales Flow](https://docs.erpnext.com/docs/assets/img/accounts/so-flow.png)","# Tout sur la facture de vente
+
+Une facture de vente est la facture que vous envoyez à vos clients et pour laquelle ils effectuent le paiement. C'est une opération comptable. À la validation de la facture de vente, le système met à jour les comptes clients et comptabilise le revenu sur le compte du client.
+
+Voici le déroulement habituel de la création d'une facture de vente :
+
+
+![Flux des ventes](https://docs.Cortex.com/docs/assets/img/accounts/so-flow.png)"
+"# Asset Category
+
+An Asset Category classifies different assets of a Company.
+
+You can create an Asset Category based on the type of assets. For example, all your desktops and laptops can be part of an Asset Category named ""Electronic Equipments"". Create a separate category for furniture. Also, you can update default properties for each category, like:
+ - Depreciation type and duration
+ - Fixed asset account
+ - Depreciation account
+","# Catégorie d'actif
+
+Une catégorie d'actif classe les différents actifs d'une société.
+
+Vous pouvez créer une catégorie selon le type d'actif. Par exemple, tous vos ordinateurs de bureau et portables peuvent appartenir à une catégorie « Équipements électroniques ». Créez une catégorie distincte pour le mobilier. Vous pouvez aussi définir des propriétés par défaut pour chaque catégorie :
+ - Type et durée d'amortissement
+ - Compte d'immobilisations
+ - Compte d'amortissement
+
+"
+"# Asset Item
+
+Asset items are created based on Asset Category. You can create one or multiple items against once Asset Category. The sales and purchase transaction for Asset is done via Asset Item. ","# Article d'actif
+
+Les articles d'actif sont créés à partir d'une catégorie d'actif. Vous pouvez créer un ou plusieurs articles pour une même catégorie. Les opérations de vente et d'achat d'un actif se font par l'article d'actif."
+"# Buying Settings
+
+
+Buying module’s features are highly configurable as per your business needs. Buying Settings is the place where you can set your preferences for:
+
+- Supplier naming and default values
+- Billing and shipping preference in buying transactions
+
+
+","# Paramètres d'achat
+
+
+Les fonctions du module Achats sont très configurables selon les besoins de votre entreprise. Les paramètres d'achat permettent de définir vos préférences pour :
+
+- Nomination des fournisseurs et valeurs par défaut
+- Préférences de facturation et de livraison dans les opérations d'achat
+
+
+
+"
+"# CRM Settings
+
+CRM module’s features are configurable as per your business needs. CRM Settings is the place where you can set your preferences for:
+- Campaign
+- Lead
+- Opportunity
+- Quotation","# Paramètres CRM
+
+Les fonctions du module CRM se configurent selon les besoins de votre entreprise. Les paramètres CRM permettent de définir vos préférences pour :
+- Campagne
+- Prospect
+- Opportunité
+- Devis"
+"# Chart Of Accounts
+
+ERPNext sets up a simple chart of accounts for each Company you create, but you can modify it according to business and legal requirements.","# Plan comptable
+
+Cortex crée un plan comptable simple pour chaque société que vous créez, mais vous pouvez le modifier selon vos exigences commerciales et légales."
+"# Check Stock Reports
+Based on the various stock transactions, you can get a host of one-click Stock Reports in ERPNext like Stock Ledger, Stock Balance, Projected Quantity, and Ageing analysis.","# Consulter les rapports de stock
+À partir des différentes opérations de stock, vous obtenez de nombreux rapports de stock en un clic dans Cortex, comme le grand livre des stocks, le solde de stock, la quantité projetée et l'analyse du vieillissement."
+"# Cost Centers for Budgeting and Analysis
+
+While your Books of Accounts are framed to fulfill statutory requirements, you can set up Cost Center and Accounting Dimensions to address your companies reporting and budgeting requirements.
+
+Click here to learn more about how  <b>[Cost Center](https://docs.erpnext.com/docs/v13/user/manual/en/accounts/cost-center)</b> and <b> [Dimensions](https://docs.erpnext.com/docs/v13/user/manual/en/accounts/accounting-dimensions)</b> allow you to get advanced financial analytics reports from ERPNext.","# Centres de coûts pour le budget et l'analyse
+
+Vos livres comptables sont conçus pour répondre aux exigences légales, mais vous pouvez aussi définir des centres de coûts et des dimensions comptables pour répondre aux besoins de rapports et de budgets de votre entreprise.
+
+Cliquez ici pour en savoir plus sur la façon dont les <b>[centres de coûts](https://docs.Cortex.com/docs/v13/user/manual/en/accounts/cost-center)</b> et les <b>[dimensions](https://docs.Cortex.com/docs/v13/user/manual/en/accounts/accounting-dimensions)</b> vous donnent des rapports financiers avancés dans Cortex.
+"
+"# Create Items for Bill of Materials
+
+One of the prerequisites of a BOM is the creation of raw materials, sub-assembly, and finished items. Once these items are created, you will be able to proceed to the Bill of Materials master, which is composed of items and routing.
+","# Créer les articles d'une nomenclature
+
+Une nomenclature exige au préalable la création des matières premières, des sous-ensembles et des produits finis. Une fois ces articles créés, vous pouvez passer à la fiche de nomenclature, composée d'articles et de gammes.
+
+"
+"# Create Operations
+
+An Operation refers to any manufacturing operation performed on the raw materials to process it further in the manufacturing path. As an example, if you are into garments manufacturing, you will create Operations like fabric cutting, stitching, and washing as some of the operations.","# Créer des opérations
+
+Une opération est une étape de fabrication appliquée aux matières premières pour les transformer. Par exemple, dans la confection de vêtements, vous créerez des opérations comme la coupe du tissu, la couture et le lavage."
+"# Create Workstations
+
+A Workstation stores information regarding the place where the workstation operations are performed. As an example, if you have ten sewing machines doing stitching jobs, each machine will be added as a workstation.","# Créer des postes de travail
+
+Un poste de travail contient les renseignements sur l'endroit où se déroulent les opérations. Par exemple, si dix machines à coudre font de la couture, chaque machine est ajoutée comme poste de travail."
+"# Create a Bill of Materials
+
+A Bill of Materials (BOM) is a list of items and sub-assemblies with quantities required to manufacture an Item.
+
+BOM also provides cost estimation for the production of the item. It takes raw-materials cost based on valuation and operations to cost based on routing, which gives total costing for a BOM.","# Créer une nomenclature
+
+Une nomenclature (BOM) est la liste des articles et des sous-ensembles, avec les quantités nécessaires pour fabriquer un article.
+
+Elle fournit aussi une estimation du coût de production : le coût des matières premières selon l'évaluation, et le coût des opérations selon la gamme, ce qui donne le coût total de la nomenclature."
+"# Create a Customer
+
+The Customer master is at the heart of your sales transactions. Customers are linked in Quotations, Sales Orders, Invoices, and Payments. Customers can be either numbered or identified by name (you would typically do this based on the number of customers you have).
+
+Through Customer’s master, you can effectively track essentials like:
+ - Customer’s multiple address and contacts
+ - Account Receivables
+ - Credit Limit and Credit Period
+","# Créer un client
+
+La fiche client est au cœur de vos opérations de vente. Les clients sont liés aux devis, aux commandes clients, aux factures et aux paiements. Un client peut être identifié par un numéro ou par son nom (selon le nombre de clients que vous avez).
+
+Grâce à la fiche client, vous suivez l'essentiel :
+ - Les adresses et contacts multiples du client
+ - Les comptes clients à recevoir
+ - La limite et le délai de crédit
+
+"
+"# Create a Letter Head
+
+A Letter Head contains your organization's name, logo, address, etc which appears at the header and footer portion in documents. You can learn more about Setting up Letter Head in ERPNext here.
+","# Créer un en-tête de lettre
+
+Un en-tête de lettre contient le nom de votre organisation, son logo, son adresse, etc., qui apparaissent dans l'en-tête et le pied de page des documents. Vous pouvez en apprendre davantage sur la configuration de l'en-tête de lettre dans Cortex ici.
+
+"
+"# Create a Quotation
+
+Let’s get started with business transactions by creating your first Quotation. You can create a Quotation for an existing customer or a prospect. It will be an approved document, with items you sell and the proposed price + taxes applied. After completing the instructions, you will get a Quotation in a ready to share print format.","# Créer un devis
+
+Commençons les opérations commerciales en créant votre premier devis. Vous pouvez créer un devis pour un client existant ou un prospect. Ce sera un document approuvé, avec les articles que vous vendez, le prix proposé et les taxes appliquées. À la fin des instructions, vous obtiendrez un devis prêt à partager en format d'impression."
+"# Create a Supplier
+
+Also known as Vendor, is a master at the center of your purchase transactions. Suppliers are linked in Request for Quotation, Purchase Orders, Receipts, and Payments. Suppliers can be either numbered or identified by name.
+
+Through Supplier’s master, you can effectively track essentials like:
+ - Supplier’s multiple address and contacts
+ - Account Receivables
+ - Credit Limit and Credit Period
+","# Créer un fournisseur
+
+Aussi appelé vendeur, le fournisseur est une fiche au centre de vos opérations d'achat. Les fournisseurs sont liés aux demandes de devis, aux commandes d'achat, aux réceptions et aux paiements. Un fournisseur peut être identifié par un numéro ou par son nom.
+
+Grâce à la fiche fournisseur, vous suivez l'essentiel :
+ - Les adresses et contacts multiples du fournisseur
+ - Les comptes à payer
+ - La limite et le délai de crédit
+
+"
+"# Create a Supplier
+In this step we will create a **Supplier**. If you have already created a **Supplier** you can skip this step.","# Créer un fournisseur
+À cette étape, nous créons un **fournisseur**. Si vous en avez déjà créé un, vous pouvez sauter cette étape."
+"# Create a Work Order
+
+A Work Order or a Job order is given to the manufacturing shop floor by the Production Manager to initiate the manufacturing of a certain quantity of an item. Work Order carriers details of production Item, its BOM, quantities to be manufactured, and operations.
+
+Through Work Order, you can track various production status like:
+
+- Issue of raw-material to shop material
+- Progress on each Workstation via Job Card
+- Manufactured Quantity against Work Order
+","# Créer un ordre de fabrication
+
+Un ordre de fabrication est donné à l'atelier par le responsable de production pour lancer la fabrication d'une certaine quantité d'un article. Il contient le détail de l'article à produire, sa nomenclature, les quantités à fabriquer et les opérations.
+
+Grâce à l'ordre de fabrication, vous suivez l'état de la production :
+
+- Sortie des matières premières vers l'atelier
+- Avancement à chaque poste de travail par la fiche de travail
+- Quantité fabriquée par rapport à l'ordre de fabrication
+
+"
+"# Create an Item
+
+Item is a product or a service offered by your company, or something you buy as a part of your supplies or raw materials.
+
+Items are integral to everything you do in ERPNext - from billing, purchasing to managing inventory. Everything you buy or sell, whether it is a physical product or a service is an Item. Items can be stock, non-stock, variants, serialized, batched, assets, etc.
+","# Créer un article
+
+Un article est un produit ou un service offert par votre entreprise, ou un élément que vous achetez comme fourniture ou matière première.
+
+Les articles sont au cœur de tout ce que vous faites dans Cortex : facturation, achats, gestion des stocks. Tout ce que vous achetez ou vendez, produit physique ou service, est un article. Les articles peuvent être stockés ou non, avoir des variantes, être sérialisés, en lots, des actifs, etc.
+
+"
+"# Create an Item
+The Stock module deals with the movement of items.
+
+In this step we will create an  [**Item**](https://docs.erpnext.com/docs/user/manual/en/stock/item).","# Créer un article
+Le module Stock gère les mouvements d'articles.
+
+À cette étape, nous créons un [**article**](https://docs.Cortex.com/docs/user/manual/en/stock/item)."
+"# Create first Purchase Order
+
+Purchase Order is at the heart of your buying transactions. In ERPNext, Purchase Order can can be created against a Purchase Material Request (indent) and Supplier Quotation as well.  Purchase Orders is also linked to Purchase Receipt and Purchase Invoices, allowing you to keep a birds-eye view on your purchase deals.
+
+","# Créer votre première commande d'achat
+
+La commande d'achat est au cœur de vos opérations d'achat. Dans Cortex, elle peut être créée à partir d'une demande de matériel (demande d'achat) et d'un devis fournisseur. Elle est aussi liée à la réception d'achat et aux factures d'achat, ce qui vous donne une vue d'ensemble de vos achats.
+
+"
+"# Create your first Purchase Invoice
+
+A Purchase Invoice is a bill received from a Supplier for a product(s) or service(s) delivery to your company. You can track payables through Purchase Invoice and process Payment Entries against it.
+
+Purchase Invoices can also be created against a Purchase Order or Purchase Receipt.","# Créer votre première facture d'achat
+
+Une facture d'achat est la facture reçue d'un fournisseur pour la livraison de produits ou de services à votre entreprise. Vous suivez les comptes à payer par la facture d'achat et traitez les paiements à partir de celle-ci.
+
+Les factures d'achat peuvent aussi être créées à partir d'une commande d'achat ou d'une réception d'achat."
+"# Financial Statements
+
+In ERPNext, you can get crucial financial reports like [Balance Sheet] and [Profit and Loss] statements with a click of a button. You can run in the report for a different period and plot analytics charts premised on statement data. For more reports, check sections like Financial Statements, General Ledger, and Profitability reports.
+
+<b>[Check Accounting reports](https://docs.erpnext.com/docs/v13/user/manual/en/accounts/accounting-reports)</b>","# États financiers
+
+Dans Cortex, vous obtenez d'un clic les principaux rapports financiers, comme le [bilan] et l'[état des résultats]. Vous pouvez les exécuter pour différentes périodes et tracer des graphiques d'analyse à partir des données. Pour d'autres rapports, consultez les sections États financiers, Grand livre et Rentabilité.
+
+<b>[Consulter les rapports de comptabilité](https://docs.Cortex.com/docs/v13/user/manual/en/accounts/accounting-reports)</b>"
+"# Fixed Asset Accounts
+
+With the company, a host of fixed asset accounts are pre-configured. To ensure your asset transactions are leading to correct accounting entries, you can review and set up following asset accounts as per your business  requirements.
+ - Fixed asset accounts (Asset account)
+ - Accumulated depreciation
+ - Capital Work in progress (CWIP) account
+ - Asset Depreciation account (Expense account)","# Comptes d'immobilisations
+
+Avec la société, plusieurs comptes d'immobilisations sont préconfigurés. Pour que vos opérations sur les actifs produisent les bonnes écritures comptables, vous pouvez vérifier et configurer les comptes suivants selon vos besoins :
+ - Comptes d'immobilisations (compte d'actif)
+ - Amortissement cumulé
+ - Compte des travaux en cours (CWIP)
+ - Compte d'amortissement (compte de charges)"
+"# How Production Planning Works
+
+Production Plan helps in production and material planning for the Items planned for manufacturing. These production items can be committed via Sales Order (to Customers) or Material Requests (internally).
+","# Comment fonctionne la planification de production
+
+Le plan de production aide à planifier la production et les matières pour les articles à fabriquer. Ces articles peuvent être demandés par une commande client (pour des clients) ou par des demandes de matériel (en interne).
+
+"
+"# Import Data from Spreadsheet
+
+In ERPNext, you can easily migrate your historical data using spreadsheets. You can use it for migrating not just masters (like Customer, Supplier, Items), but also for transactions like (outstanding invoices, opening stock and accounting entries, etc).","# Importer des données depuis un tableur
+
+Dans Cortex, vous pouvez facilement migrer vos données historiques à l'aide de tableurs. Vous pouvez migrer non seulement les fiches maîtresses (clients, fournisseurs, articles), mais aussi les opérations (factures en souffrance, stock d'ouverture, écritures comptables, etc.)."
+"# Introduction to Stock Entry
+This video will give a quick introduction to [**Stock Entry**](https://docs.erpnext.com/docs/user/manual/en/stock/stock-entry).","# Introduction aux écritures de stock
+Cette vidéo présente brièvement les [**écritures de stock**](https://docs.Cortex.com/docs/user/manual/en/stock/stock-entry)."
+"# Manage Stock Movements
+Stock entry allows you to register the movement of stock for various purposes like transfer, received, issues, repacked, etc. To address issues related to theft and pilferages,  you can always ensure that the movement of goods happens against a document reference Stock Entry in ERPNext.
+
+Let’s get a quick walk-through on the various scenarios covered in Stock Entry by watching [*this video*](https://www.youtube.com/watch?v=Njt107hlY3I).","# Gérer les mouvements de stock
+L'écriture de stock permet d'enregistrer les mouvements de stock à différentes fins : transfert, réception, sortie, reconditionnement, etc. Pour prévenir le vol et la perte, vous pouvez toujours exiger que le mouvement de marchandises se fasse à partir d'un document d'écriture de stock dans Cortex.
+
+Voyez rapidement les différents scénarios couverts par l'écriture de stock en regardant [*cette vidéo*](https://www.youtube.com/watch?v=Njt107hlY3I)."
+"# Navigation in ERPNext
+
+Ease of navigating and browsing around the ERPNext is one of our core strengths. In the following video, you will learn how to reach a specific feature in ERPNext via module page or AwesomeBar.","# Navigation dans Cortex
+
+La facilité de navigation est l'une de nos grandes forces. Dans la vidéo suivante, vous verrez comment atteindre une fonction précise par la page d'un module ou par la barre de recherche."
+"# Purchase an Asset
+
+Assets purchases process if done following the standard Purchase cycle. If capital work in progress is enabled in Asset Category, Asset will be created as soon as Purchase Receipt is created for it. You can quickly create a Purchase Receipt for Asset and see its impact on books of accounts.","# Acheter un actif
+
+L'achat d'un actif suit le cycle d'achat habituel. Si les travaux en cours sont activés dans la catégorie d'actif, l'actif est créé dès la création de la réception d'achat. Vous pouvez créer rapidement une réception d'achat pour un actif et voir son effet sur les livres comptables."
+"# Review Manufacturing Settings
+
+In ERPNext, the Manufacturing module’s features are configurable as per your business needs. Manufacturing Settings is the place where you can set your preferences for:
+
+- Capacity planning for allocating jobs to workstations
+- Raw-material consumption based on BOM or actual
+- Default values and over-production allowance
+","# Vérifier les paramètres de fabrication
+
+Dans Cortex, les fonctions du module Fabrication se configurent selon les besoins de votre entreprise. Les paramètres de fabrication permettent de définir vos préférences pour :
+
+- La planification de capacité pour affecter les tâches aux postes de travail
+- La consommation des matières premières selon la nomenclature ou selon le réel
+- Les valeurs par défaut et la tolérance de surproduction
+
+"
+"# Review Stock Settings
+
+In ERPNext, the Stock module’s features are configurable as per your business needs. Stock Settings is the place where you can set your preferences for:
+- Default values for Item and Pricing
+- Default valuation method for inventory valuation
+- Set preference for serialization and batching of item
+- Set tolerance for over-receipt and delivery of items","# Vérifier les paramètres de stock
+
+Dans Cortex, les fonctions du module Stock se configurent selon les besoins de votre entreprise. Les paramètres de stock permettent de définir vos préférences pour :
+- Les valeurs par défaut des articles et des prix
+- La méthode d'évaluation des stocks par défaut
+- La sérialisation et la gestion par lots des articles
+- La tolérance de sur-réception et de sur-livraison d'articles"
+"# Sales Order
+
+A Sales Order is a confirmation of an order from your customer. It is also referred to as Proforma Invoice.
+
+Sales Order at the heart of your sales and purchase transactions. Sales Orders are linked in Delivery Note, Sales Invoices, Material Request, and Maintenance transactions. Through Sales Order, you can track fulfillment of the overall deal towards the customer.","# Commande client
+
+Une commande client est la confirmation d'une commande de votre client. On l'appelle aussi facture proforma.
+
+La commande client est au cœur de vos opérations de vente et d'achat. Elle est liée aux bons de livraison, aux factures de vente, aux demandes de matériel et aux opérations d'entretien. Grâce à elle, vous suivez l'exécution de l'ensemble de la transaction envers le client."
+"# Selling Settings
+
+CRM and Selling module’s features are configurable as per your business needs. Selling Settings is the place where you can set your preferences for:
+ - Customer naming and default values
+ - Billing and shipping preference in sales transactions
+","# Paramètres de vente
+
+Les fonctions des modules CRM et Ventes se configurent selon les besoins de votre entreprise. Les paramètres de vente permettent de définir vos préférences pour :
+ - La nomination des clients et les valeurs par défaut
+ - Les préférences de facturation et de livraison dans les opérations de vente
+
+"
+"# Set Up a Company
+
+A company is a legal entity for which you will set up your books of account and create accounting transactions. In ERPNext, you can create multiple companies, and establish relationships (group/subsidiary) among them.
+
+Within the company master, you can capture various default accounts for that Company and set crucial settings related to the accounting methodology followed for a company.
+","# Configurer une société
+
+Une société est une entité juridique pour laquelle vous tenez des livres comptables et créez des écritures. Dans Cortex, vous pouvez créer plusieurs sociétés et établir des liens entre elles (groupe et filiale).
+
+Dans la fiche société, vous saisissez les comptes par défaut de la société et les paramètres importants liés à la méthode comptable qu'elle suit.
+
+"
+"# Setting up Taxes
+
+ERPNext lets you configure your taxes so that they are automatically applied in your buying and selling transactions. You can configure them globally or even on Items. ERPNext taxes are pre-configured for most regions.","# Configurer les taxes
+
+Cortex vous permet de configurer vos taxes pour qu'elles s'appliquent automatiquement à vos opérations d'achat et de vente. Vous pouvez les configurer globalement ou même par article. Les taxes sont préconfigurées pour la plupart des régions."
+"# Setup Routing
+
+A Routing stores all Operations along with the description, hourly rate, operation time, batch size, etc. Click below to learn how the Routing template can be created, for quick selection in the BOM.","# Configurer une gamme
+
+Une gamme conserve toutes les opérations avec leur description, leur taux horaire, leur durée, la taille de lot, etc. Cliquez ci-dessous pour apprendre à créer un modèle de gamme afin de le sélectionner rapidement dans la nomenclature."
+"# Setup a Warehouse
+The warehouse can be your location/godown/store where you maintain the item's inventory, and receive/deliver them to various parties.
+
+In ERPNext, you can maintain a Warehouse in the tree structure, so that location and sub-location of an item can be tracked. Also, you can link a Warehouse to a specific Accounting ledger, where the real-time stock value of that warehouse’s item will be reflected.","# Configurer un entrepôt
+L'entrepôt peut être votre emplacement, dépôt ou magasin où vous gérez l'inventaire des articles, et d'où vous les recevez ou les livrez à différentes parties.
+
+Dans Cortex, vous pouvez organiser les entrepôts en arborescence pour suivre l'emplacement et le sous-emplacement d'un article. Vous pouvez aussi lier un entrepôt à un compte comptable précis, où se reflète la valeur en temps réel des articles de cet entrepôt."
+"# Track Material Request
+
+
+Also known as Purchase Request or an Indent, is a document identifying a requirement of a set of items (products or services) for various purposes like procurement, transfer, issue, or manufacturing. Once the Material Request is validated, a purchase manager can take the next actions for purchasing items like requesting RFQ from a supplier or directly placing an order with an identified Supplier.
+
+","# Suivre une demande de matériel
+
+
+Aussi appelée demande d'achat, c'est le document qui indique le besoin d'un ensemble d'articles (produits ou services) pour diverses fins : approvisionnement, transfert, sortie ou fabrication. Une fois la demande de matériel validée, un responsable des achats peut passer aux étapes suivantes : demander des devis à un fournisseur ou passer directement commande auprès d'un fournisseur retenu.
+
+
+"
+"# Update Stock Opening Balance
+It’s an entry to update the stock balance of an item, in a warehouse, on a date and time you are going live on ERPNext.
+
+Once opening stocks are updated, you can create transactions like manufacturing and stock deliveries, where this opening stock will be consumed.","# Mettre à jour le solde de stock d'ouverture
+C'est une écriture qui met à jour le solde de stock d'un article, dans un entrepôt, à la date et à l'heure de votre mise en service dans Cortex.
+
+Une fois les stocks d'ouverture mis à jour, vous pouvez créer des opérations comme la fabrication et les livraisons, qui consommeront ce stock d'ouverture."
+"# Updating Opening Balances
+
+Once you close the financial statement in previous accounting software, you can update the same as opening in your ERPNext's Balance Sheet accounts. This will allow you to get complete financial statements from ERPNext in the coming years, and discontinue the parallel accounting system right away.","# Mettre à jour les soldes d'ouverture
+
+Quand vous fermez les états financiers dans votre ancien logiciel comptable, vous pouvez les saisir comme soldes d'ouverture dans les comptes du bilan d'Cortex. Vous obtiendrez ainsi des états financiers complets dans Cortex pour les années à venir et pourrez cesser tout de suite la comptabilité parallèle."
+"# View Warehouse
+In ERPNext the term 'warehouse' can be thought of as a storage location.
+
+Warehouses are arranged in ERPNext in a tree like structure, where multiple sub-warehouses can be grouped under a single warehouse.
+
+In this step we will view the [**Warehouse Tree**](https://docs.erpnext.com/docs/user/manual/en/stock/warehouse#21-tree-view) to view the [**Warehouses**](https://docs.erpnext.com/docs/user/manual/en/stock/warehouse) that are set by default.","# Consulter l'entrepôt
+Dans Cortex, le terme « entrepôt » désigne un lieu de stockage.
+
+Les entrepôts sont organisés en arborescence : plusieurs sous-entrepôts peuvent être regroupés sous un seul entrepôt.
+
+À cette étape, nous consultons l'[**arborescence des entrepôts**](https://docs.Cortex.com/docs/user/manual/en/stock/warehouse#21-tree-view) pour voir les [**entrepôts**](https://docs.Cortex.com/docs/user/manual/en/stock/warehouse) définis par défaut."
+"## Products and Services
+
+Depending on the nature of your business, you might be selling products or services to your clients or even both. 
+ERPNext is optimized for itemized management of your sales and purchase.
+
+The **Item Master**  is where you can add all your sales items. If you are in services, you can create an Item for each service that you offer. If you run a manufacturing business, the same master is used for keeping a record of raw materials, sub-assemblies etc.
+
+Completing the Item Master is very essential for the successful implementation of ERPNext. We have a brief video introducing the item master for you, you can watch it in the next step.","## Produits et services
+
+Selon la nature de votre entreprise, vous vendez des produits, des services ou les deux.
+Cortex est optimisé pour la gestion détaillée par article de vos ventes et de vos achats.
+
+La **fiche article** est l'endroit où vous ajoutez tout ce que vous vendez. Si vous offrez des services, vous pouvez créer un article pour chaque service. Si vous fabriquez, la même fiche sert à conserver les matières premières, les sous-ensembles, etc.
+
+Bien remplir la fiche article est essentiel à la réussite de la mise en place d'Cortex. Une courte vidéo présente la fiche article à l'étape suivante."
+"## Who is a Customer?
+
+A customer, who is sometimes known as a client, buyer, or purchaser is the one who receives goods, services, products, or ideas, from a seller for a monetary consideration.
+
+Every customer needs to be assigned a unique id. Customer name itself can be the id or you can set a naming series for ids to be generated in Selling Settings.
+
+Just like the supplier, let's quickly create a customer.","## Qui est un client?
+
+Un client, parfois appelé acheteur, est celui qui reçoit des biens, des services, des produits ou des idées d'un vendeur en échange d'une contrepartie financière.
+
+Chaque client doit avoir un identifiant unique. Le nom du client peut servir d'identifiant, ou vous pouvez définir une série de numérotation dans les paramètres de vente.
+
+Comme pour le fournisseur, créons rapidement un client."
+"## Who is a Supplier?
+
+Suppliers are companies or individuals who provide you with products or services. ERPNext has comprehensive features for purchase cycles. 
+
+Let's quickly create a supplier with the minimal details required. You need the name of the supplier, assign the supplier to a group, and select the type of the supplier, viz. Company or Individual.","## Qui est un fournisseur?
+
+Les fournisseurs sont des entreprises ou des personnes qui vous fournissent des produits ou des services. Cortex offre des fonctions complètes pour les cycles d'achat.
+
+Créons rapidement un fournisseur avec le minimum de renseignements : son nom, son groupe et son type, soit entreprise ou particulier."
+% Complete must be between 0 and 100,Le % d'achèvement doit être compris entre 0 et 100
+'Verification Link Expiry Duration' must be between 15 to 60 minutes.,La « durée d'expiration du lien de vérification » doit être comprise entre 15 et 60 minutes.
+'{0}' has been already added.,« {0} » a déjà été ajouté.
+<b>Row #{0}:</b> Bundle {1} in warehouse {2} has insufficient packed items:<br><div style='margin-top: 15px;'><ul style='line-height: 0.8;'>{3}</ul></div>,<b>Ligne n° {0} :</b> le lot {1} de l'entrepôt {2} n'a pas assez d'articles emballés :<br><div style='margin-top: 15px;'><ul style='line-height: 0.8;'>{3}</ul></div>
+"<div class=""text-muted text-center"">{0}</div>","<div class=""text-muted text-center"">{0}</div>"
+"<li>Packed Item {0}: Required {1}, Available {2}</li>","<li>Article emballé {0} : requis {1}, disponible {2}</li>"
+"<span class=""h2"">Hi,</span>","<span class=""h2"">Bonjour,</span>"
+"<span class=""h4""><b>Documents</b></span>","<span class=""h4""><b>Documents</b></span>"
+"<span class=""h4""><b>Reports & Masters</b></span>","<span class=""h4""><b>Rapports et fiches maîtresses</b></span>"
+"<span style=""font-size: 18px; letter-spacing: 0.18px;""><b>Components to build your app</b></span>","<span style=""font-size: 18px; letter-spacing: 0.18px;""><b>Composants pour bâtir votre application</b></span>"
+"<span style=""font-size: 18px; letter-spacing: 0.18px;""><b>Get started</b><br></span>","<span style=""font-size: 18px; letter-spacing: 0.18px;""><b>Pour commencer</b><br></span>"
+<strong>Total qty</strong> of the rows (<strong>{0}</strong>) does not match the <strong>Qty to Fetch</strong> (<strong>{1}</strong>). Qty of the item will be changed to <strong>{0}</strong>. Are you sure want to proceed?,La <strong>quantité totale</strong> des lignes (<strong>{0}</strong>) ne correspond pas à la <strong>quantité à récupérer</strong> (<strong>{1}</strong>). La quantité de l'article sera changée pour <strong>{0}</strong>. Voulez-vous continuer?
+"A DocType (Document Type) is used to insert forms in ERPNext. Forms such as Customer, Orders, and Invoices are Doctypes in the backend. You can also create new DocTypes to create new forms in ERPNext as per your business needs.","Un type de document (DocType) sert à créer des formulaires dans Cortex. Les formulaires comme Client, Commande et Facture sont des types de documents en arrière-plan. Vous pouvez aussi créer de nouveaux types de documents pour ajouter des formulaires selon vos besoins."
+A Period Closing Voucher is already submitted and an Opening Entry can no longer be created. {0} to learn more.,Une pièce de clôture de période est déjà validée : il n'est plus possible de créer une écriture d'ouverture. {0} pour en savoir plus.
+"A Sales Order is a confirmation of an order from your customer. It is also referred to as Proforma Invoice.
+
+Sales Order at the heart of your sales and purchase transactions. Sales Orders are linked in Delivery Note, Sales Invoices, Material Request, and Maintenance transactions. Through Sales Order, you can track fulfillment of the overall deal towards the customer.","Une commande client est la confirmation d'une commande de votre client. On l'appelle aussi facture proforma.
+
+La commande client est au cœur de vos opérations de vente et d'achat. Elle est liée aux bons de livraison, aux factures de vente, aux demandes de matériel et aux opérations d'entretien. Grâce à elle, vous suivez l'exécution de l'ensemble de la transaction envers le client."
+A draft reverse journal for {0} has been created: {1},Un brouillon d'écriture d'extourne a été créé pour {0} : {1}
+A file with same name {} already exists,Un fichier du même nom {} existe déjà
+A verified appointment cannot be moved back to 'Unverified' status.,Un rendez-vous vérifié ne peut pas revenir au statut « Non vérifié ».
+API Details,Détails de l'API
+Account {0} does not belong to Company {1},Le compte {0} n'appartient pas à la société {1}
+Account {0} does not belong to company {1},Le compte {0} n'appartient pas à la société {1}
+Accounting Period cannot be created for a future date. End Date {0} is after today.,Une période comptable ne peut pas être créée pour une date future. La date de fin {0} est postérieure à aujourd'hui.
+Accounts Receivable / Payable Report,Rapport des comptes clients et fournisseurs
+"Accounts cannot be removed, as user doesn't have access to all the accounts of {0}.","Les comptes ne peuvent pas être retirés, car la personne n'a pas accès à tous les comptes de {0}."
+"Accounts, Invoices, Taxation, and more.","Comptes, factures, taxes et plus."
+Action for Expired Unverified Appointments,Action pour les rendez-vous non vérifiés expirés
+Add Blog Category,Ajouter une catégorie de blogue
+Add Row,Ajouter une ligne
+Add Schedule,Ajouter un horaire
+Add an Existing Asset,Ajouter un actif existant
+Add atleast one voucher to repost.,Ajoutez au moins une pièce à republier.
+Add attachment,Ajouter une pièce jointe
+Add page break,Ajouter un saut de page
+Add section above,Ajouter une section au-dessus
+Add vouchers to generate preview.,Ajoutez des pièces pour générer l'aperçu.
+Additional Discount Amount ({discount_amount}) cannot exceed ,Le montant de la remise supplémentaire ({discount_amount}) ne peut pas dépasser 
+Advance Booking Days is mandatory for Appointment Scheduling.,Le nombre de jours de réservation à l'avance est obligatoire pour la prise de rendez-vous.
+Age as on,Âge au
+All picked items have already been transferred against this Pick List,Tous les articles prélevés ont déjà été transférés pour cette liste de prélèvement
+Allow Editing After Submit,Autoriser la modification après validation
+Allow Editing of Items and Quantities in Work Order,Autoriser la modification des articles et des quantités dans l'ordre de fabrication
+Allow Multiple Responses,Autoriser plusieurs réponses
+Allow Negative Stock for Batch,Autoriser le stock négatif pour le lot
+Allow Older Web View Links (Insecure),Autoriser les anciens liens d'affichage Web (non sécuritaire)
+Allow recording my first session to improve user experience,Autoriser l'enregistrement de ma première session pour améliorer l'expérience
+Allowed Doctypes for Guest Uploads,Types de documents autorisés pour les dépôts des invités
+Allowed Users,Utilisateurs autorisés
+Allowed Users is not required as Frappe CRM is already installed on the site.,"Les utilisateurs autorisés ne sont pas nécessaires, car Frappe CRM est déjà installé sur le site."
+Allowed Users is required for data synchronization from remote Frappe CRM site.,Les utilisateurs autorisés sont requis pour la synchronisation des données depuis un site Frappe CRM distant.
+Allows printing or PDF download of documents.,Permet d'imprimer les documents ou de les télécharger en PDF.
+Allows sharing document access with other users.,Permet de partager l'accès au document avec d'autres utilisateurs.
+Allows the user to access reports related to the document.,Permet à la personne d'accéder aux rapports liés au document.
+Allows the user to create new documents.,Permet à la personne de créer de nouveaux documents.
+Allows the user to delete documents.,Permet à la personne de supprimer des documents.
+Allows the user to edit existing records they have access to.,Permet à la personne de modifier les enregistrements auxquels elle a accès.
+Allows the user to email from the document.,Permet à la personne d'envoyer un courriel depuis le document.
+Allows the user to export data from the Report view.,Permet à la personne d'exporter les données de la vue Rapport.
+Allows the user to search and see records.,Permet à la personne de chercher et de voir les enregistrements.
+Allows the user to use Data Import tool to create / update records.,Permet à la personne d'utiliser l'outil d'importation pour créer ou mettre à jour des enregistrements.
+Allows the user to view the document.,Permet à la personne de voir le document.
+Allows users to enable the mask property for any field of the respective doctype.,Permet aux utilisateurs d'activer le masquage pour n'importe quel champ du type de document concerné.
+An appointment booked through the portal can only be opened via email verification.,Un rendez-vous réservé par le portail ne peut être ouvert que par la vérification du courriel.
+An error occured for certain Items while creating Material Requests based on Re-order level. Please rectify these issues :,Une erreur s'est produite pour certains articles lors de la création des demandes de matériel selon le seuil de réapprovisionnement. Veuillez corriger ces problèmes :
+App that produced this notification; used to scope app-specific panels. Derived from the reference document when not set explicitly.,Application qui a produit cette notification ; sert à limiter les panneaux propres à une application. Déduite du document de référence si elle n'est pas définie.
+App {} is not installed,L'application {} n'est pas installée
+Appointment Booking Portal Settings,Paramètres du portail de réservation de rendez-vous
+Appointment Confirmed,Rendez-vous confirmé
+Appointment Scheduling,Prise de rendez-vous
+Appointment Scheduling needs to be enabled for Appointment Booking through portal.,La prise de rendez-vous doit être activée pour réserver par le portail.
+Appointment can only be scheduled up to {0} day(s) in advance.,Un rendez-vous ne peut être pris que jusqu'à {0} jour(s) à l'avance.
+Appointment cannot be scheduled for a past time.,Un rendez-vous ne peut pas être fixé à une heure passée.
+Appointment cannot be scheduled on a holiday.,Un rendez-vous ne peut pas être fixé un jour férié.
+Appointment has been closed. Please book the appointment again.,Le rendez-vous a été fermé. Veuillez le réserver de nouveau.
+Appointment is already verified.,Le rendez-vous est déjà vérifié.
+Appointment must be scheduled within the available slot timings.,Le rendez-vous doit être fixé dans les plages horaires disponibles.
+Appointments created manually cannot have 'Unverified' status.,Les rendez-vous créés manuellement ne peuvent pas avoir le statut « Non vérifié ».
+Are you sure you want to delete page {0}?,Voulez-vous vraiment supprimer la page {0} ?
+Are you sure you want to log out?,Voulez-vous vraiment vous déconnecter ?
+Are you sure you want to relink this communication?,Voulez-vous vraiment relier de nouveau cette communication ?
+Are you sure you want to resend the invitation?,Voulez-vous vraiment renvoyer l'invitation ?
+Are you sure you want to send this newsletter now?,Voulez-vous vraiment envoyer cette infolettre maintenant ?
+Asset Depreciation Details,Détails d'amortissement de l'actif
+"Asset Depreciation Schedules created:<br>{0}<br><br>Please check, edit if needed, and submit the Asset.","Calendriers d'amortissement de l'actif créés :<br>{0}<br><br>Veuillez les vérifier, les modifier au besoin, puis valider l'actif."
+Asset created after Asset Capitalization {0} was submitted,Actif créé après la validation de la capitalisation d'actif {0}
+Asset updated after cancellation of Asset Repair {0},Actif mis à jour après l'annulation de la réparation d'actif {0}
+Asset updated after completion of Asset Repair {0},Actif mis à jour après l'achèvement de la réparation d'actif {0}
+Asset {0} does not belong to the custodian {1},L'actif {0} n'appartient pas au dépositaire {1}
+Asset {0} does not belong to the location {1},L'actif {0} n'appartient pas à l'emplacement {1}
+Asset {0} has been created. Please set the depreciation details if any and submit it.,"L'actif {0} a été créé. Veuillez définir les détails d'amortissement, s'il y a lieu, puis le valider."
+"Assets, Depreciations, Repairs, and more.","Actifs, amortissements, réparations et plus."
+Asset{is_plural} {assets_link} created for {item_code},Actif{is_plural} {assets_link} créé(s) pour {item_code}
+At least one raw material item must be present in the stock entry for the type {0},Au moins une matière première doit figurer dans l'écriture de stock de type {0}
+Attachment Gallery,Galerie de pièces jointes
+Attachment Gallery filters must target File.,Les filtres de la galerie de pièces jointes doivent viser les fichiers.
+Attendee not found in this event.,Participant introuvable dans cet événement.
+Attribute Value {0} is not valid for the selected attribute {1}.,La valeur d'attribut {0} n'est pas valide pour l'attribut sélectionné {1}.
+Attribute {0} is disabled.,L'attribut {0} est désactivé.
+Attribute {0} is not valid for the selected template.,L'attribut {0} n'est pas valide pour le modèle sélectionné.
+Authorization POST requests must use application/x-www-form-urlencoded,Les requêtes POST d'autorisation doivent utiliser application/x-www-form-urlencoded
+Automatically Fetch Payment Terms from Order/Quotation,Récupérer automatiquement les conditions de paiement depuis la commande ou le devis
+BOM Creator Item with name {0} does not exist,L'article du créateur de nomenclature nommé {0} n'existe pas
+BOM Creator Item {0} does not exist,L'article {0} du créateur de nomenclature n'existe pas
+BOM and Finished Good Quantity is mandatory for Disassembly,La nomenclature et la quantité de produit fini sont obligatoires pour le démontage
+Balance Sheet Closing Balance,Solde de clôture du bilan
+Balance Sheet requires {0} to be synced to DuckDB,Le bilan exige que {0} soit synchronisé avec DuckDB
+Batch Qty updated successfully,Quantité du lot mise à jour avec succès
+Batch Qty updated to {0},Quantité du lot mise à jour à {0}
+"Blogs, Website View Tracking, and more.","Blogues, suivi des vues du site Web et plus."
+Books have been closed till the period ending on {0}.,Les livres sont fermés jusqu'à la période se terminant le {0}.
+Browse by category,Parcourir par catégorie
+Bucket {0} not found.,Le compartiment {0} est introuvable.
+"Budget cannot be assigned against {0}, as its Root Type is not of Income or Expense","Le budget ne peut pas être affecté à {0}, car son type racine n'est ni Revenu ni Charge"
+Bulk Actions,Actions groupées
+"By default, emails are only sent for failed backups.","Par défaut, des courriels ne sont envoyés que pour les sauvegardes qui échouent."
+Call to Action,Appel à l'action
+Campaign {0} not found,Campagne {0} introuvable
+Can Read,Peut lire
+Can Share,Peut partager
+Can Submit,Peut valider
+Can Write,Peut écrire
+Cancel Scheduling,Annuler la planification
+Cannot cancel this document as it is linked with the submitted Asset Value Adjustment <b>{0}</b>. Please cancel the Asset Value Adjustment to continue.,"Impossible d'annuler ce document, car il est lié à l'ajustement de valeur d'actif validé <b>{0}</b>. Annulez d'abord l'ajustement de valeur d'actif pour continuer"
+Cannot change Item {0} from serialized to non-serialized because a Serial and Batch Bundle exists for it. Please delete or cancel the Serial and Batch Bundle first.,"Impossible de faire passer l'article {0} de sérialisé à non sérialisé, car un lot de numéros de série et de lots existe pour cet article. Supprimez ou annulez d'abord ce lot de numéros de série et de lots."
+Cannot create Intercompany {0}. All items in the source {1} have already been fully invoiced. ,Impossible de créer l'opération intersociétés {0}. Tous les articles de la source {1} ont déjà été entièrement facturés. 
+Cannot declare as Lost because an active Quotation exists.,"Impossible de déclarer comme perdu, car un devis actif existe."
+Cannot delete an item which has been ordered,Impossible de supprimer un article qui a été commandé
+Cannot delete private workspace of other users,Impossible de supprimer l'espace de travail privé d'autres utilisateurs
+Cannot delete public workspace without Workspace Manager role,Impossible de supprimer un espace de travail public sans le rôle Gestionnaire d'espaces de travail
+Cannot disable {0} as it may lead to incorrect stock valuation.,"Impossible de désactiver {0}, car cela pourrait fausser l'évaluation du stock."
+Cannot disassemble {0} qty against Stock Entry {1}. Only {2} qty available to disassemble.,Impossible de démonter {0} unités pour l'écriture de stock {1}. Seulement {2} unités peuvent être démontées.
+Cannot enable Opportunity creation from Contact Us because the Contact Us form is disabled.,"Impossible d'activer la création d'opportunités depuis « Nous joindre », car ce formulaire est désactivé."
+"Cannot find a default warehouse for item {0}. Please select one in the Update Items dialog, or set a default in the Item Master or in Stock Settings.","Impossible de trouver un entrepôt par défaut pour l'article {0}. Choisissez-en un dans la fenêtre de mise à jour des articles, ou définissez-en un dans la fiche article ou dans les paramètres de stock."
+Cannot merge {0} '{1}' into '{2}' as both have existing accounting entries in different currencies for company '{3}'.,Impossible de fusionner {0} « {1} » dans « {2} » : les deux ont des écritures comptables en devises différentes pour la société « {3} ».
+Cannot reduce quantity than ordered or purchased quantity,Impossible de réduire la quantité sous la quantité commandée ou achetée
+Cannot repost more than {0} vouchers at once. Split them into multiple documents.,Impossible de republier plus de {0} pièces à la fois. Répartissez-les en plusieurs documents.
+Cannot select a Group type Customer Group. Please select a non-group Customer Group.,Impossible de choisir un groupe de clients de type Groupe. Choisissez un groupe de clients qui n'est pas un groupe.
+Cannot update private workspace of other users,Impossible de modifier l'espace de travail privé d'autres utilisateurs
+Cannot update rate as item {0} is already ordered or purchased against this quotation,"Impossible de modifier le prix, car l'article {0} est déjà commandé ou acheté pour ce devis"
+Capitalization Method,Méthode de capitalisation
+Capitalize this asset before submitting.,Capitalisez cet actif avant de le valider.
+Category for the in-app notification. Used for filtering and per-user email preferences.,Catégorie de la notification dans l'application. Sert au filtrage et aux préférences de courriel par utilisateur.
+Check Availability in Warehouse,Vérifier la disponibilité dans l'entrepôt
+Check Stock Ledger,Consulter le grand livre des stocks
+Check Stock Projected Qty,Consulter la quantité projetée en stock
+Check broken links,Vérifier les liens brisés
+Checking broken links...,Vérification des liens brisés...
+Child Table {0} for field {1},Table enfant {0} du champ {1}
+Choose a WIP composite asset,Choisissez un actif composite en cours
+Choose which notification types are emailed to you. Unchecked types still show as in-app notifications.,Choisissez les types de notifications que vous recevez par courriel. Les types décochés s'affichent quand même dans l'application.
+Clear Last Scanned Warehouse,Effacer le dernier entrepôt balayé
+Clear Link,Effacer le lien
+Clear all filters,Effacer tous les filtres
+Cleared auto-assigned serial numbers and batch numbers for manual picking,Numéros de série et numéros de lot attribués automatiquement effacés pour un prélèvement manuel
+Click here to post bugs and suggestions,Cliquez ici pour signaler des bogues et faire des suggestions
+Closing Stock Balance,Solde de stock à la clôture
+Comment limit,Limite de commentaires
+Comment limit per hour,Limite de commentaires par heure
+Communication {0} is not on the timeline of Issue {1},La communication {0} ne figure pas dans l'historique de la demande {1}
+Company Account is mandatory,Le compte de la société est obligatoire
+Company is mandatory for company account,La société est obligatoire pour le compte de société
+Company {0} is not in South Africa.,La société {0} n'est pas en Afrique du Sud.
+Completed Quantity cannot be negative,La quantité terminée ne peut pas être négative
+Condition JSON,Condition JSON
+Configure Account Settings,Configurer les paramètres de comptabilité
+Configure Buying Settings.,Configurer les paramètres d'achat.
+Consumed Stock Items or Consumed Asset Items are mandatory for creating new composite asset,Des articles de stock consommés ou des actifs consommés sont obligatoires pour créer un nouvel actif composite
+Copy Attachments to Transaction,Copier les pièces jointes dans l'opération
+Copy Embed Code,Copier le code d'intégration
+Cost Center Validation Error,Erreur de validation du centre de coûts
+Cost Centers for Budgeting and Analysis,Centres de coûts pour le budget et l'analyse
+Could not auto update shifts. Shift with shift factor {0} needed.,Impossible de mettre à jour automatiquement les quarts. Un quart avec le facteur {0} est nécessaire.
+Could not start up: ,Démarrage impossible : 
+Create Blogger,Créer un blogueur
+Create Custom Fields,Créer des champs personnalisés
+Create Duplicate,Créer un doublon
+Create Raw Materials,Créer des matières premières
+Create Your First Purchase Invoice ,Créer votre première facture d'achat 
+Create Your First Sales Invoice ,Créer votre première facture de vente 
+Create a Customer,Créer un client
+Create a Finished Good,Créer un produit fini
+Create a Fixed Asset Item,Créer un article d'immobilisation
+Create a Product,Créer un produit
+Create a Quotation,Créer un devis
+Create a Sales Item,Créer un article à vendre
+Create a Sales Order,Créer une commande client
+Create a Supplier,Créer un fournisseur
+Create a Warehouse,Créer un entrepôt
+Create a new composite asset,Créer un nouvel actif composite
+Create an Asset,Créer un actif
+Create an Asset Category,Créer une catégorie d'actif
+Create an Asset Item,Créer un article d'actif
+Create an Item,Créer un article
+Create and Send Quotation,Créer et envoyer un devis
+Create and send emails to a specific group of subscribers periodically.,Créez et envoyez périodiquement des courriels à un groupe précis d'abonnés.
+Create first Purchase Order,Créer votre première commande d'achat
+Create new forms and views with doctypes. Set up multi-level workflows for approval,Créez de nouveaux formulaires et de nouvelles vues avec des types de documents. Configurez des flux d'approbation à plusieurs niveaux
+Create your first Quotation,Créer votre premier devis
+Create your first Sales Order,Créer votre première commande client
+Created through Portal,Créé par le portail
+Creditor Turnover Ratio,Ratio de rotation des fournisseurs
+Current Ratio,Ratio de liquidité générale
+Custom Document Types,Types de documents personnalisés
+"Custom Field, Custom Doctype, Naming Series, Role Permission, Workflow, Print Formats, Reports","Champ personnalisé, type de document personnalisé, série de numérotation, permission de rôle, flux de travail, formats d'impression, rapports"
+Customization onboarding is all done!,La personnalisation est terminée !
+Customize Print Formats,Personnaliser les formats d'impression
+DB Tables,Tables de la base de données
+Date ,Date 
+Dates to Process,Dates à traiter
+Debit / Credit Note Posting Date,Date de comptabilisation de la note de débit ou de crédit
+Debt Equity Ratio,Ratio d'endettement
+Debtor Turnover Ratio,Ratio de rotation des clients
+Default Ageing Range,Tranche de vieillissement par défaut
+Default Sales Contact,Contact de vente par défaut
+Default Target Warehouse {0} must be a Transit warehouse when Add to Transit is enabled.,L'entrepôt cible par défaut {0} doit être un entrepôt de transit lorsque « Ajouter au transit » est activé.
+Define Asset Category,Définir une catégorie d'actif
+Delete All,Tout supprimer
+Delete Demo Data,Supprimer les données de démonstration
+Delete Gravatar URLs,Supprimer les adresses Gravatar
+Delete Permanently,Supprimer définitivement
+Delete Workspace,Supprimer l'espace de travail
+Delete all the Transactions for {0},Supprimer toutes les opérations de {0}
+Deleted all documents successfully,Tous les documents ont été supprimés avec succès
+Deletion Steps ,Étapes de suppression 
+Delivered by Supplier,Livré par le fournisseur
+Delivery Note(s) created for the Pick List,Bon(s) de livraison créé(s) pour la liste de prélèvement
+Demo Bank Account,Compte bancaire de démonstration
+Direct return is not allowed for Timesheet.,Le retour direct n'est pas permis pour une feuille de temps.
+"Disable ""Consider Accounting Dimension"" Filter",Désactiver le filtre « Tenir compte de la dimension comptable »
+Disable Likes,Désactiver les mentions « J'aime »
+Disable Opening Balance Calculation,Désactiver le calcul du solde d'ouverture
+Disable Prepared Report Automation,Désactiver l'automatisation des rapports préparés
+Disable auto setting Grand Total to default Payment Mode,Désactiver l'affectation automatique du total général au mode de paiement par défaut
+Disabled Item {0} cannot be used in BOMs.,L'article désactivé {0} ne peut pas être utilisé dans des nomenclatures.
+Disabled Price List,Liste de prix désactivée
+Disassemble Qty cannot be less than or equal to 0.,La quantité à démonter ne peut pas être inférieure ou égale à 0.
+Disassemble Qty cannot be less than or equal to <b>0</b>.,La quantité à démonter ne peut pas être inférieure ou égale à <b>0</b>.
+Do Not Create New User ,Ne pas créer de nouvel utilisateur 
+Do Not Use Batchwise Valuation,Ne pas utiliser l'évaluation par lot
+Do not fetch incoming rate from Serial No,Ne pas récupérer le taux d'entrée depuis le numéro de série
+Do not have permission to access bucket {0}.,Vous n'avez pas la permission d'accéder au compartiment {0}.
+Doc Values,Valeurs du document
+DocType can be one of them {0},Le type de document peut être l'un de ceux-ci : {0}
+DocType must be a string,Le type de document doit être une chaîne de caractères
+"DocTypes can not be modified, please use {0} instead",Les types de documents ne peuvent pas être modifiés ; utilisez plutôt {0}
+Doctype To Sync,Type de document à synchroniser
+Doctype with same route already exist. Please choose different title.,Un type de document avec la même route existe déjà. Veuillez choisir un autre titre.
+Document Name must be a string,Le nom du document doit être une chaîne de caractères
+Document No,N° de document
+Document {0} {1} does not exist,Le document {0} {1} n'existe pas
+Dropbox Refresh Token,Jeton d'actualisation Dropbox
+DuckDB Sync,Synchronisation DuckDB
+DuckDB Sync Item,Élément de synchronisation DuckDB
+Dunning Letter for Dunning Type {0} in language '{1}' not found.,Lettre de relance du type de relance {0} dans la langue « {1} » introuvable.
+Dunning Letter for Dunning Type {0} not found.,Lettre de relance du type de relance {0} introuvable.
+Duplicate Closing Stock Balance,Doublon du solde de stock à la clôture
+Duplicate POS Fields,Champs de PDV en double
+Duplicate POS Search Fields,Champs de recherche de PDV en double
+Duplicate Workspace,Dupliquer l'espace de travail
+Duplicate languages found on Dunning Letter Text. Keep only one of them.,Des langues en double figurent dans le texte de la lettre de relance. Conservez-en une seule.
+Duplicate of {0} named as {1} is created successfully,Le doublon de {0} nommé {1} a été créé avec succès
+Duplicate vouchers found. Remove the duplicate vouchers to continue to repost.,Des pièces en double ont été trouvées. Retirez-les pour continuer la republication.
+"Each document created in ERPNext can have a unique ID generated for it, using a prefix defined for it. Though each document has some prefix pre-configured, you can further customize it using tools like Naming Series Tool and Document Naming Rule.
+","Chaque document créé dans Cortex peut avoir un identifiant unique généré à partir d'un préfixe défini. Même si chaque document a un préfixe préconfiguré, vous pouvez le personnaliser avec des outils comme l'outil de séries de numérotation et la règle de numérotation de document.
+
+"
+Edit Filter,Modifier le filtre
+Edit Qty,Modifier la quantité
+Edit Section,Modifier la section
+Edit Workspace,Modifier l'espace de travail
+Email Campaign Error,Erreur de campagne de courriel
+Email Campaign Send Error,Erreur d'envoi de la campagne de courriel
+Email Sent At,Courriel envoyé le
+Email Verified,Courriel vérifié
+Email couldn't be sent.,Le courriel n'a pas pu être envoyé.
+Email everyone for <b>{0}</b> notifications? This adds it to every user's email preferences. Users can still opt out individually afterwards.,Envoyer un courriel à tout le monde pour les notifications <b>{0}</b> ? Cela l'ajoute aux préférences de courriel de chaque utilisateur. Chaque personne pourra ensuite s'en désabonner individuellement
+Email me for these notification types,M'envoyer un courriel pour ces types de notifications
+Employee is required,L'employé est obligatoire
+Employee {0} already has a linked user,L'employé {0} a déjà un utilisateur lié
+Employee {0} does not belong to the company {1},L'employé {0} n'appartient pas à la société {1}
+Employee {0} not found,Employé {0} introuvable
+Enable <b>{0}</b> on the Item master to proceed with {1} inspection.,Activez <b>{0}</b> dans la fiche article pour poursuivre l'inspection {1}.
+Enable Appointment Booking Through Portal,Activer la réservation de rendez-vous par le portail
+Enable Email Notification,Activer les notifications par courriel
+Enable Email Notifications for All Users,Activer les notifications par courriel pour tous les utilisateurs
+Enable Frappe CRM Data Synchronization,Activer la synchronisation des données Frappe CRM
+Enable Opportunity Creation from Contact Us,Activer la création d'opportunités depuis « Nous joindre »
+Enable Rate Limit,Activer la limitation de débit
+Enable Snapshot Reports,Activer les rapports instantanés
+Enable Website Tracking,Activer le suivi du site Web
+Enable email notification for any comment or likes received on your Blog Post.,Activer la notification par courriel pour tout commentaire ou mention « J'aime » reçu sur votre article de blogue.
+Enable the notification type before emailing it to users.,Activez le type de notification avant de l'envoyer par courriel aux utilisateurs.
+Enabling email for {0} across all users in the background.,Activation du courriel pour {0} chez tous les utilisateurs en arrière-plan.
+"Enabling this will register your site on a central relay server to send push notifications for all installed apps through Firebase Cloud Messaging. This server only stores user tokens and error logs, and no messages are saved. ",Activer cette option enregistre votre site sur un serveur relais central afin d'envoyer des notifications poussées pour toutes les applications installées par Firebase Cloud Messaging. Ce serveur ne conserve que les jetons d'utilisateur et les journaux d'erreurs ; aucun message n'est enregistré. 
+"Every form in ERPNext has a standard set of fields. If you need to capture some information, but there is no standard Field available for it, you can insert Custom Field for it.
+
+Once custom fields are added, you can use them for reports and analytics charts as well.
+","Chaque formulaire d'Cortex a un ensemble standard de champs. Si vous devez saisir une information pour laquelle aucun champ standard n'existe, vous pouvez ajouter un champ personnalisé.
+
+Une fois les champs personnalisés ajoutés, vous pouvez les utiliser dans les rapports et les graphiques d'analyse.
+
+"
+Excess Disassembly,Démontage excédentaire
+Excess Material Transfer,Transfert de matières excédentaire
+Exchange rate {0} does not match the exchange rate of Purchase Receipt {1}. Use the same exchange rate as the Purchase Receipt or enable {2} in {3} to adjust the landed cost based on this invoice.,"Le taux de change {0} ne correspond pas à celui de la réception d'achat {1}. Utilisez le même taux de change que la réception d'achat, ou activez {2} dans {3} pour ajuster le coût au débarquement selon cette facture."
+Exclude Zero Balance Parties,Exclure les tiers à solde nul
+Excluded Fee,Frais exclus
+Existing Gravatar URLs may still be stored on User and Contact records. Do you want to delete these URLs now?,Des adresses Gravatar existantes peuvent encore être conservées dans les fiches utilisateur et contact. Voulez-vous supprimer ces adresses maintenant ?
+"Existing Gravatar URLs may still be stored on User, Contact, and Lead records. Do you want to delete these URLs now?","Des adresses Gravatar existantes peuvent encore être conservées dans les fiches utilisateur, contact et prospect. Voulez-vous supprimer ces adresses maintenant ?"
+Exit Full Screen,Quitter le plein écran
+Expires in a week or less,Expire dans une semaine ou moins
+Expires today or already expired,Expire aujourd'hui ou est déjà expiré
+Extended Bank Statement,Relevé bancaire détaillé
+FG Items to Make,Produits finis à fabriquer
+FG Qty from Transferred Raw Materials,Quantité de produits finis à partir des matières premières transférées
+Failed to send email for campaign {0} to {1},Échec de l'envoi du courriel de la campagne {0} à {1}
+Fieldtype of {0} in {1} cannot be changed from {2} to {3},Le type de champ de {0} dans {1} ne peut pas passer de {2} à {3}
+Filter By,Filtrer par
+Filters applied to Link queries and Attachment Gallery files.,Filtres appliqués aux requêtes de liens et aux fichiers de la galerie de pièces jointes.
+"Filters must be four-value rows with string doctypes, fields, and operators.","Les filtres doivent être des lignes à quatre valeurs avec des types de documents, des champs et des opérateurs en texte."
+Filters {0},Filtres {0}
+Finished Items,Produits finis
+Finished good quantity being consumed ({0} in stock UOM) must equal the quantity ,La quantité de produit fini consommée ({0} dans l'unité de stock) doit être égale à la quantité 
+First Used On,Première utilisation le
+Fix SABB Entry,Corriger l'écriture SABB
+Fixed Asset Turnover Ratio,Ratio de rotation des immobilisations
+Fixed Outgoing Email Account,Compte de courriel sortant fixe
+Following links are broken in the email content: {0},Les liens suivants sont brisés dans le contenu du courriel : {0}
+"For item <b>{0}</b>, only <b>{1}</b> asset have been created or linked to <b>{2}</b>. ","Pour l'article <b>{0}</b>, seulement <b>{1}</b> actif(s) ont été créés ou liés à <b>{2}</b>. "
+"For the item {0}, the consumed quantity should be {1} according to the BOM {2}.","Pour l'article {0}, la quantité consommée devrait être {1} selon la nomenclature {2}."
+Frappe CRM,Frappe CRM
+Frappe CRM Allowed User,Utilisateur autorisé de Frappe CRM
+Frappe CRM data synchronization is not enabled on ERPNext. Contact System Manager of ERPNext.,La synchronisation des données Frappe CRM n'est pas activée dans Cortex. Communiquez avec l'administrateur système.
+Frappe School,École Frappe
+"Frappe no longer uses Gravatar because it can disclose hashed email addresses to a third-party service. To fully stop this behavior, existing Gravatar image URLs must be deleted.","Frappe n'utilise plus Gravatar, car ce service peut divulguer des adresses courriel hachées à un tiers. Pour arrêter complètement ce comportement, les adresses d'images Gravatar existantes doivent être supprimées."
+From Date cannot be greater than To Date.,La date de début ne peut pas être postérieure à la date de fin.
+From Reference Date cannot be greater than To Reference Date,La date de référence de début ne peut pas être postérieure à la date de référence de fin
+"Full Name, Email or Phone/Mobile of the user are mandatory to continue.","Le nom complet, le courriel ou le téléphone de l'utilisateur sont obligatoires pour continuer."
+Full Screen,Plein écran
+Function {0} is not allowed in this query.,La fonction {0} n'est pas permise dans cette requête.
+GNU General Public License,Licence publique générale GNU
+General Ledger Report,Rapport du grand livre
+General Ledger requires {0} to be synced to DuckDB,Le grand livre exige que {0} soit synchronisé avec DuckDB
+Generate Closing Stock Balance,Générer le solde de stock à la clôture
+Generate Custom Reports,Générer des rapports personnalisés
+Get Raw Materials for Purchase,Obtenir les matières premières pour l'achat
+Get Raw Materials for Transfer,Obtenir les matières premières pour le transfert
+Get more insights with,Obtenez plus de perspectives avec
+Go to Access Control section,Aller à la section Contrôle d'accès
+Google Calendar - Contact / email not found. Did not add attendee for -<br>{0},Google Agenda - Contact ou courriel introuvable. Participant non ajouté pour -<br>{0}
+Google Contacts,Contacts Google
+Google Drive,Google Drive
+Grand Total (Transaction Currency),Total général (devise de l'opération)
+Gravatar URL deletion has been queued.,La suppression des adresses Gravatar a été mise en file d'attente.
+Gravatar URLs will not be deleted.,Les adresses Gravatar ne seront pas supprimées.
+Gross Profit Ratio,Ratio de marge brute
+Gross Purchase Amount Too Low: {0} cannot be depreciated over {1} cycles with a frequency of {2} depreciations.,Montant d'achat brut trop faible : {0} ne peut pas être amorti sur {1} cycles à la fréquence de {2} amortissements.
+Gross Purchase Amount should be <b>equal</b> to purchase amount of one single Asset.,Le montant d'achat brut doit être <b>égal</b> au montant d'achat d'un seul actif.
+Guests are not allowed to upload files for {0} Doctype,Les invités ne sont pas autorisés à déposer des fichiers pour le type de document {0}
+Has Operating Cost,A un coût d'exploitation
+Headline of the in-app notification. Falls back to Subject if left blank. Supports Jinja.,Titre de la notification dans l'application. Reprend l'objet si laissé vide. Accepte Jinja.
+"Help: To link to another record in the system, use ""/app/note/[Note Name]"" as the Link URL. (don't use ""http://"")","Aide : pour créer un lien vers un autre enregistrement du système, utilisez « /app/note/[Nom de la note] » comme adresse du lien (n'utilisez pas « http:// »)."
+Helvetica Neue,Helvetica Neue
+Hide Saved,Masquer les filtres enregistrés
+Hide Tags,Masquer les étiquettes
+Hide Workspace,Masquer l'espace de travail
+Holiday List - {0} is not valid for current date.,La liste des jours fériés - {0} n'est pas valide pour la date actuelle.
+How to Navigate in ERPNext,Comment naviguer dans Cortex
+"I guess you don't have access to any workspace yet, but you can create one just for yourself. Click on the <b>Create Workspace</b> button to create one.<br>","Il semble que vous n'ayez accès à aucun espace de travail pour l'instant, mais vous pouvez en créer un pour vous seul. Cliquez sur le bouton <b>Créer un espace de travail</b>.<br>"
+"If checked, <i>Prepared Report</i> will not be enabled automatically on slow runs.","Si cette option est cochée, le <i>rapport préparé</i> ne sera pas activé automatiquement lors des exécutions lentes."
+"If enabled, the web form can only be used with a <i>Key</i> from a corresponding <b>Web Form Request</b>.","Si cette option est activée, le formulaire Web ne peut être utilisé qu'avec une <i>clé</i> provenant d'une <b>demande de formulaire Web</b> correspondante."
+"If it's empty, it will backup to the root of the bucket.","Si vide, la sauvegarde sera faite à la racine du compartiment."
+"If the condition is satisfied user will be rewarded with the points. eg. doc.status == 'Closed'
+","Si la condition est remplie, la personne recevra les points. Par exemple : doc.status == 'Closed'
+
+"
+"If the user enables the mask property for the phone number field, the value will be displayed in a masked format (e.g., 811XXXXXXX).","Si la personne active le masquage pour le champ de téléphone, la valeur s'affichera de façon masquée (par exemple 811XXXXXXX)."
+"If the user has access to Employee and Report is enabled, they can view Employee-based reports.","Si la personne a accès aux employés et que le rapport est activé, elle peut consulter les rapports basés sur les employés."
+"If this email is registered with us, a download link will be sent to it.","Si ce courriel est enregistré chez nous, un lien de téléchargement lui sera envoyé."
+If you have recently restored the site you may need to copy the site config contaning original Encryption Key.,"Si vous avez récemment restauré le site, il se peut que vous deviez copier la configuration du site contenant la clé de chiffrement d'origine."
+"If you just want to customize for your site, use {0} instead.","Si vous voulez seulement personnaliser votre site, utilisez plutôt {0}."
+Ignore Available Stock,Ignorer le stock disponible
+Image Height,Hauteur de l'image
+Image Width,Largeur de l'image
+"Image in the description has been removed. To disable this behavior, uncheck ""{0}"" in {1}.","L'image de la description a été retirée. Pour désactiver ce comportement, décochez « {0} » dans {1}."
+Impersonating {0},Vous incarnez {0}
+Import Data from Spreadsheet,Importer des données depuis un tableur
+Importing Code Lists from remote URLs is not allowed.,L'importation de listes de codes depuis des adresses distantes n'est pas permise.
+"In ERPNext, you can add your Employees as Users, and give them restricted access. Tools like Role Permission and User Permission allow you to define rules which give restricted access to the user to masters and transactions.","Dans Cortex, vous pouvez ajouter vos employés comme utilisateurs et leur donner un accès restreint. Des outils comme les permissions de rôle et les permissions d'utilisateur permettent de définir des règles qui limitent l'accès aux fiches maîtresses et aux opérations."
+"In each module, you will find a host of single-click reports, ranging from financial statements to sales and purchase analytics and stock tracking reports. If a required new report is not available out-of-the-box, you can create custom reports in ERPNext by pulling values from the same multiple ERPNext tables.
+","Dans chaque module, vous trouverez de nombreux rapports en un clic, des états financiers aux analyses de ventes et d'achats et aux rapports de suivi des stocks. Si un rapport dont vous avez besoin n'existe pas, vous pouvez créer des rapports personnalisés dans Cortex en réunissant des valeurs provenant de plusieurs tables d'Cortex.
+
+"
+"In {0}, {1} is required in every row.","Dans {0}, {1} est obligatoire dans chaque ligne."
+"In {0}, {1} is required in row {2}.","Dans {0}, {1} est obligatoire à la ligne {2}."
+"In {0}, {1} is required in rows {2}.","Dans {0}, {1} est obligatoire aux lignes {2}."
+"In {0}, {1} is required in {2} rows.","Dans {0}, {1} est obligatoire dans {2} lignes."
+Include Disabled,Inclure les éléments désactivés
+Include Returned Invoices (Stand-alone),Inclure les factures retournées (autonomes)
+Include Revaluation Journals,Inclure les écritures de réévaluation
+Included Fee,Frais inclus
+Included fee is bigger than the withdrawal itself.,Les frais inclus sont supérieurs au retrait lui-même.
+Income Account Validation Error,Erreur de validation du compte de revenus
+Incorrect Account,Compte incorrect
+Incorrect Company,Société incorrecte
+Incorrect Inventory Dimension,Dimension d'inventaire incorrecte
+Incorrect value in row {0}:,Valeur incorrecte à la ligne {0} :
+Incorrect value:,Valeur incorrecte :
+Insufficient Stock for Product Bundle Items,Stock insuffisant pour les articles de l'ensemble de produits
+Internal Customer Already Exists,Le client interne existe déjà
+Internal Customer {0} already exists for {1}. Disable it to make this Customer internal.,Le client interne {0} existe déjà pour {1}. Désactivez-le pour rendre ce client interne.
+Internal Supplier Already Exists,Le fournisseur interne existe déjà
+Internal Supplier {0} already exists for {1}. Disable it to make this Supplier internal.,Le fournisseur interne {0} existe déjà pour {1}. Désactivez-le pour rendre ce fournisseur interne.
+Introduction to Assets,Introduction aux actifs
+Introduction to CRM,Introduction au CRM
+Introduction to Selling,Introduction aux ventes
+Introduction to Stock Entry,Introduction aux écritures de stock
+Introduction to Website,Introduction au site Web
+Invalid Accounting Dimension,Dimension comptable invalide
+Invalid Customer Group,Groupe de clients invalide
+Invalid Disassembly Item,Article de démontage invalide
+Invalid Disassembly Quantity,Quantité de démontage invalide
+Invalid Discount Amount,Montant de remise invalide
+Invalid Document Type {0},Type de document invalide {0}
+Invalid Filter,Filtre invalide
+"Invalid Filters for field {0}. Filters must be a list of filters, where each filter is a list with four values: doctype, fieldname, operator, and value.","Filtres invalides pour le champ {0}. Les filtres doivent être une liste de filtres, chacun étant une liste de quatre valeurs : type de document, nom du champ, opérateur et valeur."
+Invalid Filters for field {0}. Filters must be valid JSON.,Filtres invalides pour le champ {0}. Les filtres doivent être du JSON valide.
+Invalid JSON,JSON invalide
+Invalid POS Field,Champ de PDV invalide
+Invalid POS Search Field,Champ de recherche de PDV invalide
+Invalid Package Name,Nom de paquet invalide
+Invalid Price List,Liste de prix invalide
+Invalid Shipping Account,Compte d'expédition invalide
+Invalid Source and Target Warehouse,Entrepôt source et cible invalides
+Invalid Tree Type {0},Type d'arborescence invalide {0}
+Invalid Upload,Dépôt invalide
+Invalid Web Form Request,Demande de formulaire Web invalide
+Invalid action,Action invalide
+Invalid address,Adresse invalide
+Invalid backup path,Chemin de sauvegarde invalide
+Invalid doctype,Type de document invalide
+Invalid doctype {0},Type de document invalide {0}
+Invalid document type,Type de document invalide
+Invalid field for grouping,Champ de regroupement invalide
+Invalid filter,Filtre invalide
+Invalid name,Nom invalide
+Invalid parameter. 'dn' should be of type str,Paramètre invalide. « dn » doit être de type texte
+Invalid reference,Référence invalide
+Invalid tax master doctype,Type de document de modèle de taxes invalide
+Invalid type,Type invalide
+Invalid value {0} for 'Based On',Valeur {0} invalide pour « Basé sur »
+Invalid value {0} for 'Doctype',Valeur {0} invalide pour « Type de document »
+Inventory Turnover Ratio,Ratio de rotation des stocks
+"Inventory, Warehouses, Analysis, and more.","Stock, entrepôts, analyses et plus."
+Invitation resent,Invitation renvoyée
+Invoice is not blocked. Block the invoice to change the release date.,La facture n'est pas bloquée. Bloquez la facture pour changer la date de déblocage.
+Is Billing Contact,Est un contact de facturation
+Is Your Company Address,Est l'adresse de votre société
+Item Out of Stock,Article en rupture de stock
+Item Price added for {0} in Price List - {1},Prix de l'article ajouté pour {0} dans la liste de prix - {1}
+Item rates have been updated based on the selected Buying Price List {0},Les prix des articles ont été mis à jour selon la liste de prix d'achat sélectionnée {0}
+Item {0} is not a template item.,L'article {0} n'est pas un article modèle.
+"Item, Customer, Supplier and Quotation","Article, client, fournisseur et devis"
+Items must be a list of Item codes,Les articles doivent être une liste de codes d'article
+Items to Be Repost,Éléments à republier
+JSON value must be an object,La valeur JSON doit être un objet
+Keep Gravatar URLs,Conserver les adresses Gravatar
+Key Required,Clé requise
+Key required,Clé requise
+Lead / Customer / Supplier,Prospect / Client / Fournisseur
+"Lead, Opportunity, Customer, and more.","Prospect, opportunité, client et plus."
+Learn about Standard and Custom Print Formats,En savoir plus sur les formats d'impression standard et personnalisés
+Learn about Web Pages,En savoir plus sur les pages Web
+Learn how to add Custom Fields,Apprendre à ajouter des champs personnalisés
+Learn more about Report Builders,En savoir plus sur les générateurs de rapports
+Learn more about creating new DocTypes,En savoir plus sur la création de nouveaux types de documents
+Ledger Type,Type de grand livre
+Ledgers Posted,Grands livres comptabilisés
+Let's Set Up Your Accounts and Taxes.,Configurons vos comptes et vos taxes.
+Let's Set Up Your CRM.,Configurons votre CRM.
+Let's Set Up Your Website.,Configurons votre site Web.
+Let's Set Up the Assets Module.,Configurons le module Actifs.
+Let's Set Up the Buying Module.,Configurons le module Achats.
+Let's Set Up the Manufacturing Module.,Configurons le module Fabrication.
+Let's Set Up the Selling Module.,Configurons le module Ventes.
+Let's Set Up the Stock Module.,Configurons le module Stock.
+Let's begin your journey with ERPNext,Commençons votre parcours avec Cortex
+Like limit,Limite de mentions « J'aime »
+Like limit per hour,Limite de mentions « J'aime » par heure
+Like on {0}: {1},« J'aime » sur {0} : {1}
+Liquidity Ratios,Ratios de liquidité
+Loading user profile,Chargement du profil de l'utilisateur
+Login or a request key is required to see web form list view. Enable {0} to see list settings,Une connexion ou une clé de demande est requise pour voir la liste du formulaire Web. Activez {0} pour voir les paramètres de la liste
+Loving Frappe Framework?,Vous aimez le cadre Frappe ?
+Main Item Code,Code de l'article principal
+Make Attachment Public (by default),Rendre les pièces jointes publiques (par défaut)
+Malformed Address Header,En-tête d'adresse mal formé
+Manage Stock Movements,Gérer les mouvements de stock
+Manage third party apps,Gérer les applications tierces
+Manage your apps,Gérer vos applications
+Manufacturing module is all set up!,Le module Fabrication est entièrement configuré !
+Mark as Closed,Marquer comme clos
+Marketing Campaign,Campagne de marketing
+Max Zip Extract Size (MB),Taille maximale d'extraction d'un fichier ZIP (Mo)
+Maximum total size a ZIP archive is allowed to expand to when extracted.,Taille totale maximale qu'une archive ZIP peut atteindre une fois extraite.
+Meaning of Different Permission Types,Signification des différents types de permissions
+Message (HTML),Message (HTML)
+Message (Markdown),Message (Markdown)
+"Min Value: {0}, Max Value: {1}, in Increments of: {2}","Valeur min. : {0}, valeur max. : {1}, par incréments de : {2}"
+Missing Items,Articles manquants
+Missing Parameter,Paramètre manquant
+Missing Warehouse,Entrepôt manquant
+Module HTML,HTML du module
+Modules HTML,HTML des modules
+Monthly Rank,Rang mensuel
+My Filter,Mon filtre
+Navigation Buttons,Boutons de navigation
+Need Workspace Manager role to hide/unhide public workspaces,Le rôle Gestionnaire d'espaces de travail est requis pour masquer ou afficher les espaces de travail publics
+Negative Stock Error,Erreur de stock négatif
+Net Profit Ratio,Ratio de marge nette
+New Journal Entry will be posted for the difference amount. The Posting Date can be modified.,Une nouvelle écriture de journal sera comptabilisée pour la différence. La date de comptabilisation peut être modifiée.
+Newsletter Attachment,Pièce jointe de l'infolettre
+Newsletter must be published to send webview link in email,L'infolettre doit être publiée pour envoyer le lien d'affichage Web par courriel
+Next Document,Document suivant
+No Data to Show,Aucune donnée à afficher
+No Items Found,Aucun article trouvé
+No Matching Vouchers Found,Aucune pièce correspondante trouvée
+No activities to show,Aucune activité à afficher
+No address added yet.,Aucune adresse ajoutée pour l'instant.
+No attachments,Aucune pièce jointe
+No availability of slots are found. Please add on Appointment Booking Settings.,Aucune plage horaire disponible. Veuillez en ajouter dans les paramètres de réservation de rendez-vous.
+No broken links found in the email content,Aucun lien brisé trouvé dans le contenu du courriel
+No changes made on the page,Aucune modification apportée à la page
+No comments yet. ,Aucun commentaire pour l'instant. 
+No email found for {0} {1},Aucun courriel trouvé pour {0} {1}
+No expense accounts found for Purchase Invoice {0},Aucun compte de charges trouvé pour la facture d'achat {0}
+No file uploaded or URL provided.,Aucun fichier déposé ni adresse fournie.
+No new notifications,Aucune nouvelle notification
+No of Items to Repost,Nombre d'éléments à republier
+No recipients found for campaign {0},Aucun destinataire trouvé pour la campagne {0}
+No {0} Found,Aucun(e) {0} trouvé(e)
+Noop Source,Source sans opération
+Normal Balances,Soldes normaux
+Not Used,Non utilisé
+Not permitted to sort or group by {0},Il n'est pas permis de trier ou de regrouper par {0}
+Not permitted to update Serial No,Il n'est pas permis de modifier le numéro de série
+Note: On checking Is Mandatory the accounting dimension will become mandatory against that specific account for all accounting transactions,"Remarque : en cochant « Obligatoire », la dimension comptable deviendra obligatoire pour ce compte dans toutes les opérations comptables"
+Note: Please create Sales Orders from individual Quotations to select from among Alternative Items.,Remarque : veuillez créer les commandes clients à partir de chaque devis pour choisir parmi les articles alternatifs.
+Notes HTML,HTML des notes
+Notification Message,Message de la notification
+Notification Title,Titre de la notification
+Notification Type,Type de notification
+Notification Type Preference,Préférence de type de notification
+Office 365,Office 365
+On hold,En suspens
+One of the child page with name {0} already exist in {1} Section. Please update the name of the child page first before moving,Une des pages enfants nommée {0} existe déjà dans la section {1}. Veuillez d'abord changer le nom de la page enfant avant de la déplacer
+Only Workspace Manager can sort or edit this page,Seul le gestionnaire d'espaces de travail peut trier ou modifier cette page
+Only change this if you want to use other S3 compatible object storage backends.,Ne modifiez ceci que si vous voulez utiliser un autre service de stockage d'objets compatible S3.
+Only one of Deposit or Withdrawal should be non-zero when applying an Excluded Fee.,Un seul dépôt ou retrait doit être non nul lors de l'application de frais exclus.
+Only pending invitations can be resent,Seules les invitations en attente peuvent être renvoyées
+Opening Accumulated Depreciation must be less than or equal to {0},L'amortissement cumulé d'ouverture doit être inférieur ou égal à {0}
+Opening Balances,Soldes d'ouverture
+Opening Purchase Invoice(s) have been created.,Les factures d'achat d'ouverture ont été créées.
+Opening Sales Invoice(s) have been created.,Les factures de vente d'ouverture ont été créées.
+Operation & Workstation,Opération et poste de travail
+Option 1,Option 1
+Option 2,Option 2
+Option 3,Option 3
+Optional body of the in-app notification. Supports Jinja.,Corps facultatif de la notification dans l'application. Accepte Jinja.
+Optional. Select a specific manufacture entry to reverse.,Facultatif. Choisissez une écriture de fabrication précise à extourner.
+P&L Closing Balance,Solde de clôture des résultats
+PCV Job Timeout (seconds),Délai d'expiration de la tâche de clôture de période (secondes)
+PCV Paused,Clôture de période suspendue
+PCV Resumed,Clôture de période reprise
+POS Profile {0} cannot be disabled as there are ongoing POS sessions.,"Le profil de PDV {0} ne peut pas être désactivé, car des sessions de PDV sont en cours."
+POS Profile {} does not belong to company {},Le profil de PDV {} n'appartient pas à la société {}
+POS Profile {} does not exist.,Le profil de PDV {} n'existe pas.
+POS Profile {} is disabled.,Le profil de PDV {} est désactivé.
+Package contains disallowed path entry,Le paquet contient un chemin non autorisé
+Page Saved Successfully,Page enregistrée avec succès
+Page with title {0} already exist.,Une page avec le titre {0} existe déjà.
+Paid From and Paid To accounts must be different for an Internal Transfer.,Les comptes « Payé de » et « Payé à » doivent être différents pour un transfert interne.
+Parent Task {0} must be a Group Task,La tâche parente {0} doit être une tâche de groupe
+Parent document is required to search child rows,Le document parent est requis pour chercher dans les lignes enfants
+Partial Payment in POS Invoice is not allowed.,Le paiement partiel dans une facture de PDV n'est pas permis.
+Partially Billed,Partiellement facturé
+Partially Reposted,Partiellement republié
+Partially Transferred,Partiellement transféré
+Party Link,Lien du tiers
+Party Not Required,Tiers non requis
+Past dates are not allowed for Scheduling.,Les dates passées ne sont pas permises pour la planification.
+Payment Entry Settings,Paramètres des écritures de paiement
+Payment Link couldn't be sent.,Le lien de paiement n'a pas pu être envoyé.
+Payment methods refreshed. Please review before proceeding.,Les modes de paiement ont été actualisés. Veuillez les vérifier avant de continuer.
+Period Closing Voucher {0} GL Entry Cancellation Failed,Échec de l'annulation de l'écriture du grand livre de la pièce de clôture de période {0}
+Period Closing Voucher {0} GL Entry Processing Failed,Échec du traitement de l'écriture du grand livre de la pièce de clôture de période {0}
+Pick Serial / Batch,Choisir un numéro de série ou un lot
+Plan to Request Qty,Quantité prévue à demander
+Planned End Date cannot be before Planned Start Date,La date de fin prévue ne peut pas précéder la date de début prévue
+Please add a valid Holiday List on Appointment Booking Settings.,Veuillez ajouter une liste de jours fériés valide dans les paramètres de réservation de rendez-vous.
+Please add atleast one user on Allowed Users to allow Data Synchronization from Frappe CRM site.,Veuillez ajouter au moins un utilisateur dans les utilisateurs autorisés pour permettre la synchronisation depuis le site Frappe CRM.
+Please capitalize this asset before submitting.,Veuillez capitaliser cet actif avant de le valider.
+Please check your email to confirm the appointment.,Veuillez vérifier votre courriel pour confirmer le rendez-vous.
+Please enter Stock Items consumed during the Repair.,Veuillez saisir les articles de stock consommés pendant la réparation.
+Please enter a valid Write Off Account,Veuillez saisir un compte de radiation valide
+Please enter a valid Write Off Cost Center,Veuillez saisir un centre de coûts de radiation valide
+Please fill the following mandatory fields before saving:,Veuillez remplir les champs obligatoires suivants avant d'enregistrer :
+Please fill up the Availability of Slots table to enable Appointment Scheduling.,Veuillez remplir le tableau des plages horaires pour activer la prise de rendez-vous.
+"Please first set Full Name, Email and Phone for the user","Veuillez d'abord définir le nom complet, le courriel et le téléphone de l'utilisateur"
+"Please keep one Applicable Charges, when 'Distribute Charges Based On' is 'Distribute Manually'. For more charges, please create another Landed Cost Voucher.","Veuillez conserver un seul frais applicable lorsque « Répartir les frais selon » est « Répartir manuellement ». Pour d'autres frais, créez un autre bon de coût au débarquement."
+Please make sure you really want to delete all the transactions for {0}. Your master data will remain as it is. This action cannot be undone.,Assurez-vous de vouloir vraiment supprimer toutes les opérations de {0}. Vos fiches maîtresses resteront intactes. Cette action est irréversible.
+Please select a Holiday List to enable Appointment Scheduling.,Veuillez choisir une liste de jours fériés pour activer la prise de rendez-vous.
+Please select a company.,Veuillez choisir une société.
+Please select a valid {0},Veuillez choisir un(e) {0} valide
+Please select a warehouse first.,Veuillez d'abord choisir un entrepôt.
+Please select at least one attribute value,Veuillez choisir au moins une valeur d'attribut
+Please select at least one row to fix,Veuillez choisir au moins une ligne à corriger
+Please select at least one row with difference value,Veuillez choisir au moins une ligne avec une valeur d'écart
+Please select the document type first.,Veuillez d'abord choisir le type de document.
+Please set Dropbox access keys in site config or doctype,Veuillez définir les clés d'accès Dropbox dans la configuration du site ou du type de document
+Please set Opening Number of Booked Depreciations,Veuillez définir le nombre d'amortissements d'ouverture comptabilisés
+Please set a primary email ID for the Contact {0},Veuillez définir un courriel principal pour le contact {0}
+Please set company on the Document before requesting for invoices.,Veuillez définir la société sur le document avant de demander des factures.
+Posting / Transaction Date,Date de comptabilisation / d'opération
+Posting date is required,La date de comptabilisation est obligatoire
+Prefer not to say,Préfère ne pas répondre
+Preview Image,Aperçu de l'image
+Previous Document,Document précédent
+Previous Qty,Quantité précédente
+Price List {0} cannot be used on a buying transaction,La liste de prix {0} ne peut pas être utilisée dans une opération d'achat
+Price List {0} cannot be used on a selling transaction,La liste de prix {0} ne peut pas être utilisée dans une opération de vente
+Price List {0} is disabled,La liste de prix {0} est désactivée
+Pricing Rule {0} is disabled,La règle de tarification {0} est désactivée
+Print Format Builder (New),Générateur de formats d'impression (nouveau)
+Print Formats allow you can define looks for documents when printed or converted to PDF. You can also create a custom Print Format using drag-and-drop tools.,Les formats d'impression permettent de définir l'apparence des documents imprimés ou convertis en PDF. Vous pouvez aussi créer un format d'impression personnalisé avec des outils de glisser-déposer.
+Process Period Closing Voucher,Traiter la pièce de clôture de période
+Process Period Closing Voucher Detail,Détail du traitement de la pièce de clôture de période
+Processing Date,Date de traitement
+Processing Sales! Please Wait...,Traitement des ventes en cours ! Veuillez patienter...
+Production Planning,Planification de la production
+"Products, Purchases, Analysis, and more.","Produits, achats, analyses et plus."
+"Products, Raw Materials, BOM, Work Order, and more.","Produits, matières premières, nomenclature, ordres de fabrication et plus."
+"Products, Sales, Analysis, and more.","Produits, ventes, analyses et plus."
+Profit and Loss Statement requires {0} to be synced to DuckDB,L'état des résultats exige que {0} soit synchronisé avec DuckDB
+"Provide a list of allowed Doctypes for file uploads. Each line should contain one allowed Doctype. If unset, uploads to all doctypes are allowed. Example: <br>User<br>Item<br>Quotation","Indiquez la liste des types de documents autorisés pour le dépôt de fichiers, un par ligne. Si elle est vide, le dépôt est autorisé pour tous les types de documents. Exemple : <br>User<br>Item<br>Quotation"
+Publish as a web page,Publier comme page Web
+Purchase Invoice can be held after submitting.,La facture d'achat peut être mise en attente après sa validation.
+Purchase Invoice without any outstanding amount cannot be held.,Une facture d'achat sans montant en souffrance ne peut pas être mise en attente.
+Purchase an Asset,Acheter un actif
+Purchase an Asset Item,Acheter un article d'actif
+Qty (in Stock UOM),Qté (dans l'unité de stock)
+Qty As Per BOM,Qté selon la nomenclature
+Qty To Manufacture in the job card cannot be greater than Qty To Manufacture in the work order for the operation {0}. <br><br><b>Solution: </b> Either you can reduce the Qty To Manufacture in the job card or set the 'Overproduction Percentage For Work Order' in the {1}.,La quantité à fabriquer de la fiche de travail ne peut pas dépasser la quantité à fabriquer de l'ordre de fabrication pour l'opération {0}. <br><br><b>Solution :</b> réduisez la quantité à fabriquer de la fiche de travail ou définissez le « pourcentage de surproduction pour l'ordre de fabrication » dans {1}.
+Qty to Disassemble,Quantité à démonter
+Quality Inspection Not Configured,Inspection de qualité non configurée
+Quantity must be greater than zero,La quantité doit être supérieure à zéro
+Queued for Submission. You can track the progress over {0}.,Mis en file d'attente pour validation. Vous pouvez suivre la progression sur {0}.
+Queued {0} emails,{0} courriels mis en file d'attente
+Queuing emails...,Mise en file d'attente des courriels...
+Quick Ratio,Ratio de liquidité immédiate
+RQ Worker,Travailleur RQ
+Rate Limiting,Limitation de débit
+Rate Limits,Limites de débit
+Rate limit for email link login,Limite de débit pour la connexion par lien courriel
+Rate of '{}' items cannot be changed,Le prix des articles « {} » ne peut pas être modifié
+Raw Materials Consumption ,Consommation de matières premières 
+Raw Materials Missing,Matières premières manquantes
+Raw Materials Warehouse,Entrepôt de matières premières
+Read the docs,Lire la documentation
+Recalculate Batch Qty,Recalculer la quantité du lot
+Recalculate Valuation Rate,Recalculer le taux d'évaluation
+Receive an email for notifications of these types. Remove a type to stop its emails (in-app notifications are unaffected).,Recevez un courriel pour les notifications de ces types. Retirez un type pour ne plus recevoir ses courriels (les notifications dans l'application ne changent pas).
+Recent Activity,Activité récente
+Recipient & Status,Destinataire et statut
+Reconciliation Failed,Échec du rapprochement
+Recurse Every (As Per Transaction UOM),Répéter tous les (selon l'unité de l'opération)
+Redact Message After Send,Masquer le message après l'envoi
+Regenerate Closing Stock Balance,Régénérer le solde de stock à la clôture
+Rejected malformed encoded address header with synthesized '@': {0},En-tête d'adresse encodé mal formé rejeté avec « @ » synthétisé : {0}
+Reload File,Recharger le fichier
+Repair Details,Détails de la réparation
+"Replace the message body with a placeholder once the email has been sent, so that sensitive content like password reset links is not retained in the queue.","Remplacer le corps du message par un texte de remplacement une fois le courriel envoyé, afin que les contenus sensibles, comme les liens de réinitialisation de mot de passe, ne soient pas conservés dans la file d'attente."
+Report an Issue,Signaler un problème
+Repost Payment Ledger,Republier le grand livre des paiements
+Repost Status,Statut de la republication
+Reposting Data File,Fichier de données de republication
+Reposting Item and Warehouse,Republication de l'article et de l'entrepôt
+Reposting Progress,Progression de la republication
+Reposting Status,Statut de la republication
+Reposting Vouchers,Republication des pièces
+Reposting Vouchers Progress,Progression de la republication des pièces
+Reposting can be started only for submitted document.,La republication ne peut être lancée que pour un document validé.
+Reposting cannot be started when status is {0}.,La republication ne peut pas être lancée lorsque le statut est {0}.
+Reposting for Item-Wh Completed {0}%,Republication article-entrepôt terminée à {0} %
+Reposting for Vouchers Completed {0}%,Republication des pièces terminée à {0} %
+Reposting in the background.,Republication en arrière-plan.
+Reposting is still in progress in background.,La republication est encore en cours en arrière-plan.
+Reposting {0} {1},Republication de {0} {1}
+Request Account Deletion,Demander la suppression du compte
+Reset the password for your account,Réinitialiser le mot de passe de votre compte
+Return Purchase Invoice cannot be held.,Une facture d'achat de retour ne peut pas être mise en attente.
+Return invoice of asset cancelled,Facture de retour de l'actif annulée
+Return on Asset Ratio,Ratio de rendement de l'actif
+Return on Equity Ratio,Ratio de rendement des capitaux propres
+Reversal Journal Entries,Écritures de journal d'extourne
+Reversal Of Exchange Rate Revaluation,Extourne de la réévaluation du taux de change
+Reverse {0} already available in draft status: {1},L'extourne {0} existe déjà au statut brouillon : {1}
+Reversing Journals...,Extourne des journaux en cours...
+Review Chart of Accounts,Vérifier le plan comptable
+Review Fixed Asset Accounts,Vérifier les comptes d'immobilisations
+Review Stock Settings,Vérifier les paramètres de stock
+"Route: Example ""/app""",Route : exemple « /app »
+Row # {0}: Non administrator user can not set the role {1} to the custom doctype,Ligne n° {0} : un utilisateur non administrateur ne peut pas attribuer le rôle {1} à un type de document personnalisé
+Row #{0}: '{1}' cannot be used to search items.,Ligne n° {0} : « {1} » ne peut pas servir à chercher des articles.
+Row #{0}: '{1}' does not match {2}.,Ligne n° {0} : « {1} » ne correspond pas à {2}.
+Row #{0}: '{1}' is not a valid field of {2}.,Ligne n° {0} : « {1} » n'est pas un champ valide de {2}.
+"Row #{0}: Asset {1} cannot be sold, it is already {2}","Ligne n° {0} : l'actif {1} ne peut pas être vendu, il est déjà {2}"
+Row #{0}: Asset {1} is already sold,Ligne n° {0} : l'actif {1} est déjà vendu
+Row #{0}: Cannot delete item {1} which is already ordered against this Sales Order.,"Ligne n° {0} : impossible de supprimer l'article {1}, déjà commandé dans cette commande client."
+Row #{0}: Cannot transfer {1} {2} of Item {3}. ,Ligne n° {0} : impossible de transférer {1} {2} de l'article {3}. 
+Row #{0}: Depreciation Start Date is required,Ligne n° {0} : la date de début d'amortissement est obligatoire
+Row #{0}: For {1} Clearance date {2} cannot be before Cheque Date {3},"Ligne n° {0} : pour {1}, la date de compensation {2} ne peut pas précéder la date du chèque {3}"
+Row #{0}: Frequency of Depreciation must be greater than zero,Ligne n° {0} : la fréquence d'amortissement doit être supérieure à zéro
+Row #{0}: Item {1} has no stock in warehouse {2}.,Ligne n° {0} : l'article {1} n'a pas de stock dans l'entrepôt {2}.
+"Row #{0}: Item {1} in warehouse {2}: Available {3}, Needed {4}.","Ligne n° {0} : article {1} dans l'entrepôt {2} : disponible {3}, nécessaire {4}."
+Row #{0}: Item {1} is not part of the source manufacture entry and cannot be ,Ligne n° {0} : l'article {1} ne fait pas partie de l'écriture de fabrication source et ne peut pas être 
+Row #{0}: Item {1} quantity ({2} in stock UOM) does not match the quantity ,Ligne n° {0} : la quantité de l'article {1} ({2} dans l'unité de stock) ne correspond pas à la quantité 
+Row #{0}: Next Depreciation Date cannot be before Available-for-use Date,Ligne n° {0} : la prochaine date d'amortissement ne peut pas précéder la date de mise en service
+Row #{0}: Next Depreciation Date cannot be before Purchase Date,Ligne n° {0} : la prochaine date d'amortissement ne peut pas précéder la date d'achat
+Row #{0}: Quantity must be greater than 0 for Item {1},Ligne n° {0} : la quantité doit être supérieure à 0 pour l'article {1}
+Row #{0}: Received Qty must be equal to Accepted + Rejected Qty for Item {1},Ligne n° {0} : la quantité reçue doit être égale à la quantité acceptée plus la quantité rejetée pour l'article {1}
+Row #{0}: Return Against is required for returning asset,Ligne n° {0} : « Retour sur » est obligatoire pour retourner un actif
+Row #{0}: Source and Target Warehouse cannot be the same for Material Transfer,Ligne n° {0} : l'entrepôt source et l'entrepôt cible ne peuvent pas être identiques pour un transfert de matériel
+"Row #{0}: Source, Target Warehouse and Inventory Dimensions cannot be the exact same for Material Transfer","Ligne n° {0} : l'entrepôt source, l'entrepôt cible et les dimensions d'inventaire ne peuvent pas être identiques pour un transfert de matériel"
+Row #{0}: Target Warehouse {1} must be a Transit warehouse when Add to Transit is enabled.,Ligne n° {0} : l'entrepôt cible {1} doit être un entrepôt de transit lorsque « Ajouter au transit » est activé.
+Row #{0}: Total Number of Depreciations must be greater than zero,Ligne n° {0} : le nombre total d'amortissements doit être supérieur à zéro
+Row #{0}: Warehouse {1} does not match with the warehouse {2} in Serial and Batch Bundle {3}.,Ligne n° {0} : l'entrepôt {1} ne correspond pas à l'entrepôt {2} du lot de numéros de série et de lots {3}.
+Row #{0}: {1} account is not of type {2},Ligne n° {0} : le compte {1} n'est pas de type {2}
+Row #{0}:Quantity for Item {1} cannot be zero.,Ligne n° {0} : la quantité de l'article {1} ne peut pas être zéro.
+Row {0}: Account {1} is a Group Account,Ligne {0} : le compte {1} est un compte de groupe
+Row {0}: Cannot sell item {1} from Sample Retention Warehouse {2},Ligne {0} : impossible de vendre l'article {1} de l'entrepôt de rétention d'échantillons {2}
+Row {0}: Expected Value After Useful Life cannot be negative,Ligne {0} : la valeur attendue après la durée de vie utile ne peut pas être négative
+Row {0}: Expense Account {1} is linked to company {2}. Please select an account belonging to company {3}.,Ligne {0} : le compte de charges {1} est lié à la société {2}. Veuillez choisir un compte appartenant à la société {3}.
+Row {0}: Operation time should be greater than 0 for operation {1},Ligne {0} : la durée de l'opération doit être supérieure à 0 pour l'opération {1}
+Row {0}: Sales Invoice {1} is already created for {2},Ligne {0} : la facture de vente {1} est déjà créée pour {2}
+Row {0}: Serial/Batch has been reset to values linked with Work Order {1},Ligne {0} : le numéro de série ou de lot a été réinitialisé aux valeurs liées à l'ordre de fabrication {1}
+Row {0}: Total Number of Depreciations cannot be less than or equal to Opening Number of Booked Depreciations,Ligne {0} : le nombre total d'amortissements ne peut pas être inférieur ou égal au nombre d'amortissements d'ouverture comptabilisés
+Row {0}: Transferred quantity cannot be greater than the requested quantity.,Ligne {0} : la quantité transférée ne peut pas dépasser la quantité demandée.
+Row {0}: Warehouse is required,Ligne {0} : l'entrepôt est obligatoire
+Row {0}: Warehouse {1} is linked to company {2}. Please select a warehouse belonging to company {3}.,Ligne {0} : l'entrepôt {1} est lié à la société {2}. Veuillez choisir un entrepôt appartenant à la société {3}.
+Row {0}: {1} {2} is linked to company {3}. Please select a document belonging to company {4}.,Ligne {0} : {1} {2} est lié à la société {3}. Veuillez choisir un document appartenant à la société {4}.
+Row {0}: {3} Account {1} does not belong to Company {2},Ligne {0} : le compte {3} {1} n'appartient pas à la société {2}
+S3 Backup has been queued. You can track the progress <a href='/app/rq-job/{0}' target='_blank'>here</a>.,La sauvegarde S3 a été mise en file d'attente. Vous pouvez suivre la progression <a href='/app/rq-job/{0}' target='_blank'>ici</a>.
+Sales Order Schedule,Échéancier de la commande client
+Save Filter,Enregistrer le filtre
+Save the document to attach files.,Enregistrez le document pour joindre des fichiers.
+Schedule Newsletter,Planifier l'infolettre
+Schedule sending,Planifier l'envoi
+Schedule sending at a later time,Planifier l'envoi à une date ultérieure
+Scheduled Sending,Envoi planifié
+Scheduler is inactive. Reposting will only run once background jobs are processed.,Le planificateur est inactif. La republication ne s'exécutera qu'une fois les tâches d'arrière-plan traitées.
+Search Bar,Barre de recherche
+Search Results for,Résultats de recherche pour
+Search or type a command ({0}),Rechercher ou taper une commande ({0})
+Select Document,Choisir un document
+Select a document to check if it meets conditions.,Choisissez un document pour vérifier s'il respecte les conditions.
+Select a document to preview request data,Choisissez un document pour voir l'aperçu des données de la requête
+Select an app to continue,Choisissez une application pour continuer
+Select at least one attribute value.,Veuillez choisir au moins une valeur d'attribut.
+Selected Serial and Batch Bundle entries have been fixed.,Les entrées de lots de numéros de série et de lots sélectionnées ont été corrigées.
+Selected {doctype} does not contain the Item Code {item_code},Le {doctype} sélectionné ne contient pas le code d'article {item_code}
+Send Acknowledgement Email,Envoyer un courriel d'accusé de réception
+Send Email At,Envoyer le courriel à
+Send Test Email,Envoyer un courriel de test
+Send Web View Link,Envoyer le lien d'affichage Web
+Send a request to delete your account,Envoyer une demande de suppression de votre compte
+Send a test email,Envoyer un courriel de test
+Send again,Envoyer de nouveau
+Send an acknowledgement email to the email address entered in the contact form.,Envoyer un courriel d'accusé de réception à l'adresse saisie dans le formulaire de contact.
+Send now,Envoyer maintenant
+Sending Email,Envoi du courriel
+Sending emails,Envoi des courriels
+Serial No and Batch for Finished Good,Numéro de série et lot du produit fini
+Serial No status sync has been queued. Reload the report after a few minutes.,La synchronisation du statut des numéros de série a été mise en file d'attente. Rechargez le rapport dans quelques minutes.
+Serial No {0} is already Delivered. You cannot use them again in Manufacture / Repack entry.,Le numéro de série {0} est déjà livré. Vous ne pouvez pas le réutiliser dans une écriture de fabrication ou de reconditionnement.
+Serial No {0} is not available in the selected inventory dimensions: {1},Le numéro de série {0} n'est pas disponible dans les dimensions d'inventaire sélectionnées : {1}
+Serial Nos {0} are already Delivered. You cannot use them again in Manufacture / Repack entry.,Les numéros de série {0} sont déjà livrés. Vous ne pouvez pas les réutiliser dans une écriture de fabrication ou de reconditionnement.
+Serial and Batch Bundle Exists,Un lot de numéros de série et de lots existe
+Serial and Batch Bundle {0} is not submitted,Le lot de numéros de série et de lots {0} n'est pas validé
+Serial and Batch Bundle {0} is submitted and its entries cannot be modified.,Le lot de numéros de série et de lots {0} est validé et ses entrées ne peuvent pas être modifiées.
+Service Expense Account,Compte de charges de services
+Set From Warehouse,Définir l'entrepôt source
+Set Incoming Rate as Zero for Expired Batch,Définir le taux d'entrée à zéro pour un lot expiré
+Set Up a Company,Configurer une société
+Set up your Warehouse,Configurer votre entrepôt
+Settings to control blog categories and interactions like comments and likes,Paramètres pour gérer les catégories de blogue et les interactions comme les commentaires et les mentions « J'aime »
+Setup Approval Workflows,Configurer les flux d'approbation
+Setup Limited Access for a User,Configurer un accès limité pour un utilisateur
+Setup Naming Series,Configurer les séries de numérotation
+Setup Your Letterhead,Configurer votre en-tête de lettre
+Setup a Warehouse,Configurer un entrepôt
+Shipping Account {0} does not belong to Company {1},Le compte d'expédition {0} n'appartient pas à la société {1}
+"Show ""Call to Action"" in Blog",Afficher l'« appel à l'action » dans le blogue
+Show Account Balance,Afficher le solde du compte
+Show Dimension Wise Stock,Afficher le stock par dimension
+Show Disabled Items,Afficher les articles désactivés
+Show Group Accounts,Afficher les comptes de groupe
+Show List,Afficher la liste
+Show More Activity,Afficher plus d'activité
+Show Party Balance,Afficher le solde du tiers
+Show Saved,Afficher les filtres enregistrés
+Show all blogs,Afficher tous les blogues
+Show availability of exploded items,Afficher la disponibilité des articles éclatés
+"Since {0} are Serial No/Batch No items, you cannot enable 'Recreate Stock Ledgers' in Repost Item Valuation.","Comme {0} sont des articles à numéro de série ou de lot, vous ne pouvez pas activer « Recréer les grands livres des stocks » dans la republication de l'évaluation des articles."
+"Since {0} has 'Update Stock' disabled, you cannot create repost item valuation against it","Comme {0} a « Mettre à jour le stock » désactivé, vous ne pouvez pas créer de republication de l'évaluation des articles"
+Skip Available Sub Assembly Items,Ignorer les sous-ensembles disponibles
+Snapshot Report,Rapport instantané
+Snapshot Reports,Rapports instantanés
+Solvency Ratios,Ratios de solvabilité
+Source Manufacture Entry,Écriture de fabrication source
+Source Stock Entry (Manufacture),Écriture de stock source (fabrication)
+"Source Stock Entry {0} belongs to Work Order {1}, not {2}. Please use a manufacture entry from the same Work Order.","L'écriture de stock source {0} appartient à l'ordre de fabrication {1}, et non à {2}. Veuillez utiliser une écriture de fabrication du même ordre de fabrication."
+Source Stock Entry {0} has no finished goods quantity,L'écriture de stock source {0} n'a aucune quantité de produits finis
+Source warehouse required for stock item {0},L'entrepôt source est obligatoire pour l'article en stock {0}
+Split qty cannot be grater than or equal to asset qty,La quantité fractionnée ne peut pas être supérieure ou égale à la quantité de l'actif
+Stack Trace,Trace de la pile d'appels
+Standard reports can only be created in developer mode.,Les rapports standard ne peuvent être créés qu'en mode développeur.
+Star us on GitHub,Donnez-nous une étoile sur GitHub
+Start Date cannot be after End Date,La date de début ne peut pas être postérieure à la date de fin
+Started a background job to create {1} {0}. {2},Une tâche d'arrière-plan a été lancée pour créer {1} {0}. {2}
+Stock Consumed During Repair,Stock consommé pendant la réparation
+Stock Consumption Details,Détails de la consommation de stock
+Stock Update Not Allowed,Mise à jour du stock non permise
+Stock cannot be updated for Purchase Invoice {0} because a Purchase Receipt {1} has already been created for this transaction. Please disable the 'Update Stock' checkbox in the Purchase Invoice and save the invoice.,"Le stock ne peut pas être mis à jour pour la facture d'achat {0}, car une réception d'achat {1} a déjà été créée pour cette opération. Désactivez la case « Mettre à jour le stock » dans la facture d'achat, puis enregistrez-la."
+"Stock entries exist with the old account. Changing the account may lead to a mismatch between the warehouse closing balance and the account closing balance. The overall closing balance will still match, but not for the specific account.","Des écritures de stock existent avec l'ancien compte. Changer le compte peut créer un écart entre le solde de clôture de l'entrepôt et celui du compte. Le solde de clôture global restera juste, mais pas celui du compte précis."
+Sub Assembly,Sous-ensemble
+Submit your Quotation,Valider votre devis
+Subqueries are not allowed in this query.,Les sous-requêtes ne sont pas permises dans cette requête.
+Successfully {0} 1 record.,1 enregistrement {0} avec succès.
+"Successfully {0} {1} record out of {2}. Click on Export Errored Rows, fix the errors and import again.","{0} avec succès : {1} enregistrement sur {2}. Cliquez sur « Exporter les lignes en erreur », corrigez les erreurs et importez de nouveau."
+"Successfully {0} {1} records out of {2}. Click on Export Errored Rows, fix the errors and import again.","{0} avec succès : {1} enregistrements sur {2}. Cliquez sur « Exporter les lignes en erreur », corrigez les erreurs et importez de nouveau."
+Successfully {0} {1} records.,{0} avec succès : {1} enregistrements.
+Supplier Quotation {0} already exists against Request for Quotation {1},Un devis fournisseur {0} existe déjà pour la demande de devis {1}
+Supplier Warehouse mandatory for sub-contracted {0},L'entrepôt du fournisseur est obligatoire pour la sous-traitance {0}
+Sync Data,Synchroniser les données
+Sync In Batches,Synchroniser par lots
+Sync Serial No Status,Synchroniser le statut des numéros de série
+Sync Timeout (Seconds),Délai de synchronisation (secondes)
+System Notifications,Notifications système
+Target Asset Location,Emplacement cible de l'actif
+Target Item Name,Nom de l'article cible
+Thank you for reaching out to us. We will get back to you at the earliest.,Merci de nous avoir écrit. Nous vous répondrons dans les plus brefs délais.
+The Accounts Module is all set up!,Le module Comptabilité est entièrement configuré !
+The Assets Module is all set up!,Le module Actifs est entièrement configuré !
+"The Batch {0} has negative batch quantity {1}. To fix this, go to the batch and click on Recalculate Batch Qty. If the issue still persists, create an inward entry.","Le lot {0} a une quantité négative ({1}). Pour corriger, ouvrez le lot et cliquez sur « Recalculer la quantité du lot ». Si le problème persiste, créez une écriture d'entrée."
+The Buying Module is all set up!,Le module Achats est entièrement configuré !
+The CRM Module is all set up!,Le module CRM est entièrement configuré !
+The Excluded Fee is bigger than the Deposit it is deducted from.,Les frais exclus sont supérieurs au dépôt dont ils sont déduits.
+The Selling Module is all set up!,Le module Ventes est entièrement configuré !
+The Stock Module is all set up!,Le module Stock est entièrement configuré !
+The account type of {0} cannot be changed from {1} because stock ledger entries exist against it.,"Le type de compte de {0} ne peut pas être changé depuis {1}, car des écritures du grand livre des stocks existent pour ce compte."
+The company {0} is not in South Africa. VAT Audit Report is only available for companies in South Africa.,La société {0} n'est pas en Afrique du Sud. Le rapport d'audit de la TVA n'est offert que pour les sociétés d'Afrique du Sud.
+The company {0} is not in United Arab Emirates. UAE VAT 201 report is only available for companies in United Arab Emirates.,La société {0} n'est pas aux Émirats arabes unis. Le rapport TVA 201 des Émirats n'est offert que pour les sociétés des Émirats arabes unis.
+The completed quantity {0} of an operation {1} cannot be greater than the completed quantity {2} of a previous operation {3}.,La quantité terminée {0} de l'opération {1} ne peut pas dépasser la quantité terminée {2} de l'opération précédente {3}.
+The email button is enabled for the user in the document.,Le bouton de courriel est activé pour la personne dans le document.
+The finished product {0} quantity {1} and For Quantity {2} cannot be different,La quantité {1} du produit fini {0} et la quantité « Pour » {2} ne peuvent pas être différentes
+The following cancelled repost entries exist for <b>{0}</b>:<br><br>{1}<br><br>,Les republications annulées suivantes existent pour <b>{0}</b> :<br><br>{1}<br><br>
+The following vouchers are not submitted: {0},Les pièces suivantes ne sont pas validées : {0}
+The outstanding amount {0} in {1} is lesser than {2}. Updating the outstanding to this invoice.,Le montant en souffrance {0} dans {1} est inférieur à {2}. Mise à jour du montant en souffrance de cette facture.
+The page you are looking for has gone missing.,La page que vous cherchez est introuvable.
+The print button is enabled for the user in the document.,Le bouton d'impression est activé pour la personne dans le document.
+The total column width cannot be more than 10.,La largeur totale des colonnes ne peut pas dépasser 10.
+The uploaded file could not be parsed as a genericode XML document.,Le fichier déposé n'a pas pu être lu comme un document XML genericode.
+The user can create a new Item but cannot edit existing items.,La personne peut créer un nouvel article mais ne peut pas modifier les articles existants.
+The user can delete Draft / Cancelled documents.,La personne peut supprimer les documents brouillons ou annulés.
+The user can export report data.,La personne peut exporter les données du rapport.
+The user can import new records or update existing data for the document.,La personne peut importer de nouveaux enregistrements ou mettre à jour les données existantes du document.
+The user can select a Customer in Sales Order but cannot open the Customer master.,La personne peut choisir un client dans une commande client mais ne peut pas ouvrir la fiche client.
+The user can share document access with another user.,La personne peut partager l'accès au document avec une autre personne.
+The user can update a customer or any other fields in an existing Sales Order but cannot create a new Sales Order.,La personne peut modifier un client ou d'autres champs d'une commande client existante mais ne peut pas créer de nouvelle commande client.
+The user can view Sales Invoices but cannot modify any field values in them.,La personne peut consulter les factures de vente mais ne peut modifier aucune valeur de champ.
+"There are two options to maintain valuation of stock. FIFO (first in - first out) and Moving Average. To understand this topic in detail please visit <a href='https://docs.frappe.io/erpnext/user/manual/en/calculation-of-valuation-rate-in-fifo-and-moving-average' target='_blank'>Item Valuation, FIFO and Moving Average.</a>","Il existe deux options pour évaluer le stock : PEPS (premier entré, premier sorti) et coût moyen mobile. Pour comprendre ce sujet en détail, consultez <a href='https://docs.frappe.io/Cortex/user/manual/en/calculation-of-valuation-rate-in-fifo-and-moving-average' target='_blank'>Évaluation des articles, PEPS et coût moyen mobile.</a>"
+There's nothing here,Il n'y a rien ici
+These announcements will appear inside a dismissible alert below the Navbar.,"Ces annonces apparaîtront dans une alerte que l'on peut fermer, sous la barre de navigation."
+This Doctype does not contain latitude and longitude fields,Ce type de document ne contient pas de champs de latitude et de longitude
+This Doctype does not contain location fields,Ce type de document ne contient pas de champs d'emplacement
+This Job Card has no raw materials to transfer.,Cette fiche de travail n'a aucune matière première à transférer.
+This PO has been fully subcontracted.,Cette commande d'achat a été entièrement sous-traitée.
+This Payment Entry is reconciled with {0}. Cancelling will automatically unreconcile it. Do you want to proceed?,Cette écriture de paiement est rapprochée de {0}. L'annuler la dérapprochera automatiquement. Voulez-vous continuer ?
+This Web Form Request has already been used,Cette demande de formulaire Web a déjà été utilisée
+This Web Form Request has expired,Cette demande de formulaire Web a expiré
+"This document allows you to edit limited fields. For all kinds of workspace customization, use the Edit button located on the workspace page","Ce document permet de modifier un nombre limité de champs. Pour toute personnalisation de l'espace de travail, utilisez le bouton Modifier situé sur la page de l'espace de travail"
+This document has already been queued for submission. You can track the progress over {0}.,Ce document a déjà été mis en file d'attente pour validation. Vous pouvez suivre la progression sur {0}.
+This is a snapshot report generated {0}.,Ceci est un rapport instantané généré {0}.
+This newsletter is scheduled to be sent on {0},Cette infolettre est planifiée pour être envoyée le {0}
+This newsletter was scheduled to send on a later date. Are you sure you want to send it now?,Cette infolettre était planifiée pour une date ultérieure. Voulez-vous vraiment l'envoyer maintenant ?
+This schedule was created when Asset {0} was restored due to Sales Invoice {1} cancellation.,Cet échéancier a été créé lorsque l'actif {0} a été restauré à la suite de l'annulation de la facture de vente {1}.
+This schedule was created when Asset {0} was updated after being split into new Asset {1}.,Cet échéancier a été créé lorsque l'actif {0} a été mis à jour après sa division en un nouvel actif {1}.
+This schedule was created when Asset {0} was {1} through Sales Invoice {2}.,Cet échéancier a été créé lorsque l'actif {0} a été {1} par la facture de vente {2}.
+This schedule was created when Asset {0}'s Asset Repair {1} was cancelled.,Cet échéancier a été créé lorsque la réparation d'actif {1} de l'actif {0} a été annulée.
+This schedule was created when new Asset {0} was split from Asset {1}.,Cet échéancier a été créé lorsque le nouvel actif {0} a été séparé de l'actif {1}.
+This verification link is invalid. Please book the appointment again.,Ce lien de vérification est invalide. Veuillez réserver de nouveau le rendez-vous.
+"This will terminate the job immediately and might be dangerous, are you sure? ",Cela arrêtera immédiatement la tâche et peut être dangereux. Voulez-vous continuer ? 
+This will update the warehouse and status of Serial Nos counted in {0} to match the stock ledger. Continue?,Cela mettra à jour l'entrepôt et le statut des numéros de série comptés dans {0} pour qu'ils correspondent au grand livre des stocks. Continuer ?
+Timesheet {0} cannot be invoiced in its current state,La feuille de temps {0} ne peut pas être facturée dans son état actuel
+To manage your authorized third party apps,Pour gérer vos applications tierces autorisées
+"To use Google Indexing, enable <a href=""/app/google-settings"">Google Settings</a>.","Pour utiliser l'indexation Google, activez les <a href=""/app/google-settings"">paramètres Google</a>."
+"To use Slack Channel, add a <a href=""#List/Slack%20Webhook%20URL/List"">Slack Webhook URL</a>.","Pour utiliser un canal Slack, ajoutez une <a href=""#List/Slack%20Webhook%20URL/List"">adresse de webhook Slack</a>."
+Toggle Section: {0},Basculer la section : {0}
+Too many requests. Please try again later.,Trop de requêtes. Veuillez réessayer plus tard.
+Top 10,10 premiers
+Top {0},{0} premiers
+Total Advance Paid,Total des avances payées
+Total Advance Paid: {0},Total des avances payées : {0}
+Total Advance Received,Total des avances reçues
+Total Advance Received: {0},Total des avances reçues : {0}
+Total Amount Due,Montant total dû
+Total Ledgers,Total des grands livres
+Total Only,Total seulement
+Total Recipients,Total des destinataires
+Total Unpaid,Total impayé
+Total Views,Total des vues
+Total completed quantity: {0},Quantité totale terminée : {0}
+"Total {0} of all items is zero, charges cannot be distributed on it.",Le total {0} de tous les articles est nul : les frais ne peuvent pas être répartis.
+Total {0} of all items is zero. Set 'Distribute Charges Based On' to {1}.,Le total {0} de tous les articles est nul. Définissez « Répartir les frais selon » sur {1}.
+Track Material Request,Suivre une demande de matériel
+Transaction Qty,Quantité de l'opération
+Transaction date can't be earlier than previous movement date,La date de l'opération ne peut pas précéder la date du mouvement précédent
+Transferred Qty (in Stock UOM),Quantité transférée (dans l'unité de stock)
+Trial Balance requires {0} to be synced to DuckDB,La balance de vérification exige que {0} soit synchronisé avec DuckDB
+Try the new Print Designer,Essayez le nouveau concepteur d'impression
+Turnover Ratios,Ratios de rotation
+Type Distribution,Répartition par type
+Type Name,Nom du type
+Unable to Repost Accounting Ledger,Impossible de republier le grand livre comptable
+Unable to load attachments.,Impossible de charger les pièces jointes.
+Unhide Workspace,Afficher l'espace de travail
+Unit Price,Prix unitaire
+Unreconcile Transaction,Annuler le rapprochement de l'opération
+Update Batch Qty,Mettre à jour la quantité du lot
+Update Costing and Billing,Mettre à jour les coûts et la facturation
+Update Stock Opening Balance,Mettre à jour le solde de stock d'ouverture
+Updating Opening Balances,Mettre à jour les soldes d'ouverture
+Upgrade plan,Améliorer le forfait
+Uploading backup to Google Drive.,Envoi de la sauvegarde vers Google Drive.
+Uploading successful.,Envoi réussi.
+Uploading to Google Drive,Envoi vers Google Drive
+Use Legacy Controller For Period Closing Voucher,Utiliser l'ancien contrôleur pour la pièce de clôture de période
+Use Number Format from Currency,Utiliser le format de nombre de la devise
+Use Prices from Default Price List as Fallback,Utiliser les prix de la liste de prix par défaut en dernier recours
+User Forum,Forum des utilisateurs
+User ID of a Blogger,Identifiant d'utilisateur d'un blogueur
+User Settings,Paramètres de l'utilisateur
+User don't have permissions to select/read this account.,La personne n'a pas la permission de sélectionner ou de lire ce compte.
+User not allowed to synchronize data from Frappe CRM on ERPNext. Contact System Manager of ERPNext.,La personne n'est pas autorisée à synchroniser les données de Frappe CRM dans Cortex. Communiquez avec l'administrateur système.
+Validate Consumed Qty (as per BOM),Valider la quantité consommée (selon la nomenclature)
+Validate Material Transfer Warehouses,Valider les entrepôts de transfert de matériel
+Variant {0} and its template {1} cannot both be added to the same Pricing Rule,La variante {0} et son modèle {1} ne peuvent pas être ajoutés ensemble à la même règle de tarification
+Verification Link Expiry Duration,Durée d'expiration du lien de vérification
+Verification Token,Jeton de vérification
+Verification link has expired.,Le lien de vérification a expiré.
+View Blog Post,Voir l'article de blogue
+View Stock Balance,Voir le solde de stock
+View Stock Ledger,Voir le grand livre des stocks
+View Switcher,Sélecteur de vue
+View Warehouses,Voir les entrepôts
+WIP Composite Asset,Actif composite en cours
+Wait for it to finish. Deleting the lock file {} will not release the lock.,Attendez la fin de l'opération. Supprimer le fichier de verrouillage {} ne libérera pas le verrou.
+Warning: Account changed for warehouse,Avertissement : le compte a changé pour l'entrepôt
+"We can see {0} is made against {1}. If you want {1}'s outstanding to be updated, uncheck the '{2}' checkbox.","Nous voyons que {0} est établi contre {1}. Si vous voulez que le montant en souffrance de {1} soit mis à jour, décochez la case « {2} »."
+Web Form Request,Demande de formulaire Web
+Web Form Request key is required,La clé de la demande de formulaire Web est obligatoire
+Web Form Request link copied,Lien de la demande de formulaire Web copié
+Web Form Values,Valeurs du formulaire Web
+What the recipient receives by email when this notification fires. Mirrors Title/Description by default; set these to make the email differ from the in-app text.,Ce que le destinataire reçoit par courriel lorsque cette notification se déclenche. Reprend le titre et la description par défaut ; modifiez-les pour que le courriel diffère du texte dans l'application.
+"When there are multiple finished goods ({0}) in a Repack stock entry, the basic rate for all finished goods must be set manually. To set rate manually, enable the checkbox 'Set Basic Rate Manually' in the respective finished good row.","Quand une écriture de stock de reconditionnement contient plusieurs produits finis ({0}), le taux de base de tous les produits finis doit être défini manuellement. Pour cela, cochez « Définir le taux de base manuellement » dans la ligne du produit fini concerné."
+Work Order Mismatch,Écart d'ordre de fabrication
+Work Order {0} has no produced qty,L'ordre de fabrication {0} n'a aucune quantité produite
+Workflows allow you to define custom rules for the approval process of a particular document in ERPNext. You can also set complex Workflow Rules and set approval conditions.,Les flux de travail permettent de définir des règles personnalisées pour le processus d'approbation d'un document d'Cortex. Vous pouvez aussi définir des règles complexes et des conditions d'approbation.
+Workspace not found,Espace de travail introuvable
+Workspace {0} Created Successfully,Espace de travail {0} créé avec succès
+Workspace {0} Deleted Successfully,Espace de travail {0} supprimé avec succès
+Workspace {0} Edited Successfully,Espace de travail {0} modifié avec succès
+Yahoo Mail,Yahoo Mail
+You are impersonating as another user.,Vous incarnez un autre utilisateur.
+You are not allowed to update attendance for another user.,Vous n'êtes pas autorisé à mettre à jour la présence d'un autre utilisateur.
+You are not permitted to create a Task for Project {0},Vous n'avez pas la permission de créer une tâche pour le projet {0}
+You can only edit your own replies.,Vous ne pouvez modifier que vos propres réponses.
+You can only follow documents for yourself.,Vous ne pouvez suivre des documents que pour vous-même.
+You can only unfollow documents for yourself.,Vous ne pouvez ne plus suivre des documents que pour vous-même.
+You can set a high value here if multiple users will be logging in from the same network.,Vous pouvez définir une valeur élevée ici si plusieurs utilisateurs se connectent depuis le même réseau.
+You can use {0} to reconcile against {1} later.,Vous pourrez utiliser {0} pour rapprocher {1} plus tard.
+"You cannot outward following {0} as either they are Delivered, Inactive or located in a different warehouse.","Vous ne pouvez pas sortir les {0} suivants, car ils sont livrés, inactifs ou situés dans un autre entrepôt."
+You do not have Read or Select Permissions for {},Vous n'avez pas les permissions de lecture ou de sélection pour {}
+You do not have permission to create or restore documents of type {0}.,Vous n'avez pas la permission de créer ou de restaurer des documents de type {0}.
+You do not have permission to restore this document.,Vous n'avez pas la permission de restaurer ce document.
+You don't have permission to create Report records.,Vous n'avez pas la permission de créer des enregistrements de rapport.
+You don't have permission to create report for {0},Vous n'avez pas la permission de créer un rapport pour {0}
+You don't have permission to print: {0},Vous n'avez pas la permission d'imprimer : {0}
+You don't have permission to read/attach the file {0}.,Vous n'avez pas la permission de lire ou de joindre le fichier {0}.
+You have enabled {0} and {1} in {2}. This can lead to prices from the default price list being inserted in the transaction price list.,Vous avez activé {0} et {1} dans {2}. Cela peut entraîner l'insertion des prix de la liste de prix par défaut dans la liste de prix de l'opération.
+You have enabled {0} and {1} in {2}. This can lead to prices from the default price list being inserted into the transaction price list.,Vous avez activé {0} et {1} dans {2}. Cela peut entraîner l'insertion des prix de la liste de prix par défaut dans la liste de prix de l'opération.
+You have received a ❤️ like on your blog post,Vous avez reçu un ❤️ sur votre article de blogue
+You have unseen notifications,Vous avez des notifications non lues
+You hit the rate limit because of too many requests. Please try after sometime.,Vous avez atteint la limite de débit en raison d'un trop grand nombre de requêtes. Veuillez réessayer plus tard.
+You last edited this document,Vous avez modifié ce document pour la dernière fois
+You must login to use this form,Vous devez vous connecter pour utiliser ce formulaire
+You need to create these first: ,Vous devez d'abord créer ceci : 
+You need write permissions to add attachments to this record.,Vous avez besoin de la permission d'écriture pour ajouter des pièces jointes à cet enregistrement.
+You're ready to start your journey with ERPNext,Vous êtes prêt à commencer votre parcours avec Cortex
+Your login attempt is invalid or has expired. Please try again.,Votre tentative de connexion est invalide ou a expiré. Veuillez réessayer.
+Your site is undergoing maintenance or being updated.,Votre site est en cours de maintenance ou de mise à jour.
+Your website is all set up!,Votre site Web est entièrement configuré !
+Zip file extracts to more than the maximum allowed size of {0} MB,Le fichier ZIP s'extrait en plus que la taille maximale permise de {0} Mo
+`doctype` and `fieldname` are required for deleting property setters.,`doctype` et `fieldname` sont obligatoires pour supprimer des propriétés personnalisées.
+added {0} row(s) to {1},{0} ligne(s) ajoutée(s) à {1}
+changed {0},{0} modifié
+cleared {0},{0} effacé
+is already,est déjà
+min read,min de lecture
+removed {0} row(s) from {1},{0} ligne(s) retirée(s) de {1}
+set {0} to,{0} défini à
+set {0} to {1} in row #{2},{0} défini à {1} à la ligne n° {2}
+updated {0},{0} mis à jour
+via Google Meet,par Google Meet
+via {0},par {0}
+visible_types entries must be strings or {type: [fields]} maps,Les entrées de visible_types doivent être des chaînes ou des tables {type : [champs]}
+visible_types fields for {0} must be a list,Les champs de visible_types pour {0} doivent être une liste
+visible_types is not valid JSON: {0},visible_types n'est pas du JSON valide : {0}
+visible_types must be a list,visible_types doit être une liste
+will be,sera
+{0} Budget for Account {1} against {2} {3} is {4}. It {5} exceed by {6},Le budget {0} du compte {1} pour {2} {3} est de {4}. Il {5} dépassé de {6}
+{0} Modules,{0} modules
+{0} Workspace,Espace de travail {0}
+{0} appreciation point for {1},{0} point d'appréciation pour {1}
+{0} appreciation points for {1},{0} points d'appréciation pour {1}
+{0} can be either {1} or {2}.,{0} peut être {1} ou {2}.
+{0} contains invalid field(s): {1},{0} contient des champs invalides : {1}
+{0} creation for the following records will be skipped.,La création de {0} pour les enregistrements suivants sera ignorée.
+{0} criticism point for {1},{0} point de critique pour {1}
+{0} criticism points for {1},{0} points de critique pour {1}
+{0} does not belong to the Company {1}.,{0} n'appartient pas à la société {1}.
+{0} does not exist,{0} n'existe pas
+{0} doesn't belong to Company {1}. Please select a Cost Center that belongs to Company {1}.,{0} n'appartient pas à la société {1}. Veuillez choisir un centre de coûts appartenant à la société {1}.
+{0} doesn't belong to Company {1}. Please select an Income Account that belongs to Company {1}.,{0} n'appartient pas à la société {1}. Veuillez choisir un compte de revenus appartenant à la société {1}.
+{0} gained {1} points,{0} a gagné {1} points
+{0} gave {1} points,{0} a donné {1} points
+{0} has been modified after you pulled it. Please pull it again.,{0} a été modifié après que vous l'avez récupéré. Veuillez le récupérer de nouveau.
+{0} is a built-in Notification Type and cannot be deleted. Disable it instead.,{0} est un type de notification intégré et ne peut pas être supprimé. Désactivez-le plutôt.
+{0} is a group Cost Center. Please select a non-group Cost Center.,{0} est un centre de coûts de groupe. Veuillez choisir un centre de coûts qui n'est pas un groupe.
+{0} is a group account. Please select a non-group Income Account.,{0} est un compte de groupe. Veuillez choisir un compte de revenus qui n'est pas un groupe.
+{0} is a mandatory Accounting Dimension. <br>,{0} est une dimension comptable obligatoire. <br>
+{0} is already a Reverse Journal Entry of {1}. Cancel it instead of reversing it.,{0} est déjà une écriture de journal d'extourne de {1}. Annulez-la plutôt que de l'extourner.
+{0} is disabled. Please select a valid Income Account.,{0} est désactivé. Veuillez choisir un compte de revenus valide.
+{0} is disabled. Please select an enabled Cost Center.,{0} est désactivé. Veuillez choisir un centre de coûts activé.
+{0} is not a CSV file.,{0} n'est pas un fichier CSV.
+{0} is not a child table,{0} n'est pas une table enfant
+{0} is not a valid Accounting Dimension.,{0} n'est pas une dimension comptable valide.
+{0} is not a valid reference field for {1},{0} n'est pas un champ de référence valide pour {1}
+{0} is not a valid {1} fieldname.,{0} n'est pas un nom de champ {1} valide.
+{0} is not an Income Account. Please select a valid Income Account.,{0} n'est pas un compte de revenus. Veuillez choisir un compte de revenus valide.
+{0} is not an enabled Print Format for a Report,{0} n'est pas un format d'impression activé pour un rapport
+{0} is still in Draft. Please submit it before saving the Asset Repair.,{0} est encore au statut brouillon. Veuillez le valider avant d'enregistrer la réparation d'actif.
+{0} is the site's Demo Company and cannot be deleted directly. Use {1} instead.,{0} est la société de démonstration du site et ne peut pas être supprimée directement. Utilisez plutôt {1}.
+{0} items disassembled,{0} articles démontés
+{0} items returned,{0} articles retournés
+{0} items to return,{0} articles à retourner
+{0} languages are marked as default languages. Please select only one of them.,{0} langues sont marquées comme langues par défaut. Veuillez n'en choisir qu'une seule.
+{0} last edited this document,{0} a modifié ce document pour la dernière fois
+{0} must be beginning with '{1}',{0} doit commencer par « {1} »
+{0} must be equal to '{1}',{0} doit être égal à « {1} »
+{0} must be greater than zero.,{0} doit être supérieur à zéro.
+{0} must be none of {1},{0} ne doit être aucun de {1}
+{0} must be {1} {2},{0} doit être {1} {2}
+"{0} never sends email, so it cannot be enabled for users.","{0} n'envoie jamais de courriel, il ne peut donc pas être activé pour les utilisateurs."
+{0} of {1} sent,{0} sur {1} envoyé(s)
+{0} row #{1}: ,{0} ligne n° {1} : 
+{0} units of Item {1} is not available in any of the warehouses. Other Pick Lists exist for this item.,{0} unités de l'article {1} ne sont disponibles dans aucun entrepôt. D'autres listes de prélèvement existent pour cet article.
+{0} units of {1} are required in {2} with the inventory dimension: {3} on {4} {5} for {6} to complete the transaction.,{0} unités de {1} sont nécessaires dans {2} avec la dimension d'inventaire : {3} le {4} {5} pour {6} afin de terminer l'opération.
+{0} {1} is blocked and on hold until {2}.,{0} {1} est bloqué et en attente jusqu'au {2}.
+{0} {1} is blocked.,{0} {1} est bloqué.
+{0} {1} was submitted but could not be reconciled against Bank Transaction {2}. Match it manually from the Bank Reconciliation Tool.,{0} {1} a été validé mais n'a pas pu être rapproché de l'opération bancaire {2}. Rapprochez-le manuellement avec l'outil de rapprochement bancaire.
+{0}'s {1} cannot be before {2}'s Expected Start Date.,Le {1} de {0} ne peut pas précéder la date de début prévue de {2}.
+"{0}, {1} or {2} are the only allowed options.","{0}, {1} ou {2} sont les seules options permises."
+{0}: Link field cannot reference DocType {1} without Guest read permission,{0} : le champ de lien ne peut pas référencer le type de document {1} sans permission de lecture pour les invités
+"{0}: expected ""{1}"", got ""{2}""","{0} : « {1} » attendu, « {2} » reçu"
+{0}: {1} does not exist,{0} : {1} n'existe pas
+{0}: {1} is a group account.,{0} : {1} est un compte de groupe.
+"{filters.get('party_type', 'Party')} Type","Type de {filters.get('party_type', 'Party')}"
+{} Published,{} publié(e)
+Under Repair,En réparation
+Decommissioned,Radié
+Tax Rate (%),Taux de taxe (%)
+Half Day,Demi-journée
+Quarter Day,Quart de journée
+Blog,Blogue
+Newsletter,Infolettre
+Newsletters,Infolettres
+Models,Modèles
+Modules,Modules
+Module Settings,Paramètres du module
+Webhook,Webhook
+Core,Noyau
+Email / Notifications,Courriel / Notifications
+Learn Accounting,Apprendre la comptabilité
+Get started,Pour commencer
+Frappe Insights →,Frappe Insights →
+Let's walk-through Chart of Accounts to review setup,Passons en revue le plan comptable pour vérifier la configuration
+Let’s walk-through few Buying Settings,Passons en revue quelques paramètres d'achat
+Let’s walk-through Selling Settings,Passons en revue les paramètres de vente
+Take a walk through Stock Settings,Passons en revue les paramètres de stock
+In Progress,En cours
+Pending Verification,Vérification en attente
+System User,Utilisateur système
+Website User,Utilisateur du site Web
+Lead,Prospect
+Guest,Invité
+Accounts Payable Ageing,Vieillissement des comptes fournisseurs
+Accounts Receivable Ageing,Vieillissement des comptes clients
+Active Suppliers,Fournisseurs actifs
+Annual Purchase,Achats annuels
+Annual Sales,Ventes annuelles
+Browse Apps,Parcourir les applications
+Budget Variance,Écart budgétaire
+Communication Channels,Canaux de communication
+Delivery Trends,Tendances des livraisons
+Incoming Bills (Purchase Invoice),Factures reçues (factures d'achat)
+Incoming Leads,Prospects entrants
+Item Shortage Summary,Sommaire des ruptures d'articles
+Item-wise Annual Sales,Ventes annuelles par article
+Location-wise Asset Value,Valeur des actifs par emplacement
+Masters &amp; Reports,Fiches maîtresses et rapports
+Masters & Reports,Fiches maîtresses et rapports
+Reports &amp; Masters,Rapports et fiches maîtresses
+Reports & Masters,Rapports et fiches maîtresses
+Material Request Analysis,Analyse des demandes de matériel
+Negative Batch Report,Rapport des lots négatifs
+New Lead (Last 1 Month),Nouveaux prospects (dernier mois)
+New Opportunity (Last 1 Month),Nouvelles opportunités (dernier mois)
+Notification,Notification
+Oldest Items,Articles les plus anciens
+Open Opportunity,Opportunités ouvertes
+Opportunities via Campaigns,Opportunités par campagne
+Opportunity Trends,Tendances des opportunités
+Outgoing Bills (Sales Invoice),Factures émises (factures de vente)
+Social Login,Connexion sociale
+Stock Qty vs Batch Qty,Quantité en stock et quantité par lot
+Territory Wise Opportunity Count,Nombre d'opportunités par territoire
+Top Customers,Meilleurs clients
+Top Suppliers,Meilleurs fournisseurs
+Won Opportunities,Opportunités gagnées
+Won Opportunity (Last 1 Month),Opportunités gagnées (dernier mois)
+Sales Order Trends,Tendances des commandes clients
+Purchase Order Trends,Tendances des commandes d'achat
+Sales Invoice Trends,Tendances des factures de vente
+Purchase Invoice Trends,Tendances des factures d'achat
+Purchase Receipt Trends,Tendances des réceptions d'achat
+Warehouse wise Stock Value,Valeur du stock par entrepôt
+Category-wise Asset Value,Valeur des actifs par catégorie
+Completed Operation,Opérations terminées
+Cortex System Manager,Gestionnaire système Cortex
+Cortex Operations Manager,Gestionnaire des opérations Cortex
+Cortex Counter Staff,Personnel de comptoir Cortex
+Cortex Inventory Manager,Gestionnaire d'inventaire Cortex
+Cortex Finance Manager,Gestionnaire des finances Cortex
+Cortex Consignment Manager,Gestionnaire de consignation Cortex
+Cortex Account Reviewer,Réviseur de comptes Cortex
+Cortex Read Only,Lecture seule Cortex
+Cortex Migration Worker,Agent de migration Cortex
+Cortex Agent Intake,Agent d'accueil des demandes Cortex
+Cortex Agent Availability,Agent de disponibilité Cortex
+Cortex Agent Reporting,Agent de rapports Cortex
+Agent Service Account,Compte de service d'agent
+Rental Manager,Gestionnaire de location
+Rental Operator,Opérateur de location

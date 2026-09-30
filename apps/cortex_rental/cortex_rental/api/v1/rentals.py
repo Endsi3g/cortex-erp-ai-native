@@ -28,7 +28,7 @@ def _profile(item_code: str, company: str):
     )
     if not profile:
         frappe.throw(
-            f"{item_code} is not in the rental catalog for this company.",
+            f"{item_code} ne fait pas partie du catalogue de location de cette société.",
             frappe.ValidationError,
         )
     return profile
@@ -37,12 +37,12 @@ def _profile(item_code: str, company: str):
 def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     starts_at, ends_at = payload.get("starts_at"), payload.get("ends_at")
     if not starts_at or not ends_at:
-        frappe.throw("Rental start and end dates are required.", frappe.ValidationError)
+        frappe.throw("Les dates de début et de fin de la location sont obligatoires.", frappe.ValidationError)
     calendar_days, billable_days = PricingService.compute_billable_days(starts_at, ends_at, company)
     requests = payload.get("items") or []
     if not requests:
         frappe.throw(
-            "Add at least one rental item before requesting a price.",
+            "Ajoutez au moins un équipement avant de demander un prix.",
             frappe.ValidationError,
         )
     lines, subtotal, discount_amount = [], 0.0, 0.0
@@ -53,16 +53,16 @@ def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
         discount = float(requested.get("discount_percentage") or 0)
         if quantity <= 0:
             frappe.throw(
-                f"Quantity must be greater than zero for {code}.",
+                f"La quantité doit être supérieure à zéro pour {code}.",
                 frappe.ValidationError,
             )
         if discount < 0 or discount > 100:
             frappe.throw(
-                f"Discount must be between 0 and 100 for {code}.",
+                f"La remise doit être comprise entre 0 et 100 pour {code}.",
                 frappe.ValidationError,
             )
         if discount and not roles.intersection({"System Manager", "Administrator", "Rental Manager"}):
-            frappe.throw("Only a Rental Manager can apply a discount.", frappe.PermissionError)
+            frappe.throw("Seul un gestionnaire de location peut appliquer une remise.", frappe.PermissionError)
         profile = _profile(code, company)
         # The browser's daily_rate is deliberately ignored. The company-scoped
         # Rental Item Profile is the sole price authority.
@@ -100,7 +100,7 @@ def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
 
 def _customer_in_company(customer: str, company: str) -> None:
     if not frappe.db.exists("Customer", {"name": customer, "cortex_company": company}):
-        frappe.throw("Customer is unavailable for the active company.", frappe.PermissionError)
+        frappe.throw("Ce client n'est pas disponible pour la société active.", frappe.PermissionError)
 
 
 def _serialize(doc) -> Dict[str, Any]:
@@ -209,7 +209,7 @@ def _owned_transaction(name: str, company: str):
     doc = frappe.get_doc("Cortex Rental Transaction", name)
     if doc.company != company:
         frappe.throw(
-            "Rental transaction is unavailable for the active company.",
+            "Cette location n'est pas disponible pour la société active.",
             frappe.PermissionError,
         )
     return doc

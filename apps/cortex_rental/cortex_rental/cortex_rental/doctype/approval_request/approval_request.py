@@ -12,6 +12,7 @@ except ImportError:
     frappe = None
 
 from cortex_rental.cortex_rental.doctype.audit_event.audit_event import log_audit_event
+from cortex_rental.labels import approval_label
 
 
 class ApprovalRequest(Document):
@@ -28,7 +29,7 @@ class ApprovalRequest(Document):
             # Strict Agent Gate: Agents can never approve
             if "Agent Service Account" in user_roles or getattr(frappe.flags, "in_agent_context", False):
                 frappe.throw(
-                    "Agents are strictly forbidden from approving requests.",
+                    "Un agent ne peut jamais approuver une demande.",
                     frappe.PermissionError,
                 )
 
@@ -40,7 +41,7 @@ class ApprovalRequest(Document):
 
             if self.status != "Pending":
                 frappe.throw(
-                    f"Cannot approve an approval request in status [{self.status}].",
+                    f"Impossible d'approuver une demande au statut « {approval_label(self.status)} ».",
                     frappe.ValidationError,
                 )
 
@@ -109,9 +110,9 @@ class ApprovalRequest(Document):
     def reject(self, reason: str):
         if not reason or not reason.strip():
             if frappe:
-                frappe.throw("A rejection reason is strictly required.", frappe.ValidationError)
+                frappe.throw("Un motif de refus est obligatoire.", frappe.ValidationError)
             else:
-                raise ValueError("Rejection reason required.")
+                raise ValueError("Un motif de refus est obligatoire.")
 
         if frappe:
             current_user = frappe.session.user

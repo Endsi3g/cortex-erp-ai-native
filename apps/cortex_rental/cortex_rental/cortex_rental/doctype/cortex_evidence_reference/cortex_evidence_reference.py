@@ -22,8 +22,8 @@ class CortexEvidenceReference(Document):
         if not self.file and not self.text_excerpt:
             if frappe:
                 frappe.throw(
-                    "A Cortex Evidence Reference must have either a file or a text excerpt.",
+                    "Une pièce justificative doit contenir un fichier ou un extrait de texte.",
                     frappe.ValidationError,
                 )
             else:
-                raise ValueError("Evidence Reference must have a file or a text excerpt.")
+                raise ValueError("Une pièce justificative doit contenir un fichier ou un extrait de texte.")

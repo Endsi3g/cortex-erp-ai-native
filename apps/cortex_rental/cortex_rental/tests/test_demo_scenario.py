@@ -117,7 +117,7 @@ class TestCortexDemoScenario(unittest.TestCase):
             current_state="Quote", target_state="Reservation", transaction_doc=None, is_agent=True
         )
         self.assertFalse(allowed)
-        self.assertIn("Approval required", reason)
+        self.assertIn("approbation humaine", reason)
 
     def test_step_9_consignment_payout_redacts_renter_identity(self):
         payout = prepare_owner_statement_handler(

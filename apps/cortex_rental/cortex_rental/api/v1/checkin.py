@@ -28,7 +28,7 @@ from cortex_rental.services.evidence import register_evidence
 def complete_checkin_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
     checkin_name = payload.get("checkin_id")
     if not checkin_name:
-        raise ValueError("checkin_id is required.")
+        raise ValueError("Le retour à clôturer est obligatoire.")
     finalize_mode = payload.get("finalize_mode", "auto")
     return complete_checkin(checkin_name=checkin_name, actor_id=actor_id, finalize_mode=finalize_mode)
 
@@ -36,7 +36,7 @@ def complete_checkin_handler(payload: Dict[str, Any], company: str, actor_id: st
 def submit_checkin_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
     transaction_id = payload.get("transaction_id")
     if not transaction_id:
-        raise ValueError("transaction_id is required.")
+        raise ValueError("La location est obligatoire.")
 
     items_raw = payload.get("items")
     if isinstance(items_raw, str):
@@ -50,7 +50,7 @@ def submit_checkin_handler(payload: Dict[str, Any], company: str, actor_id: str)
         items = items_raw or []
 
     if not items:
-        raise ValueError("items array is required.")
+        raise ValueError("Ajoutez au moins une ligne de matériel.")
 
     for item in items:
         file_name = item.pop("file_name", None)
@@ -67,7 +67,7 @@ def submit_checkin_handler(payload: Dict[str, Any], company: str, actor_id: str)
                 or attached.attached_to_name != transaction_id
             ):
                 frappe.throw(
-                    "Evidence file is not attached to this rental transaction.",
+                    "Ce fichier n'est pas joint à cette location.",
                     frappe.PermissionError,
                 )
             evidence = register_evidence(

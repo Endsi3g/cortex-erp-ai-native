@@ -31,7 +31,7 @@
       "in_list_view": 1,
       "in_standard_filter": 1,
       "label": "Agent ID",
-      "description": "Logical agent persona (e.g. cortex_intake, cortex_availability), from the X-Cortex-Agent-Id request header.",
+      "description": "Persona logique de l'agent (par exemple cortex_intake, cortex_availability), tirée de l'en-tête X-Cortex-Agent-Id.",
       "reqd": 1
     },
     {
@@ -39,7 +39,7 @@
       "fieldtype": "Data",
       "in_list_view": 1,
       "label": "Request/Run ID",
-      "description": "Correlation ID grouping every tool call made within one logical agent run.",
+      "description": "Identifiant de corrélation qui regroupe tous les appels d'outils d'une même exécution d'agent.",
       "reqd": 1,
       "unique": 1
     },
@@ -54,7 +54,7 @@
       "fieldname": "model_used",
       "fieldtype": "Data",
       "label": "Model Used",
-      "description": "e.g. gemini-3.7-flash, claude-sonnet-5. Informational only, never trusted for authorization."
+      "description": "Par exemple gemini-3.7-flash ou claude-sonnet-5. À titre indicatif seulement : jamais utilisé pour autoriser."
     },
     {
       "default": "Running",

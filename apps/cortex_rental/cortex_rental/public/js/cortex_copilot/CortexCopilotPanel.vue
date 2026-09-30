@@ -189,16 +189,16 @@ const panelStyle = computed(() =>
 			v-if="mode === 'floating' && !isOpen"
 			ref="launcherRef"
 			class="cp-launcher"
-			aria-label="Ouvrir Cortex Copilot (⌘J)"
-			title="Cortex Copilot (⌘J / Ctrl+J)"
+			aria-label="Ouvrir le copilote Cortex (⌘J)"
+			title="Copilote Cortex (⌘J / Ctrl+J)"
 			@click="open(false)"
 		>
 			<span class="cp-launcher-icon" v-html="ICONS.sparkles"></span>
-			<span class="cp-launcher-text">Copilot</span>
+			<span class="cp-launcher-text">Copilote</span>
 			<span class="cp-launcher-kbd">⌘J</span>
 		</button>
 
-		<div v-if="mode === 'docked' || isOpen" class="cp-panel" :class="mode" :style="panelStyle" role="complementary" aria-label="Cortex Copilot">
+		<div v-if="mode === 'docked' || isOpen" class="cp-panel" :class="mode" :style="panelStyle" role="complementary" aria-label="Copilote Cortex">
 			<div v-if="mode === 'floating'" class="cp-resize-handle" @mousedown="startResize"></div>
 			<CopilotHeader
 				subtitle="Cortex peut expliquer, préparer et signaler — jamais exécuter seul."

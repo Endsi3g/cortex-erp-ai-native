@@ -14,6 +14,22 @@ def signup_form_path() -> str:
     return SIGNUP_TEMPLATE
 
 
+def french_for_guests() -> None:
+    """Cortex ships in French only: a visitor who is not signed in and chose no language gets French pages.
+
+    Signed-in people keep the language of their profile (French unless they picked another one). An explicit `_lang`
+    parameter or `preferred_language` cookie still wins.
+    """
+    if not frappe or frappe.session.user != "Guest":
+        return
+    request = getattr(frappe.local, "request", None)
+    if request is None:
+        return
+    if request.args.get("_lang") or request.cookies.get("preferred_language"):
+        return
+    frappe.local.lang = "fr"
+
+
 def boot_session(bootinfo) -> None:
     """Read-only: tell the Desk where the AI-first home is and whether the owner's setup is unfinished.
 

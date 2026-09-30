@@ -62,7 +62,7 @@ def with_idempotency(
     if existing:
         if existing.payload_hash != payload_hash:
             frappe.throw(
-                "Idempotency-Key reuse with a different request payload is not allowed.",
+                "La même clé d'idempotence ne peut pas servir pour une demande différente.",
                 frappe.ValidationError,
             )
         return json.loads(existing.response_snapshot)

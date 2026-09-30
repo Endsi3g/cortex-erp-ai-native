@@ -19,6 +19,23 @@
 		return el.getAttribute("data-original-title") || el.getAttribute("title") || "";
 	}
 
+	// Nom français d'un champ dont l'étiquette n'est pas reliée : étiquette du formulaire ou du rapport ouvert, sinon
+	// le nom technique lisible (jamais exposé tel quel : « posting_date » devient « posting date »).
+	function fieldLabel(fieldname) {
+		if (!fieldname) return "";
+		try {
+			if (window.cur_frm && window.cur_frm.doctype) {
+				const df = frappe.meta.get_docfield(window.cur_frm.doctype, fieldname, window.cur_frm.docname);
+				if (df && df.label) return t(df.label);
+			}
+			const filter = frappe.query_report && frappe.query_report.get_filter && frappe.query_report.get_filter(fieldname);
+			if (filter && filter.df && filter.df.label) return t(filter.df.label);
+		} catch (e) {
+			// On retombe sur le nom lisible.
+		}
+		return fieldname.replace(/_/g, " ");
+	}
+
 	function fixViewport() {
 		const meta = document.querySelector('meta[name="viewport"]');
 		if (meta && /user-scalable\s*=\s*no|maximum-scale\s*=\s*1(\.0)?\b/.test(meta.content)) {
@@ -67,7 +84,7 @@
 		[".frappe-control input:not([type=checkbox]):not([type=hidden]):not([aria-label]):not([id]), .frappe-control textarea:not([aria-label]):not([id])", (el) => {
 			const control = el.closest(".frappe-control");
 			const label = control && control.querySelector(".control-label, .label-area");
-			name(el, (label && visibleText(label)) || el.getAttribute("placeholder") || el.getAttribute("data-fieldname"));
+			name(el, (label && visibleText(label)) || el.getAttribute("placeholder") || fieldLabel(el.getAttribute("data-fieldname")));
 		}],
 		[".scroll-to-top:not([aria-label])", (el) => name(el, t("Haut de la page"))],
 		// Tables de formulaire (grilles) et sélecteur d'heure.
@@ -93,7 +110,7 @@
 		// Listes déroulantes de filtres.
 		["select:not([aria-label]):not([id])", (el) => {
 			const control = el.closest(".frappe-control");
-			name(el, el.getAttribute("placeholder") || (control && tooltip(control)) || el.getAttribute("data-fieldname"));
+			name(el, el.getAttribute("placeholder") || (control && tooltip(control)) || fieldLabel(el.getAttribute("data-fieldname")));
 		}],
 		// Tables de rapport (DataTable).
 		["input.dt-filter:not([aria-label])", (el) => name(el, t("Filtre de colonne"))],

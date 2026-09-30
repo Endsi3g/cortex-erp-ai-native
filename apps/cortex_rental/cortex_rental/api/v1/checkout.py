@@ -17,7 +17,7 @@ def _transaction(name, company):
     doc = frappe.get_doc("Cortex Rental Transaction", name)
     if doc.company != company:
         frappe.throw(
-            "Rental transaction is unavailable for the active company.",
+            "Cette location n'est pas disponible pour la société active.",
             frappe.PermissionError,
         )
     return doc
@@ -41,7 +41,7 @@ if frappe:
         payload = frappe.local.form_dict
         doc = _transaction(payload.get("rental_id"), company)
         if doc.rental_state != "Contract":
-            frappe.throw("Only an approved Contract can be checked out.", frappe.ValidationError)
+            frappe.throw("Seul un contrat approuvé peut donner lieu à une sortie de matériel.", frappe.ValidationError)
         serial = (payload.get("serial_number") or "").strip()
         serial_doc = frappe.db.get_value(
             "Serial No",
@@ -55,7 +55,7 @@ if frappe:
             or (serial_doc.cortex_status or "Active") != "Active"
         ):
             frappe.throw(
-                "This serial number is missing, belongs to another company, or is not available.",
+                "Ce numéro de série est introuvable, appartient à une autre société ou n'est pas disponible.",
                 frappe.ValidationError,
             )
         row = next(
@@ -64,13 +64,13 @@ if frappe:
         )
         if not row or row.item_code != serial_doc.item_code:
             frappe.throw(
-                "This serial number is not allocated to this rental contract.",
+                "Ce numéro de série n'est pas attribué à ce contrat de location.",
                 frappe.ValidationError,
             )
         scanned = _array(row.scanned_checkout_serials)
         if serial in scanned:
             frappe.throw(
-                "This serial number has already been scanned for this checkout.",
+                "Ce numéro de série a déjà été balayé pour cette sortie.",
                 frappe.ValidationError,
             )
         scanned.append(serial)
@@ -91,7 +91,7 @@ if frappe:
         payload = frappe.local.form_dict
         doc = _transaction(payload.get("rental_id"), company)
         if doc.rental_state != "Contract":
-            frappe.throw("Only an approved Contract can be checked out.", frappe.ValidationError)
+            frappe.throw("Seul un contrat approuvé peut donner lieu à une sortie de matériel.", frappe.ValidationError)
         missing = []
         for row in doc.items:
             assigned = set(_array(row.assigned_serials))
@@ -105,12 +105,12 @@ if frappe:
                 missing.extend(sorted(assigned - scanned))
             elif profile and not assigned:
                 frappe.throw(
-                    f"No physical serial allocation exists for {row.item_code}; return the contract to the rental manager.",
+                    f"Aucun numéro de série n'est attribué à {row.item_code} ; renvoyez le contrat au gestionnaire de location.",
                     frappe.ValidationError,
                 )
         if missing:
             frappe.throw(
-                "Scan every allocated unit before completing checkout: " + ", ".join(missing),
+                "Balayez chaque unité attribuée avant de terminer la sortie : " + ", ".join(missing),
                 frappe.ValidationError,
             )
         doc.transition_to("Checked Out", reason="Warehouse checkout completed by authorized staff")

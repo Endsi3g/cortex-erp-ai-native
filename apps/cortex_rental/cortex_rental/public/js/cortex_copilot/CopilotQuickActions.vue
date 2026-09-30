@@ -23,7 +23,7 @@ const ACTIONS_BY_PAGE = {
 		{ label: "Vérifier la règle 7j=3j", message: "Vérifie l'application de la règle tarifaire 7j=3j." },
 	],
 	checkin: [
-		{ label: "Retours en retard (Overdue)", message: "Y a-t-il des retours en retard sur les locations en cours ?" },
+		{ label: "Retours en retard", message: "Y a-t-il des retours en retard sur les locations en cours ?" },
 		{ label: "Articles en quarantaine", message: "Quels équipements sont actuellement en quarantaine pour diagnostic ?" },
 	],
 	dashboard: [

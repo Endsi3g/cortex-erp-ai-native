@@ -18,5 +18,5 @@ class CortexChatMessage(Document):
 
     def on_trash(self):
         if frappe:
-            frappe.throw("Cortex Chat Message records cannot be deleted.", frappe.PermissionError)
-        raise PermissionError("Cortex Chat Message records cannot be deleted.")
+            frappe.throw("Les messages de conversation ne peuvent pas être supprimés.", frappe.PermissionError)
+        raise PermissionError("Les messages de conversation ne peuvent pas être supprimés.")

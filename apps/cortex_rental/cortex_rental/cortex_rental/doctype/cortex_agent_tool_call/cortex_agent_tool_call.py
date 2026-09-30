@@ -22,10 +22,10 @@ class CortexAgentToolCall(Document):
     def before_save(self):
         if hasattr(self, "is_new") and not self.is_new():
             if frappe:
-                frappe.throw("Agent Tool Call records are immutable.", frappe.PermissionError)
-            raise PermissionError("Agent Tool Call records are immutable.")
+                frappe.throw("Les appels d'outil d'agent sont immuables.", frappe.PermissionError)
+            raise PermissionError("Les appels d'outil d'agent sont immuables.")
 
     def on_trash(self):
         if frappe:
-            frappe.throw("Agent Tool Call records cannot be deleted.", frappe.PermissionError)
-        raise PermissionError("Agent Tool Call records cannot be deleted.")
+            frappe.throw("Les appels d'outil d'agent ne peuvent pas être supprimés.", frappe.PermissionError)
+        raise PermissionError("Les appels d'outil d'agent ne peuvent pas être supprimés.")

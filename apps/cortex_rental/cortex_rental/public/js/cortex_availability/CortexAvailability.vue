@@ -183,7 +183,7 @@ defineExpose({ load });
 				<span>Catégorie</span>
 				<select v-model="category">
 					<option value="">Toutes</option>
-					<option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
+					<option v-for="c in categories" :key="c" :value="c">{{ __(c) }}</option>
 				</select>
 			</label>
 			<label class="cx-field">
@@ -229,7 +229,7 @@ defineExpose({ load });
 				</thead>
 				<tbody v-for="[group, groupRows] in grouped" :key="group">
 					<tr class="cx-group">
-						<th :colspan="days.length + 1" scope="colgroup">{{ group }}</th>
+						<th :colspan="days.length + 1" scope="colgroup">{{ __(group) }}</th>
 					</tr>
 					<tr v-for="row in groupRows" :key="row.item.item_code">
 						<th scope="row" class="cx-sticky">

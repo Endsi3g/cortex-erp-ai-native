@@ -48,7 +48,6 @@ class TestNoErpnextInVisibleText(unittest.TestCase):
             "cortex_rental/report/*/*",
             "cortex_rental/onboarding_step/*/*.json",
             "cortex_rental/module_onboarding/*/*.json",
-            "translations/*.csv",
             "fixtures/*.json",
         ]
         offenders = []
@@ -57,6 +56,13 @@ class TestNoErpnextInVisibleText(unittest.TestCase):
                 with open(path, encoding="utf-8") as handle:
                     if re.search(r"erp\s?next", handle.read(), re.IGNORECASE):
                         offenders.append(os.path.relpath(path, root))
+        # Translations: the English source keys name the product; only the French text people read is checked.
+        import csv
+
+        with open(os.path.join(root, "translations", "fr.csv"), encoding="utf-8", newline="") as handle:
+            for row in csv.reader(handle):
+                if len(row) > 1 and re.search(r"erp\s?next", row[1], re.IGNORECASE):
+                    offenders.append("translations/fr.csv: " + row[0][:60])
         for path in glob.glob(os.path.join(root, "cortex_rental", "doctype", "*", "*.json")):
             with open(path, encoding="utf-8") as handle:
                 labels = re.findall(r'"label":\s*"([^"]*)"', handle.read())

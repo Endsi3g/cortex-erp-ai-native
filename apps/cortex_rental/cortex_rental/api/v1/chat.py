@@ -59,7 +59,7 @@ def _service(model: bool = False) -> ChatSessionService:
 
 def _raise_validation_error(exc: ValidationError) -> None:
     if frappe:
-        frappe.throw(f"Invalid chat request: {exc}", frappe.ValidationError)
+        frappe.throw(f"Demande de conversation invalide : {exc}", frappe.ValidationError)
     raise ValueError(str(exc))
 
 
@@ -124,11 +124,11 @@ if frappe:
         require_human_staff_role()
         name = frappe.local.form_dict.get("name")
         if not name:
-            frappe.throw("name is required.", frappe.ValidationError)
+            frappe.throw("Le nom est obligatoire.", frappe.ValidationError)
         try:
             result = _service().get_session(name=name, user=frappe.session.user)
         except ChatSessionNotFoundError:
-            frappe.throw(f"Chat session {name} not found.", frappe.DoesNotExistError)
+            frappe.throw(f"Conversation {name} introuvable.", frappe.DoesNotExistError)
         return {"data": result}
 
     @frappe.whitelist(methods=["GET"])
@@ -136,11 +136,11 @@ if frappe:
         require_human_staff_role()
         name = frappe.local.form_dict.get("name")
         if not name:
-            frappe.throw("name is required.", frappe.ValidationError)
+            frappe.throw("Le nom est obligatoire.", frappe.ValidationError)
         try:
             result = _service().get_messages(name=name, user=frappe.session.user)
         except ChatSessionNotFoundError:
-            frappe.throw(f"Chat session {name} not found.", frappe.DoesNotExistError)
+            frappe.throw(f"Conversation {name} introuvable.", frappe.DoesNotExistError)
         return {"data": result}
 
     @frappe.whitelist(methods=["GET"])
@@ -158,7 +158,7 @@ if frappe:
         context_snapshot_name = payload.get("context_snapshot_id")
         if not session_name or not context_snapshot_name:
             frappe.throw(
-                "chat_session_id and context_snapshot_id are required.",
+                "La conversation et le contexte à épingler sont obligatoires.",
                 frappe.ValidationError,
             )
         _service().pin_context(session_name, context_snapshot_name, user=frappe.session.user)
@@ -170,6 +170,6 @@ if frappe:
         payload = frappe.local.form_dict
         session_name = payload.get("chat_session_id")
         if not session_name:
-            frappe.throw("chat_session_id is required.", frappe.ValidationError)
+            frappe.throw("La conversation est obligatoire.", frappe.ValidationError)
         _service().clear_context(session_name, user=frappe.session.user)
         return {"data": {"pinned": False}}

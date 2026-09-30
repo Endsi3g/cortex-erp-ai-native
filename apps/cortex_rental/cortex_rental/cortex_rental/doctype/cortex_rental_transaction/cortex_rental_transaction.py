@@ -1,3 +1,4 @@
+from cortex_rental.labels import state_label
 from typing import Optional
 
 try:
@@ -97,8 +98,8 @@ class CortexRentalTransaction(Document):
         if self.is_new():
             if self.rental_state and self.rental_state != "Quote":
                 frappe.throw(
-                    "New Cortex Rental Transaction records must be created in the "
-                    "'Quote' state; use transition_to() to advance the lifecycle.",
+                    "Une nouvelle location doit être créée à l'état « Devis » ; "
+                    "utilisez les actions de la location pour la faire avancer.",
                     frappe.PermissionError,
                 )
             return
@@ -182,8 +183,8 @@ class CortexRentalTransaction(Document):
             unavailable = [c["item_id"] for c in checks if not c["is_available"]]
             if unavailable:
                 frappe.throw(
-                    f"Cannot confirm {new_state}: insufficient availability for {', '.join(unavailable)} "
-                    "in the requested window (re-checked under lock).",
+                    f"Impossible de passer à l'état « {state_label(new_state)} » : disponibilité insuffisante pour {', '.join(unavailable)} "
+                    "sur la période demandée (revérifiée sous verrou).",
                     frappe.ValidationError,
                 )
 
@@ -208,7 +209,7 @@ class CortexRentalTransaction(Document):
             quantity = float(row.qty or 0)
             if quantity <= 0 or not quantity.is_integer():
                 frappe.throw(
-                    f"Serialized equipment {row.item_code} requires a whole-number quantity.",
+                    f"L'équipement sérialisé {row.item_code} exige une quantité entière.",
                     frappe.ValidationError,
                 )
             candidates = frappe.db.sql(
@@ -240,7 +241,7 @@ class CortexRentalTransaction(Document):
             serials = [candidate[0] for candidate in candidates]
             if len(serials) < int(quantity):
                 frappe.throw(
-                    f"Only {len(serials)} serialized units remain available for {row.item_code}.",
+                    f"Il ne reste que {len(serials)} unité(s) sérialisée(s) disponible(s) pour {row.item_code}.",
                     frappe.ValidationError,
                 )
             row.assigned_serials = frappe.as_json(serials)

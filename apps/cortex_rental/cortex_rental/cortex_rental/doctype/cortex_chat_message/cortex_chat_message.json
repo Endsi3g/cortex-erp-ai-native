@@ -40,7 +40,7 @@
       "label": "Company",
       "options": "Company",
       "reqd": 1,
-      "description": "Denormalized from chat_session.company so permission_query_conditions can filter rows without a join, matching every other Company-scoped doctype in this app."
+      "description": "Copiée depuis la conversation pour que le filtrage par société fonctionne sans jointure."
     },
     {
       "fieldname": "sender_type",
@@ -56,32 +56,32 @@
       "fieldtype": "Data",
       "label": "Sender ID",
       "reqd": 1,
-      "description": "frappe.session.user for Human, the resolved agent_profile for Agent, or a fixed system label."
+      "description": "L'utilisateur Frappe pour une personne, le profil d'agent pour un agent, ou une étiquette système fixe."
     },
     {
       "fieldname": "content_sanitized",
       "fieldtype": "Small Text",
       "label": "Content (sanitized)",
-      "description": "The human-readable message text only \u2014 never a raw model prompt, system instruction, or tool payload. See services/chat_response_transformer.py."
+      "description": "Le texte lisible du message seulement : jamais une consigne au modèle, une instruction système ou des données d'outil."
     },
     {
       "fieldname": "content_hash",
       "fieldtype": "Data",
       "label": "Content Hash",
-      "description": "sha256 of content_sanitized, same hashing convention as services/idempotency.py."
+      "description": "Empreinte SHA-256 du contenu nettoyé, selon la même convention que l'idempotence."
     },
     {
       "fieldname": "ui_blocks_json",
       "fieldtype": "Code",
       "label": "UI Blocks (JSON)",
       "options": "JSON",
-      "description": "The typed CortexChatBlock list this message rendered as \u2014 see cortex_rental/schemas/chat_schemas.py."
+      "description": "Liste typée des blocs d'affichage de ce message (faits vérifiés, propositions, approbations, risques…)."
     },
     {
       "fieldname": "onyx_message_id",
       "fieldtype": "Data",
       "label": "Onyx Message ID",
-      "description": "Empty while OnyxChatClient is MockOnyxChatClient."
+      "description": "Vide tant que le service de conversation n'est pas branché à un vrai serveur."
     },
     {
       "fieldname": "model_provider",
@@ -92,13 +92,13 @@
       "fieldname": "model_name",
       "fieldtype": "Data",
       "label": "Model Name",
-      "description": "Informational only, never trusted for authorization \u2014 same convention as Cortex Agent Run.model_used."
+      "description": "À titre indicatif seulement : jamais utilisé pour autoriser (même règle que pour les exécutions d'agent)."
     },
     {
       "fieldname": "routing_reason",
       "fieldtype": "Small Text",
       "label": "Routing Reason",
-      "description": "Why AgentRouter/the model router picked this provider/agent \u2014 see docs/design-system.md's chat spec \"Routage Gemini et Sonnet\". Not populated by MockOnyxChatClient beyond a fixed placeholder string in this pass."
+      "description": "Pourquoi l'aiguilleur a choisi ce fournisseur ou cet agent. Non renseigné pour l'instant."
     },
     {
       "fieldname": "input_tokens",
@@ -114,14 +114,14 @@
       "fieldname": "estimated_cost_usd",
       "fieldtype": "Float",
       "label": "Estimated Cost (USD)",
-      "description": "A rough estimate for observability, not a billing record \u2014 deliberately not a Currency field, which would overstate its accounting significance."
+      "description": "Estimation approximative pour le suivi, pas une écriture de facturation (volontairement pas un champ monétaire)."
     },
     {
       "fieldname": "request_id",
       "fieldtype": "Data",
       "in_list_view": 1,
       "label": "Request ID",
-      "description": "Correlates to the same request_id used by Cortex Agent Run/Cortex Agent Tool Call for this turn."
+      "description": "Même identifiant de corrélation que l'exécution d'agent et les appels d'outils de ce tour."
     },
     {
       "fieldname": "created_at",

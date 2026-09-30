@@ -12,7 +12,7 @@ if frappe:
     def get_session_context():
         user = frappe.session.user
         if not user or user == "Guest":
-            frappe.throw("Authentication is required.", frappe.AuthenticationError)
+            frappe.throw("Vous devez être connecté.", frappe.AuthenticationError)
         roles = frappe.get_roles(user)
         companies = frappe.get_list("Company", fields=["name", "default_currency"], order_by="name asc")
         default_company = frappe.defaults.get_user_default("Company", user) or frappe.defaults.get_global_default(

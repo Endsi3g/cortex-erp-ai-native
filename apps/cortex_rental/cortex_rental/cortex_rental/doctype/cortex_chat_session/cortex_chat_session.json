@@ -26,7 +26,7 @@
       "label": "Company",
       "options": "Company",
       "reqd": 1,
-      "description": "Resolved server-side via get_company_context() — never accepted from the client, same invariant as every other Company field in this app."
+      "description": "Déterminée par le serveur : jamais acceptée du client, comme pour tous les champs de société."
     },
     {
       "fieldname": "user",
@@ -36,7 +36,7 @@
       "label": "User",
       "options": "User",
       "reqd": 1,
-      "description": "Always frappe.session.user at creation time — a session belongs to exactly one human identity, never chosen or impersonated via the API."
+      "description": "Toujours la personne connectée à la création : une conversation appartient à une seule identité humaine."
     },
     {
       "fieldname": "agent_profile",
@@ -44,13 +44,13 @@
       "in_list_view": 1,
       "label": "Agent Profile",
       "reqd": 1,
-      "description": "Resolved server-side by AgentRouter from the page context (e.g. cortex-availability, cortex-intake) — never a client-supplied choice. See services/agent_router.py."
+      "description": "Déterminé par le serveur selon la page (par exemple disponibilité ou prise en charge) : jamais un choix du client."
     },
     {
       "fieldname": "onyx_chat_session_id",
       "fieldtype": "Data",
       "label": "Onyx Chat Session ID",
-      "description": "The upstream Onyx session id, once a real Onyx backend is connected. Empty/mocked while OnyxChatClient is MockOnyxChatClient (see HANDOFF.md)."
+      "description": "Identifiant de la session côté assistant, une fois un vrai serveur connecté. Vide tant qu'il n'est pas configuré."
     },
     {
       "default": "fr-CA",
@@ -74,13 +74,13 @@
       "fieldtype": "Link",
       "label": "Pinned Context Snapshot",
       "options": "Cortex Chat Context Snapshot",
-      "description": "Set by chat.pin_context, cleared by chat.clear_context. When set, this snapshot's context is used instead of whatever the client's next message sends."
+      "description": "Défini par « épingler le contexte », effacé par « effacer le contexte ». Quand il est défini, ce contexte remplace celui du prochain message."
     },
     {
       "fieldname": "last_context_hash",
       "fieldtype": "Data",
       "label": "Last Context Hash",
-      "description": "sha256 of the last resolved context — lets the frontend detect a stale/changed context without re-sending the full payload."
+      "description": "Empreinte du dernier contexte validé : permet au client de détecter un contexte périmé sans renvoyer toutes les données."
     },
     {
       "fieldname": "started_at",
@@ -97,7 +97,7 @@
       "fieldname": "retention_until",
       "fieldtype": "Datetime",
       "label": "Retention Until",
-      "description": "Not populated by any job in this pass — no retention/deletion policy is implemented yet. A real value here today would be a fabricated guarantee; left null until that job exists (tracked in HANDOFF.md)."
+      "description": "Non renseigné pour l'instant : aucune politique de conservation n'est encore en place, donc aucune garantie n'est affichée."
     }
   ],
   "module": "Cortex Rental",
