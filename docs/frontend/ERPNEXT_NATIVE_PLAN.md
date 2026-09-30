@@ -104,5 +104,5 @@ Feuille `cortex-motion.css` (chargée dans le Desk) : entrée douce du contenu d
 | P1 workspaces | Fait : hub + 6 groupes, 26 cartes, 9 graphiques, onboarding ; vérifiés sur bench. |
 | P2 vues natives | Fait pour *Location* (liste, Kanban, calendrier/Gantt, formulaire avec actions), *Approval Request* (décision), listes d'état des autres DocTypes et 5 rapports. Reste : formulaires dédiés des autres DocTypes, règles de prix dans les contrôleurs. |
 | P3 accueil IA | Fait ; la réponse réelle dépend de la configuration d'Onyx. |
-| P4 scan et grille | Sortie par champ Code-barres (lecteur ou saisie) faite ; la grille interactive est remplacée par le rapport *Disponibilité du parc*. |
-| P5 vérification | axe/adaptatif de l'accueil faits ; natifs Frappe : violations identiques à ERPNext d'origine. |
+| P4 scan et grille | Fait : sortie par champ Code-barres (lecteur ou saisie) ; grille de disponibilité interactive (Page `cortex-availability`, équipements × jours, détail et « Nouvelle location ce jour-là »), en plus du rapport *Disponibilité du parc*. |
+| P5 vérification | Fait : 0 violation axe et aucun débordement de 320 à 768 px sur les écrans Cortex et les vues natives (correctifs `cortex_a11y.js` / `cortex-a11y.css`). |

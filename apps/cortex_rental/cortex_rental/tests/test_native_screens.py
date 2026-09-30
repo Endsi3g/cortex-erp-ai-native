@@ -156,6 +156,35 @@ class TestWorkspacesFollowTheAccountingLayout(unittest.TestCase):
             self.assertIn(name, steps)
 
 
+class TestAccessibilityAndAvailabilityGrid(unittest.TestCase):
+    def test_accessibility_shim_and_styles_are_loaded_in_the_desk(self):
+        with open(os.path.join(APP_DIR, "hooks.py"), encoding="utf-8") as handle:
+            hooks = handle.read()
+        for asset in ("cortex_a11y.js", "cortex-a11y.css", "cortex_views.js", "cortex_desk.js"):
+            self.assertIn(asset, hooks)
+            folder = "css" if asset.endswith(".css") else "js"
+            self.assertTrue(os.path.exists(os.path.join(APP_DIR, "public", folder, asset)), asset)
+
+    def test_availability_grid_page_ships_its_bundle_and_reads_the_server_matrix(self):
+        page = os.path.join(MODULE_DIR, "page", "cortex_availability")
+        for name in ("__init__.py", "cortex_availability.json", "cortex_availability.js"):
+            self.assertTrue(os.path.exists(os.path.join(page, name)), name)
+        bundle = os.path.join(APP_DIR, "public", "js", "cortex_availability")
+        with open(os.path.join(bundle, "CortexAvailability.vue"), encoding="utf-8") as handle:
+            source = handle.read()
+        self.assertIn("cortex_rental.api.v1.availability.get_matrix", source)
+        self.assertIn("revérifie", source, "the grid must say the server re-checks availability")
+        self.assertTrue(os.path.exists(os.path.join(bundle, "cortex_availability.bundle.js")))
+
+    def test_workspaces_link_the_grid_page(self):
+        linked = [
+            name
+            for name, doc in _docs("workspace").items()
+            if any(s["link_to"] == "cortex-availability" for s in doc.get("shortcuts", []))
+        ]
+        self.assertTrue(linked)
+
+
 class TestFrenchTranslations(unittest.TestCase):
     def test_translation_file_is_well_formed_and_names_doctypes(self):
         import csv

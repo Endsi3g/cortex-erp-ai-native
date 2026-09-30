@@ -33,7 +33,7 @@ const WORKSPACES = [
 
 const CHIPS = [
 	{ label: "Nouvelle location", route: ["Form", "Cortex Rental Transaction", "new"], icon: "plusCircle" },
-	{ label: "Disponibilité du parc", route: ["query-report", "Disponibilité du parc"], icon: "calendar" },
+	{ label: "Grille de disponibilité", route: ["cortex-availability"], icon: "calendar" },
 	{ label: "Approbations", route: ["List", "Approval Request"], icon: "checkCircle" },
 ];
 

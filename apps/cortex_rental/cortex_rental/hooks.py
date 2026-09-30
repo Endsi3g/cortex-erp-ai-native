@@ -28,6 +28,7 @@ app_include_css = [
     "/assets/cortex_rental/css/cortex-utilities.css",
     "/assets/cortex_rental/css/cortex-home.css",
     "/assets/cortex_rental/css/cortex-motion.css",
+    "/assets/cortex_rental/css/cortex-a11y.css",
 ]
 
 # Global floating Cortex Copilot launcher — mounted on every Desk page
@@ -40,6 +41,7 @@ app_include_js = [
     "cortex_copilot.bundle.js",
     "/assets/cortex_rental/js/cortex_desk.js",
     "/assets/cortex_rental/js/cortex_views.js",
+    "/assets/cortex_rental/js/cortex_a11y.js",
 ]
 
 # DocType Events (Audit logging & validation hooks)

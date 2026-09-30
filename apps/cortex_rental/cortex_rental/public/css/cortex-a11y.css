@@ -1,0 +1,109 @@
+/* Accessibilité et écrans étroits pour le Desk (Cortex et ERPNext). */
+
+/* Contraste : texte indicatif des filtres (gris clair de Frappe < 4,5:1). */
+.frappe-control .placeholder,
+.frappe-control .placeholder span,
+.frappe-control select.form-control:invalid {
+	color: var(--cortex-text-secondary, #52525b);
+}
+.frappe-control .placeholder span {
+	opacity: 1;
+}
+
+/* Contraste : le gris « muted » de Frappe (#7c7c7c) tombe à 3,8:1 sur fond gris clair. */
+:root,
+[data-theme="light"] {
+	--text-muted: #5c5c5c;
+	--text-light: #5c5c5c;
+}
+.text-muted,
+.grid-heading-row .static-area,
+.grid-heading-row .row-index,
+.grid-heading-row .row-index span,
+.add-card .ellipsis,
+.breadcrumb .disabled > a,
+.disabled > a,
+.control-value.like-disabled-input,
+.fc-day-number {
+	color: #5c5c5c !important;
+}
+
+/* Calendrier : en-têtes, jours hors mois, bouton actif et aujourd'hui. */
+.fc th > span,
+.fc-day-header {
+	color: #5c5c5c !important;
+}
+.fc-other-month .fc-day-number {
+	color: #6b6b6b !important;
+}
+.fc-other-month,
+.fc-other-month .fc-day,
+.fc-day-number,
+.fc-day-top {
+	opacity: 1 !important;
+}
+.fc-button.active,
+.fc-button.fc-state-active,
+.fc-month-button.active {
+	background-color: #555555 !important;
+	color: #ffffff !important;
+}
+.fc-today .fc-day-number {
+	background-color: #0b5cad !important;
+	color: #ffffff !important;
+}
+
+/* Focus visible pour les menus déroulants devenus des boutons. */
+a[role="button"][data-toggle="dropdown"]:focus-visible,
+.drop-icon:focus-visible,
+.chart-menu:focus-visible,
+.gantt-container:focus-visible {
+	outline: 2px solid var(--cortex-emerald-600, #059669);
+	outline-offset: 2px;
+}
+
+/* 320 px : les widgets des espaces de travail ne dépassent jamais la fenêtre. */
+@media (max-width: 480px) {
+	#page-Workspaces .widget,
+	#page-Workspaces .widget-head,
+	#page-Workspaces .widget-control {
+		max-width: 100%;
+		min-width: 0;
+	}
+	#page-Workspaces .widget-head {
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+	#page-Workspaces .widget-control {
+		display: flex;
+		flex: 1 1 100%;
+		flex-wrap: wrap;
+		justify-content: flex-start;
+		gap: 4px;
+	}
+	#page-Workspaces .widget-control .chart-actions {
+		flex: 0 1 auto;
+		min-width: 0;
+	}
+	#page-Workspaces .widget-control .chart-actions {
+		float: none !important;
+		max-width: 100%;
+	}
+	#page-Workspaces .widget-control .chart-actions .btn {
+		max-width: 100%;
+	}
+	#page-Workspaces .widget-control .filter-label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 12em;
+	}
+}
+
+/* Tables de formulaire (lignes de location, etc.) : défilement interne plutôt que débordement de la page. */
+@media (max-width: 900px) {
+	.form-grid-container {
+		max-width: 100%;
+		overflow-x: auto !important;
+	}
+}

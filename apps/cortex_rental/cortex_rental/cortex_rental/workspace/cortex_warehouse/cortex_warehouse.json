@@ -19,7 +19,7 @@
  "hide_custom": 0,
  "indicator_color": "",
  "restrict_to_domain": "",
- "content": "[{\"id\": \"42b73d2852\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Séries par statut Cortex\", \"col\": 6}}, {\"id\": \"1342ed8871\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Locations par état\", \"col\": 6}}, {\"id\": \"6d3a956311\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sorties à préparer\", \"col\": 3}}, {\"id\": \"daa4b87474\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Retours enregistrés (7 jours)\", \"col\": 3}}, {\"id\": \"e5cf584de7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Matériel en quarantaine\", \"col\": 3}}, {\"id\": \"6d766db12a\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Matériel manquant\", \"col\": 3}}, {\"id\": \"7226206720\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"a49cc2cb76\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"a9eed5cfff\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouvelle sortie/retour\", \"col\": 3}}, {\"id\": \"7ca5d582bc\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sorties et retours\", \"col\": 3}}, {\"id\": \"c2ad9888c2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Numéros de série\", \"col\": 3}}, {\"id\": \"bcd559efe8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Mouvements de stock\", \"col\": 3}}, {\"id\": \"5a1176c705\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Disponibilité du parc\", \"col\": 3}}, {\"id\": \"234e99ca2f\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"0e30c2d38a\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"27fb93b9c8\", \"type\": \"card\", \"data\": {\"card_name\": \"Entrepôt\", \"col\": 4}}, {\"id\": \"b36efb4557\", \"type\": \"card\", \"data\": {\"card_name\": \"Rapports\", \"col\": 4}}]",
+ "content": "[{\"id\": \"42b73d2852\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Séries par statut Cortex\", \"col\": 6}}, {\"id\": \"1342ed8871\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Locations par état\", \"col\": 6}}, {\"id\": \"6d3a956311\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sorties à préparer\", \"col\": 3}}, {\"id\": \"daa4b87474\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Retours enregistrés (7 jours)\", \"col\": 3}}, {\"id\": \"e5cf584de7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Matériel en quarantaine\", \"col\": 3}}, {\"id\": \"6d766db12a\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Matériel manquant\", \"col\": 3}}, {\"id\": \"7226206720\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"a49cc2cb76\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"a9eed5cfff\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouvelle sortie/retour\", \"col\": 3}}, {\"id\": \"7ca5d582bc\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sorties et retours\", \"col\": 3}}, {\"id\": \"c2ad9888c2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Numéros de série\", \"col\": 3}}, {\"id\": \"bcd559efe8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Mouvements de stock\", \"col\": 3}}, {\"id\": \"5a1176c705\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Grille de disponibilité\", \"col\": 3}}, {\"id\": \"234e99ca2f\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"0e30c2d38a\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"27fb93b9c8\", \"type\": \"card\", \"data\": {\"card_name\": \"Entrepôt\", \"col\": 4}}, {\"id\": \"b36efb4557\", \"type\": \"card\", \"data\": {\"card_name\": \"Rapports\", \"col\": 4}}]",
  "charts": [
   {
    "chart_name": "Séries par statut Cortex",
@@ -79,12 +79,11 @@
    "color": "#066336"
   },
   {
-   "label": "Disponibilité du parc",
-   "link_to": "Disponibilité du parc",
-   "type": "Report",
+   "label": "Grille de disponibilité",
+   "link_to": "cortex-availability",
+   "type": "Page",
    "doc_view": "",
-   "color": "#066336",
-   "report_ref_doctype": "Cortex Rental Item Profile"
+   "color": "#066336"
   }
  ],
  "links": [
