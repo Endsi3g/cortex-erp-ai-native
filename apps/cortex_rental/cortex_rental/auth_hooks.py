@@ -30,6 +30,21 @@ def french_for_guests() -> None:
     frappe.local.lang = "fr"
 
 
+def _company_identity() -> dict:
+    """Name and logo of the person's company for the AI home (read-only, both may be empty)."""
+    identity = {"company": "", "company_logo": ""}
+    try:
+        from cortex_rental.permissions.agent_scopes import get_company_context
+
+        company = get_company_context()
+    except Exception:
+        company = frappe.defaults.get_user_default("Company") or ""
+    if company:
+        identity["company"] = company
+        identity["company_logo"] = frappe.db.get_value("Company", company, "company_logo") or ""
+    return identity
+
+
 def boot_session(bootinfo) -> None:
     """Read-only: tell the Desk where the AI-first home is and whether the owner's setup is unfinished.
 
@@ -47,4 +62,5 @@ def boot_session(bootinfo) -> None:
         except Exception:
             # Never block the Desk because of onboarding bookkeeping.
             frappe.log_error(title="Cortex onboarding boot flag failed")
+    home.update(_company_identity())
     bootinfo.cortex_home = home

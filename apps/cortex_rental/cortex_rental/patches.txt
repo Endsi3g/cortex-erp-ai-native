@@ -9,3 +9,5 @@ cortex_rental.patches.clear_default_app
 cortex_rental.patches.remove_shell_pages
 cortex_rental.patches.create_kanban_boards
 cortex_rental.patches.set_french_default
+cortex_rental.patches.enable_translated_links
+cortex_rental.patches.translate_demo_items

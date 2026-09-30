@@ -54,6 +54,18 @@ body[data-route="cortex-home"] #page-cortex-home .page-head {
 	width: 22px;
 	height: 22px;
 }
+.ch-logo {
+	display: block;
+	margin: 0 auto 16px;
+	height: 44px;
+	max-width: 160px;
+	object-fit: contain;
+}
+.ch-date {
+	margin: 6px 0 0;
+	font-size: 14px;
+	color: var(--cortex-text-secondary, #52525b);
+}
 .ch-greeting {
 	margin: 14px 0 2px;
 	color: var(--cortex-text-secondary, #52525b);
@@ -76,6 +88,23 @@ body[data-route="cortex-home"] #page-cortex-home .page-head {
 	padding: 14px 14px 10px 18px;
 	box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04), 0 8px 24px rgba(9, 9, 11, 0.05);
 	transition: border-color 0.18s, box-shadow 0.18s;
+}
+.ch-composer {
+	display: flex;
+	align-items: flex-end;
+	gap: 12px;
+}
+.ch-composer .ch-input {
+	flex: 1;
+}
+.ch-composer .ch-composer-row {
+	margin: 0;
+	flex: none;
+}
+body[data-route="cortex-home"] .navbar .breadcrumb,
+body[data-route="cortex-home"] #navbar-breadcrumbs,
+body[data-route="cortex-home"] .navbar-breadcrumbs {
+	display: none;
 }
 .ch-composer:focus-within {
 	border-color: var(--cortex-emerald-500, #10b981);

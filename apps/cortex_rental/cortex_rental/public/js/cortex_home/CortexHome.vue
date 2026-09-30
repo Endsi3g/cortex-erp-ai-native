@@ -4,33 +4,6 @@ import CopilotConversation from "../cortex_copilot/CopilotConversation.vue";
 import { sendMessage, getMessages, listSessions, resolveDeskContext } from "../cortex_copilot/chatClient.js";
 import { ICONS } from "../cortex_shared/CortexIcons.js";
 
-// Suggestions : des phrases que la personne peut envoyer, jamais des réponses ou des chiffres inventés.
-const PROMPTS = [
-	{ roles: [], text: "Que dois-je traiter en priorité aujourd'hui ?" },
-	{
-		roles: ["Cortex Operations Manager", "Cortex Counter Staff", "Rental Manager", "Rental Operator"],
-		text: "Quels équipements sont disponibles vendredi et samedi ?",
-	},
-	{
-		roles: ["Cortex Operations Manager", "Cortex Counter Staff", "Rental Manager", "Rental Operator"],
-		text: "Prépare un brouillon de location pour un client",
-	},
-	{ roles: ["Cortex Inventory Manager"], text: "Quels équipements sont en quarantaine ou endommagés ?" },
-	{ roles: ["Cortex Finance Manager"], text: "Résume les factures de location à suivre" },
-	{ roles: ["Cortex Consignment Manager"], text: "Prépare le relevé de consignation du mois" },
-	{ roles: ["Cortex Account Reviewer"], text: "Quelles approbations attendent ma décision ?" },
-];
-
-// Raccourcis vers les espaces de travail Desk (routes = titres d'espaces épurés).
-const WORKSPACES = [
-	{ route: "cortex-operations", label: "Opérations", hint: "Locations, départs, retours", icon: "calendarRange" },
-	{ route: "cortex-warehouse", label: "Entrepôt", hint: "Sorties, retours, séries", icon: "scanLine" },
-	{ route: "cortex-catalog", label: "Catalogue", hint: "Équipements et kits", icon: "packageIcon" },
-	{ route: "cortex-finance", label: "Finance", hint: "Facturation et consignation", icon: "dollarSign" },
-	{ route: "cortex-ai", label: "IA", hint: "Boîte d'entrée, approbations, audit", icon: "sparkles" },
-	{ route: "cortex-admin", label: "Administration", hint: "Règles, équipe, imports", icon: "settings" },
-];
-
 const CHIPS = [
 	{ label: "Nouvelle location", route: ["Form", "Cortex Rental Transaction", "new"], icon: "plusCircle" },
 	{ label: "Grille de disponibilité", route: ["cortex-availability"], icon: "calendar" },
@@ -55,12 +28,23 @@ const firstName = computed(() => {
 		return "";
 	}
 });
-const greeting = computed(() => (firstName.value ? `Bonjour ${firstName.value}` : "Bonjour"));
-const setupPending = computed(() => !!(frappe.boot.cortex_home && frappe.boot.cortex_home.setup_pending));
-const prompts = computed(() => {
-	const roles = frappe.user_roles || [];
-	return PROMPTS.filter((p) => !p.roles.length || p.roles.some((r) => roles.includes(r))).slice(0, 4);
+const displayName = computed(() => {
+	if (firstName.value) return firstName.value;
+	try {
+		const full = frappe.user.full_name();
+		return full && full !== "Administrator" ? full : "";
+	} catch (e) {
+		return "";
+	}
 });
+const greeting = computed(() => (displayName.value ? `Bonjour ${displayName.value}` : "Bonjour"));
+const today = computed(() => {
+	const label = new Date().toLocaleDateString("fr-CA", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+	return label.charAt(0).toUpperCase() + label.slice(1);
+});
+const identity = computed(() => frappe.boot.cortex_home || {});
+const logoUrl = computed(() => identity.value.company_logo || "/assets/cortex_rental/images/cortex-logo.svg");
+const logoAlt = computed(() => (identity.value.company ? `Logo de ${identity.value.company}` : "Logo Cortex"));
 
 function go(route) {
 	frappe.set_route(route);
@@ -179,9 +163,9 @@ defineExpose({ refresh });
 		<section class="ch-stage">
 			<Transition name="ch-fade" mode="out-in">
 				<header v-if="!inConversation" key="hero" class="ch-hero">
-					<span class="ch-mark" aria-hidden="true" v-html="icon('sparkles')"></span>
-					<p class="ch-greeting">{{ greeting }}</p>
-					<h1 class="ch-title">Que puis-je faire pour vous ?</h1>
+					<img class="ch-logo" :src="logoUrl" :alt="logoAlt" />
+					<h1 class="ch-title">{{ greeting }}</h1>
+					<p class="ch-date">{{ today }}</p>
 				</header>
 
 				<div v-else key="chat" class="ch-thread">
@@ -203,16 +187,12 @@ defineExpose({ refresh });
 					v-model="text"
 					class="ch-input"
 					rows="1"
-					placeholder="Demandez à Cortex…"
+					placeholder="Que puis-je faire pour vous ?"
 					:disabled="sending"
 					@input="resize"
 					@keydown="onKeydown"
 				></textarea>
 				<div class="ch-composer-row">
-					<p class="ch-hint">
-						Cortex prépare des brouillons et des demandes. Contrats, factures et envois exigent une validation
-						humaine. Entrée pour envoyer, Maj+Entrée pour un saut de ligne.
-					</p>
 					<button type="submit" class="ch-send" :disabled="sending || !text.trim()" aria-label="Envoyer">
 						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
 					</button>
@@ -226,31 +206,6 @@ defineExpose({ refresh });
 							<button type="button" class="ch-chip" @click="go(chip.route)">
 								<span aria-hidden="true" v-html="icon(chip.icon)"></span>{{ chip.label }}
 							</button>
-						</li>
-					</ul>
-
-					<div v-if="setupPending" class="ch-setup" role="status">
-						<div>
-							<strong>Terminez la mise en route de votre entreprise.</strong>
-							<span>Profil, équipe et catalogue : quelques étapes guidées dans l'espace Cortex.</span>
-						</div>
-						<button type="button" class="ch-chip ch-chip-accent" @click="go('cortex-rental')">Continuer</button>
-					</div>
-
-					<h2 class="ch-section">Essayez de demander</h2>
-					<ul class="ch-prompts">
-						<li v-for="(prompt, i) in prompts" :key="prompt.text" :style="{ '--i': i }">
-							<button type="button" class="ch-prompt" @click="submit(prompt.text)">{{ prompt.text }}</button>
-						</li>
-					</ul>
-
-					<h2 class="ch-section">Espaces de travail</h2>
-					<ul class="ch-tiles">
-						<li v-for="(tile, i) in WORKSPACES" :key="tile.route" :style="{ '--i': i }">
-							<a class="ch-tile" :href="`/app/${tile.route}`" @click.prevent="go(tile.route)">
-								<span class="ch-tile-icon" aria-hidden="true" v-html="icon(tile.icon)"></span>
-								<span class="ch-tile-text"><strong>{{ tile.label }}</strong><small>{{ tile.hint }}</small></span>
-							</a>
 						</li>
 					</ul>
 

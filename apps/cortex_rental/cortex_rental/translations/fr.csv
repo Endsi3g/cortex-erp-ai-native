@@ -1855,3 +1855,92 @@ Cortex Agent Reporting,Agent de rapports Cortex
 Agent Service Account,Compte de service d'agent
 Rental Manager,Gestionnaire de location
 Rental Operator,Opérateur de location
+Pricing Manager,Gestionnaire de tarification
+Bank and Cash Payment Voucher,Bon de paiement bancaire et comptant
+Cheque Printing Format,Format d'impression de chèque
+Detailed Tax Invoice,Facture fiscale détaillée
+Drop Shipping Format,Format de livraison directe
+IRS 1099 Form,Formulaire 1099 de l'IRS
+Journal Auditing Voucher,Bon d'audit de journal
+Payment Receipt Voucher,Bon de réception de paiement
+Purchase Auditing Voucher,Bon d'audit d'achat
+Purchase Receipt Serial and Batch Bundle Print,Impression du lot de numéros de série et de lots de la réception d'achat
+Purchase eInvoice,Facture d'achat électronique
+Return POS Invoice,Facture de retour de PDV
+Sales Auditing Voucher,Bon d'audit de vente
+Sales Invoice Print,Impression de facture de vente
+Sales Invoice Return,Retour de facture de vente
+Simplified Tax Invoice,Facture fiscale simplifiée
+Tax Invoice,Facture fiscale
+POS Invoice,Facture de PDV
+Pick List,Liste de prélèvement
+Material Request Receipt Notification,Notification de réception d'une demande de matériel
+Notification for new fiscal year,Notification de nouvel exercice fiscal
+Bulk Transaction,Opérations en lot
+Contacts,Contacts
+Desk,Bureau
+EDI,EDI
+Geo,Géographie
+Social,Social
+Telephony,Téléphonie
+Administrative Assistant,Adjoint administratif
+Business Analyst,Analyste d'affaires
+Chief Executive Officer,Président-directeur général
+Chief Financial Officer,Chef de la direction financière
+Chief Operating Officer,Chef de l'exploitation
+Chief Technology Officer,Chef de la technologie
+Customer Service Representative,Représentant du service à la clientèle
+Executive Assistant,Adjoint de direction
+Finance Manager,Gestionnaire des finances
+Managing Director,Directeur général
+Marketing Manager,Gestionnaire du marketing
+Marketing Specialist,Spécialiste du marketing
+President,Président
+Product Manager,Gestionnaire de produit
+Sales Representative,Représentant des ventes
+Vice President,Vice-président
+Advertisement,Publicité
+Cold Calling,Appel à froid
+Customer's Vendor,Fournisseur du client
+Exhibition,Exposition
+Existing Customer,Client existant
+Mass Mailing,Envoi en masse
+Supplier Reference,Recommandation d'un fournisseur
+Walk In,Visite sans rendez-vous
+Classic,Classique
+Modern,Moderne
+Monochrome,Monochrome
+Redesign,Nouvelle conception
+External,Externe
+Internal,Interne
+Transit,Transit
+On Customer Creation,À la création d'un client
+On Item Creation,À la création d'un article
+On Lead Creation,À la création d'un prospect
+On Supplier Creation,À la création d'un fournisseur
+Cortex Mail,Courriel Cortex
+Box,Boîte
+Centimeter,Centimètre
+Meter,Mètre
+Millimeter,Millimètre
+Kilometer,Kilomètre
+Foot,Pied
+Inch,Pouce
+Yard,Verge
+Mile,Mille
+Gram,Gramme
+Pound,Livre
+Ounce,Once
+Litre,Litre
+Millilitre,Millilitre
+Second,Seconde
+Watt,Watt
+Kilowatt,Kilowatt
+Kilowatt-Hour,Kilowattheure
+Ampere,Ampère
+Celsius,Celsius
+Acre,Acre
+Carat,Carat
+Pair,Paire
+Bushel (US Dry Level),Boisseau (É.-U.)
+Calorie (Food),Calorie (alimentaire)

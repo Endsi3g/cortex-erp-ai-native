@@ -35,7 +35,26 @@
 	// dictionnaire de traductions, seulement dans les zones où elles apparaissent (graphiques, cellules filtrables).
 	const VALUE_AREAS = ".frappe-chart text, .chart-legend text, .chart-legend, a.filterable, a.filterable span";
 
+	// Listes d'enregistrements dont le nom est stocké en anglais (rôles, formats d'impression, rapports…) : la colonne
+	// « nom » s'affiche avec sa traduction ; le nom stocké, sur lequel le code s'appuie, ne change pas.
+	const TRANSLATED_NAME_LISTS = [
+		"Role", "Print Format", "Report", "Notification", "Designation", "Lead Source",
+		"Project Type", "Warehouse Type", "Print Style", "Module Def", "Energy Point Rule", "UOM",
+	];
+
+	function translateListNames() {
+		const route = (frappe.get_route && frappe.get_route()) || [];
+		if (route[0] !== "List" || !TRANSLATED_NAME_LISTS.includes(route[1])) return;
+		document.querySelectorAll(".list-row .list-subject a, .list-row .list-subject .ellipsis").forEach((el) => {
+			if (el.children.length) return;
+			const t = (el.textContent || "").trim();
+			const fr = t && tr(t);
+			if (fr && fr !== t) el.textContent = fr;
+		});
+	}
+
 	function translateValues() {
+		translateListNames();
 		document.querySelectorAll(VALUE_AREAS).forEach((el) => {
 			if (el.children.length && el.tagName.toLowerCase() !== "a") return;
 			const t = (el.textContent || "").trim();

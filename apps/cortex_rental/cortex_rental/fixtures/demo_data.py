@@ -146,7 +146,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
     catalog = [
         {
             "item_code": "ARRI-ALX35",
-            "item_name": "ARRI Alexa 35 Camera Body",
+            "item_name": "Boîtier de caméra ARRI Alexa 35",
             "category": "Camera Bodies",
             "is_serialized": 1,
             "daily_rate": 1500.0,
@@ -157,7 +157,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
         },
         {
             "item_code": "COOKE-S4I-SET",
-            "item_name": "Cooke S4/i Prime Lens Set (5-Lens)",
+            "item_name": "Ensemble d'objectifs fixes Cooke S4/i (5 objectifs)",
             "category": "Cinema Lenses",
             "is_serialized": 1,
             "daily_rate": 800.0,
@@ -168,7 +168,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
         },
         {
             "item_code": "APUTURE-1200D",
-            "item_name": "Aputure Electro Storm 1200d Pro Light",
+            "item_name": "Projecteur Aputure Electro Storm 1200d Pro",
             "category": "Lighting",
             "is_serialized": 1,
             "daily_rate": 250.0,
@@ -179,7 +179,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
         },
         {
             "item_code": "BNC-50FT",
-            "item_name": "BNC 12G-SDI Video Cable 50ft",
+            "item_name": "Câble vidéo BNC 12G-SDI, 50 pi",
             "category": "Grip & Rigging",
             "is_serialized": 0,
             "total_quantity": 20,
@@ -191,7 +191,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
         },
         {
             "item_code": "C-STAND-40",
-            "item_name": 'Avenger C-Stand 40" with Grip Arm',
+            "item_name": 'Pied C-Stand Avenger 40 po avec bras',
             "category": "Grip & Rigging",
             "is_serialized": 0,
             "total_quantity": 15,
@@ -298,7 +298,7 @@ def _ensure_transactions(company: str, customer: str, items: List[Dict[str, Any]
                 "items": [
                     {
                         "item_code": "ARRI-ALX35",
-                        "item_name": "ARRI Alexa 35 Camera Body",
+                        "item_name": "Boîtier de caméra ARRI Alexa 35",
                         "serial_no": "SN-ALX-001",
                         "qty": 1.0,
                         "returned_qty": 0.0,
@@ -307,7 +307,7 @@ def _ensure_transactions(company: str, customer: str, items: List[Dict[str, Any]
                     },
                     {
                         "item_code": "COOKE-S4I-SET",
-                        "item_name": "Cooke S4/i Prime Lens Set (5-Lens)",
+                        "item_name": "Ensemble d'objectifs fixes Cooke S4/i (5 objectifs)",
                         "serial_no": "SN-CKE-001",
                         "qty": 1.0,
                         "returned_qty": 0.0,
@@ -316,7 +316,7 @@ def _ensure_transactions(company: str, customer: str, items: List[Dict[str, Any]
                     },
                     {
                         "item_code": "BNC-50FT",
-                        "item_name": "BNC 12G-SDI Video Cable 50ft",
+                        "item_name": "Câble vidéo BNC 12G-SDI, 50 pi",
                         "qty": 4.0,
                         "returned_qty": 0.0,
                         "rate": 15.0,
@@ -348,7 +348,7 @@ def _ensure_transactions(company: str, customer: str, items: List[Dict[str, Any]
                 "items": [
                     {
                         "item_code": "ARRI-ALX35",
-                        "item_name": "ARRI Alexa 35 Camera Body",
+                        "item_name": "Boîtier de caméra ARRI Alexa 35",
                         "serial_no": "SN-ALX-002",
                         "qty": 1.0,
                         "returned_qty": 0.0,
@@ -357,7 +357,7 @@ def _ensure_transactions(company: str, customer: str, items: List[Dict[str, Any]
                     },
                     {
                         "item_code": "APUTURE-1200D",
-                        "item_name": "Aputure Electro Storm 1200d Pro Light",
+                        "item_name": "Projecteur Aputure Electro Storm 1200d Pro",
                         "serial_no": "SN-APT-001",
                         "qty": 1.0,
                         "returned_qty": 0.0,
@@ -390,7 +390,7 @@ def _ensure_transactions(company: str, customer: str, items: List[Dict[str, Any]
                 "items": [
                     {
                         "item_code": "APUTURE-1200D",
-                        "item_name": "Aputure Electro Storm 1200d Pro Light",
+                        "item_name": "Projecteur Aputure Electro Storm 1200d Pro",
                         "qty": 2.0,
                         "returned_qty": 0.0,
                         "rate": 250.0,
