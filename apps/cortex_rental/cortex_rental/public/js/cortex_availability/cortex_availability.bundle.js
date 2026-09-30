@@ -16,4 +16,5 @@ frappe.ui.setup_cortex_availability = function (wrapper) {
 	const vm = app.mount(mount);
 	wrapper.cortex_availability_app = app;
 	wrapper.cortex_availability_refresh = () => vm.load && vm.load();
+	wrapper.cortex_availability_set = (category) => vm.setCategory && vm.setCategory(category);
 };

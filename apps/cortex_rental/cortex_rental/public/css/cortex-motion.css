@@ -157,3 +157,31 @@ body[data-route^="Workspaces"] .codex-editor__redactor > .ce-block,
 		scroll-behavior: auto !important;
 	}
 }
+
+/* Sous-titre de page : une ligne grise sous le titre ; l'en-tête s'adapte à sa hauteur. */
+.page-head .page-head-content {
+	height: auto;
+	min-height: var(--page-head-height, 40px);
+	padding: 10px 0 8px;
+}
+body.cx-nav-on .page-head .page-title {
+	flex: 1 1 auto;
+	width: auto;
+	max-width: none;
+}
+body.cx-nav-on .page-head .page-actions {
+	flex: 0 0 auto;
+}
+.page-head .title-area {
+	align-items: flex-start;
+}
+.page-head .title-area .cx-page-sub {
+	display: block;
+	max-width: 88ch;
+	margin-top: 2px;
+	color: var(--cortex-text-secondary, #52525b);
+	font-size: 13px;
+	line-height: 1.4;
+	white-space: normal;
+	overflow: visible;
+}

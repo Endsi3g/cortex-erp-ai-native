@@ -11,7 +11,14 @@ frappe.pages["cortex-availability"].on_page_load = function (wrapper) {
 frappe.pages["cortex-availability"].on_page_show = function (wrapper) {
 	if (wrapper.cortex_availability_ready) {
 		wrapper.cortex_availability_ready.then(() => {
-			if (wrapper.cortex_availability_refresh) wrapper.cortex_availability_refresh();
+			// Une catégorie par sous-page : /app/cortex-availability/<catégorie> (sans catégorie : la première).
+			const route = frappe.get_route();
+			const first = (cortex.CATEGORIES || [])[0];
+			if (!route[1] && first) {
+				frappe.set_route("cortex-availability", first);
+				return;
+			}
+			if (wrapper.cortex_availability_set) wrapper.cortex_availability_set(route[1]);
 		});
 	}
 };

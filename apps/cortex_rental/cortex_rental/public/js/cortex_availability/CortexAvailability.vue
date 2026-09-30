@@ -62,7 +62,8 @@ const periodLabel = computed(() => {
 	return `${first.day} ${first.month} au ${last.day} ${last.month}`;
 });
 
-const categories = computed(() => [...new Set(items.value.map((i) => i.category).filter(Boolean))].sort());
+// Une catégorie par sous-page (/app/cortex-availability/<catégorie>) : la liste vient de la barre de navigation.
+const CATEGORY_ORDER = (window.cortex && window.cortex.CATEGORIES) || [];
 
 // Jour [ymd 00:00, ymd+1 00:00) : comparaison de chaînes « AAAA-MM-JJ hh:mm:ss » (même fuseau que le serveur).
 function overlapping(item, ymd) {
@@ -113,7 +114,12 @@ async function load() {
 		const r = await frappe.call({
 			method: "cortex_rental.api.v1.availability.get_matrix",
 			type: "GET",
-			args: { starts_at: `${start.value} 00:00:00`, ends_at: `${addDays(start.value, span.value)} 00:00:00`, search: search.value },
+			args: {
+					starts_at: `${start.value} 00:00:00`,
+					ends_at: `${addDays(start.value, span.value)} 00:00:00`,
+					search: search.value,
+					category: category.value || undefined,
+				},
 			silent: true,
 		});
 		items.value = ((r.message || {}).data || {}).items || [];
@@ -153,18 +159,30 @@ function onSearch() {
 	timer = setTimeout(load, 300);
 }
 
-onMounted(load);
-defineExpose({ load });
+function goCategory(value) {
+	frappe.set_route("cortex-availability", value);
+}
+function setCategory(value) {
+	const next = value || CATEGORY_ORDER[0] || "";
+	if (next === category.value && items.value.length) return;
+	category.value = next;
+	load();
+}
+
+onMounted(() => {
+	if (!category.value) category.value = CATEGORY_ORDER[0] || "";
+	load();
+});
+defineExpose({ load, setCategory });
 </script>
 
 <template>
 	<section class="cx-avail" aria-labelledby="cx-avail-title">
 		<header class="cx-avail-head">
 			<div>
-				<h1 id="cx-avail-title" class="cx-avail-title">Grille de disponibilité</h1>
+				<h1 id="cx-avail-title" class="cx-avail-title">Disponibilité<span v-if="category"> · {{ __(category) }}</span></h1>
 				<p class="cx-avail-sub">
-					Quantités libres par équipement et par jour. Indicatif : le serveur revérifie la disponibilité au moment de
-					réserver.
+					Unités libres de chaque équipement, jour par jour. Indicatif : le serveur revérifie au moment de réserver.
 				</p>
 			</div>
 			<div class="cx-avail-nav" role="group" aria-label="Période">
@@ -175,17 +193,23 @@ defineExpose({ load });
 			</div>
 		</header>
 
+		<nav class="cx-tabs" aria-label="Catégories d'équipement">
+			<a
+				v-for="c in CATEGORY_ORDER"
+				:key="c"
+				href="#"
+				class="cx-tab"
+				:class="{ active: c === category }"
+				:aria-current="c === category ? 'page' : null"
+				@click.prevent="goCategory(c)"
+				>{{ __(c) }}</a
+			>
+		</nav>
+
 		<div class="cx-avail-filters">
 			<label class="cx-field">
 				<span>Recherche</span>
 				<input v-model="search" type="search" placeholder="Nom ou code de l'équipement" @input="onSearch" />
-			</label>
-			<label class="cx-field">
-				<span>Catégorie</span>
-				<select v-model="category">
-					<option value="">Toutes</option>
-					<option v-for="c in categories" :key="c" :value="c">{{ __(c) }}</option>
-				</select>
 			</label>
 			<label class="cx-field">
 				<span>Période affichée</span>
@@ -196,7 +220,7 @@ defineExpose({ load });
 		</div>
 
 		<ul class="cx-avail-legend" aria-label="Légende">
-			<li><span class="cx-dot cx-dot-ok"></span> Libre</li>
+			<li><span class="cx-dot cx-dot-ok"></span> Tout libre</li>
 			<li><span class="cx-dot cx-dot-partial"></span> Partiellement réservé</li>
 			<li><span class="cx-dot cx-dot-full"></span> Complet</li>
 			<li><span class="cx-dot cx-dot-quote"></span> Devis en cours (ne bloque pas le matériel)</li>
@@ -229,13 +253,13 @@ defineExpose({ load });
 					</tr>
 				</thead>
 				<tbody v-for="[group, groupRows] in grouped" :key="group">
-					<tr class="cx-group">
+					<tr v-if="!category" class="cx-group">
 						<th :colspan="days.length + 1" scope="colgroup">{{ __(group) }}</th>
 					</tr>
 					<tr v-for="row in groupRows" :key="row.item.item_code">
 						<th scope="row" class="cx-sticky">
-							<span class="cx-name">{{ row.item.item_name }}</span>
-							<span class="cx-code">{{ row.item.item_code }} · parc {{ row.item.fleet_quantity }}</span>
+							<span class="cx-name" :title="row.item.item_code">{{ row.item.item_name }}</span>
+							<span class="cx-code">parc {{ row.item.fleet_quantity }}</span>
 						</th>
 						<td v-for="(c, i) in row.cells" :key="days[i].ymd" :class="{ 'cx-weekend': days[i].weekend }">
 							<button
@@ -280,7 +304,7 @@ defineExpose({ load });
 </template>
 
 <style>
-body[data-route="cortex-availability"] #page-cortex-availability .page-head {
+#page-cortex-availability .page-head {
 	display: none;
 }
 .cx-avail {
@@ -294,6 +318,34 @@ body[data-route="cortex-availability"] #page-cortex-availability .page-head {
 	--line: #e4e4e7;
 	padding: 16px 0 48px;
 	color: #09090b;
+}
+.cx-tabs {
+	display: flex;
+	gap: 4px;
+	margin: 14px 0 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+	border-bottom: 1px solid var(--line);
+}
+.cx-tab {
+	flex: 0 0 auto;
+	padding: 8px 12px;
+	border-bottom: 2px solid transparent;
+	color: var(--muted) !important;
+	font-size: 13px;
+	text-decoration: none !important;
+	white-space: nowrap;
+	transition: color 0.14s, border-color 0.14s, background 0.14s;
+}
+.cx-tab:hover {
+	color: #09090b !important;
+	background: #f4f4f5;
+	border-radius: 8px 8px 0 0;
+}
+.cx-tab.active {
+	color: #09090b !important;
+	border-bottom-color: #09090b;
+	font-weight: 600;
 }
 .cx-avail-head {
 	display: flex;
@@ -393,8 +445,8 @@ body[data-route="cortex-availability"] #page-cortex-availability .page-head {
 	margin-right: 4px;
 	vertical-align: -1px;
 }
-.cx-dot-ok { background: var(--ok-bg); border: 1px solid var(--ok); }
-.cx-dot-partial { background: var(--partial-bg); border: 1px solid var(--partial); }
+.cx-dot-ok { background: #fff; border: 1px solid #a1a1aa; }
+.cx-dot-partial { background: #e4e4e7; border: 1px solid #a1a1aa; }
 .cx-dot-full { background: var(--full-bg); border: 1px solid var(--full); }
 .cx-dot-quote { border: 1px dashed var(--muted); }
 .cx-avail-scroll {
@@ -412,8 +464,8 @@ body[data-route="cortex-availability"] #page-cortex-availability .page-head {
 }
 .cx-avail-table th,
 .cx-avail-table td {
-	padding: 4px;
-	border-bottom: 1px solid var(--line);
+	padding: 1px 2px;
+	border-bottom: 1px solid #f0f0f1;
 	text-align: center;
 	font-weight: 500;
 }
@@ -424,8 +476,11 @@ body[data-route="cortex-availability"] #page-cortex-availability .page-head {
 	white-space: nowrap;
 }
 .cx-avail-table .cx-today {
-	background: #d1fae5;
-	color: #064e3b;
+	background: #09090b;
+	color: #fff;
+}
+.cx-avail-table .cx-today .cx-dn {
+	color: #fff;
 }
 .cx-avail-table .cx-weekend:not(.cx-today) {
 	background: #fafafa;
@@ -444,9 +499,11 @@ body[data-route="cortex-availability"] #page-cortex-availability .page-head {
 	position: sticky;
 	left: 0;
 	z-index: 1;
-	min-width: 180px;
-	max-width: 220px;
+	min-width: 200px;
+	max-width: 260px;
+	padding: 2px 12px !important;
 	text-align: left !important;
+	display: table-cell;
 	background: #fff;
 	border-right: 1px solid var(--line);
 }
@@ -454,14 +511,18 @@ thead .cx-sticky {
 	background: #f4f4f5;
 }
 .cx-name {
-	display: block;
-	font-weight: 600;
+	display: inline-block;
+	max-width: 210px;
+	vertical-align: bottom;
+	font-size: 13px;
+	font-weight: 500;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 .cx-code {
-	display: block;
+	display: inline-block;
+	margin-left: 8px;
 	font-size: 11px;
 	color: var(--muted);
 }
@@ -476,28 +537,31 @@ thead .cx-sticky {
 }
 .cx-cell {
 	width: 100%;
-	min-width: 40px;
-	height: 36px;
-	border-radius: 8px;
+	min-width: 34px;
+	height: 26px;
+	border-radius: 6px;
 	border: 1px solid transparent;
+	background: transparent;
+	color: #27272a;
 	font: inherit;
-	font-weight: 650;
+	font-size: 13px;
+	font-weight: 500;
+	font-variant-numeric: tabular-nums;
 	cursor: pointer;
 	transition: transform 0.12s, box-shadow 0.12s;
 }
 .cx-cell:hover {
-	transform: translateY(-1px);
-	box-shadow: 0 2px 8px rgba(9, 9, 11, 0.12);
+	background: #e4e4e7;
 }
 .cx-cell:focus-visible,
 .cx-avail-scroll:focus-visible {
 	outline: 2px solid var(--ok);
 	outline-offset: 2px;
 }
-.cx-cell-ok { background: var(--ok-bg); color: var(--ok); }
-.cx-cell-partial { background: var(--partial-bg); color: var(--partial); }
-.cx-cell-full { background: var(--full-bg); color: var(--full); }
-.cx-cell-none { background: #f4f4f5; color: var(--muted); }
+.cx-cell-ok { background: transparent; }
+.cx-cell-partial { background: #ececee; }
+.cx-cell-full { background: var(--full-bg); color: var(--full); font-weight: 650; }
+.cx-cell-none { color: #a1a1aa; }
 .cx-cell-quote { border: 1px dashed var(--muted); }
 .cx-cell[aria-pressed="true"] { box-shadow: 0 0 0 2px #09090b; }
 .cx-avail-detail {
@@ -539,7 +603,7 @@ thead .cx-sticky {
 }
 .cx-avail-skeleton span {
 	display: block;
-	height: 38px;
+	height: 28px;
 	margin-bottom: 8px;
 	border-radius: 8px;
 	background: linear-gradient(90deg, #f4f4f5 25%, #e9e9ec 37%, #f4f4f5 63%);
