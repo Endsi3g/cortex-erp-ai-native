@@ -82,7 +82,7 @@ function toggle() {
 }
 
 function detach() {
-	frappe.set_route("cortex-assistant");
+	frappe.set_route("cortex-home");
 }
 
 let nextId = 1;

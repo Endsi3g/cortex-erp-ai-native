@@ -71,17 +71,5 @@ if frappe:
                 ],
                 "active_company_id": default_company,
                 "permissions": permissions,
-                "onboarding": _onboarding_flag(user),
             }
         }
-
-
-def _onboarding_flag(user: str) -> dict:
-    """Read-only: a company owner with an unfinished setup is sent to the setup assistant once per session."""
-    try:
-        from cortex_rental.services import onboarding
-
-        return {"needed": bool(onboarding.needs_onboarding(user)), "route": "/company-setup"}
-    except Exception:
-        frappe.log_error(title="Cortex onboarding flag failed")
-        return {"needed": False, "route": "/company-setup"}

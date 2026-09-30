@@ -4,7 +4,7 @@
 
 COMPOSE_DEV = docker compose -f infra/docker/docker-compose.dev.yml
 
-.PHONY: build-desk build-spa help up down restart ps logs shell-bench shell-mcp test lint check-all env format
+.PHONY: build-desk help up down restart ps logs shell-bench shell-mcp test lint check-all env format
 
 help: ## Afficher l'aide des commandes disponibles
 	@echo "Cortex ERP AI-Native — Commandes du Monorepo :"
@@ -42,11 +42,8 @@ shell-mcp: ## Ouvrir un shell interactif dans le conteneur FastMCP Python
 test: ## Exécuter la suite de tests Python (pytest)
 	pytest apps/
 
-build-desk: ## Construire les écrans Vue 3 + Frappe UI hébergés dans le Desk (Vite)
-	cd apps/cortex_rental/cortex_rental/public/frontend && npm ci --no-audit --no-fund && npm run build:desk
-
-build-spa: ## Construire l'application autonome servie sur /cortex (Vite + frappe-ui, écrit www/cortex.html)
-	cd apps/cortex_rental/cortex_rental/public/frontend && npm ci --no-audit --no-fund && npm run build:spa
+build-desk: ## Compiler les bundles du Desk (bundler intégré de Frappe)
+	docker compose -f infra/docker/docker-compose.dev.yml exec bench bench build --app cortex_rental
 
 lint: ## Lancer le linter Python (Ruff)
 	ruff check apps/

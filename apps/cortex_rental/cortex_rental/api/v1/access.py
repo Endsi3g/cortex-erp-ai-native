@@ -12,7 +12,7 @@ try:
 except ImportError:
     frappe = None
 
-from cortex_rental.services import access_requests, login_options as login_options_service
+from cortex_rental.services import access_requests
 from cortex_rental.services.signup_rules import SignupError
 
 
@@ -57,8 +57,3 @@ if frappe:
     def access_status():
         """Whether the login page should offer « Demander l'accès » (no secret, cacheable)."""
         return {"signup_enabled": access_requests.signup_enabled()}
-
-    @frappe.whitelist(allow_guest=True, methods=["GET"])
-    def login_options(redirect_to: str = ""):
-        """Sign-in choices for the standalone app (Google/GitHub only when configured). No secret leaves the server."""
-        return login_options_service.login_options(redirect_to)

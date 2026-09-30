@@ -26,6 +26,8 @@ app_include_css = [
     "/assets/cortex_rental/css/cortex-tokens.css",
     "/assets/cortex_rental/css/cortex-theme.css",
     "/assets/cortex_rental/css/cortex-utilities.css",
+    "/assets/cortex_rental/css/cortex-home.css",
+    "/assets/cortex_rental/css/cortex-motion.css",
 ]
 
 # Global floating Cortex Copilot launcher — mounted on every Desk page
@@ -35,9 +37,8 @@ app_include_css = [
 # .bundle.js (docs.frappe.io + frappe/frappe wiki, cross-checked before
 # use — see CHANGELOG.md, eighth wave).
 app_include_js = [
-    # Host for the Vue 3 + Frappe UI screens (built by Vite, see public/frontend and cortex_host.js).
-    "/assets/cortex_rental/js/cortex_host/cortex_host.js",
     "cortex_copilot.bundle.js",
+    "/assets/cortex_rental/js/cortex_desk.js",
 ]
 
 # DocType Events (Audit logging & validation hooks)
@@ -98,25 +99,8 @@ before_migrate = "cortex_rental.setup.before_migrate"
 after_migrate = "cortex_rental.setup.after_migrate"
 after_install = "cortex_rental.setup.after_install"
 
-# Login experience: access-request form on the login page, and a read-only boot flag that sends a
-# company owner with an unfinished setup to the onboarding assistant (see auth_hooks.py and
-# public/js/cortex_host/cortex_host.js). The boot hook never writes to the database.
+# Login experience: access-request form on the login page, and a read-only boot flag that points the Desk at the
+# AI-first home page `cortex-home` (see auth_hooks.py and public/js/cortex_desk.js). The boot hook never writes
+# to the database.
 signup_form_template = ["cortex_rental.auth_hooks.signup_form_path"]
 boot_session = "cortex_rental.auth_hooks.boot_session"
-
-# Standalone Cortex app (Vue 3 + frappe-ui, built into www/cortex.html): every path under /cortex
-# loads the same page so a refresh on /cortex/rental/CR-TRX-2026-00001 still opens the app.
-website_route_rules = [
-    {"from_route": "/cortex/<path:app_path>", "to_route": "cortex"},
-]
-
-# Apps screen entry: with `default_app` set to cortex_rental (see auth_setup.ensure_default_app), Frappe sends a
-# signed-in user to the standalone Cortex app instead of the Desk. The Desk stays available under /app.
-add_to_apps_screen = [
-    {
-        "name": "cortex_rental",
-        "logo": "/assets/cortex_rental/images/cortex-logo.svg",
-        "title": "Cortex",
-        "route": "/cortex",
-    }
-]

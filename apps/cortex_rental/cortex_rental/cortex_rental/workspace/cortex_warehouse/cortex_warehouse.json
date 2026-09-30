@@ -1,27 +1,156 @@
 {
- "charts": [],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Warehouse</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Check-in et retours\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Retours et diagnostics\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Parc matériel\", \"col\": 3}}]",
- "creation": "2026-09-28 20:30:00.000000",
- "custom_blocks": [],
  "docstatus": 0,
- "doctype": "Workspace",
- "for_user": "",
- "hide_custom": 0,
- "icon": "octicon octicon-package",
  "idx": 0,
- "is_hidden": 0,
- "label": "Cortex Warehouse",
- "links": [],
- "modified": "2026-09-28 20:30:00.000000",
+ "creation": "2026-09-30 09:00:00.000000",
+ "modified": "2026-09-30 09:00:00.000000",
  "modified_by": "Administrator",
- "module": "Cortex Rental",
- "name": "Cortex Warehouse",
- "number_cards": [],
  "owner": "Administrator",
+ "module": "Cortex Rental",
+ "doctype": "Workspace",
+ "name": "Cortex Warehouse",
+ "label": "Cortex Warehouse",
+ "title": "Entrepôt",
+ "icon": "stock",
+ "sequence_id": 3.0,
  "parent_page": "Cortex Rental",
  "public": 1,
- "quick_lists": [],
+ "is_hidden": 0,
+ "for_user": "",
+ "hide_custom": 0,
+ "indicator_color": "",
  "restrict_to_domain": "",
+ "content": "[{\"id\": \"42b73d2852\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Séries par statut Cortex\", \"col\": 6}}, {\"id\": \"1342ed8871\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Locations par état\", \"col\": 6}}, {\"id\": \"6d3a956311\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sorties à préparer\", \"col\": 3}}, {\"id\": \"daa4b87474\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Retours enregistrés (7 jours)\", \"col\": 3}}, {\"id\": \"e5cf584de7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Matériel en quarantaine\", \"col\": 3}}, {\"id\": \"6d766db12a\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Matériel manquant\", \"col\": 3}}, {\"id\": \"7226206720\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"a49cc2cb76\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"a9eed5cfff\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouvelle sortie/retour\", \"col\": 3}}, {\"id\": \"7ca5d582bc\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sorties et retours\", \"col\": 3}}, {\"id\": \"c2ad9888c2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Numéros de série\", \"col\": 3}}, {\"id\": \"bcd559efe8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Mouvements de stock\", \"col\": 3}}, {\"id\": \"5a1176c705\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Disponibilité du parc\", \"col\": 3}}, {\"id\": \"234e99ca2f\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"0e30c2d38a\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"27fb93b9c8\", \"type\": \"card\", \"data\": {\"card_name\": \"Entrepôt\", \"col\": 4}}, {\"id\": \"b36efb4557\", \"type\": \"card\", \"data\": {\"card_name\": \"Rapports\", \"col\": 4}}]",
+ "charts": [
+  {
+   "chart_name": "Séries par statut Cortex",
+   "label": "Séries par statut Cortex"
+  },
+  {
+   "chart_name": "Locations par état",
+   "label": "Locations par état"
+  }
+ ],
+ "number_cards": [
+  {
+   "number_card_name": "Sorties à préparer",
+   "label": "Sorties à préparer"
+  },
+  {
+   "number_card_name": "Retours enregistrés (7 jours)",
+   "label": "Retours enregistrés (7 jours)"
+  },
+  {
+   "number_card_name": "Matériel en quarantaine",
+   "label": "Matériel en quarantaine"
+  },
+  {
+   "number_card_name": "Matériel manquant",
+   "label": "Matériel manquant"
+  }
+ ],
+ "quick_lists": [],
+ "shortcuts": [
+  {
+   "label": "Nouvelle sortie/retour",
+   "link_to": "Cortex Check-In",
+   "type": "DocType",
+   "doc_view": "New",
+   "color": "#066336"
+  },
+  {
+   "label": "Sorties et retours",
+   "link_to": "Cortex Check-In",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Numéros de série",
+   "link_to": "Serial No",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Mouvements de stock",
+   "link_to": "Stock Entry",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Disponibilité du parc",
+   "link_to": "Disponibilité du parc",
+   "type": "Report",
+   "doc_view": "",
+   "color": "#066336",
+   "report_ref_doctype": "Cortex Rental Item Profile"
+  }
+ ],
+ "links": [
+  {
+   "type": "Card Break",
+   "label": "Entrepôt",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 3,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Sorties et retours",
+   "link_to": "Cortex Check-In",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Numéros de série",
+   "link_to": "Serial No",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Entrepôts",
+   "link_to": "Warehouse",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Card Break",
+   "label": "Rapports",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 1,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Disponibilité du parc",
+   "link_to": "Disponibilité du parc",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "Cortex Rental Item Profile"
+  }
+ ],
+ "custom_blocks": [],
  "roles": [
   {
    "role": "System Manager"
@@ -45,30 +174,5 @@
    "role": "Rental Operator"
   }
  ],
- "sequence_id": 3.0,
- "shortcuts": [
-  {
-   "label": "Check-in et retours",
-   "link_to": "cortex-checkin",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "Retours et diagnostics",
-   "link_to": "Cortex Check-In",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Parc matériel",
-   "link_to": "cortex-fleet",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  }
- ],
- "title": "Cortex Warehouse",
  "type": "Workspace"
 }

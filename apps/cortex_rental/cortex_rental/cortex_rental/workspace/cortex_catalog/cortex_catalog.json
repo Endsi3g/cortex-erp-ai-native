@@ -1,27 +1,179 @@
 {
- "charts": [],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Catalog</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Équipements\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kits et forfaits\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profils d'équipement\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Articles\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Numéros de série\", \"col\": 3}}]",
- "creation": "2026-09-28 20:30:00.000000",
- "custom_blocks": [],
  "docstatus": 0,
- "doctype": "Workspace",
- "for_user": "",
- "hide_custom": 0,
- "icon": "octicon octicon-database",
  "idx": 0,
- "is_hidden": 0,
- "label": "Cortex Catalog",
- "links": [],
- "modified": "2026-09-28 20:30:00.000000",
+ "creation": "2026-09-30 09:00:00.000000",
+ "modified": "2026-09-30 09:00:00.000000",
  "modified_by": "Administrator",
- "module": "Cortex Rental",
- "name": "Cortex Catalog",
- "number_cards": [],
  "owner": "Administrator",
+ "module": "Cortex Rental",
+ "doctype": "Workspace",
+ "name": "Cortex Catalog",
+ "label": "Cortex Catalog",
+ "title": "Catalogue",
+ "icon": "list-alt",
+ "sequence_id": 4.0,
  "parent_page": "Cortex Rental",
  "public": 1,
- "quick_lists": [],
+ "is_hidden": 0,
+ "for_user": "",
+ "hide_custom": 0,
+ "indicator_color": "",
  "restrict_to_domain": "",
+ "content": "[{\"id\": \"c56ce92f8c\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Équipements par catégorie\", \"col\": 12}}, {\"id\": \"aef99f39e4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Équipements au catalogue\", \"col\": 3}}, {\"id\": \"fd2de9d2cc\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Séries actives\", \"col\": 3}}, {\"id\": \"aeb04e2b33\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Kits et forfaits\", \"col\": 3}}, {\"id\": \"94a60f6b79\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Valeur de remplacement du parc\", \"col\": 3}}, {\"id\": \"732fa08903\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"1568fe6f19\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"dc57a7dee2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profils d’équipement\", \"col\": 3}}, {\"id\": \"fc4d89262e\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouveau profil\", \"col\": 3}}, {\"id\": \"4ef4bde029\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Articles\", \"col\": 3}}, {\"id\": \"73824750a5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Numéros de série\", \"col\": 3}}, {\"id\": \"f475c0fd97\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kits et forfaits\", \"col\": 3}}, {\"id\": \"a14f271fb1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Import de données\", \"col\": 3}}, {\"id\": \"f1419cb029\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"39a38ed7ed\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"3cc3695cc0\", \"type\": \"card\", \"data\": {\"card_name\": \"Catalogue\", \"col\": 4}}, {\"id\": \"4f5423d60a\", \"type\": \"card\", \"data\": {\"card_name\": \"Données\", \"col\": 4}}]",
+ "charts": [
+  {
+   "chart_name": "Équipements par catégorie",
+   "label": "Équipements par catégorie"
+  }
+ ],
+ "number_cards": [
+  {
+   "number_card_name": "Équipements au catalogue",
+   "label": "Équipements au catalogue"
+  },
+  {
+   "number_card_name": "Séries actives",
+   "label": "Séries actives"
+  },
+  {
+   "number_card_name": "Kits et forfaits",
+   "label": "Kits et forfaits"
+  },
+  {
+   "number_card_name": "Valeur de remplacement du parc",
+   "label": "Valeur de remplacement du parc"
+  }
+ ],
+ "quick_lists": [],
+ "shortcuts": [
+  {
+   "label": "Profils d’équipement",
+   "link_to": "Cortex Rental Item Profile",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Nouveau profil",
+   "link_to": "Cortex Rental Item Profile",
+   "type": "DocType",
+   "doc_view": "New",
+   "color": "#066336"
+  },
+  {
+   "label": "Articles",
+   "link_to": "Item",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Numéros de série",
+   "link_to": "Serial No",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Kits et forfaits",
+   "link_to": "Product Bundle",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Import de données",
+   "link_to": "Data Import",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  }
+ ],
+ "links": [
+  {
+   "type": "Card Break",
+   "label": "Catalogue",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 4,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Profils d’équipement",
+   "link_to": "Cortex Rental Item Profile",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Articles",
+   "link_to": "Item",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Groupes d’articles",
+   "link_to": "Item Group",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Kits et forfaits",
+   "link_to": "Product Bundle",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Card Break",
+   "label": "Données",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 2,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Import de données",
+   "link_to": "Data Import",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Numéros de série",
+   "link_to": "Serial No",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  }
+ ],
+ "custom_blocks": [],
  "roles": [
   {
    "role": "System Manager"
@@ -45,44 +197,5 @@
    "role": "Rental Operator"
   }
  ],
- "sequence_id": 6.0,
- "shortcuts": [
-  {
-   "label": "Équipements",
-   "link_to": "cortex-equipment",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "Kits et forfaits",
-   "link_to": "cortex-kits",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "Profils d'équipement",
-   "link_to": "Cortex Rental Item Profile",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Articles",
-   "link_to": "Item",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Numéros de série",
-   "link_to": "Serial No",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  }
- ],
- "title": "Cortex Catalog",
  "type": "Workspace"
 }

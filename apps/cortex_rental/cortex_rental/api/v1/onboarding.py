@@ -90,5 +90,5 @@ if frappe:
 
 
 def onboarding_route(user: str) -> str:
-    """Standalone app URLs (`/cortex/...`); the Desk pages remain reachable under /app."""
-    return "/cortex/company-setup" if onboarding.needs_onboarding(user) else "/cortex"
+    """Where to go once the password is set: the AI-first home (it shows the pending setup for an owner)."""
+    return "/app/cortex-home"

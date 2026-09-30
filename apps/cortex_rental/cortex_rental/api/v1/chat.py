@@ -31,8 +31,20 @@ from cortex_rental.services.chat_session import (
 )
 
 
-def _service() -> ChatSessionService:
-    """The chat service, or a clear message when the model gateway (Onyx) is not configured on this site."""
+class _ModelNotNeeded:
+    """Stand-in client for calls that never reach the model (history, sessions): no Onyx configuration required."""
+
+    def send_message(self, *args, **kwargs):  # pragma: no cover - guarded by _service(model=True)
+        raise OnyxConfigurationError("Onyx is not configured.")
+
+
+def _service(model: bool = False) -> ChatSessionService:
+    """The chat service. Only sending a message needs the model gateway (Onyx); reading history never does.
+
+    When Onyx is missing, sending answers with a clear message instead of a server error.
+    """
+    if not model:
+        return ChatSessionService(onyx_client=_ModelNotNeeded())
     try:
         return ChatSessionService()
     except OnyxConfigurationError:
@@ -66,7 +78,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
         _raise_validation_error(exc)
         return {}  # unreachable when frappe is available; keeps type-checkers happy
 
-    service = _service()
+    service = _service(model=True)
     try:
         response = service.send_message(
             user=user,

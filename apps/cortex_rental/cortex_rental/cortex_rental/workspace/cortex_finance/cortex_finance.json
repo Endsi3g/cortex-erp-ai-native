@@ -1,27 +1,224 @@
 {
- "charts": [],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Finance</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profit et pertes\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Consignation\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Propriétaires\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Factures de location\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements aux propriétaires\", \"col\": 3}}]",
- "creation": "2026-09-28 20:30:00.000000",
- "custom_blocks": [],
  "docstatus": 0,
- "doctype": "Workspace",
- "for_user": "",
- "hide_custom": 0,
- "icon": "octicon octicon-graph",
  "idx": 0,
- "is_hidden": 0,
- "label": "Cortex Finance",
- "links": [],
- "modified": "2026-09-28 20:30:00.000000",
+ "creation": "2026-09-30 09:00:00.000000",
+ "modified": "2026-09-30 09:00:00.000000",
  "modified_by": "Administrator",
- "module": "Cortex Rental",
- "name": "Cortex Finance",
- "number_cards": [],
  "owner": "Administrator",
+ "module": "Cortex Rental",
+ "doctype": "Workspace",
+ "name": "Cortex Finance",
+ "label": "Cortex Finance",
+ "title": "Finance",
+ "icon": "money-coins-1",
+ "sequence_id": 5.0,
  "parent_page": "Cortex Rental",
  "public": 1,
- "quick_lists": [],
+ "is_hidden": 0,
+ "for_user": "",
+ "hide_custom": 0,
+ "indicator_color": "",
  "restrict_to_domain": "",
+ "content": "[{\"id\": \"a61015cb42\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Profit and Loss\", \"col\": 12}}, {\"id\": \"160d5bd57a\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Facturé ce mois\", \"col\": 3}}, {\"id\": \"a0a18c1695\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Encaissé ce mois\", \"col\": 3}}, {\"id\": \"340f531eea\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Solde à recevoir\", \"col\": 3}}, {\"id\": \"14b17b26b6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Versements à payer\", \"col\": 3}}, {\"id\": \"a87caa1486\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"2e2cd6a00e\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"b28b26be1d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Factures de vente\", \"col\": 3}}, {\"id\": \"a9f8f3bf72\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Paiements\", \"col\": 3}}, {\"id\": \"3c4dcd558d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements de consignation\", \"col\": 3}}, {\"id\": \"2c388c2925\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Propriétaires\", \"col\": 3}}, {\"id\": \"8c903a6736\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements par propriétaire\", \"col\": 3}}, {\"id\": \"8afe39b374\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Relevé propriétaire\", \"col\": 3}}, {\"id\": \"f5211a8c30\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"État des résultats\", \"col\": 3}}, {\"id\": \"75002f9dd5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Grand livre\", \"col\": 3}}, {\"id\": \"487798fcd2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"7f07b08f4f\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"6ec1147100\", \"type\": \"card\", \"data\": {\"card_name\": \"Consignation\", \"col\": 4}}, {\"id\": \"48e33b8ac4\", \"type\": \"card\", \"data\": {\"card_name\": \"Comptabilité\", \"col\": 4}}]",
+ "charts": [
+  {
+   "chart_name": "Profit and Loss",
+   "label": "Profit and Loss"
+  }
+ ],
+ "number_cards": [
+  {
+   "number_card_name": "Facturé ce mois",
+   "label": "Facturé ce mois"
+  },
+  {
+   "number_card_name": "Encaissé ce mois",
+   "label": "Encaissé ce mois"
+  },
+  {
+   "number_card_name": "Solde à recevoir",
+   "label": "Solde à recevoir"
+  },
+  {
+   "number_card_name": "Versements à payer",
+   "label": "Versements à payer"
+  }
+ ],
+ "quick_lists": [],
+ "shortcuts": [
+  {
+   "label": "Factures de vente",
+   "link_to": "Sales Invoice",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Paiements",
+   "link_to": "Payment Entry",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Versements de consignation",
+   "link_to": "Consignment Payout",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#b45309",
+   "stats_filter": "[[\"Consignment Payout\", \"status\", \"=\", \"Approved\"]]"
+  },
+  {
+   "label": "Propriétaires",
+   "link_to": "Consignment Owner",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Versements par propriétaire",
+   "link_to": "Versements de consignation",
+   "type": "Report",
+   "doc_view": "",
+   "color": "#066336",
+   "report_ref_doctype": "Consignment Payout"
+  },
+  {
+   "label": "Relevé propriétaire",
+   "link_to": "Relevé propriétaire",
+   "type": "Report",
+   "doc_view": "",
+   "color": "#066336",
+   "report_ref_doctype": "Consignment Payout"
+  },
+  {
+   "label": "État des résultats",
+   "link_to": "Profit and Loss Statement",
+   "type": "Report",
+   "doc_view": "",
+   "color": "#066336",
+   "report_ref_doctype": "GL Entry"
+  },
+  {
+   "label": "Grand livre",
+   "link_to": "General Ledger",
+   "type": "Report",
+   "doc_view": "",
+   "color": "#066336",
+   "report_ref_doctype": "GL Entry"
+  }
+ ],
+ "links": [
+  {
+   "type": "Card Break",
+   "label": "Consignation",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 4,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Propriétaires",
+   "link_to": "Consignment Owner",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Versements",
+   "link_to": "Consignment Payout",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Versements de consignation",
+   "link_to": "Versements de consignation",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "Consignment Payout"
+  },
+  {
+   "type": "Link",
+   "label": "Relevé propriétaire",
+   "link_to": "Relevé propriétaire",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "Consignment Payout"
+  },
+  {
+   "type": "Card Break",
+   "label": "Comptabilité",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 4,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Factures de vente",
+   "link_to": "Sales Invoice",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Paiements",
+   "link_to": "Payment Entry",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "État des résultats",
+   "link_to": "Profit and Loss Statement",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "GL Entry"
+  },
+  {
+   "type": "Link",
+   "label": "Grand livre",
+   "link_to": "General Ledger",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "GL Entry"
+  }
+ ],
+ "custom_blocks": [],
  "roles": [
   {
    "role": "System Manager"
@@ -45,44 +242,5 @@
    "role": "Rental Manager"
   }
  ],
- "sequence_id": 4.0,
- "shortcuts": [
-  {
-   "label": "Profit et pertes",
-   "link_to": "cortex-accounting-pnl",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "Consignation",
-   "link_to": "cortex-consignment",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "Propriétaires",
-   "link_to": "cortex-consignment-owner",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "Factures de location",
-   "link_to": "Sales Invoice",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Versements aux propriétaires",
-   "link_to": "Consignment Payout",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  }
- ],
- "title": "Cortex Finance",
  "type": "Workspace"
 }

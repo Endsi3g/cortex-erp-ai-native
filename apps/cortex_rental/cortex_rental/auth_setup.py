@@ -36,10 +36,10 @@ def ensure_access_settings():
         frappe.get_single("Cortex Access Settings").save(ignore_permissions=True)
 
 
-def ensure_default_app():
-    """Land on the standalone Cortex app after sign-in, unless an administrator already chose another default."""
-    if not frappe.db.get_single_value("System Settings", "default_app"):
-        frappe.db.set_single_value("System Settings", "default_app", "cortex_rental")
+def clear_default_app():
+    """Undo the standalone-app default: sign-in lands on the Desk, where `cortex-home` is the first page."""
+    if frappe.db.get_single_value("System Settings", "default_app") == "cortex_rental":
+        frappe.db.set_single_value("System Settings", "default_app", "")
 
 
 def run_all():
@@ -48,4 +48,3 @@ def run_all():
     apply_branding()
     ensure_social_login_keys()
     ensure_access_settings()
-    ensure_default_app()

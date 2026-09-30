@@ -24,11 +24,6 @@ class TestBranding(unittest.TestCase):
         for colour in FORBIDDEN:
             self.assertNotIn(colour.lower(), logo.lower())
 
-    def test_spa_favicon_points_to_a_shipped_file(self):
-        index = _read("public", "frontend", "index.html")
-        href = re.search(r'rel="icon"[^>]*href="/([^"]+)"', index).group(1)
-        self.assertTrue(os.path.exists(os.path.join(APP_DIR, "public", "frontend", "public", href)))
-
 
 if __name__ == "__main__":
     unittest.main()
@@ -46,12 +41,13 @@ class TestNoErpnextInVisibleText(unittest.TestCase):
 
         root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         patterns = [
-            "public/frontend/src/features/**/*.vue",
-            "public/frontend/src/api/adapters/*.ts",
-            "public/frontend/src/api/mock/**/*.ts",
-            "public/frontend/locales/*.json",
             "cortex_rental/page/*/*.json",
             "cortex_rental/workspace/*/*.json",
+            "cortex_rental/number_card/*/*.json",
+            "cortex_rental/dashboard_chart/*/*.json",
+            "cortex_rental/report/*/*",
+            "cortex_rental/onboarding_step/*/*.json",
+            "cortex_rental/module_onboarding/*/*.json",
             "translations/*.csv",
             "fixtures/*.json",
         ]

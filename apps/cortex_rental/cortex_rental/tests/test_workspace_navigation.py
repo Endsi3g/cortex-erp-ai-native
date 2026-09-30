@@ -19,13 +19,24 @@ MODULE_DIR = os.path.join(APP_DIR, "cortex_rental")
 # DocTypes owned by Frappe/ERPNext, not by this app.
 CORE_DOCTYPES = {
     "Item",
+    "Item Group",
     "Serial No",
     "Customer",
     "Sales Invoice",
+    "Sales Order",
+    "Quotation",
+    "Payment Entry",
+    "Stock Entry",
+    "Warehouse",
+    "Product Bundle",
+    "GL Entry",
     "Company",
     "User",
     "Data Import",
 }
+# Standard ERPNext reports and charts reused by the Finance workspace.
+ERPNEXT_REPORTS = {"Profit and Loss Statement", "General Ledger"}
+ERPNEXT_CHARTS = {"Profit and Loss"}
 HUB = "Cortex Rental"
 ERPNEXT_TARGETS = {"Accounting", "Stock", "Selling", "Buying", "Projects", "ERPNext Settings"}
 
@@ -50,6 +61,10 @@ def _pages():
     return {_load(p)["name"] for p in glob.glob(os.path.join(MODULE_DIR, "page", "*", "*.json"))}
 
 
+def _names(kind: str):
+    return {_load(p)["name"] for p in glob.glob(os.path.join(MODULE_DIR, kind, "*", "*.json"))}
+
+
 def _doctypes():
     return {
         _load(p)["name"] for p in glob.glob(os.path.join(MODULE_DIR, "doctype", "*", "*.json")) if "name" in _load(p)
@@ -67,21 +82,24 @@ class TestWorkspaceNavigation(unittest.TestCase):
         self.assertTrue(workspaces)
         for path, doc in workspaces.items():
             folder = os.path.basename(os.path.dirname(path))
-            self.assertEqual(folder, scrub(doc["title"]), path)
+            self.assertEqual(folder, scrub(doc["name"]), path)
+            self.assertEqual(doc["name"], doc["label"], path)
             self.assertEqual(os.path.basename(path), f"{folder}.json", path)
 
     def test_workspace_titles_are_unique(self):
         titles = [doc["title"] for doc in _workspaces().values()]
         self.assertEqual(len(titles), len(set(titles)), titles)
+        labels = [doc["label"] for doc in _workspaces().values()]
+        self.assertEqual(len(labels), len(set(labels)), labels)
 
     def test_hub_and_six_groups_exist_with_valid_parent(self):
-        docs = {doc["title"]: doc for doc in _workspaces().values()}
+        docs = {doc["label"]: doc for doc in _workspaces().values()}
         self.assertIn(HUB, docs)
         self.assertEqual(docs[HUB]["parent_page"], "")
-        children = [d for d in docs.values() if d["title"] != HUB]
+        children = [d for d in docs.values() if d["label"] != HUB]
         self.assertEqual(len(children), 6)
         for child in children:
-            self.assertEqual(child["parent_page"], HUB, child["title"])
+            self.assertEqual(child["parent_page"], HUB, child["label"])
             self.assertEqual(child["public"], 1)
             self.assertEqual(child["is_hidden"], 0)
         sequences = [d["sequence_id"] for d in docs.values()]
@@ -94,6 +112,7 @@ class TestWorkspaceNavigation(unittest.TestCase):
 
     def test_every_target_exists(self):
         pages, doctypes = _pages(), _doctypes() | CORE_DOCTYPES
+        reports = _names("report") | ERPNEXT_REPORTS
         for path, doc in _workspaces().items():
             entries = [(s["type"], s["link_to"]) for s in doc.get("shortcuts", [])]
             entries += [(l["link_type"], l["link_to"]) for l in doc.get("links", []) if l.get("type") == "Link"]
@@ -103,6 +122,8 @@ class TestWorkspaceNavigation(unittest.TestCase):
                     self.assertIn(target, pages, f"{path}: unknown Page {target}")
                 elif kind == "DocType":
                     self.assertIn(target, doctypes, f"{path}: unknown DocType {target}")
+                elif kind == "Report":
+                    self.assertIn(target, reports, f"{path}: unknown Report {target}")
                 else:
                     self.fail(f"{path}: unsupported target type {kind}")
 
@@ -114,12 +135,21 @@ class TestWorkspaceNavigation(unittest.TestCase):
         for path, doc in _workspaces().items():
             labels = {s["label"] for s in doc.get("shortcuts", [])}
             cards = {l["label"] for l in doc.get("links", []) if l.get("type") == "Card Break"}
+            charts = {c["chart_name"] for c in doc.get("charts", [])}
+            numbers = {c["number_card_name"] for c in doc.get("number_cards", [])}
+            quick = {q["label"] for q in doc.get("quick_lists", [])}
             for block in json.loads(doc["content"]):
                 data = block["data"]
                 if block["type"] == "shortcut":
                     self.assertIn(data["shortcut_name"], labels, path)
                 elif block["type"] == "card":
                     self.assertIn(data["card_name"], cards, path)
+                elif block["type"] == "chart":
+                    self.assertIn(data["chart_name"], charts, path)
+                elif block["type"] == "number_card":
+                    self.assertIn(data["number_card_name"], numbers, path)
+                elif block["type"] == "quick_list":
+                    self.assertIn(data["quick_list_name"], quick, path)
 
     def test_live_count_filters_are_valid(self):
         counted = 0
@@ -130,7 +160,7 @@ class TestWorkspaceNavigation(unittest.TestCase):
                     parsed = json.loads(shortcut["stats_filter"])
                     self.assertEqual(shortcut["type"], "DocType", path)
                     self.assertTrue(all(row[0] == shortcut["link_to"] for row in parsed), path)
-        self.assertGreaterEqual(counted, 2, "approvals and inbound requests should show live counts")
+        self.assertGreaterEqual(counted, 4, "key shortcuts should show live counts")
 
     def test_count_filters_use_declared_status_options(self):
         for doctype, folder in (
