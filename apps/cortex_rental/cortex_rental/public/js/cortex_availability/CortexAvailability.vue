@@ -12,13 +12,14 @@ const STATE_LABELS = {
 	"Checked Out": "Sorti",
 };
 const SPANS = [
+	{ days: 3, label: "3 jours" },
 	{ days: 7, label: "7 jours" },
 	{ days: 14, label: "14 jours" },
 	{ days: 30, label: "30 jours" },
 ];
 
 const start = ref(todayString());
-const span = ref(window.innerWidth < 640 ? 7 : 14);
+const span = ref(window.innerWidth < 640 ? 3 : 14);
 const search = ref("");
 const category = ref("");
 const items = ref([]);
@@ -101,7 +102,7 @@ const grouped = computed(() => {
 const STATUS_TEXT = { ok: "libre", partial: "partiellement réservé", full: "complet", none: "aucun parc" };
 
 function cellLabel(row, day, c) {
-	return `${row.item.item_name}, ${day.weekday} ${day.day} ${day.month} : ${c.free} sur ${c.fleet} disponible${c.free > 1 ? "s" : ""}, ${STATUS_TEXT[c.status]}`;
+	return `${row.item.item_name}, ${day.weekday} ${day.day} ${day.month} : ${Math.max(c.free, 0)} sur ${c.fleet} disponible${c.free > 1 ? "s" : ""}, ${STATUS_TEXT[c.status]}`;
 }
 
 async function load() {
@@ -245,7 +246,7 @@ defineExpose({ load });
 								:aria-pressed="selected && selected.row === row && selected.day === days[i]"
 								@click="select(row, days[i], c)"
 							>
-								{{ c.free }}
+								{{ Math.max(c.free, 0) }}
 							</button>
 						</td>
 					</tr>
@@ -260,7 +261,7 @@ defineExpose({ load });
 				<button type="button" class="cx-btn" aria-label="Fermer le détail" @click="selected = null">Fermer</button>
 			</div>
 			<p>
-				{{ selected.cell.free }} libre{{ selected.cell.free > 1 ? "s" : "" }} sur {{ selected.cell.fleet }} ·
+				{{ Math.max(selected.cell.free, 0) }} libre{{ selected.cell.free > 1 ? "s" : "" }} sur {{ selected.cell.fleet }} ·
 				{{ selected.cell.booked }} bloqué{{ selected.cell.booked > 1 ? "s" : "" }}
 			</p>
 			<ul v-if="selected.cell.blocks.length" class="cx-avail-blocks">

@@ -135,6 +135,7 @@ def create_user(
             "allow": "Company",
             "for_value": company,
             "apply_to_all_doctypes": 1,
+            "is_default": 1,
         }
     ).insert(ignore_permissions=True)
     return user.name

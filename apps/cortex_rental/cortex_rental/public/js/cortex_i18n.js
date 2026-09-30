@@ -43,6 +43,14 @@
 		"Project Type", "Warehouse Type", "Print Style", "Module Def", "Energy Point Rule", "UOM",
 	];
 
+	// On remplace le texte du nœud existant (et non l'élément entier) : les graphiques de Frappe redessinent leurs
+	// étiquettes et échouent si un nœud qu'ils connaissent a été retiré.
+	function setText(el, text) {
+		const first = el.firstChild;
+		if (first && first.nodeType === 3 && el.childNodes.length === 1) first.nodeValue = text;
+		else el.textContent = text;
+	}
+
 	function translateListNames() {
 		const route = (frappe.get_route && frappe.get_route()) || [];
 		if (route[0] !== "List" || !TRANSLATED_NAME_LISTS.includes(route[1])) return;
@@ -50,7 +58,7 @@
 			if (el.children.length) return;
 			const t = (el.textContent || "").trim();
 			const fr = t && tr(t);
-			if (fr && fr !== t) el.textContent = fr;
+			if (fr && fr !== t) setText(el, fr);
 		});
 	}
 
@@ -61,7 +69,7 @@
 			const t = (el.textContent || "").trim();
 			if (!t || el.children.length) return;
 			const fr = tr(t);
-			if (fr && fr !== t) el.textContent = fr;
+			if (fr && fr !== t) setText(el, fr);
 		});
 		document.querySelectorAll("a.filterable[title], a.filterable[data-original-title]").forEach((el) => {
 			["title", "data-original-title"].forEach((attr) => {

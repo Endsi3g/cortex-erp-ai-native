@@ -5,7 +5,7 @@ frappe.query_reports["Disponibilité du parc"] = {
 			label: __("Société"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: (frappe.boot.cortex_home && frappe.boot.cortex_home.company) || frappe.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{

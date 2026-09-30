@@ -13,3 +13,4 @@ cortex_rental.patches.enable_translated_links
 cortex_rental.patches.translate_demo_items
 cortex_rental.patches.set_kanban_card_fields
 cortex_rental.patches.set_quebec_formats
+cortex_rental.patches.sync_system_defaults
