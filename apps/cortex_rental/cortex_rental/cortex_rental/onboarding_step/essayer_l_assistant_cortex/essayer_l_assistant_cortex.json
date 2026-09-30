@@ -2,7 +2,7 @@
  "docstatus": 0,
  "idx": 0,
  "creation": "2026-09-30 09:00:00.000000",
- "modified": "2026-09-30 09:00:00.000000",
+ "modified": "2026-09-30 21:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "module": "Cortex Rental",
@@ -17,5 +17,7 @@
  "action": "Go to Page",
  "path": "cortex-home",
  "callback_title": "",
- "callback_message": ""
+ "callback_message": "",
+ "description": "Demandez à l'assistant de consulter la disponibilité ou de préparer un devis. Il propose, vous décidez : rien n'est confirmé sans votre approbation.",
+ "intro_video_url": ""
 }

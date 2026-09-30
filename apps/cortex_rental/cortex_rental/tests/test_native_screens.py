@@ -251,6 +251,28 @@ class TestReportAndPrintRights(unittest.TestCase):
             self.assertEqual(json.load(handle)["ref_doctype"], "Cortex Rental Transaction")
 
 
+class TestLandingAndWorkspaceDesign(unittest.TestCase):
+    def test_people_land_on_the_cortex_rental_workspace(self):
+        from cortex_rental import auth_hooks
+
+        self.assertEqual(auth_hooks.HOME_ROUTE, "cortex-rental")
+
+    def test_number_cards_are_black_except_the_ones_that_need_attention(self):
+        cards = {}
+        for path in glob.glob(os.path.join(MODULE_DIR, "number_card", "*", "*.json")):
+            with open(path, encoding="utf-8") as handle:
+                card = json.load(handle)
+            cards[card["name"]] = card.get("color") or ""
+        self.assertEqual(cards["Locations en cours"], "")
+        self.assertEqual(cards["Départs du jour"], "")
+        self.assertNotEqual(cards["Approbations en attente"], "")
+
+    def test_onboarding_steps_explain_themselves(self):
+        for path in glob.glob(os.path.join(MODULE_DIR, "onboarding_step", "*", "*.json")):
+            with open(path, encoding="utf-8") as handle:
+                self.assertTrue(json.load(handle).get("description"), path)
+
+
 class TestFrenchTranslations(unittest.TestCase):
     def test_translation_file_is_well_formed_and_names_doctypes(self):
         import csv

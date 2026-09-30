@@ -248,6 +248,25 @@ const panelStyle = computed(() =>
 	gap: 6px;
 	transition: all 0.15s ease;
 }
+.cp-launcher-kbd {
+	font-variant-numeric: tabular-nums;
+}
+@media (max-width: 768px), (pointer: coarse) {
+	/* Téléphone : un bouton rond discret, sans raccourci clavier, qui ne recouvre plus les listes. */
+	.cp-launcher {
+		right: var(--space-3);
+		bottom: var(--space-3);
+		width: 44px;
+		height: 44px;
+		padding: 0;
+		justify-content: center;
+		border-radius: 50%;
+	}
+	.cp-launcher-text,
+	.cp-launcher-kbd {
+		display: none;
+	}
+}
 .cp-launcher:hover {
 	border-color: var(--cortex-primary-400);
 	background: var(--cortex-surface-muted);

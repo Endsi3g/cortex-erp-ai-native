@@ -90,5 +90,5 @@ if frappe:
 
 
 def onboarding_route(user: str) -> str:
-    """Where to go once the password is set: the AI-first home (it shows the pending setup for an owner)."""
-    return "/app/cortex-home"
+    """Where to go once the password is set: the Cortex Rental workspace (it shows the setup guide for an owner)."""
+    return "/app/cortex-rental"

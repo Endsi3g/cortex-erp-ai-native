@@ -5,7 +5,8 @@ try:
 except ImportError:
     frappe = None
 
-HOME_ROUTE = "cortex-home"
+# Pour l'instant l'arrivée se fait sur l'espace Cortex Rental; l'Accueil IA (`cortex-home`) reste ouvert à la demande.
+HOME_ROUTE = "cortex-rental"
 SIGNUP_TEMPLATE = "cortex_rental/templates/includes/cortex_signup.html"
 
 
@@ -46,7 +47,7 @@ def _company_identity() -> dict:
 
 
 def boot_session(bootinfo) -> None:
-    """Read-only: tell the Desk where the AI-first home is and whether the owner's setup is unfinished.
+    """Read-only: tell the Desk where people land after sign-in and whether the owner's setup is unfinished.
 
     `public/js/cortex_desk.js` sends a signed-in person who lands on the bare `/app` to that Page. The hook never
     writes to the database and never blocks the Desk.

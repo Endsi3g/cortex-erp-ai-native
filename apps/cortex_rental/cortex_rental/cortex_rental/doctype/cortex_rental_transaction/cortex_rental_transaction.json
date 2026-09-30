@@ -22,7 +22,7 @@
       "label": "Company",
       "options": "Company",
       "reqd": 1,
-      "in_list_view": 1,
+      "in_list_view": 0,
       "in_standard_filter": 1
     },
     {
@@ -303,5 +303,6 @@
       "export": 1,
       "share": 1
     }
-  ]
+  ],
+  "modified": "2026-09-30 21:30:00.000000"
 }

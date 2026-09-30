@@ -2,7 +2,7 @@
  "docstatus": 0,
  "idx": 0,
  "creation": "2026-09-30 09:00:00.000000",
- "modified": "2026-09-30 09:00:00.000000",
+ "modified": "2026-09-30 21:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "module": "Cortex Rental",
@@ -18,5 +18,7 @@
  "path": "List/Rental Pricing Rule",
  "reference_document": "Rental Pricing Rule",
  "callback_title": "",
- "callback_message": ""
+ "callback_message": "",
+ "description": "Par défaut, une semaine se facture 3 jours (7 jours = 3 jours facturés). Ajustez la règle si votre tarification est différente.",
+ "intro_video_url": ""
 }

@@ -4,6 +4,8 @@ Columns are the raw `rental_state` Select values (Frappe stores the column name 
 card still goes through the server-side state machine, which refuses transitions that need an approval.
 """
 
+import json
+
 import frappe
 
 BOARD = "Locations par état"
@@ -31,6 +33,7 @@ def execute():
             "field_name": "rental_state",
             "private": 0,
             "show_labels": 0,
+            "fields": json.dumps(["starts_at", "grand_total"]),
             "columns": [{"column_name": name, "status": "Active", "indicator": color} for name, color in COLUMNS],
         }
     )

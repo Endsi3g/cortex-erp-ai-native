@@ -2,7 +2,7 @@
  "docstatus": 0,
  "idx": 0,
  "creation": "2026-09-30 09:00:00.000000",
- "modified": "2026-09-30 09:00:00.000000",
+ "modified": "2026-09-30 21:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "module": "Cortex Rental",
@@ -18,5 +18,7 @@
  "reference_document": "Cortex Rental Transaction",
  "show_full_form": 1,
  "callback_title": "",
- "callback_message": ""
+ "callback_message": "",
+ "description": "Créez un devis, vérifiez la disponibilité, puis réservez. Le contrat est confirmé après approbation d'un humain.",
+ "intro_video_url": ""
 }

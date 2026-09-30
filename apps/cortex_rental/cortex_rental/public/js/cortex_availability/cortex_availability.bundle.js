@@ -11,6 +11,8 @@ frappe.ui.setup_cortex_availability = function (wrapper) {
 	mount.className = "cx-avail-mount";
 	parent.appendChild(mount);
 	const app = createApp(CortexAvailability);
+	// Le gabarit utilise __() pour traduire les catégories et les groupes.
+	app.config.globalProperties.__ = window.__;
 	const vm = app.mount(mount);
 	wrapper.cortex_availability_app = app;
 	wrapper.cortex_availability_refresh = () => vm.load && vm.load();

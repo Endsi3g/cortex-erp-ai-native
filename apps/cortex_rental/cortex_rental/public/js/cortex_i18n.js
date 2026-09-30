@@ -33,7 +33,8 @@
 
 	// Valeurs stockées en anglais (états, types, catégories) que Frappe affiche telles quelles : on les traduit avec le
 	// dictionnaire de traductions, seulement dans les zones où elles apparaissent (graphiques, cellules filtrables).
-	const VALUE_AREAS = ".frappe-chart text, .chart-legend text, .chart-legend, a.filterable, a.filterable span";
+	const VALUE_AREAS =
+		".frappe-chart text, .chart-legend text, .chart-legend, a.filterable, a.filterable span, .timeline-content b, .timeline-message-box b";
 
 	// Listes d'enregistrements dont le nom est stocké en anglais (rôles, formats d'impression, rapports…) : la colonne
 	// « nom » s'affiche avec sa traduction ; le nom stocké, sur lequel le code s'appuie, ne change pas.

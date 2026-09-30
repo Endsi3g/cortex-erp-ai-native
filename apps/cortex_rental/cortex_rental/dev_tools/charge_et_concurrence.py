@@ -370,6 +370,22 @@ def concurrent_load(workers=16, seconds=20):
     }
 
 
+def nettoyer():
+    """Supprime les locations créées par ces tests (dates à plus de 60 jours, hors période simulée) et leurs traces."""
+    frappe.set_user("Administrator")
+    limite = datetime.now() + timedelta(days=60)
+    noms = frappe.get_all(
+        "Cortex Rental Transaction", filters={"company": COMPANY, "starts_at": [">=", limite]}, pluck="name"
+    )
+    for nom in noms:
+        for doctype, champ in (("Approval Request", "entity_id"),):  # le journal d'audit est immuable
+            for lien in frappe.get_all(doctype, filters={champ: nom}, pluck="name"):
+                frappe.delete_doc(doctype, lien, force=True, ignore_permissions=True)
+        frappe.delete_doc("Cortex Rental Transaction", nom, force=True, ignore_permissions=True)
+    frappe.db.commit()
+    print(f"{len(noms)} location(s) de test supprimée(s)")
+
+
 def run():
     frappe.init(site=frappe.local.site) if not getattr(frappe.local, "site", None) else None
     frappe.set_user("Administrator")
@@ -380,6 +396,7 @@ def run():
     idempotence(customers)
     benchmarks()
     concurrent_load()
+    nettoyer()
     with open(OUT, "w") as handle:
         json.dump(RESULTS, handle, indent=2, ensure_ascii=False)
     print(json.dumps(RESULTS, indent=2, ensure_ascii=False))

@@ -2,7 +2,7 @@
  "docstatus": 0,
  "idx": 0,
  "creation": "2026-09-30 09:00:00.000000",
- "modified": "2026-09-30 09:00:00.000000",
+ "modified": "2026-09-30 21:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "module": "Cortex Rental",
@@ -18,5 +18,7 @@
  "reference_document": "User",
  "show_full_form": 1,
  "callback_title": "",
- "callback_message": ""
+ "callback_message": "",
+ "description": "Ajoutez vos gestionnaires, votre comptoir et votre finance avec le bon rôle. Chaque personne ne voit que ce dont elle a besoin.",
+ "intro_video_url": ""
 }
