@@ -226,6 +226,8 @@ class CortexRentalTransaction(Document):
                     WHERE (ti.serial_no = sn.name OR ti.assigned_serials LIKE CONCAT('%%"', sn.name, '"%%'))
                       AND tx.name != %(transaction)s
                       AND tx.rental_state IN ('Reservation', 'Contract', 'Checked Out')
+                      AND tx.starts_at < %(ends_at)s
+                      AND tx.ends_at > %(starts_at)s
                   )
                 ORDER BY sn.name ASC
                 LIMIT %(quantity)s
@@ -235,6 +237,8 @@ class CortexRentalTransaction(Document):
                     "company": self.company,
                     "transaction": self.name or "",
                     "quantity": int(quantity),
+                    "starts_at": self.starts_at,
+                    "ends_at": self.ends_at,
                 },
                 as_dict=False,
             )

@@ -122,7 +122,7 @@
     {
       "create": 1,
       "read": 1,
-      "write": 1,
+      "write": 0,
       "role": "Rental Operator"
     },
     {
@@ -130,6 +130,34 @@
       "read": 1,
       "write": 1,
       "role": "System Manager"
+    },
+    {
+      "role": "Rental Manager",
+      "read": 1,
+      "write": 1,
+      "create": 0,
+      "delete": 0
+    },
+    {
+      "role": "Cortex Account Reviewer",
+      "read": 1,
+      "write": 1,
+      "create": 0,
+      "delete": 0
+    },
+    {
+      "role": "Cortex Operations Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "delete": 0
+    },
+    {
+      "role": "Cortex Counter Staff",
+      "read": 1,
+      "write": 0,
+      "create": 1,
+      "delete": 0
     }
   ],
   "sort_field": "creation",

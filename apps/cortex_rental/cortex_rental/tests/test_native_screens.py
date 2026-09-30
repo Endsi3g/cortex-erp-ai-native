@@ -185,6 +185,47 @@ class TestAccessibilityAndAvailabilityGrid(unittest.TestCase):
         self.assertTrue(linked)
 
 
+class TestMultiTenantNaming(unittest.TestCase):
+    def test_pricing_rule_names_do_not_depend_on_the_rule_label(self):
+        # Found by the 3-month simulation: two companies with the same default rule label collided on the record name.
+        path = os.path.join(MODULE_DIR, "doctype", "rental_pricing_rule", "rental_pricing_rule.json")
+        with open(path, encoding="utf-8") as handle:
+            autoname = json.load(handle)["autoname"]
+        self.assertNotIn("rule_name", autoname)
+
+
+class TestSerialAllocationIsDateAware(unittest.TestCase):
+    def test_serial_allocation_only_excludes_overlapping_reservations(self):
+        # Found by the simulation: a unit reserved for one date blocked it for every other date.
+        path = os.path.join(MODULE_DIR, "doctype", "cortex_rental_transaction", "cortex_rental_transaction.py")
+        with open(path, encoding="utf-8") as handle:
+            source = handle.read()
+        self.assertIn("tx.starts_at < %(ends_at)s", source)
+        self.assertIn("tx.ends_at > %(starts_at)s", source)
+
+
+class TestDoctypePermissions(unittest.TestCase):
+    """Found by the 3-month simulation: real approvers could not decide, and operators could edit decisions."""
+
+    def _perms(self, name):
+        path = os.path.join(MODULE_DIR, "doctype", name, f"{name}.json")
+        with open(path, encoding="utf-8") as handle:
+            return {p["role"]: p for p in json.load(handle)["permissions"]}
+
+    def test_approvers_can_write_approval_requests_and_operators_cannot(self):
+        perms = self._perms("approval_request")
+        for role in ("Rental Manager", "Cortex Account Reviewer"):
+            self.assertEqual(perms[role].get("write"), 1, role)
+        for role in ("Rental Operator", "Cortex Counter Staff", "Agent Service Account"):
+            self.assertFalse(perms[role].get("write"), role)
+
+    def test_domain_roles_have_access_to_their_own_records(self):
+        self.assertEqual(self._perms("consignment_payout")["Cortex Finance Manager"].get("write"), 1)
+        self.assertEqual(self._perms("consignment_owner")["Cortex Consignment Manager"].get("write"), 1)
+        self.assertEqual(self._perms("rental_pricing_rule")["Rental Manager"].get("write"), 1)
+        self.assertEqual(self._perms("audit_event")["Rental Manager"].get("read"), 1)
+
+
 class TestFrenchTranslations(unittest.TestCase):
     def test_translation_file_is_well_formed_and_names_doctypes(self):
         import csv

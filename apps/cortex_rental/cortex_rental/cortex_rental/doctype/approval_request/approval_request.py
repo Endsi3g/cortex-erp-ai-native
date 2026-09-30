@@ -21,6 +21,42 @@ class ApprovalRequest(Document):
     Enforces that agents can never approve their own or any approval requests.
     """
 
+    def validate(self):
+        """A decision is only valid through approve() / reject(): a plain form save can never change it."""
+        if not frappe:
+            return
+        if self.is_new():
+            if self.status != "Pending":
+                frappe.throw("Une demande d'approbation est toujours créée « En attente ».", frappe.ValidationError)
+            return
+        if getattr(self.flags, "decision_in_progress", False):
+            return
+        before = frappe.db.get_value(
+            self.doctype, self.name, ["status", "decided_by", "decided_at", "decision_reason"], as_dict=True
+        )
+        if before and (
+            before.status != self.status
+            or (before.decided_by or None) != (self.decided_by or None)
+            or (before.decision_reason or None) != (self.decision_reason or None)
+        ):
+            frappe.throw(
+                "Une décision se prend seulement avec « Approuver » ou « Refuser ».",
+                frappe.PermissionError,
+            )
+
+    @staticmethod
+    def _assert_human_decider(doc) -> None:
+        if not frappe:
+            return
+        user_roles = frappe.get_roles(frappe.session.user)
+        if "Agent Service Account" in user_roles or getattr(frappe.flags, "in_agent_context", False):
+            frappe.throw("Un agent ne peut jamais décider d'une demande.", frappe.PermissionError)
+        if doc.status != "Pending":
+            frappe.throw(
+                f"Impossible de décider d'une demande au statut « {approval_label(doc.status)} ».",
+                frappe.ValidationError,
+            )
+
     def approve(self, reason: Optional[str] = None):
         if frappe:
             current_user = frappe.session.user
@@ -45,6 +81,7 @@ class ApprovalRequest(Document):
                     frappe.ValidationError,
                 )
 
+            self.flags.decision_in_progress = True
             self.status = "Approved"
             self.decided_by = current_user
             self.decision_reason = reason
@@ -115,7 +152,9 @@ class ApprovalRequest(Document):
                 raise ValueError("Un motif de refus est obligatoire.")
 
         if frappe:
+            self._assert_human_decider(self)
             current_user = frappe.session.user
+            self.flags.decision_in_progress = True
             self.status = "Rejected"
             self.decided_by = current_user
             self.decision_reason = reason

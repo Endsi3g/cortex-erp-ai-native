@@ -191,7 +191,7 @@ def _ensure_items_and_serials(company: str) -> List[Dict[str, Any]]:
         },
         {
             "item_code": "C-STAND-40",
-            "item_name": 'Pied C-Stand Avenger 40 po avec bras',
+            "item_name": "Pied C-Stand Avenger 40 po avec bras",
             "category": "Grip & Rigging",
             "is_serialized": 0,
             "total_quantity": 15,
