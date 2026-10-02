@@ -3,6 +3,7 @@ Transaction lifecycle state machine and ERPNext synchronization service.
 Enforces preconditions for Quote -> Reservation -> Contract -> Checked Out -> Returned -> Closed.
 """
 
+from cortex_rental.labels import state_label
 from typing import Any, Optional, Tuple
 
 try:
@@ -32,13 +33,16 @@ class TransactionStateService:
         Validate if transaction can transition to target state based on business rules.
         """
         if target_state not in cls.VALID_TRANSITIONS.get(current_state, []):
-            return False, f"Invalid state transition from [{current_state}] to [{target_state}]."
+            return (
+                False,
+                f"Transition d'état invalide : de « {state_label(current_state)} » vers « {state_label(target_state)} ».",
+            )
 
         # Agents cannot autonomously confirm reservations or contracts
         if is_agent and target_state in ["Reservation", "Contract", "Closed"]:
             return (
                 False,
-                f"Agents are not permitted to transition transaction to [{target_state}] autonomously. Approval required.",
+                f"Un agent ne peut pas faire passer une location à l'état « {state_label(target_state)} » seul : une approbation humaine est requise.",
             )
 
         # Precondition checks for Contract
@@ -46,12 +50,15 @@ class TransactionStateService:
             if hasattr(transaction_doc, "customer_account_ready") and not transaction_doc.customer_account_ready:
                 return (
                     False,
-                    "Customer account readiness (onboarding & credit check) must be verified before confirming a contract.",
+                    "Le compte client (mise en route et vérification de crédit) doit être vérifié avant de confirmer un contrat.",
                 )
             if hasattr(transaction_doc, "insurance_ready") and not transaction_doc.insurance_ready:
-                return False, "Valid certificate of insurance (COI) is required before confirming a contract."
+                return False, "Un certificat d'assurance valide est requis avant de confirmer un contrat."
             if hasattr(transaction_doc, "payment_ready") and not transaction_doc.payment_ready:
-                return False, "Security deposit or validated payment terms are required before confirming a contract."
+                return (
+                    False,
+                    "Un dépôt de garantie ou des conditions de paiement validées sont requis avant de confirmer un contrat.",
+                )
 
         return True, None
 

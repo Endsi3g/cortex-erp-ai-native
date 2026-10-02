@@ -1,0 +1,8 @@
+<p>Une nouvelle demande d'accès à {{ brand }} attend votre décision.</p>
+<table cellpadding="6" style="border-collapse:collapse;font-size:14px">
+<tr><td style="color:#595959">Entreprise</td><td><strong>{{ company_name | e }}</strong></td></tr>
+<tr><td style="color:#595959">Demandeur</td><td>{{ full_name | e }}{% if job_title %} · {{ job_title | e }}{% endif %}</td></tr>
+<tr><td style="color:#595959">Courriel</td><td>{{ email | e }} (vérifié)</td></tr>
+{% if team_size %}<tr><td style="color:#595959">Équipe</td><td>{{ team_size }} personnes</td></tr>{% endif %}
+</table>
+<p style="margin:24px 0"><a style="display:inline-block;padding:12px 22px;background:#066336;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px" href="{{ review_url }}">Examiner la demande</a></p>

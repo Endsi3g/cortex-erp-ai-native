@@ -1,0 +1,5 @@
+<p>Bonjour {{ full_name | e }},</p>
+<p>Votre espace <strong>{{ company_name | e }}</strong> est créé sur {{ brand }}. Il reste une étape : choisir votre mot de passe.</p>
+<p style="margin:24px 0"><a style="display:inline-block;padding:12px 22px;background:#066336;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px" href="{{ link }}">Choisir mon mot de passe</a></p>
+<p>À votre première connexion, un assistant de 5 étapes (environ 10 minutes) vous guide : profil de l'entreprise, équipe, catalogue et règles de location. Vous pouvez l'interrompre et le reprendre à tout moment.</p>
+<p style="color:#595959;font-size:13px">Votre identifiant : <strong>{{ email | e }}</strong> · connexion : <a href="{{ login_url }}">{{ login_url }}</a><br>Lien à copier-coller : <a href="{{ link }}">{{ link }}</a></p>

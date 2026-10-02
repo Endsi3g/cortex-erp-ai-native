@@ -75,5 +75,3 @@ __pycache__/
 .agents/
 agents/
 
-# Vite build for the Desk screens (rebuilt with `npm run build:desk`)
-apps/cortex_rental/cortex_rental/public/frontend/dist-desk/

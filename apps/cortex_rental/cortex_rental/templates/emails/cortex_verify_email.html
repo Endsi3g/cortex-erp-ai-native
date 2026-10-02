@@ -1,0 +1,5 @@
+<p>Bonjour {{ full_name | e }},</p>
+<p>Merci de votre intérêt pour {{ brand }}. Confirmez que cette adresse est bien la vôtre pour poursuivre la demande d'accès de <strong>{{ company_name | e }}</strong>.</p>
+<p style="margin:24px 0"><a style="display:inline-block;padding:12px 22px;background:#066336;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px" href="{{ link }}">Confirmer mon courriel</a></p>
+<p>Ce lien est valide {{ hours }} heures et ne fonctionne qu'une fois. Ensuite, votre demande est examinée par notre équipe ; vous recevrez un courriel dès que votre espace est prêt.</p>
+<p style="color:#595959;font-size:13px">Vous n'avez pas fait cette demande ? Ignorez ce message : rien ne sera créé.<br>Lien à copier-coller : <a href="{{ link }}">{{ link }}</a></p>

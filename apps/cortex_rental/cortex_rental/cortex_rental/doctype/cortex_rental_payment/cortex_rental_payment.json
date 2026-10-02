@@ -1,0 +1,185 @@
+{
+  "actions": [],
+  "creation": "2026-09-30 23:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "modified": "2026-09-30 23:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "name": "Cortex Rental Payment",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1,
+  "autoname": "format:PAI-{YYYY}-{#####}",
+  "field_order": [
+    "company",
+    "invoice",
+    "customer",
+    "rental_transaction",
+    "cb_pay",
+    "kind",
+    "method",
+    "amount",
+    "signed_amount",
+    "paid_on",
+    "reference",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "invoice",
+      "fieldtype": "Link",
+      "label": "Invoice",
+      "options": "Cortex Rental Invoice",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Customer",
+      "options": "Customer",
+      "read_only": 1,
+      "fetch_from": "invoice.customer",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "rental_transaction",
+      "fieldtype": "Link",
+      "label": "Rental",
+      "options": "Cortex Rental Transaction",
+      "read_only": 1,
+      "fetch_from": "invoice.rental_transaction"
+    },
+    {
+      "fieldname": "cb_pay",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "kind",
+      "fieldtype": "Select",
+      "label": "Payment Kind",
+      "options": "Payment\nRefund",
+      "default": "Payment",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "method",
+      "fieldtype": "Select",
+      "label": "Payment Method",
+      "options": "Card\nCash\nBank Transfer\nCheque\nOther",
+      "default": "Card",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Amount",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "signed_amount",
+      "fieldtype": "Currency",
+      "label": "Signed Amount",
+      "read_only": 1
+    },
+    {
+      "fieldname": "paid_on",
+      "fieldtype": "Date",
+      "label": "Paid On",
+      "reqd": 1,
+      "default": "Today",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "reference",
+      "fieldtype": "Data",
+      "label": "Reference"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    }
+  ],
+  "title_field": "customer",
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Cortex Finance Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "create": 1
+    },
+    {
+      "role": "Rental Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "create": 1
+    },
+    {
+      "role": "Cortex Operations Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "create": 1
+    },
+    {
+      "role": "Cortex Counter Staff",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "create": 1
+    },
+    {
+      "role": "Cortex Account Reviewer",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1
+    },
+    {
+      "role": "Rental Operator",
+      "read": 1
+    },
+    {
+      "role": "Auditor",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

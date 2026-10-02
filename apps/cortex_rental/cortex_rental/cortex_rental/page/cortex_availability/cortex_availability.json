@@ -6,7 +6,7 @@
  "module": "Cortex Rental",
  "name": "cortex-availability",
  "owner": "Administrator",
- "page_name": "Cortex Availability",
+ "page_name": "cortex-availability",
  "restrict_to_domain": "",
  "roles": [
   {"role": "System Manager"},
@@ -14,9 +14,6 @@
   {"role": "Cortex Operations Manager"},
   {"role": "Cortex Counter Staff"},
   {"role": "Cortex Inventory Manager"},
-  {"role": "Cortex Finance Manager"},
-  {"role": "Cortex Consignment Manager"},
-  {"role": "Cortex Account Reviewer"},
   {"role": "Rental Manager"},
   {"role": "Rental Operator"}
  ],
@@ -24,5 +21,5 @@
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "Disponibilité"
+ "title": "Grille de disponibilité"
 }

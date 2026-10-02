@@ -12,7 +12,7 @@ if frappe:
     def get_session_context():
         user = frappe.session.user
         if not user or user == "Guest":
-            frappe.throw("Authentication is required.", frappe.AuthenticationError)
+            frappe.throw("Vous devez être connecté.", frappe.AuthenticationError)
         roles = frappe.get_roles(user)
         companies = frappe.get_list("Company", fields=["name", "default_currency"], order_by="name asc")
         default_company = frappe.defaults.get_user_default("Company", user) or frappe.defaults.get_global_default(
@@ -47,7 +47,7 @@ if frappe:
             "cortex:telemetry:admin": bool(set(roles) & {"System Manager", "Administrator"}),
             "cortex:copilot:access": frappe.has_permission("Cortex Chat Session", "create"),
             "cortex:policies:view": frappe.has_permission("Rental Pricing Rule", "read"),
-            "cortex:team:manage": bool(set(roles) & {"System Manager", "Administrator"}),
+            "cortex:team:manage": bool(set(roles) & {"System Manager", "Administrator", "Cortex System Manager"}),
             "cortex:migration:run": bool(set(roles) & {"System Manager", "Administrator"}),
             "cortex:audit:view": frappe.has_permission("Audit Event", "read"),
         }

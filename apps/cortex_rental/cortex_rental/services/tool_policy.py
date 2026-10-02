@@ -18,7 +18,7 @@ from typing import List
 
 # Real tool names, cross-checked against apps/cortex-mcp/cortex_mcp/server.py.
 AGENT_TOOL_MAP = {
-    "cortex-availability": ["search_rental_items", "check_inventory_availability"],
+    "cortex-availability": ["search_rental_items", "check_inventory_availability", "list_rentals"],
     "cortex-intake": [
         "search_rental_items",
         "search_customers",
@@ -32,9 +32,17 @@ AGENT_TOOL_MAP = {
     # yet — these three agents are read-only by design (the spec's own
     # table has no write tool for them either) but literally have no
     # tool to call until one is built. Empty on purpose, not an oversight.
-    "cortex-returns": [],
-    "cortex-approval-assistant": [],
-    "cortex-operations": ["search_rental_items", "check_inventory_availability"],
+    # Les outils de lecture de la passerelle IA (services/ai/tools.py) comblent une partie de ce manque :
+    # lire les locations et les approbations en attente. Aucun n'écrit ni n'approuve.
+    "cortex-returns": ["list_rentals"],
+    "cortex-approval-assistant": ["list_pending_approvals", "list_rentals"],
+    "cortex-operations": [
+        "search_rental_items",
+        "check_inventory_availability",
+        "list_rentals",
+        "list_pending_approvals",
+        "finance_summary",
+    ],
 }
 
 

@@ -19,7 +19,7 @@
     {
       "fieldname": "item_code",
       "fieldtype": "Link",
-      "label": "ERPNext Item Code",
+      "label": "Item Code",
       "options": "Item",
       "reqd": 1,
       "unique": 1,
@@ -63,14 +63,14 @@
       "fieldtype": "Check",
       "label": "Is Serialized Unit",
       "default": "1",
-      "description": "If unchecked, this item has no individual Serial No records — availability is computed from total_quantity instead of counting Serial No rows. See ADR-004."
+      "description": "Si décoché, l'article n'a pas de numéros de série individuels : la disponibilité est calculée à partir de la quantité totale."
     },
     {
       "fieldname": "total_quantity",
       "fieldtype": "Int",
       "label": "Total Fleet Quantity (non-serialized only)",
       "default": "0",
-      "description": "Fleet size for non-serialized items only. Ignored when is_serialized is checked, where the real Serial No count is authoritative."
+      "description": "Taille du parc pour les articles non sérialisés seulement. Ignorée si l'article est sérialisé : le nombre réel de numéros de série fait foi."
     },
     {
       "fieldname": "prep_hours",
@@ -96,21 +96,33 @@
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 1
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Rental Manager",
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 1
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Rental Operator",
       "read": 1,
       "write": 1,
       "create": 0,
-      "delete": 0
+      "delete": 0,
+      "print": 1,
+      "email": 1
     },
     {
       "role": "Agent Service Account",
@@ -118,6 +130,16 @@
       "write": 0,
       "create": 0,
       "delete": 0
+    },
+    {
+      "role": "Cortex Inventory Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "share": 1
     }
   ]
 }

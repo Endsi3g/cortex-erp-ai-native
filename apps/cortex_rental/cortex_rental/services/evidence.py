@@ -40,7 +40,7 @@ def register_evidence(
     existing Frappe `File` doc name) or `text_excerpt` must be given.
     """
     if not file_name and not text_excerpt:
-        raise ValueError("register_evidence requires either file_name or text_excerpt.")
+        raise ValueError("Une pièce justificative exige un fichier ou un extrait de texte.")
 
     if not frappe:
         return {
@@ -103,6 +103,6 @@ def require_scanned_evidence(company: str, evidence_ids: list) -> None:
     )
     if unclean:
         frappe.throw(
-            f"Evidence {unclean} has not passed the scanned_clean gate and cannot be used yet.",
+            f"La pièce {unclean} n'a pas passé le contrôle antivirus et ne peut pas encore être utilisée.",
             frappe.ValidationError,
         )

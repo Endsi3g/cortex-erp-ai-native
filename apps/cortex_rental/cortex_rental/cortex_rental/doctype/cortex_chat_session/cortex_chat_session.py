@@ -30,6 +30,6 @@ class CortexChatSession(Document):
 
         if self.company not in get_allowed_companies(self.user):
             frappe.throw(
-                "Multi-Tenant Error: this session's Company is not authorized for this user.",
+                "Erreur d'isolation : la société de cette conversation n'est pas autorisée pour cette personne.",
                 frappe.PermissionError,
             )

@@ -17,6 +17,7 @@ This is deliberately human-only: no MCP tool calls into this module.
 Physical receiving requires a person scanning real serial numbers.
 """
 
+from cortex_rental.labels import state_label
 from typing import Any, Dict, List, Optional
 
 try:
@@ -356,12 +357,12 @@ def complete_checkin(checkin_name: str, actor_id: str, finalize_mode: str = "aut
 
     checkin = frappe.get_doc("Cortex Check-In", checkin_name)
     if checkin.status == "Completed":
-        frappe.throw("This Cortex Check-In has already been completed.", frappe.ValidationError)
+        frappe.throw("Ce retour de matériel est déjà terminé.", frappe.ValidationError)
 
     transaction = frappe.get_doc("Cortex Rental Transaction", checkin.transaction)
     if transaction.rental_state != "Checked Out":
         frappe.throw(
-            f"Cannot check in against a transaction in state [{transaction.rental_state}]; it must be Checked Out.",
+            f"Impossible d'enregistrer un retour pour une location à l'état « {state_label(transaction.rental_state)} » ; elle doit être à l'état « Sorti ».",
             frappe.ValidationError,
         )
 
@@ -435,18 +436,18 @@ def process_checkin(
         }
 
     if not transaction_id:
-        frappe.throw("transaction_id is required for Check-In.", frappe.ValidationError)
+        frappe.throw("La location est obligatoire pour enregistrer un retour.", frappe.ValidationError)
 
     if not items:
-        frappe.throw("At least one item must be submitted for Check-In.", frappe.ValidationError)
+        frappe.throw("Ajoutez au moins une ligne de matériel au retour.", frappe.ValidationError)
 
     txn = frappe.get_doc("Cortex Rental Transaction", transaction_id)
     if txn.company != company:
-        frappe.throw("Tenant company mismatch on transaction.", frappe.PermissionError)
+        frappe.throw("La société de la location ne correspond pas à la société active.", frappe.PermissionError)
 
     if txn.rental_state != "Checked Out":
         frappe.throw(
-            f"Cannot check in against transaction [{transaction_id}] in state [{txn.rental_state}]. It must be Checked Out.",
+            f"Impossible d'enregistrer un retour pour la location {transaction_id} à l'état « {state_label(txn.rental_state)} » ; elle doit être à l'état « Sorti ».",
             frappe.ValidationError,
         )
 
@@ -478,7 +479,7 @@ def process_checkin(
             sn_company = frappe.db.get_value("Serial No", sn, "company")
             if sn_company and sn_company != company:
                 frappe.throw(
-                    f"Serial Number [{sn}] belongs to company [{sn_company}] and cannot be checked in under company [{company}].",
+                    f"Le numéro de série {sn} appartient à la société {sn_company} et ne peut pas être reçu sous la société {company}.",
                     frappe.PermissionError,
                 )
 

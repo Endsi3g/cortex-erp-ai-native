@@ -10,20 +10,36 @@
 // server-side (schemas/chat_schemas.py rejects them outright), so
 // there's nothing to accidentally leak here either.
 
+// First user-facing message of a failed call: `_server_messages` is a JSON list of JSON strings (HTML stripped).
+function serverMessage(r) {
+	// Frappe passes the parsed body for validation errors (417) and the XHR for other failures.
+	const body = r && (r.responseJSON || r);
+	if (!body || typeof body !== "object") return "";
+	if (body._server_messages) {
+		try {
+			const first = JSON.parse(body._server_messages)[0];
+			const message = typeof first === "string" ? JSON.parse(first).message : "";
+			if (message) return String(message).replace(/<[^>]*>/g, "").trim();
+		} catch (e) {
+			// fall through to the generic message
+		}
+	}
+	return "";
+}
+
 function call(method, args) {
 	return new Promise((resolve, reject) => {
 		frappe.call({
 			method: `cortex_rental.api.v1.chat.${method}`,
 			type: method.startsWith("get_") || method === "list_sessions" ? "GET" : "POST",
 			args,
+			// Errors are shown in the conversation, not as a second pop-up.
+			silent: true,
 			callback(r) {
 				resolve(r.message || {});
 			},
 			error(r) {
-				const message =
-					(r && r.responseJSON && (r.responseJSON.message || r.responseJSON.exc)) ||
-					"Le service de conversation Cortex est indisponible.";
-				reject(new Error(message));
+				reject(new Error(serverMessage(r) || "Le service de conversation Cortex est indisponible."));
 			},
 		});
 	});
@@ -35,6 +51,10 @@ export function sendMessage(message, context, chatSessionId) {
 		context: JSON.stringify(context),
 		chat_session_id: chatSessionId || undefined,
 	});
+}
+
+export function getMessages(name) {
+	return call("get_messages", { name });
 }
 
 export function listSessions() {
@@ -60,11 +80,8 @@ export function clearContext(chatSessionId) {
 // docs/design-system.md's copilot panel section for why).
 // ---------------------------------------------------------------------
 const ROUTE_TO_PAGE = {
-	"cortex-availability": "availability",
-	"cortex-transaction-composer": "transaction",
-	"cortex-checkin": "checkin",
-	"cortex-accounting-pnl": "dashboard",
-	"cortex-assistant": "dashboard",
+	"cortex-home": "dashboard",
+	"query-report": "availability",
 };
 
 export function resolveDeskContext() {

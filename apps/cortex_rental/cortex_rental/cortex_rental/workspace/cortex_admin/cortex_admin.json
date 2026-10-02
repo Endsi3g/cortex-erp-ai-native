@@ -1,27 +1,187 @@
 {
- "charts": [],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Admin</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Règles tarifaires\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal d'audit\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Import de données\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Société\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Utilisateurs\", \"col\": 3}}]",
- "creation": "2026-09-28 20:30:00.000000",
- "custom_blocks": [],
  "docstatus": 0,
- "doctype": "Workspace",
- "for_user": "",
- "hide_custom": 0,
- "icon": "octicon octicon-gear",
  "idx": 0,
- "is_hidden": 0,
- "label": "Cortex Admin",
- "links": [],
- "modified": "2026-09-28 20:30:00.000000",
+ "creation": "2026-09-30 08:06:00.000000",
+ "modified": "2026-09-30 09:00:00.000000",
  "modified_by": "Administrator",
- "module": "Cortex Rental",
- "name": "Cortex Admin",
- "number_cards": [],
  "owner": "Administrator",
+ "module": "Cortex Rental",
+ "doctype": "Workspace",
+ "name": "Cortex Admin",
+ "label": "Cortex Admin",
+ "title": "Administration",
+ "icon": "setting-gear",
+ "sequence_id": 7.0,
  "parent_page": "Cortex Rental",
  "public": 1,
- "quick_lists": [],
+ "is_hidden": 0,
+ "for_user": "",
+ "hide_custom": 0,
+ "indicator_color": "",
  "restrict_to_domain": "",
+ "content": "[{\"id\": \"c1a2dc8af1\", \"type\": \"onboarding\", \"data\": {\"onboarding_name\": \"Cortex Rental\", \"col\": 12}}, {\"id\": \"f40cafe280\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Activité d’audit (30 jours)\", \"col\": 12}}, {\"id\": \"91c1bbe055\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Utilisateurs actifs\", \"col\": 3}}, {\"id\": \"ec62d8e9f1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Demandes d’accès à traiter\", \"col\": 3}}, {\"id\": \"c44b115d91\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Règles tarifaires actives\", \"col\": 3}}, {\"id\": \"bd5a8dbba5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Événements d’audit (24 h)\", \"col\": 3}}, {\"id\": \"429f7c6c03\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"815ac7f029\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"2a2123809c\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Règles tarifaires\", \"col\": 3}}, {\"id\": \"8e51f3cf86\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Utilisateurs\", \"col\": 3}}, {\"id\": \"cbf684f765\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Demandes d’accès\", \"col\": 3}}, {\"id\": \"a4a740676c\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Accès et inscription\", \"col\": 3}}, {\"id\": \"c19e627b91\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Import de données\", \"col\": 3}}, {\"id\": \"c3df8be842\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal d’audit\", \"col\": 3}}, {\"id\": \"9aea6cd1c5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Société\", \"col\": 3}}, {\"id\": \"ab1e375ab6\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"3f2ee550d3\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"58e082f31a\", \"type\": \"card\", \"data\": {\"card_name\": \"Accès\", \"col\": 4}}, {\"id\": \"f9df5134a9\", \"type\": \"card\", \"data\": {\"card_name\": \"Configuration\", \"col\": 4}}]",
+ "charts": [
+  {
+   "chart_name": "Activité d’audit (30 jours)",
+   "label": "Activité d’audit (30 jours)"
+  }
+ ],
+ "number_cards": [
+  {
+   "number_card_name": "Utilisateurs actifs",
+   "label": "Utilisateurs actifs"
+  },
+  {
+   "number_card_name": "Demandes d’accès à traiter",
+   "label": "Demandes d’accès à traiter"
+  },
+  {
+   "number_card_name": "Règles tarifaires actives",
+   "label": "Règles tarifaires actives"
+  },
+  {
+   "number_card_name": "Événements d’audit (24 h)",
+   "label": "Événements d’audit (24 h)"
+  }
+ ],
+ "quick_lists": [],
+ "shortcuts": [
+  {
+   "label": "Règles tarifaires",
+   "link_to": "Rental Pricing Rule",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Utilisateurs",
+   "link_to": "User",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Demandes d’accès",
+   "link_to": "Cortex Signup Request",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#b45309",
+   "stats_filter": "[[\"Cortex Signup Request\", \"status\", \"=\", \"Pending Approval\"]]"
+  },
+  {
+   "label": "Accès et inscription",
+   "link_to": "Cortex Access Settings",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Import de données",
+   "link_to": "Data Import",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Journal d’audit",
+   "link_to": "Audit Event",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Société",
+   "link_to": "Company",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  }
+ ],
+ "links": [
+  {
+   "type": "Card Break",
+   "label": "Accès",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 3,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Utilisateurs",
+   "link_to": "User",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Demandes d’accès",
+   "link_to": "Cortex Signup Request",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Accès et inscription",
+   "link_to": "Cortex Access Settings",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Card Break",
+   "label": "Configuration",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 3,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Règles tarifaires",
+   "link_to": "Rental Pricing Rule",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Société",
+   "link_to": "Company",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Import de données",
+   "link_to": "Data Import",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  }
+ ],
+ "custom_blocks": [],
  "roles": [
   {
    "role": "System Manager"
@@ -30,44 +190,5 @@
    "role": "Cortex System Manager"
   }
  ],
- "sequence_id": 7.0,
- "shortcuts": [
-  {
-   "label": "Règles tarifaires",
-   "link_to": "Rental Pricing Rule",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Journal d'audit",
-   "link_to": "Audit Event",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Import de données",
-   "link_to": "Data Import",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Société",
-   "link_to": "Company",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Utilisateurs",
-   "link_to": "User",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  }
- ],
- "title": "Cortex Admin",
  "type": "Workspace"
 }

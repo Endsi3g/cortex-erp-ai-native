@@ -1,310 +1,309 @@
 {
- "charts": [],
- "content": "[{\"id\": \"cxHdrMain\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex Rental</b></span>\", \"col\": 12}}, {\"id\": \"cxHdrQuick\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\">Accès rapide</span>\", \"col\": 12}}, {\"id\": \"cxShAvail\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Disponibilité\", \"col\": 2}}, {\"id\": \"cxShNewTrx\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouvelle transaction\", \"col\": 2}}, {\"id\": \"cxShCheckin\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Check-in & Retours\", \"col\": 2}}, {\"id\": \"cxShTrx\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transactions\", \"col\": 2}}, {\"id\": \"cxShAppr\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Approbations\", \"col\": 2}}, {\"id\": \"cxShPnl\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"P&L Financier\", \"col\": 2}}, {\"id\": \"cxShInbound\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Demandes entrantes\", \"col\": 2}}, {\"id\": \"cxSpacer1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cxHdrCards\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Modules Métiers</b></span>\", \"col\": 12}}, {\"id\": \"cxCardOps\", \"type\": \"card\", \"data\": {\"card_name\": \"Opérations de Location\", \"col\": 4}}, {\"id\": \"cxCardParc\", \"type\": \"card\", \"data\": {\"card_name\": \"Parc & Consignation\", \"col\": 4}}, {\"id\": \"cxCardFin\", \"type\": \"card\", \"data\": {\"card_name\": \"Clients & Facturation\", \"col\": 4}}, {\"id\": \"cxCardIA\", \"type\": \"card\", \"data\": {\"card_name\": \"Supervision & Copilote IA\", \"col\": 4}}, {\"id\": \"cxCardAdmin\", \"type\": \"card\", \"data\": {\"card_name\": \"Société & Audit Immuable\", \"col\": 4}}]",
- "creation": "2026-08-30 00:00:00.000000",
- "custom_blocks": [],
  "docstatus": 0,
- "doctype": "Workspace",
- "for_user": "",
- "hide_custom": 0,
- "icon": "octicon octicon-briefcase",
  "idx": 0,
- "is_hidden": 0,
- "label": "Cortex Rental",
- "links": [
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Opérations de Location",
-   "link_count": 6,
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Composer de Devis & Contrat",
-   "link_count": 0,
-   "link_to": "cortex-transaction-composer",
-   "link_type": "Page",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Grille de Disponibilité",
-   "link_count": 0,
-   "link_to": "cortex-availability",
-   "link_type": "Page",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Scanner de Check-in",
-   "link_count": 0,
-   "link_to": "cortex-checkin",
-   "link_type": "Page",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Retours & Diagnostics",
-   "link_count": 0,
-   "link_to": "Cortex Check-In",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Transactions de Location",
-   "link_count": 0,
-   "link_to": "Cortex Rental Transaction",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Demandes Entrantes (Intake)",
-   "link_count": 0,
-   "link_to": "Cortex Inbound Request",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Parc & Consignation",
-   "link_count": 5,
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Profils d'Équipements (Cortex)",
-   "link_count": 0,
-   "link_to": "Cortex Rental Item Profile",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Articles de Parc (Item)",
-   "link_count": 0,
-   "link_to": "Item",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Numéros de Série Unitaires",
-   "link_count": 0,
-   "link_to": "Serial No",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Propriétaires en Consignation",
-   "link_count": 0,
-   "link_to": "Consignment Owner",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Règles Tarifaires (7j = 3j)",
-   "link_count": 0,
-   "link_to": "Rental Pricing Rule",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Clients & Facturation",
-   "link_count": 4,
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Clients de Location",
-   "link_count": 0,
-   "link_to": "Customer",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Factures de Location",
-   "link_count": 0,
-   "link_to": "Sales Invoice",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Versements aux Propriétaires",
-   "link_count": 0,
-   "link_to": "Consignment Payout",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Compte de Résultat P&L en Direct",
-   "link_count": 0,
-   "link_to": "cortex-accounting-pnl",
-   "link_type": "Page",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Supervision & Copilote IA",
-   "link_count": 4,
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "File d'Attente des Approbations",
-   "link_count": 0,
-   "link_to": "Approval Request",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Sessions de Chat Copilot",
-   "link_count": 0,
-   "link_to": "Cortex Chat Session",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Messages de Chat Copilot",
-   "link_count": 0,
-   "link_to": "Cortex Chat Message",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Console Copilot Plein Écran",
-   "link_count": 0,
-   "link_to": "cortex-assistant",
-   "link_type": "Page",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Société & Audit Immuable",
-   "link_count": 3,
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Journal d'Audit Immuable",
-   "link_count": 0,
-   "link_to": "Audit Event",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Société de Location",
-   "link_count": 0,
-   "link_to": "Company",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Gestion des Utilisateurs",
-   "link_count": 0,
-   "link_to": "User",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  }
- ],
- "modified": "2026-09-28 00:00:00.000000",
+ "creation": "2026-09-30 08:00:00.000000",
+ "modified": "2026-09-30 21:00:00.000000",
  "modified_by": "Administrator",
- "module": "Cortex Rental",
- "name": "Cortex Rental",
- "number_cards": [],
  "owner": "Administrator",
+ "module": "Cortex Rental",
+ "doctype": "Workspace",
+ "name": "Cortex Rental",
+ "label": "Cortex Rental",
+ "title": "Cortex Rental",
+ "icon": "assets",
+ "sequence_id": 1.0,
  "parent_page": "",
  "public": 1,
- "quick_lists": [],
+ "is_hidden": 0,
+ "for_user": "",
+ "hide_custom": 0,
+ "indicator_color": "",
  "restrict_to_domain": "",
+ "content": "[{\"id\": \"65631e26fe\", \"type\": \"onboarding\", \"data\": {\"onboarding_name\": \"Cortex Rental\", \"col\": 12}}, {\"id\": \"112f46dd51\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Locations par mois\", \"col\": 6}}, {\"id\": \"d41ly0chrt\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Locations par jour\", \"col\": 6}}, {\"id\": \"2cf8e88b7d\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Locations en cours\", \"col\": 3}}, {\"id\": \"0db104dbef\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Départs du jour\", \"col\": 3}}, {\"id\": \"214fa10ba7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Retours attendus (7 jours)\", \"col\": 3}}, {\"id\": \"824b095d03\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Approbations en attente\", \"col\": 3}}, {\"id\": \"bbb4867eeb\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"fe7aa7d208\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Prochains départs\", \"col\": 6}}, {\"id\": \"7595c5a2de\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Demandes à traiter\", \"col\": 6}}, {\"id\": \"7aa8832504\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"21e5cefcbb\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"2331f7d6d0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouvelle location\", \"col\": 3}}, {\"id\": \"5954803a7c\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Locations\", \"col\": 3}}, {\"id\": \"d07d07885a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Calendrier\", \"col\": 3}}, {\"id\": \"2e91fb4590\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Grille de disponibilité\", \"col\": 3}}, {\"id\": \"8f366e3103\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sorties et retours\", \"col\": 3}}, {\"id\": \"3cc58e3c6c\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Approbations\", \"col\": 3}}, {\"id\": \"7c037f72f8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Demandes entrantes\", \"col\": 3}}, {\"id\": \"5826db14fb\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Assistant Cortex\", \"col\": 3}}, {\"id\": \"45467fd7cb\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"feadabb1d3\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"889bc2f9b5\", \"type\": \"card\", \"data\": {\"card_name\": \"Location\", \"col\": 4}}, {\"id\": \"a1ad44f763\", \"type\": \"card\", \"data\": {\"card_name\": \"Parc et consignation\", \"col\": 4}}, {\"id\": \"50a48de339\", \"type\": \"card\", \"data\": {\"card_name\": \"IA et contrôle\", \"col\": 4}}]",
+ "charts": [
+  {
+   "chart_name": "Locations par mois",
+   "label": "Locations par mois"
+  },
+  {
+   "chart_name": "Locations par jour",
+   "label": "Locations par jour"
+  }
+ ],
+ "number_cards": [
+  {
+   "number_card_name": "Locations en cours",
+   "label": "Locations en cours"
+  },
+  {
+   "number_card_name": "Départs du jour",
+   "label": "Départs du jour"
+  },
+  {
+   "number_card_name": "Retours attendus (7 jours)",
+   "label": "Retours attendus (7 jours)"
+  },
+  {
+   "number_card_name": "Approbations en attente",
+   "label": "Approbations en attente"
+  }
+ ],
+ "quick_lists": [
+  {
+   "document_type": "Cortex Rental Transaction",
+   "label": "Prochains départs",
+   "quick_list_filter": "[[\"Cortex Rental Transaction\", \"rental_state\", \"in\", [\"Reservation\", \"Contract\"]]]"
+  },
+  {
+   "document_type": "Approval Request",
+   "label": "Demandes à traiter",
+   "quick_list_filter": "[[\"Approval Request\", \"status\", \"=\", \"Pending\"]]"
+  }
+ ],
+ "shortcuts": [
+  {
+   "label": "Nouvelle location",
+   "link_to": "Cortex Rental Transaction",
+   "type": "DocType",
+   "doc_view": "New",
+   "color": "#066336"
+  },
+  {
+   "label": "Locations",
+   "link_to": "Cortex Rental Transaction",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336",
+   "stats_filter": "[[\"Cortex Rental Transaction\", \"rental_state\", \"=\", \"Checked Out\"]]"
+  },
+  {
+   "label": "Calendrier",
+   "link_to": "Cortex Rental Transaction",
+   "type": "DocType",
+   "doc_view": "Calendar",
+   "color": "#066336"
+  },
+  {
+   "label": "Grille de disponibilité",
+   "link_to": "cortex-availability",
+   "type": "Page",
+   "doc_view": "",
+   "color": "#066336"
+  },
+  {
+   "label": "Sorties et retours",
+   "link_to": "Cortex Check-In",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Approbations",
+   "link_to": "Approval Request",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#b45309",
+   "stats_filter": "[[\"Approval Request\", \"status\", \"=\", \"Pending\"]]"
+  },
+  {
+   "label": "Demandes entrantes",
+   "link_to": "Cortex Inbound Request",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336",
+   "stats_filter": "[[\"Cortex Inbound Request\", \"status\", \"=\", \"Received\"]]"
+  },
+  {
+   "label": "Assistant Cortex",
+   "link_to": "cortex-home",
+   "type": "Page",
+   "doc_view": "",
+   "color": "#066336"
+  }
+ ],
+ "links": [
+  {
+   "type": "Card Break",
+   "label": "Location",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 4,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Locations",
+   "link_to": "Cortex Rental Transaction",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Sorties et retours",
+   "link_to": "Cortex Check-In",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Prochains départs et retours",
+   "link_to": "Prochains départs et retours",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "Cortex Rental Transaction"
+  },
+  {
+   "type": "Link",
+   "label": "Disponibilité du parc",
+   "link_to": "Disponibilité du parc",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "Cortex Rental Item Profile"
+  },
+  {
+   "type": "Card Break",
+   "label": "Parc et consignation",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 6,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Profils d’équipement",
+   "link_to": "Cortex Rental Item Profile",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Articles",
+   "link_to": "Item",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Numéros de série",
+   "link_to": "Serial No",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Kits et forfaits",
+   "link_to": "Product Bundle",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Propriétaires",
+   "link_to": "Consignment Owner",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Versements",
+   "link_to": "Consignment Payout",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Card Break",
+   "label": "IA et contrôle",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 4,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Approbations",
+   "link_to": "Approval Request",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Demandes entrantes",
+   "link_to": "Cortex Inbound Request",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Extractions",
+   "link_to": "Cortex Extraction Run",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Journal d’audit",
+   "link_to": "Audit Event",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  }
+ ],
+ "custom_blocks": [],
  "roles": [
   {
    "role": "System Manager"
@@ -337,63 +336,5 @@
    "role": "Rental Operator"
   }
  ],
- "sequence_id": 1.0,
- "shortcuts": [
-  {
-   "label": "Disponibilité",
-   "link_to": "cortex-availability",
-   "type": "Page",
-   "color": "Blue",
-   "doc_view": ""
-  },
-  {
-   "label": "Nouvelle transaction",
-   "link_to": "cortex-transaction-composer",
-   "type": "Page",
-   "color": "Green",
-   "doc_view": ""
-  },
-  {
-   "label": "Check-in & Retours",
-   "link_to": "cortex-checkin",
-   "type": "Page",
-   "color": "Purple",
-   "doc_view": ""
-  },
-  {
-   "label": "Transactions",
-   "link_to": "Cortex Rental Transaction",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Approbations",
-   "link_to": "Approval Request",
-   "link_type": "DocType",
-   "type": "DocType",
-   "color": "Yellow",
-   "doc_view": "List",
-   "stats_filter": "[[\"Approval Request\", \"status\", \"=\", \"Pending\"]]",
-   "format": "{}"
-  },
-  {
-   "label": "P&L Financier",
-   "link_to": "cortex-accounting-pnl",
-   "type": "Page",
-   "color": "Green",
-   "doc_view": ""
-  },
-  {
-   "label": "Demandes entrantes",
-   "link_to": "Cortex Inbound Request",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List",
-   "stats_filter": "[[\"Cortex Inbound Request\", \"status\", \"=\", \"Received\"]]",
-   "format": "{}"
-  }
- ],
- "title": "Cortex Rental",
  "type": "Workspace"
 }

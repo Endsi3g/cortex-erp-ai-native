@@ -1,3 +1,4 @@
+from cortex_rental.labels import state_label
 from typing import Optional
 
 try:
@@ -14,7 +15,8 @@ from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.transaction_state import TransactionStateService
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.availability import AvailabilityService
-from cortex_rental.services.locking import reservation_lock
+from cortex_rental.services import billing
+from cortex_rental.services.locking import ReservationLockError, reservation_lock
 
 # States that block inventory (PRD §4). Confirming into one of these
 # must happen under the per-item reservation lock, with a fresh
@@ -74,8 +76,15 @@ class CortexRentalTransaction(Document):
                 subtotal += item.amount
 
         self.subtotal = round(subtotal, 2)
-        tax_rate = float(self.tax_rate or 0.0)
-        self.tax_amount = round(self.subtotal * (tax_rate / 100.0), 2)
+        if frappe and getattr(frappe, "db", None):
+            # Taxes de la société (TPS/TVQ par défaut), calculées par le serveur : jamais fournies par le navigateur.
+            settings = billing.get_settings(self.company)
+            self.tps_amount, self.tvq_amount = billing.compute_taxes(self.subtotal, settings)
+            self.tax_rate = billing.combined_rate(settings)
+            self.tax_amount = round(self.tps_amount + self.tvq_amount, 2)
+        else:
+            tax_rate = float(self.tax_rate or 0.0)
+            self.tax_amount = round(self.subtotal * (tax_rate / 100.0), 2)
         self.grand_total = round(self.subtotal + self.tax_amount, 2)
 
     @staticmethod
@@ -97,8 +106,8 @@ class CortexRentalTransaction(Document):
         if self.is_new():
             if self.rental_state and self.rental_state != "Quote":
                 frappe.throw(
-                    "New Cortex Rental Transaction records must be created in the "
-                    "'Quote' state; use transition_to() to advance the lifecycle.",
+                    "Une nouvelle location doit être créée à l'état « Devis » ; "
+                    "utilisez les actions de la location pour la faire avancer.",
                     frappe.PermissionError,
                 )
             return
@@ -142,6 +151,8 @@ class CortexRentalTransaction(Document):
         else:
             self.rental_state = new_state
             self.save()
+            if frappe:
+                billing.on_transition(self, new_state)
 
         # Synchronize with ERPNext documents
         TransactionStateService.sync_with_erpnext(self)
@@ -168,8 +179,18 @@ class CortexRentalTransaction(Document):
         from contextlib import ExitStack
 
         with ExitStack() as locks:
-            for code in item_codes:
-                locks.enter_context(reservation_lock(self.company, code))
+            try:
+                for code in item_codes:
+                    locks.enter_context(reservation_lock(self.company, code))
+            except ReservationLockError:
+                frappe.throw(
+                    "Un autre utilisateur confirme ce matériel en ce moment. Réessayez dans quelques secondes.",
+                    frappe.ValidationError,
+                )
+            # Nouvelle lecture cohérente : sans cela, l'instantané de transaction pris avant le verrou ne voit pas
+            # la réservation validée par celui qui vient de libérer le verrou.
+            if not frappe.flags.in_test:
+                frappe.db.commit()  # nosemgrep
 
             item_requests = [{"item_id": item.item_code, "quantity": item.qty} for item in (self.items or [])]
             checks = AvailabilityService().check(
@@ -182,8 +203,8 @@ class CortexRentalTransaction(Document):
             unavailable = [c["item_id"] for c in checks if not c["is_available"]]
             if unavailable:
                 frappe.throw(
-                    f"Cannot confirm {new_state}: insufficient availability for {', '.join(unavailable)} "
-                    "in the requested window (re-checked under lock).",
+                    f"Impossible de passer à l'état « {state_label(new_state)} » : disponibilité insuffisante pour {', '.join(unavailable)} "
+                    "sur la période demandée (revérifiée sous verrou).",
                     frappe.ValidationError,
                 )
 
@@ -192,6 +213,10 @@ class CortexRentalTransaction(Document):
 
             self.rental_state = new_state
             self.save()
+            billing.on_transition(self, new_state)
+            # Le verrou ne doit être relâché qu'après la validation en base, sinon le suivant relit l'ancien état.
+            if not frappe.flags.in_test:
+                frappe.db.commit()  # nosemgrep
 
     def _assign_serials_under_lock(self):
         """Allocate real serials atomically when a quote becomes a reservation."""
@@ -208,7 +233,7 @@ class CortexRentalTransaction(Document):
             quantity = float(row.qty or 0)
             if quantity <= 0 or not quantity.is_integer():
                 frappe.throw(
-                    f"Serialized equipment {row.item_code} requires a whole-number quantity.",
+                    f"L'équipement sérialisé {row.item_code} exige une quantité entière.",
                     frappe.ValidationError,
                 )
             candidates = frappe.db.sql(
@@ -225,6 +250,8 @@ class CortexRentalTransaction(Document):
                     WHERE (ti.serial_no = sn.name OR ti.assigned_serials LIKE CONCAT('%%"', sn.name, '"%%'))
                       AND tx.name != %(transaction)s
                       AND tx.rental_state IN ('Reservation', 'Contract', 'Checked Out')
+                      AND tx.starts_at < %(ends_at)s
+                      AND tx.ends_at > %(starts_at)s
                   )
                 ORDER BY sn.name ASC
                 LIMIT %(quantity)s
@@ -234,13 +261,15 @@ class CortexRentalTransaction(Document):
                     "company": self.company,
                     "transaction": self.name or "",
                     "quantity": int(quantity),
+                    "starts_at": self.starts_at,
+                    "ends_at": self.ends_at,
                 },
                 as_dict=False,
             )
             serials = [candidate[0] for candidate in candidates]
             if len(serials) < int(quantity):
                 frappe.throw(
-                    f"Only {len(serials)} serialized units remain available for {row.item_code}.",
+                    f"Il ne reste que {len(serials)} unité(s) sérialisée(s) disponible(s) pour {row.item_code}.",
                     frappe.ValidationError,
                 )
             row.assigned_serials = frappe.as_json(serials)

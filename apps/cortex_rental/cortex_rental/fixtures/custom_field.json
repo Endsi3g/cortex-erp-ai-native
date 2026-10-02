@@ -4,25 +4,25 @@
     "name": "Customer-cortex_company",
     "dt": "Customer",
     "fieldname": "cortex_company",
-    "label": "Cortex Tenant Company",
+    "label": "Société (locataire Cortex)",
     "fieldtype": "Link",
     "options": "Company",
     "insert_after": "customer_name",
     "reqd": 1,
     "in_standard_filter": 1,
-    "description": "Owning Company/tenant for this Customer record within Cortex. Required because core ERPNext Customer is not natively Company-scoped; Cortex enforces tenant isolation on top of it via this field."
+    "description": "Société propriétaire de cette fiche client dans Cortex. Obligatoire, car la fiche client de base n'est pas limitée à une société ; Cortex applique l'isolation entre sociétés par ce champ."
   },
   {
     "doctype": "Custom Field",
     "name": "Serial No-cortex_status",
     "dt": "Serial No",
     "fieldname": "cortex_status",
-    "label": "Cortex Rental Status",
+    "label": "Statut de location Cortex",
     "fieldtype": "Select",
     "options": "Active\nQuarantine\nUnder Repair\nMissing\nDecommissioned",
     "default": "Active",
     "insert_after": "status",
     "in_standard_filter": 1,
-    "description": "Cortex-specific rental availability status, distinct from ERPNext's native Serial No status. A unit in Quarantine/Under Repair/Missing/Decommissioned is excluded from AvailabilityService's fleet count even if the ERPNext status is still Active."
+    "description": "Statut de disponibilité à la location propre à Cortex, distinct du statut natif du numéro de série. Une unité en quarantaine, en réparation, manquante ou radiée est exclue du parc disponible même si le statut natif reste Actif."
   }
 ]

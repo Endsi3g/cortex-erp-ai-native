@@ -1,5 +1,7 @@
 # Plan de reconstruction UI — pages Desk ERPNext + Frappe UI
 
+> **Obsolète (2026-09-30) :** ce document décrit l'ancienne interface Vite/Vue/Frappe UI, retirée. La référence actuelle est [`ERPNEXT_NATIVE_PLAN.md`](ERPNEXT_NATIVE_PLAN.md) et [`CORTEX_UI_HANDOFF_V2.md`](CORTEX_UI_HANDOFF_V2.md). Il est conservé pour l'historique.
+
 **Statut :** plan d'implémentation, à valider. Aucun code applicatif n'est modifié par ce document.
 **Date :** 2026-09-28 · **Auteur de la demande :** Kael Belceus
 **Contrat parent :** [`CORTEX_UI_HANDOFF_V2.md`](CORTEX_UI_HANDOFF_V2.md) (prime sur ce plan en cas de conflit)
@@ -114,6 +116,7 @@ Livré et testé par `tests/test_workspace_navigation.py` (statique, sans bench)
 
 ### 4.5 Hébergement Desk : ce qui a été retenu et validé (2026-09-28)
 - **Plan B retenu** : les écrans Vue 3 + Frappe UI sont compilés par Vite (`npm run build:desk` → `public/frontend/dist-desk/cortex-desk.js`) et chargés par `public/js/cortex_host/cortex_host.js` via `import()`. Le build esbuild de `bench build` n'est pas utilisé pour Frappe UI. `dist-desk` n'est pas versionné : l'entrypoint Docker et `make build-desk` le produisent.
+- **Mise à jour du 2026-09-29** : les mêmes écrans sont aussi servis par une application autonome sur `/cortex` (`npm run build:spa`, plugin Vite frappe-ui, `www/cortex.py`). Le plan B ci-dessus reste en place tant que la suppression des Pages Desk n'est pas validée ; voir le handoff V2 pour la décision.
 - **Isolation CSS** : tout est sous `.cortex-root` ; les accents bleus de Frappe UI sont remplacés par la palette Cortex ; Inter est conservée ; `desk.css` neutralise les règles Desk qui fuient (`dt` gras, `font-variation-settings`, espacement des lettres).
 - **Collision Workspace / Page** : un Workspace gagne toujours sur une Page du même slug. Les écrans `cortex-operations` et `cortex-rental` vivent donc dans les Pages `cortex-ops-overview` et `cortex-rental-detail` ; `cortex_host.js` traduit les chemins SPA (`PAGE_ALIASES`), le patch `remove_shadowed_pages` supprime les anciennes Pages et un test interdit toute nouvelle collision.
 - **Validé avec Chromium sur un vrai Desk** : 13 Pages montées (opérations, locations, détail, équipements, série, kits, consignation, propriétaire, relevé, AI Inbox/Workspace/Audit, check-out), données réelles issues des endpoints `cortex_rental.api.v1.*` (12 endpoints de lecture répondent 200), lien de navigation via `frappe.set_route`.

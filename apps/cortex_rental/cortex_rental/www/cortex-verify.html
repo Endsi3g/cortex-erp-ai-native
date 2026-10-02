@@ -1,0 +1,80 @@
+{% extends "templates/web.html" %}
+
+{% block title %}Vérification du courriel{% endblock %}
+{% block head_include %}
+{{ include_style('login.bundle.css') }}
+<link rel="stylesheet" href="/assets/cortex_rental/css/cortex-login.css">
+{% endblock %}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block sidebar %}{% endblock %}
+
+{% block page_content %}
+{% set state = result.state %}
+<div class="cx-auth cx-auth--single">
+<div class="cx-auth__panel" style="flex-direction:column;align-items:stretch">
+<div class="cx-auth__form cx-sent" style="margin:0 auto">
+	<img class="app-logo app-logo--light" src="/assets/cortex_rental/images/cortex-logo.svg" alt="Cortex" style="height:40px;margin-bottom:24px">
+	<img class="app-logo app-logo--dark" src="/assets/cortex_rental/images/cortex-logo-reversed.svg" alt="" aria-hidden="true" style="height:40px;margin-bottom:24px">
+
+	{% if state == "verified" and result.next == "password" %}
+		<h1 class="cx-auth__title">Courriel confirmé</h1>
+		<p>Votre espace <strong>{{ result.company_name | e }}</strong> est créé. Nous venons de vous envoyer un courriel pour choisir votre mot de passe.</p>
+		<ol class="cx-next-steps"><li><strong>Ouvrez le courriel</strong> « Votre espace Cortex est prêt ».</li><li><strong>Choisissez votre mot de passe.</strong></li><li><strong>Suivez l'assistant</strong> de configuration (environ 10 minutes).</li></ol>
+		<p class="cx-actions"><a class="btn btn-primary btn-sm" href="/login">Aller à la connexion</a></p>
+	{% elif state == "verified" %}
+		<h1 class="cx-auth__title">Courriel confirmé</h1>
+		<p>Merci. Votre demande pour <strong>{{ result.company_name | e }}</strong> est maintenant entre les mains de notre équipe.</p>
+		<ol class="cx-next-steps"><li><strong>Nous examinons la demande</strong>, habituellement en un jour ouvrable.</li><li><strong>Vous recevez un courriel</strong> dès que votre espace est prêt.</li><li><strong>Vous choisissez votre mot de passe</strong> et configurez l'entreprise.</li></ol>
+		<p class="cx-hint">Vous n'avez rien à faire de plus : vous pouvez fermer cette page.</p>
+		<p class="cx-actions"><a class="btn btn-default btn-sm" href="/login">Retour à la connexion</a></p>
+	{% elif state == "already_verified" %}
+		<h1 class="cx-auth__title">Ce lien a déjà été utilisé</h1>
+		{% if result.status == "Provisioned" %}
+			<p>Votre espace <strong>{{ result.company_name | e }}</strong> est prêt. Connectez-vous ; si vous n'avez pas encore de mot de passe, utilisez « Mot de passe oublié ».</p>
+			<p class="cx-actions"><a class="btn btn-primary btn-sm" href="/login">Me connecter</a></p>
+		{% elif result.status == "Rejected" %}
+			<p>La demande pour <strong>{{ result.company_name | e }}</strong> n'a pas été retenue. Vous avez reçu un courriel avec les détails.</p>
+		{% else %}
+			<p>Votre courriel est déjà confirmé. La demande pour <strong>{{ result.company_name | e }}</strong> est en cours d'examen : vous serez averti par courriel.</p>
+		{% endif %}
+		<p class="cx-actions"><a class="btn btn-default btn-sm" href="/login">Retour à la connexion</a></p>
+	{% elif state == "expired" %}
+		<h1 class="cx-auth__title">Ce lien a expiré</h1>
+		<p>Pour votre sécurité, le lien de confirmation n'est valide que quelques heures. Recevez-en un nouveau en un clic.</p>
+		<div class="cx-alert" role="alert" hidden data-cx-alert></div>
+		<p class="cx-actions cx-actions--stack"><button class="btn btn-primary btn-sm" type="button" id="cx-resend" data-token="{{ result.token | e }}">Recevoir un nouveau lien</button></p>
+		<p class="sign-up-message"><a href="/login">Retour à la connexion</a></p>
+	{% else %}
+		<h1 class="cx-auth__title">Lien non valide</h1>
+		<p>Ce lien est incomplet ou a été modifié. Copiez-le en entier depuis le courriel, ou refaites une demande d'accès.</p>
+		<p class="cx-actions"><a class="btn btn-primary btn-sm" href="/login#signup">Refaire une demande</a></p>
+	{% endif %}
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block script %}
+{% if state == "expired" %}
+<script>
+frappe.ready(function () {
+	var $button = $("#cx-resend");
+	$button.on("click", function () {
+		$button.prop("disabled", true).addClass("is-busy");
+		frappe.call({
+			type: "POST", method: "cortex_rental.api.v1.access.resend_verification", args: { token: $button.data("token") }, silent: true, freeze: false,
+			callback: function () {
+				$button.removeClass("is-busy").text("Lien envoyé : vérifiez votre courriel");
+				$("[data-cx-alert]").addClass("cx-alert--success").text("Un nouveau lien vient de vous être envoyé.").prop("hidden", false);
+			},
+			error: function () {
+				$button.prop("disabled", false).removeClass("is-busy");
+				$("[data-cx-alert]").addClass("cx-alert--error").text("L'envoi a échoué. Réessayez dans un instant.").prop("hidden", false);
+			}
+		});
+	});
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,187 @@
+/*
+ * Cortex — transitions douces entre les états (chargement, contenu, panneaux, messages).
+ * Durées 150–250 ms, courbe unique ; tout est neutralisé sous `prefers-reduced-motion`.
+ */
+
+:root {
+	--cx-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+	--cx-fast: 150ms;
+	--cx-base: 220ms;
+}
+
+@keyframes cx-rise {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+@keyframes cx-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes cx-shimmer {
+	from {
+		background-position: 200% 0;
+	}
+	to {
+		background-position: -200% 0;
+	}
+}
+
+/* Espaces de travail : entrée douce des blocs (cartes, graphiques, raccourcis) une fois rendus. */
+body[data-route^="Workspaces"] .codex-editor__redactor > .ce-block,
+#page-Workspaces .codex-editor__redactor > .ce-block {
+	animation: cx-rise var(--cx-base) var(--cx-ease) both;
+}
+#page-Workspaces .codex-editor__redactor > .ce-block:nth-child(2) {
+	animation-delay: 40ms;
+}
+#page-Workspaces .codex-editor__redactor > .ce-block:nth-child(3) {
+	animation-delay: 80ms;
+}
+#page-Workspaces .codex-editor__redactor > .ce-block:nth-child(4) {
+	animation-delay: 120ms;
+}
+#page-Workspaces .codex-editor__redactor > .ce-block:nth-child(n + 5) {
+	animation-delay: 160ms;
+}
+
+/* Survol : cartes de nombres, raccourcis, cartes de liens. */
+#page-Workspaces .widget.number-widget-box,
+#page-Workspaces .widget.shortcut-widget-box,
+#page-Workspaces .links-widget-box {
+	transition: box-shadow var(--cx-fast) var(--cx-ease), transform var(--cx-fast) var(--cx-ease),
+		border-color var(--cx-fast) var(--cx-ease);
+}
+#page-Workspaces .widget.shortcut-widget-box:hover,
+#page-Workspaces .widget.number-widget-box:hover {
+	transform: translateY(-1px);
+}
+
+/* Chargement : squelettes pendant que les cartes calculent leur valeur. */
+#page-Workspaces .widget .widget-body .number-widget-box:empty,
+#page-Workspaces .widget.loading .widget-body {
+	background: linear-gradient(90deg, #f4f4f5 25%, #e9e9ec 37%, #f4f4f5 63%);
+	background-size: 400% 100%;
+	animation: cx-shimmer 1.4s linear infinite;
+	border-radius: 8px;
+}
+
+/* Transition de page Desk (changement de route). */
+.page-container > .page-card-head ~ *,
+.layout-main-section {
+	animation: cx-fade var(--cx-base) var(--cx-ease) both;
+}
+
+/* Accueil Cortex : changements d'état. */
+.ch-fade-enter-active,
+.ch-fade-leave-active {
+	transition: opacity var(--cx-base) var(--cx-ease), transform var(--cx-base) var(--cx-ease);
+}
+.ch-fade-enter-from {
+	opacity: 0;
+	transform: translateY(8px);
+}
+.ch-fade-leave-to {
+	opacity: 0;
+	transform: translateY(-6px);
+}
+.ch-prompts li,
+.ch-tiles li {
+	animation: cx-rise var(--cx-base) var(--cx-ease) both;
+	animation-delay: calc(var(--i, 0) * 35ms);
+}
+.cp-message {
+	animation: cx-rise var(--cx-base) var(--cx-ease) both;
+}
+.cp-panel.floating {
+	animation: cx-fade var(--cx-base) var(--cx-ease) both;
+}
+
+/* Finitions : boutons, menus, listes, cartes kanban, onglets. */
+.btn,
+.dropdown-item,
+.list-row,
+.kanban-card,
+.nav-link,
+.form-control,
+.indicator-pill {
+	transition: background-color var(--cx-fast) var(--cx-ease), border-color var(--cx-fast) var(--cx-ease),
+		box-shadow var(--cx-fast) var(--cx-ease), color var(--cx-fast) var(--cx-ease),
+		transform var(--cx-fast) var(--cx-ease);
+}
+.btn:active:not(:disabled) {
+	transform: scale(0.98);
+}
+.dropdown-menu.show {
+	animation: cx-menu var(--cx-fast) var(--cx-ease) both;
+	transform-origin: top right;
+}
+@keyframes cx-menu {
+	from {
+		opacity: 0;
+		transform: translateY(-4px) scale(0.98);
+	}
+}
+.kanban-card-wrapper .kanban-card:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+.list-row-container:hover .list-row {
+	background-color: var(--cortex-surface-subtle, #f4f4f5);
+}
+.modal.show .modal-dialog {
+	animation: cx-rise var(--cx-base) var(--cx-ease) both;
+}
+.form-layout .form-section,
+.form-layout .form-dashboard-section {
+	animation: cx-fade var(--cx-base) var(--cx-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-delay: 0ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+/* Sous-titre de page : une ligne grise sous le titre ; l'en-tête s'adapte à sa hauteur. */
+.page-head .page-head-content {
+	height: auto;
+	min-height: var(--page-head-height, 40px);
+	padding: 10px 0 8px;
+}
+body.cx-nav-on .page-head .page-title {
+	flex: 1 1 auto;
+	width: auto;
+	max-width: none;
+}
+body.cx-nav-on .page-head .page-actions {
+	flex: 0 0 auto;
+}
+.page-head .title-area {
+	align-items: flex-start;
+}
+.page-head .title-area .cx-page-sub {
+	display: block;
+	max-width: 88ch;
+	margin-top: 2px;
+	color: var(--cortex-text-secondary, #52525b);
+	font-size: 13px;
+	line-height: 1.4;
+	white-space: normal;
+	overflow: visible;
+}

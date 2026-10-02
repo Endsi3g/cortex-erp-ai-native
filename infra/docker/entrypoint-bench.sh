@@ -80,14 +80,8 @@ if [ ! -d "${SITES_DIR}/localhost" ] && [ ! -L "${SITES_DIR}/localhost" ]; then
     ln -sf cortex.local "${SITES_DIR}/localhost" || true
 fi
 
-# 5. Build Vue 3 bundles
+# 5. Build the Desk bundles (Frappe's own esbuild pipeline: *.bundle.js and CSS; no separate front-end build).
 if [ -d "${BENCH_DIR}/apps/cortex_rental" ]; then
-    # Desk screens (Vue 3 + Frappe UI): built by Vite, loaded by public/js/cortex_host/cortex_host.js
-    FRONTEND_DIR="${BENCH_DIR}/apps/cortex_rental/cortex_rental/public/frontend"
-    if [ -d "${FRONTEND_DIR}" ] && command -v npm >/dev/null 2>&1; then
-        echo "Building Cortex Desk screens (Vite)..."
-        (cd "${FRONTEND_DIR}" && npm ci --no-audit --no-fund && npm run build:desk) || echo "WARNING: Desk screens bundle not built; Cortex pages will show a build hint."
-    fi
     # `bench build --app cortex_rental` only compiles this app. Without the Frappe/ERPNext bundles
     # (website.bundle.css, frappe-web.bundle.js, desk.bundle.*) the portal pages (/login, /me) render
     # as unstyled HTML and the Desk does not start, so build every app when they are missing.

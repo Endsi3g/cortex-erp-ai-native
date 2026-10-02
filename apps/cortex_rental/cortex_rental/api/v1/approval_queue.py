@@ -113,7 +113,7 @@ if frappe:
                 )
             doc.reject(reason=reason)
         else:
-            frappe.throw("Decision must be approve or reject.", frappe.ValidationError)
+            frappe.throw("La décision doit être « approuver » ou « refuser ».", frappe.ValidationError)
         return {
             "request_id": frappe.generate_hash(length=16),
             "entity_id": name,

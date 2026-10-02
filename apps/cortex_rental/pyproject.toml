@@ -3,7 +3,7 @@ name = "cortex_rental"
 authors = [
     { name = "Cortex Architecture Team", email = "architecture@cortex.local"}
 ]
-description = "Cortex AI-Native Rental & Consignment Domain App for Frappe & ERPNext"
+description = "Cortex AI-Native Rental & Consignment Domain App for Frappe"
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]

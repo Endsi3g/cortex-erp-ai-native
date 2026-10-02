@@ -12,7 +12,7 @@ def health_check_handler() -> Dict[str, Any]:
         "service": "cortex_rental",
         "version": "1.0.0",
         "database": "MariaDB 10.11+",
-        "framework": "Frappe Framework / ERPNext v15+",
+        "framework": "Frappe Framework v15+",
     }
 
 

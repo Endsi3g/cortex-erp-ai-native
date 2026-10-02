@@ -20,12 +20,12 @@ class CortexIdempotencyRecord(Document):
         if hasattr(self, "is_new") and not self.is_new():
             if frappe:
                 frappe.throw(
-                    "Idempotency records are immutable and cannot be modified.",
+                    "Les enregistrements d'idempotence sont immuables et ne peuvent pas être modifiés.",
                     frappe.PermissionError,
                 )
-            raise PermissionError("Idempotency records are immutable.")
+            raise PermissionError("Les enregistrements d'idempotence sont immuables.")
 
     def on_trash(self):
         if frappe:
-            frappe.throw("Idempotency records cannot be deleted.", frappe.PermissionError)
-        raise PermissionError("Idempotency records cannot be deleted.")
+            frappe.throw("Les enregistrements d'idempotence ne peuvent pas être supprimés.", frappe.PermissionError)
+        raise PermissionError("Les enregistrements d'idempotence ne peuvent pas être supprimés.")

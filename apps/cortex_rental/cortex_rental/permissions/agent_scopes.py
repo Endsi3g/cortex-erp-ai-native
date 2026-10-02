@@ -90,7 +90,7 @@ def require_human_staff_role() -> None:
         return
 
     frappe.throw(
-        "Unauthorized: this action requires a human staff role and is never available to an agent identity.",
+        "Non autorisé : cette action exige un rôle de personnel humain et n'est jamais offerte à un agent.",
         frappe.PermissionError,
     )
 
@@ -115,7 +115,7 @@ def require_finance_role() -> None:
         return
 
     frappe.throw(
-        "Unauthorized: this action requires a finance role.",
+        "Non autorisé : cette action exige un rôle de finance.",
         frappe.PermissionError,
     )
 
@@ -141,8 +141,8 @@ def require_agent_scope(required_scope: str) -> None:
     allowed_roles = set(SCOPE_ROLE_MAP.get(required_scope, []))
     if not allowed_roles or not (roles & allowed_roles):
         frappe.throw(
-            f"Unauthorized: scope '{required_scope}' requires one of the roles "
-            f"{sorted(allowed_roles) or '[undefined scope]'}.",
+            f"Non autorisé : la portée « {required_scope} » exige l'un des rôles "
+            f"{sorted(allowed_roles) or '[portée non définie]'}.",
             frappe.PermissionError,
         )
 
@@ -236,7 +236,7 @@ def get_company_context(company_header: Optional[str] = None) -> str:
 
     if not allowed:
         frappe.throw(
-            "Multi-Tenant Error: no Company is authorized for this identity.",
+            "Erreur d'isolation : aucune société n'est autorisée pour cette identité.",
             frappe.PermissionError,
         )
 
@@ -263,8 +263,8 @@ def get_company_context(company_header: Optional[str] = None) -> str:
             return sorted(allowed)[0]
 
         frappe.throw(
-            "Multi-Tenant Error: Company context (X-Company-ID) is required "
-            "when an identity is authorized for more than one Company.",
+            "Erreur d'isolation : la société (X-Company-ID) est obligatoire "
+            "quand une identité est autorisée pour plus d'une société.",
             frappe.PermissionError,
         )
 
@@ -279,7 +279,7 @@ def get_company_context(company_header: Optional[str] = None) -> str:
                 return company_header
 
         frappe.throw(
-            "Multi-Tenant Error: requested Company is not authorized for this identity.",
+            "Erreur d'isolation : la société demandée n'est pas autorisée pour cette identité.",
             frappe.PermissionError,
         )
 

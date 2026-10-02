@@ -82,7 +82,7 @@ function toggle() {
 }
 
 function detach() {
-	frappe.set_route("cortex-assistant");
+	frappe.set_route("cortex-home");
 }
 
 let nextId = 1;
@@ -189,16 +189,16 @@ const panelStyle = computed(() =>
 			v-if="mode === 'floating' && !isOpen"
 			ref="launcherRef"
 			class="cp-launcher"
-			aria-label="Ouvrir Cortex Copilot (⌘J)"
-			title="Cortex Copilot (⌘J / Ctrl+J)"
+			aria-label="Ouvrir le copilote Cortex (⌘J)"
+			title="Copilote Cortex (⌘J / Ctrl+J)"
 			@click="open(false)"
 		>
 			<span class="cp-launcher-icon" v-html="ICONS.sparkles"></span>
-			<span class="cp-launcher-text">Copilot</span>
+			<span class="cp-launcher-text">Copilote</span>
 			<span class="cp-launcher-kbd">⌘J</span>
 		</button>
 
-		<div v-if="mode === 'docked' || isOpen" class="cp-panel" :class="mode" :style="panelStyle" role="complementary" aria-label="Cortex Copilot">
+		<div v-if="mode === 'docked' || isOpen" class="cp-panel" :class="mode" :style="panelStyle" role="complementary" aria-label="Copilote Cortex">
 			<div v-if="mode === 'floating'" class="cp-resize-handle" @mousedown="startResize"></div>
 			<CopilotHeader
 				subtitle="Cortex peut expliquer, préparer et signaler — jamais exécuter seul."
@@ -247,6 +247,25 @@ const panelStyle = computed(() =>
 	align-items: center;
 	gap: 6px;
 	transition: all 0.15s ease;
+}
+.cp-launcher-kbd {
+	font-variant-numeric: tabular-nums;
+}
+@media (max-width: 768px), (pointer: coarse) {
+	/* Téléphone : un bouton rond discret, sans raccourci clavier, qui ne recouvre plus les listes. */
+	.cp-launcher {
+		right: var(--space-3);
+		bottom: var(--space-3);
+		width: 44px;
+		height: 44px;
+		padding: 0;
+		justify-content: center;
+		border-radius: 50%;
+	}
+	.cp-launcher-text,
+	.cp-launcher-kbd {
+		display: none;
+	}
 }
 .cp-launcher:hover {
 	border-color: var(--cortex-primary-400);

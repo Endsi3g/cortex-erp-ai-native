@@ -1,5 +1,7 @@
 # Cortex Transaction Composer
 
+> **Obsolète (2026-09-30) :** ce document décrit l'ancienne interface Vite/Vue/Frappe UI, retirée. La référence actuelle est [`ERPNEXT_NATIVE_PLAN.md`](ERPNEXT_NATIVE_PLAN.md) et [`CORTEX_UI_HANDOFF_V2.md`](CORTEX_UI_HANDOFF_V2.md). Il est conservé pour l'historique.
+
 `/app/cortex-transaction-composer` — the second of the three screens
 the design spec calls out as the ones that "make it obvious an
 operator can work faster in Cortex than in a legacy ERP" (Disponibilité

@@ -99,11 +99,16 @@ class ChatSessionService:
             self.onyx_client = MockOnyxChatClient()
         else:
             conf = getattr(frappe, "conf", {})
-            provider = str(conf.get("cortex_chat_provider", "onyx")).lower()
+            # Moteur : « gateway » (passerelle IA interne, par défaut), « onyx » (ancien moteur) ou « mock » (tests).
+            provider = str(conf.get("cortex_chat_provider", "gateway")).lower()
             if provider == "mock" and conf.get("developer_mode"):
                 self.onyx_client = MockOnyxChatClient()
-            else:
+            elif provider == "onyx":
                 self.onyx_client = HttpOnyxChatClient.from_site_config()
+            else:
+                from cortex_rental.services.ai.client import GatewayChatClient
+
+                self.onyx_client = GatewayChatClient()
 
     # -----------------------------------------------------------------
     def create_session(self, user: str, company: str, page: str, locale: str = "fr-CA") -> Dict[str, Any]:
@@ -143,10 +148,42 @@ class ChatSessionService:
         session = frappe.get_doc("Cortex Chat Session", name)
         if session.user != user and "System Manager" not in frappe.get_roles(user):
             frappe.throw(
-                "Unauthorized: this chat session belongs to a different user.",
+                "Non autorisé : cette conversation appartient à une autre personne.",
                 frappe.PermissionError,
             )
         return session.as_dict()
+
+    # -----------------------------------------------------------------
+    def get_messages(self, name: str, user: str, limit: int = 200) -> List[Dict[str, Any]]:
+        """Messages of one of the caller's own sessions, oldest first, with the structured blocks parsed."""
+        if not frappe:
+            raise ChatSessionNotFoundError(name)
+        session = frappe.get_doc("Cortex Chat Session", name)
+        if session.user != user:
+            frappe.throw("Non autorisé : cette conversation appartient à une autre personne.", frappe.PermissionError)
+        rows = frappe.get_all(
+            "Cortex Chat Message",
+            filters={"chat_session": name},
+            fields=["name", "sender_type", "content_sanitized", "ui_blocks_json", "created_at"],
+            order_by="created_at asc",
+            limit_page_length=max(1, min(int(limit or 200), 200)),
+        )
+        messages = []
+        for row in rows:
+            try:
+                blocks = frappe.parse_json(row.ui_blocks_json) if row.ui_blocks_json else []
+            except Exception:
+                blocks = []
+            messages.append(
+                {
+                    "id": row.name,
+                    "role": "user" if row.sender_type == "Human" else "assistant",
+                    "text": row.content_sanitized or "",
+                    "blocks": blocks if isinstance(blocks, list) else [],
+                    "created_at": str(row.created_at) if row.created_at else None,
+                }
+            )
+        return messages
 
     # -----------------------------------------------------------------
     def list_sessions(self, user: str, company: str) -> List[Dict[str, Any]]:
@@ -168,7 +205,7 @@ class ChatSessionService:
         session = frappe.get_doc("Cortex Chat Session", session_name)
         if session.user != user:
             frappe.throw(
-                "Unauthorized: this chat session belongs to a different user.",
+                "Non autorisé : cette conversation appartient à une autre personne.",
                 frappe.PermissionError,
             )
         session.pinned_context = context_snapshot_name
@@ -180,7 +217,7 @@ class ChatSessionService:
         session = frappe.get_doc("Cortex Chat Session", session_name)
         if session.user != user:
             frappe.throw(
-                "Unauthorized: this chat session belongs to a different user.",
+                "Non autorisé : cette conversation appartient à une autre personne.",
                 frappe.PermissionError,
             )
         session.pinned_context = None
@@ -232,8 +269,11 @@ class ChatSessionService:
         self._write_message(session_name, company, "Human", user, message, [], request_id)
 
         upstream_session_id = None
+        history: List[Dict[str, Any]] = []
         if frappe:
             upstream_session_id = frappe.db.get_value("Cortex Chat Session", session_name, "onyx_chat_session_id")
+            # Échanges précédents de cette conversation (le message courant vient d'être écrit : on l'exclut).
+            history = self.get_messages(session_name, user, limit=200)[:-1][-10:]
 
         try:
             result = self.onyx_client.send_message(
@@ -241,7 +281,8 @@ class ChatSessionService:
                 chat_session_id=upstream_session_id,
                 persona_id=agent_profile,
                 allowed_tool_ids=allowed_tool_ids,
-                context=resolved_context,
+                context={**resolved_context, "request_id": request_id},
+                history=history,
             )
         except Exception as exc:
             ChatAuditTelemetryService.record_chat_turn(
@@ -312,7 +353,7 @@ class ChatSessionService:
                 owner = frappe.db.get_value("Cortex Chat Session", chat_session_id, "user")
                 if owner != user:
                     frappe.throw(
-                        "Unauthorized: this chat session belongs to a different user.",
+                        "Non autorisé : cette conversation appartient à une autre personne.",
                         frappe.PermissionError,
                     )
                 return chat_session_id

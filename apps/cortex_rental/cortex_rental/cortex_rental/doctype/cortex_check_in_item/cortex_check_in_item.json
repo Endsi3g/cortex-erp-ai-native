@@ -11,7 +11,7 @@
       "fieldtype": "Data",
       "label": "Transaction Item Row (name)",
       "reqd": 1,
-      "description": "The `name` of the Cortex Rental Transaction Item child row this return applies to."
+      "description": "Nom de la ligne de location à laquelle ce retour s'applique."
     },
     {
       "fieldname": "item_code",
@@ -60,7 +60,7 @@
       "options": "Return to Stock\nQuarantine\nRepair\nMissing\nWrite-off",
       "in_list_view": 1,
       "reqd": 1,
-      "description": "Drives the Serial No's cortex_status: Return to Stock->Active, Quarantine->Quarantine, Repair->Under Repair, Missing->Missing, Write-off->Decommissioned."
+      "description": "Détermine l'état du numéro de série : Retour en stock → Actif, Quarantaine → Quarantaine, Réparation → En réparation, Manquant → Manquant, Radiation → Radié."
     },
     {
       "fieldname": "damage_severity",
@@ -89,7 +89,7 @@
       "fieldname": "evidence_ids",
       "fieldtype": "Small Text",
       "label": "Evidence Reference IDs",
-      "description": "JSON array of hashed Cortex Evidence Reference IDs associated with this physical inspection."
+      "description": "Liste JSON des pièces justificatives (hachées) associées à cette inspection physique."
     }
   ]
 }

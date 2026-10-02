@@ -1,0 +1,170 @@
+{
+  "actions": [],
+  "creation": "2026-10-01 02:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "modified": "2026-10-01 02:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "states": [],
+  "name": "Cortex AI Settings",
+  "issingle": 1,
+  "track_changes": 1,
+  "field_order": [
+    "enabled",
+    "sb_model",
+    "model",
+    "fallback_model",
+    "cb_model",
+    "api_key",
+    "temperature",
+    "max_output_tokens",
+    "sb_limits",
+    "max_tool_steps",
+    "timeout_seconds",
+    "cb_limits",
+    "warn_percent",
+    "sb_budget",
+    "price_input_per_mtok",
+    "price_output_per_mtok",
+    "cb_budget",
+    "default_monthly_budget",
+    "default_monthly_token_cap",
+    "sb_companies",
+    "company_budgets"
+  ],
+  "fields": [
+    {
+      "fieldname": "enabled",
+      "fieldtype": "Check",
+      "label": "Assistant IA activé",
+      "default": "1"
+    },
+    {
+      "fieldname": "sb_model",
+      "fieldtype": "Section Break",
+      "label": "Modèle"
+    },
+    {
+      "fieldname": "model",
+      "fieldtype": "Data",
+      "label": "Modèle",
+      "default": "gemini-3.8-flash",
+      "reqd": 1,
+      "description": "Identifiant exact chez le fournisseur (Google : commence par « gemini- »). Pour passer à une version plus récente, changez seulement ce champ."
+    },
+    {
+      "fieldname": "fallback_model",
+      "fieldtype": "Data",
+      "label": "Modèle de repli",
+      "description": "Utilisé seulement si le modèle principal est introuvable chez le fournisseur (erreur 404). Laissez vide pour ne pas en avoir."
+    },
+    {
+      "fieldname": "cb_model",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "api_key",
+      "fieldtype": "Password",
+      "label": "Clé API",
+      "description": "Stockée chiffrée, jamais envoyée au navigateur. À défaut, la clé « gemini_api_key » de la configuration du site est utilisée."
+    },
+    {
+      "fieldname": "temperature",
+      "fieldtype": "Float",
+      "label": "Température",
+      "default": "0.2"
+    },
+    {
+      "fieldname": "max_output_tokens",
+      "fieldtype": "Int",
+      "label": "Longueur maximale d'une réponse (jetons)",
+      "default": "1024"
+    },
+    {
+      "fieldname": "sb_limits",
+      "fieldtype": "Section Break",
+      "label": "Limites techniques"
+    },
+    {
+      "fieldname": "max_tool_steps",
+      "fieldtype": "Int",
+      "label": "Étapes d'outils par question (max 8)",
+      "default": "5"
+    },
+    {
+      "fieldname": "timeout_seconds",
+      "fieldtype": "Int",
+      "label": "Délai d'attente du fournisseur (secondes)",
+      "default": "60"
+    },
+    {
+      "fieldname": "cb_limits",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "warn_percent",
+      "fieldtype": "Int",
+      "label": "Avertir à (% du budget)",
+      "default": "80"
+    },
+    {
+      "fieldname": "sb_budget",
+      "fieldtype": "Section Break",
+      "label": "Prix et plafond mensuel par défaut",
+      "description": "Le plafond est à déterminer. 0 veut dire « aucun plafond ». Sans prix, seuls les jetons sont comptés (le coût reste à 0 $)."
+    },
+    {
+      "fieldname": "price_input_per_mtok",
+      "fieldtype": "Currency",
+      "label": "Prix par million de jetons en entrée ($)",
+      "precision": "4",
+      "default": "0"
+    },
+    {
+      "fieldname": "price_output_per_mtok",
+      "fieldtype": "Currency",
+      "label": "Prix par million de jetons en sortie ($)",
+      "precision": "4",
+      "default": "0"
+    },
+    {
+      "fieldname": "cb_budget",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "default_monthly_budget",
+      "fieldtype": "Currency",
+      "label": "Budget mensuel par société ($)",
+      "default": "0"
+    },
+    {
+      "fieldname": "default_monthly_token_cap",
+      "fieldtype": "Int",
+      "label": "Plafond mensuel de jetons par société",
+      "default": "0"
+    },
+    {
+      "fieldname": "sb_companies",
+      "fieldtype": "Section Break",
+      "label": "Exceptions par société"
+    },
+    {
+      "fieldname": "company_budgets",
+      "fieldtype": "Table",
+      "label": "Plafonds par société",
+      "options": "Cortex AI Budget"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1
+    }
+  ]
+}

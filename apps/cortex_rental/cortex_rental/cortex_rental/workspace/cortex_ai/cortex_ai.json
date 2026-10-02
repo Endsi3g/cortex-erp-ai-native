@@ -1,27 +1,240 @@
 {
- "charts": [],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Cortex AI</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"AI Inbox\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"AI Workspace\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"AI Audit\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Assistant\", \"col\": 3}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Supervision et approbations\", \"col\": 3}}, {\"id\": \"sc5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Approbations\", \"col\": 3}}, {\"id\": \"sc6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sessions de chat\", \"col\": 3}}, {\"id\": \"sc7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exécutions d'agent\", \"col\": 3}}]",
- "creation": "2026-09-28 20:30:00.000000",
- "custom_blocks": [],
  "docstatus": 0,
- "doctype": "Workspace",
- "for_user": "",
- "hide_custom": 0,
- "icon": "octicon octicon-hubot",
  "idx": 0,
- "is_hidden": 0,
- "label": "Cortex AI",
- "links": [],
- "modified": "2026-09-28 20:30:00.000000",
+ "creation": "2026-09-30 08:05:00.000000",
+ "modified": "2026-10-01 02:20:00.000000",
  "modified_by": "Administrator",
- "module": "Cortex Rental",
- "name": "Cortex AI",
- "number_cards": [],
  "owner": "Administrator",
+ "module": "Cortex Rental",
+ "doctype": "Workspace",
+ "name": "Cortex AI",
+ "label": "Cortex AI",
+ "title": "IA",
+ "icon": "message",
+ "sequence_id": 6.0,
  "parent_page": "Cortex Rental",
  "public": 1,
- "quick_lists": [],
+ "is_hidden": 0,
+ "for_user": "",
+ "hide_custom": 0,
+ "indicator_color": "",
  "restrict_to_domain": "",
+ "content": "[{\"id\": \"bb116f118e\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Décisions d’approbation\", \"col\": 6}}, {\"id\": \"48a4f258ad\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Demandes entrantes par canal\", \"col\": 6}}, {\"id\": \"3d697cc2eb\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Approbations en attente\", \"col\": 3}}, {\"id\": \"a85bc0bf9a\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Demandes entrantes\", \"col\": 3}}, {\"id\": \"4df3e2940b\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Brouillons à réviser\", \"col\": 3}}, {\"id\": \"d3273ee8be\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Exécutions d’agents (24 h)\", \"col\": 3}}, {\"id\": \"3a075538c3\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"452afd4ae1\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Approbations à décider\", \"col\": 6}}, {\"id\": \"6e3ee5af21\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Demandes à traiter\", \"col\": 6}}, {\"id\": \"7b97008e40\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"311dd018f9\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"00b4af55e2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Assistant Cortex\", \"col\": 3}}, {\"id\": \"e5b5e45fb0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Approbations\", \"col\": 3}}, {\"id\": \"f0b6b71062\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Demandes entrantes\", \"col\": 3}}, {\"id\": \"dbe34c3db0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Extractions\", \"col\": 3}}, {\"id\": \"4223b69f32\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exécutions d’agents\", \"col\": 3}}, {\"id\": \"910f0c0d32\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal d’audit\", \"col\": 3}}, {\"id\": \"5840461bd0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Conversations\", \"col\": 3}}, {\"id\": \"2b011ddd47\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Réglages de l’IA\", \"col\": 3}}, {\"id\": \"e38c096f71\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Utilisation IA\", \"col\": 3}}, {\"id\": \"4d8c2c0faf\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"7593e09337\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"9a2f65675d\", \"type\": \"card\", \"data\": {\"card_name\": \"Boîte IA\", \"col\": 4}}, {\"id\": \"5895f1347b\", \"type\": \"card\", \"data\": {\"card_name\": \"Contrôle\", \"col\": 4}}]",
+ "charts": [
+  {
+   "chart_name": "Décisions d’approbation",
+   "label": "Décisions d’approbation"
+  },
+  {
+   "chart_name": "Demandes entrantes par canal",
+   "label": "Demandes entrantes par canal"
+  }
+ ],
+ "number_cards": [
+  {
+   "number_card_name": "Approbations en attente",
+   "label": "Approbations en attente"
+  },
+  {
+   "number_card_name": "Demandes entrantes",
+   "label": "Demandes entrantes"
+  },
+  {
+   "number_card_name": "Brouillons à réviser",
+   "label": "Brouillons à réviser"
+  },
+  {
+   "number_card_name": "Exécutions d’agents (24 h)",
+   "label": "Exécutions d’agents (24 h)"
+  }
+ ],
+ "quick_lists": [
+  {
+   "document_type": "Approval Request",
+   "label": "Approbations à décider",
+   "quick_list_filter": "[[\"Approval Request\", \"status\", \"=\", \"Pending\"]]"
+  },
+  {
+   "document_type": "Cortex Inbound Request",
+   "label": "Demandes à traiter",
+   "quick_list_filter": "[[\"Cortex Inbound Request\", \"status\", \"in\", [\"Received\", \"Processing\"]]]"
+  }
+ ],
+ "shortcuts": [
+  {
+   "label": "Assistant Cortex",
+   "link_to": "cortex-home",
+   "type": "Page",
+   "doc_view": "",
+   "color": "#066336"
+  },
+  {
+   "label": "Approbations",
+   "link_to": "Approval Request",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#b45309",
+   "stats_filter": "[[\"Approval Request\", \"status\", \"=\", \"Pending\"]]"
+  },
+  {
+   "label": "Demandes entrantes",
+   "link_to": "Cortex Inbound Request",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336",
+   "stats_filter": "[[\"Cortex Inbound Request\", \"status\", \"=\", \"Received\"]]"
+  },
+  {
+   "label": "Extractions",
+   "link_to": "Cortex Extraction Run",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Exécutions d’agents",
+   "link_to": "Cortex Agent Run",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Journal d’audit",
+   "link_to": "Audit Event",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Conversations",
+   "link_to": "Cortex Chat Session",
+   "type": "DocType",
+   "doc_view": "List",
+   "color": "#066336"
+  },
+  {
+   "label": "Réglages de l’IA",
+   "link_to": "Cortex AI Settings",
+   "type": "DocType",
+   "doc_view": "",
+   "color": "#066336"
+  },
+  {
+   "label": "Utilisation IA",
+   "link_to": "Utilisation IA",
+   "type": "Report",
+   "doc_view": "",
+   "color": "#066336"
+  }
+ ],
+ "links": [
+  {
+   "type": "Card Break",
+   "label": "Boîte IA",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 3,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Approbations",
+   "link_to": "Approval Request",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Demandes entrantes",
+   "link_to": "Cortex Inbound Request",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Extractions",
+   "link_to": "Cortex Extraction Run",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Card Break",
+   "label": "Contrôle",
+   "hidden": 0,
+   "is_query_report": 0,
+   "link_count": 3,
+   "onboard": 0
+  },
+  {
+   "type": "Link",
+   "label": "Journal d’audit",
+   "link_to": "Audit Event",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Exécutions d’agents",
+   "link_to": "Cortex Agent Run",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Appels d’outils",
+   "link_to": "Cortex Agent Tool Call",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Réglages de l’IA",
+   "link_to": "Cortex AI Settings",
+   "link_type": "DocType",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 0,
+   "link_count": 0,
+   "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Utilisation IA",
+   "link_to": "Utilisation IA",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "Cortex AI Usage"
+  }
+ ],
+ "custom_blocks": [],
  "roles": [
   {
    "role": "System Manager"
@@ -54,67 +267,5 @@
    "role": "Rental Operator"
   }
  ],
- "sequence_id": 5.0,
- "shortcuts": [
-  {
-   "label": "AI Inbox",
-   "link_to": "cortex-ai-inbox",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "AI Workspace",
-   "link_to": "cortex-ai-workspace",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "AI Audit",
-   "link_to": "cortex-ai-audit",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "Assistant",
-   "link_to": "cortex-assistant",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "Supervision et approbations",
-   "link_to": "cortex-supervision",
-   "type": "Page",
-   "color": "Grey",
-   "doc_view": ""
-  },
-  {
-   "label": "Approbations",
-   "link_to": "Approval Request",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List",
-   "stats_filter": "[[\"Approval Request\", \"status\", \"=\", \"Pending\"]]",
-   "format": "{}"
-  },
-  {
-   "label": "Sessions de chat",
-   "link_to": "Cortex Chat Session",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Exécutions d'agent",
-   "link_to": "Cortex Agent Run",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  }
- ],
- "title": "Cortex AI",
  "type": "Workspace"
 }

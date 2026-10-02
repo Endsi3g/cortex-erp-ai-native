@@ -1,0 +1,93 @@
+{
+  "actions": [],
+  "creation": "2026-09-29 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "signup_enabled",
+    "approval_mode",
+    "verification_hours",
+    "section_policy",
+    "block_free_email_domains",
+    "allowed_email_domains",
+    "section_notify",
+    "notify_email",
+    "owner_roles"
+  ],
+  "fields": [
+    {
+      "fieldname": "signup_enabled",
+      "fieldtype": "Check",
+      "label": "Accepter les demandes d'accès",
+      "default": "1",
+      "description": "Affiche le lien « Demander l'accès » sur la page de connexion."
+    },
+    {
+      "fieldname": "approval_mode",
+      "fieldtype": "Select",
+      "label": "Approbation",
+      "options": "Manual\nAutomatic after email verification",
+      "default": "Manual",
+      "description": "Manuelle par défaut : un administrateur approuve chaque entreprise avant qu'elle soit créée."
+    },
+    {
+      "fieldname": "verification_hours",
+      "fieldtype": "Int",
+      "label": "Validité du lien de vérification (heures)",
+      "default": "48"
+    },
+    {
+      "fieldname": "section_policy",
+      "fieldtype": "Section Break",
+      "label": "Adresses courriel autorisées"
+    },
+    {
+      "fieldname": "block_free_email_domains",
+      "fieldtype": "Check",
+      "label": "Exiger un courriel professionnel",
+      "default": "1",
+      "description": "Refuse Gmail, Outlook.com, Yahoo… Décochez pour accepter toute adresse."
+    },
+    {
+      "fieldname": "allowed_email_domains",
+      "fieldtype": "Small Text",
+      "label": "Domaines autorisés",
+      "description": "Un domaine par ligne. Vide = tous les domaines (sous réserve de la règle ci-dessus)."
+    },
+    {
+      "fieldname": "section_notify",
+      "fieldtype": "Section Break",
+      "label": "Notifications et rôles"
+    },
+    {
+      "fieldname": "notify_email",
+      "fieldtype": "Data",
+      "label": "Notifier cette adresse",
+      "options": "Email",
+      "description": "Vide = tous les utilisateurs ayant le rôle System Manager."
+    },
+    {
+      "fieldname": "owner_roles",
+      "fieldtype": "Small Text",
+      "label": "Rôles du propriétaire d'une nouvelle entreprise",
+      "default": "Cortex System Manager\nRental Manager\nCortex Operations Manager\nCortex Finance Manager\nCortex Inventory Manager\nCortex Consignment Manager\nCortex Account Reviewer",
+      "description": "Jamais « System Manager » : un propriétaire ne doit pas voir les autres entreprises."
+    }
+  ],
+  "modified": "2026-09-29 12:00:00.000000",
+  "module": "Cortex Rental",
+  "name": "Cortex Access Settings",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "role": "System Manager",
+      "create": 1
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "issingle": 1,
+  "track_changes": 1
+}

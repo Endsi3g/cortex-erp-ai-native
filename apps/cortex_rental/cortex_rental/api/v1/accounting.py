@@ -109,7 +109,7 @@ def _build_pnl_filters(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
         filters["from_fiscal_year"] = fiscal_year
         filters["to_fiscal_year"] = fiscal_year
     else:
-        raise ValueError("Either fiscal_year or from_date+to_date is required.")
+        raise ValueError("Indiquez un exercice fiscal ou une période (du… au…).")
 
     for key in ("cost_center", "project", "finance_book", "presentation_currency"):
         if payload.get(key):

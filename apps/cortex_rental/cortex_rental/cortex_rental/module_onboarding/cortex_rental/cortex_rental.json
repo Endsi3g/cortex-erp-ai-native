@@ -1,0 +1,47 @@
+{
+ "docstatus": 0,
+ "idx": 0,
+ "creation": "2026-09-30 09:00:00.000000",
+ "modified": "2026-09-30 09:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "module": "Cortex Rental",
+ "doctype": "Module Onboarding",
+ "name": "Cortex Rental",
+ "title": "Bienvenue dans Cortex",
+ "subtitle": "Six étapes pour préparer votre location de matériel.",
+ "success_message": "Votre espace Cortex est prêt.",
+ "documentation_url": "https://github.com/Endsi3g/cortex-erp-ai-native/blob/main/docs/auth/LOGIN_AND_ONBOARDING.md",
+ "is_complete": 0,
+ "allow_roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Cortex System Manager"
+  },
+  {
+   "role": "Rental Manager"
+  }
+ ],
+ "steps": [
+  {
+   "step": "Vérifier le profil de l’entreprise"
+  },
+  {
+   "step": "Inviter votre équipe"
+  },
+  {
+   "step": "Ajouter votre matériel"
+  },
+  {
+   "step": "Vérifier la règle tarifaire 7 = 3"
+  },
+  {
+   "step": "Créer votre première location"
+  },
+  {
+   "step": "Essayer l’assistant Cortex"
+  }
+ ]
+}

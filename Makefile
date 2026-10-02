@@ -42,8 +42,8 @@ shell-mcp: ## Ouvrir un shell interactif dans le conteneur FastMCP Python
 test: ## Exécuter la suite de tests Python (pytest)
 	pytest apps/
 
-build-desk: ## Construire les écrans Vue 3 + Frappe UI hébergés dans le Desk (Vite)
-	cd apps/cortex_rental/cortex_rental/public/frontend && npm ci --no-audit --no-fund && npm run build:desk
+build-desk: ## Compiler les bundles du Desk (bundler intégré de Frappe)
+	docker compose -f infra/docker/docker-compose.dev.yml exec bench bench build --app cortex_rental
 
 lint: ## Lancer le linter Python (Ruff)
 	ruff check apps/

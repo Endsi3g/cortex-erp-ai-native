@@ -1,5 +1,7 @@
 # Cortex ERP AI-Native — Frontend Dependency Decision Record
 
+> **Obsolète (2026-09-30) :** ce document décrit l'ancienne interface Vite/Vue/Frappe UI, retirée. La référence actuelle est [`ERPNEXT_NATIVE_PLAN.md`](ERPNEXT_NATIVE_PLAN.md) et [`CORTEX_UI_HANDOFF_V2.md`](CORTEX_UI_HANDOFF_V2.md). Il est conservé pour l'historique.
+
 ## 1. Context & Objectives
 The Cortex ERP frontend requires a modern, robust, type-safe stack designed for operational speed, high-density workflows, accessible UI, and clean boundary separation from the Frappe Framework backend.
 

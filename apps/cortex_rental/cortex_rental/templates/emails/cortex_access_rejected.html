@@ -1,0 +1,4 @@
+<p>Bonjour {{ full_name | e }},</p>
+<p>Nous ne pouvons pas donner suite à la demande d'accès de <strong>{{ company_name | e }}</strong> pour le moment.</p>
+{% if reason %}<p style="padding:12px 16px;background:#f5f5f5;border-radius:8px">{{ reason | e }}</p>{% endif %}
+<p>Si vous pensez qu'il s'agit d'une erreur, répondez à ce courriel : nous regarderons votre dossier.</p>

@@ -1,0 +1,43 @@
+{
+  "actions": [],
+  "creation": "2026-10-01 02:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "modified": "2026-10-01 02:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "states": [],
+  "name": "Cortex AI Budget",
+  "istable": 1,
+  "field_order": [
+    "company",
+    "monthly_budget",
+    "monthly_token_cap"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "monthly_budget",
+      "fieldtype": "Currency",
+      "label": "Budget mensuel ($)",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "monthly_token_cap",
+      "fieldtype": "Int",
+      "label": "Jetons par mois",
+      "in_list_view": 1
+    }
+  ],
+  "permissions": []
+}

@@ -1,0 +1,377 @@
+/*
+ * Accueil Cortex (Page Desk `cortex-home`) — écran conversationnel.
+ * Portée : `.cortex-home` uniquement ; la page masque l'en-tête Desk vide, rien d'autre n'est modifié.
+ */
+
+body[data-route="cortex-home"] #page-cortex-home .page-head {
+	display: none;
+}
+
+.cortex-home-mount {
+	min-height: calc(100vh - var(--navbar-height, 56px) - 40px);
+}
+
+.cortex-home.cortex-app {
+	background: transparent;
+	display: flex;
+	justify-content: center;
+	padding: var(--space-6, 24px) var(--space-4, 16px) 96px;
+}
+
+.ch-stage {
+	width: 100%;
+	max-width: 760px;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-5, 20px);
+}
+
+.ch-sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+/* ---- En-tête ---- */
+.ch-hero {
+	text-align: center;
+	padding-top: clamp(24px, 9vh, 96px);
+}
+.ch-mark {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 14px;
+	background: var(--cortex-emerald-50, #ecfdf5);
+	color: var(--cortex-emerald-700, #047857);
+}
+.ch-mark svg {
+	width: 22px;
+	height: 22px;
+}
+.ch-logo {
+	display: block;
+	margin: 0 auto 16px;
+	height: 44px;
+	max-width: 160px;
+	object-fit: contain;
+}
+.ch-date {
+	margin: 6px 0 0;
+	font-size: 14px;
+	color: var(--cortex-text-secondary, #52525b);
+}
+.ch-greeting {
+	margin: 14px 0 2px;
+	color: var(--cortex-text-secondary, #52525b);
+	font-size: 15px;
+}
+.ch-title {
+	margin: 0;
+	font-size: clamp(26px, 4.2vw, 36px);
+	line-height: 1.2;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	color: var(--cortex-text, #09090b);
+}
+
+/* ---- Zone de saisie ---- */
+.ch-composer {
+	background: var(--cortex-surface, #fff);
+	border: 1px solid var(--cortex-border, #e4e4e7);
+	border-radius: 20px;
+	padding: 14px 14px 10px 18px;
+	box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04), 0 8px 24px rgba(9, 9, 11, 0.05);
+	transition: border-color 0.18s, box-shadow 0.18s;
+}
+.ch-composer {
+	display: flex;
+	align-items: flex-end;
+	gap: 12px;
+}
+.ch-composer .ch-input {
+	flex: 1;
+}
+.ch-composer .ch-composer-row {
+	margin: 0;
+	flex: none;
+}
+body[data-route="cortex-home"] .navbar .breadcrumb,
+body[data-route="cortex-home"] #navbar-breadcrumbs,
+body[data-route="cortex-home"] .navbar-breadcrumbs {
+	display: none;
+}
+.ch-composer:focus-within {
+	border-color: var(--cortex-emerald-500, #10b981);
+	box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 8px 24px rgba(9, 9, 11, 0.06);
+}
+.cortex-home .ch-input,
+.cortex-home .ch-input:focus {
+	display: block;
+	box-shadow: none;
+	height: auto;
+	border-radius: 0;
+	width: 100%;
+	min-height: 28px;
+	max-height: 220px;
+	border: 0;
+	outline: 0;
+	resize: none;
+	background: transparent !important;
+	font: inherit;
+	font-size: 16px;
+	line-height: 1.5;
+	color: var(--cortex-text, #09090b);
+	padding: 0;
+}
+.ch-input::placeholder {
+	color: var(--cortex-text-muted, #71717a);
+}
+.ch-composer-row {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 12px;
+	margin-top: 6px;
+}
+.ch-hint {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--cortex-text-muted, #71717a);
+}
+.ch-send {
+	flex: none;
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	border: 0;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--cortex-emerald-700, #047857);
+	color: #fff;
+	transition: background 0.15s, transform 0.15s, opacity 0.15s;
+}
+.ch-send:hover:not(:disabled) {
+	background: var(--cortex-emerald-800, #065f34);
+	transform: translateY(-1px);
+}
+.ch-send:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+}
+
+/* ---- Sous la saisie ---- */
+.ch-below {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3, 12px);
+}
+.ch-chips,
+.ch-prompts,
+.ch-tiles,
+.ch-recent {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.ch-chips {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+}
+.ch-chip,
+.ch-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: 36px;
+	padding: 0 14px;
+	border-radius: 999px;
+	border: 1px solid var(--cortex-border, #e4e4e7);
+	background: var(--cortex-surface, #fff);
+	color: var(--cortex-text, #09090b);
+	font-size: 13px;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+.ch-chip:hover,
+.ch-link:hover {
+	border-color: var(--cortex-emerald-500, #10b981);
+	background: var(--cortex-emerald-50, #ecfdf5);
+}
+.ch-chip-accent {
+	border-color: var(--cortex-emerald-600, #059669);
+	color: var(--cortex-emerald-700, #047857);
+	font-weight: 600;
+}
+.ch-link {
+	border: 0;
+	background: transparent;
+	color: var(--cortex-text-secondary, #52525b);
+	padding: 0 8px;
+}
+.ch-section {
+	margin: var(--space-4, 16px) 0 0;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--cortex-text-muted, #71717a);
+}
+.ch-prompts {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+	gap: 10px;
+}
+.ch-prompt {
+	width: 100%;
+	text-align: left;
+	padding: 14px 16px;
+	border-radius: 14px;
+	border: 1px solid var(--cortex-border, #e4e4e7);
+	background: var(--cortex-surface, #fff);
+	font: inherit;
+	font-size: 14px;
+	line-height: 1.4;
+	color: var(--cortex-text, #09090b);
+	cursor: pointer;
+	transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.ch-prompt:hover {
+	border-color: var(--cortex-emerald-500, #10b981);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 14px rgba(9, 9, 11, 0.06);
+}
+.ch-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+	gap: 10px;
+}
+.ch-tile {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 16px;
+	border-radius: 14px;
+	border: 1px solid var(--cortex-border, #e4e4e7);
+	background: var(--cortex-surface, #fff);
+	color: inherit;
+	text-decoration: none;
+	transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.ch-tile:hover {
+	border-color: var(--cortex-emerald-500, #10b981);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 14px rgba(9, 9, 11, 0.06);
+	text-decoration: none;
+}
+.ch-tile-icon {
+	display: inline-flex;
+	width: 36px;
+	height: 36px;
+	align-items: center;
+	justify-content: center;
+	border-radius: 10px;
+	background: var(--cortex-emerald-50, #ecfdf5);
+	color: var(--cortex-emerald-700, #047857);
+	flex: none;
+}
+.ch-tile-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+.ch-tile-text strong {
+	font-size: 14px;
+	font-weight: 600;
+}
+.ch-tile-text small {
+	font-size: 12px;
+	color: var(--cortex-text-muted, #71717a);
+}
+.ch-recent {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.ch-recent-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 10px 12px;
+	border: 0;
+	border-radius: 10px;
+	background: transparent;
+	font: inherit;
+	font-size: 14px;
+	color: var(--cortex-text-secondary, #52525b);
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+.ch-recent-item:hover {
+	background: var(--cortex-surface-subtle, #f4f4f5);
+	color: var(--cortex-text, #09090b);
+}
+.ch-setup {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 14px 16px;
+	border: 1px solid var(--cortex-emerald-200, #a7f3d0);
+	border-radius: 14px;
+	background: var(--cortex-emerald-50, #ecfdf5);
+	font-size: 14px;
+}
+.ch-setup div {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.ch-setup span {
+	color: var(--cortex-text-secondary, #52525b);
+	font-size: 13px;
+}
+.ch-note {
+	margin: 0;
+	font-size: 13px;
+	color: var(--cortex-text-muted, #71717a);
+	text-align: center;
+}
+
+/* ---- Conversation ---- */
+.ch-thread {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2, 8px);
+}
+.ch-thread .cp-conversation {
+	padding: 0;
+	overflow: visible;
+}
+.cortex-home.is-chat .ch-composer {
+	position: sticky;
+	bottom: 16px;
+	z-index: 5;
+}
+
+@media (max-width: 640px) {
+	.ch-hint {
+		display: none;
+	}
+	.ch-setup {
+		flex-direction: column;
+		align-items: stretch;
+	}
+}

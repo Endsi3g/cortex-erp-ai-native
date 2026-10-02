@@ -176,9 +176,66 @@ def before_migrate() -> None:
     ensure_prerequisites()
 
 
+# Les rôles Cortex doivent lire les clients de leur société (liste, rapports, fiches de location). Le filtre par
+# société reste imposé par `customer_query_conditions`; ici on n'ajoute que les droits de base.
+CUSTOMER_EDITORS = ("Rental Manager", "Cortex Operations Manager", "Cortex Counter Staff")
+CUSTOMER_READERS = (
+    "Rental Operator",
+    "Cortex Finance Manager",
+    "Cortex Consignment Manager",
+    "Cortex Account Reviewer",
+    "Auditor",
+)
+
+
+SERIAL_READERS = (
+    "Rental Manager",
+    "Cortex Operations Manager",
+    "Cortex Counter Staff",
+    "Rental Operator",
+    "Cortex Finance Manager",
+    "Cortex Consignment Manager",
+    "Cortex Account Reviewer",
+)
+SERIAL_EDITORS = ("Cortex Inventory Manager",)
+
+
+def _grant(doctype: str, role: str, rights: tuple) -> None:
+    if not frappe.db.exists("Role", role):
+        return
+    from frappe.permissions import add_permission, update_permission_property
+
+    add_permission(doctype, role, 0)
+    for right in rights:
+        update_permission_property(doctype, role, 0, right, 1)
+
+
+def ensure_customer_permissions() -> None:
+    """Accorde aux rôles Cortex l'accès aux clients et aux numéros de série (idempotent, à l'installation et à chaque
+    migration). Le cloisonnement par société reste imposé par les permissions d'utilisateur et `customer_query_conditions`.
+    """
+    if not frappe or not getattr(frappe, "db", None):
+        return
+    if frappe.db.exists("DocType", "Customer"):
+        for role in CUSTOMER_EDITORS:
+            _grant("Customer", role, ("read", "write", "create", "report", "export", "print", "email"))
+        for role in CUSTOMER_READERS:
+            _grant("Customer", role, ("read", "report", "export", "print"))
+    if frappe.db.exists("DocType", "Serial No"):
+        for role in SERIAL_READERS:
+            _grant("Serial No", role, ("read", "report", "export"))
+        for role in SERIAL_EDITORS:
+            _grant("Serial No", role, ("read", "write", "create", "report", "export", "print"))
+
+
 def after_migrate() -> None:
     ensure_prerequisites()
+    ensure_customer_permissions()
 
 
 def after_install() -> None:
     ensure_prerequisites()
+    ensure_customer_permissions()
+    from cortex_rental.auth_setup import run_all
+
+    run_all()

@@ -5,17 +5,24 @@
   "custom": 0,
   "is_submittable": 0,
   "track_changes": 1,
+  "is_calendar_and_gantt": 1,
+  "title_field": "customer",
   "autoname": "CR-TRX-.YYYY.-.#####",
   "naming_rule": "Expression (old style)",
   "engine": "InnoDB",
   "fields": [
+    {
+      "fieldname": "sb_rental",
+      "fieldtype": "Section Break",
+      "label": "Client et projet"
+    },
     {
       "fieldname": "company",
       "fieldtype": "Link",
       "label": "Company",
       "options": "Company",
       "reqd": 1,
-      "in_list_view": 1,
+      "in_list_view": 0,
       "in_standard_filter": 1
     },
     {
@@ -26,6 +33,10 @@
       "reqd": 1,
       "in_list_view": 1,
       "in_standard_filter": 1
+    },
+    {
+      "fieldname": "cb_rental",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "project_name",
@@ -40,20 +51,18 @@
       "options": "Quote\nReservation\nContract\nChecked Out\nReturned\nClosed\nCancelled\nDisputed\nQuarantine",
       "default": "Quote",
       "reqd": 1,
-      "in_list_view": 1,
+      "in_list_view": 0,
       "in_standard_filter": 1
+    },
+    {
+      "fieldname": "sb_period",
+      "fieldtype": "Section Break",
+      "label": "Période"
     },
     {
       "fieldname": "starts_at",
       "fieldtype": "Datetime",
       "label": "Starts At",
-      "reqd": 1,
-      "in_list_view": 1
-    },
-    {
-      "fieldname": "ends_at",
-      "fieldtype": "Datetime",
-      "label": "Ends At",
       "reqd": 1,
       "in_list_view": 1
     },
@@ -64,10 +73,26 @@
       "read_only": 1
     },
     {
+      "fieldname": "cb_period",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "ends_at",
+      "fieldtype": "Datetime",
+      "label": "Ends At",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
       "fieldname": "billable_days",
       "fieldtype": "Float",
       "label": "Billable Days",
       "read_only": 1
+    },
+    {
+      "fieldname": "sb_readiness",
+      "fieldtype": "Section Break",
+      "label": "Préparation avant le contrat"
     },
     {
       "fieldname": "customer_account_ready",
@@ -76,10 +101,18 @@
       "default": "0"
     },
     {
+      "fieldname": "cb_ready_2",
+      "fieldtype": "Column Break"
+    },
+    {
       "fieldname": "insurance_ready",
       "fieldtype": "Check",
       "label": "Insurance Validated",
       "default": "0"
+    },
+    {
+      "fieldname": "cb_ready_3",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "payment_ready",
@@ -88,10 +121,19 @@
       "default": "0"
     },
     {
+      "fieldname": "sb_items",
+      "fieldtype": "Section Break"
+    },
+    {
       "fieldname": "items",
       "fieldtype": "Table",
       "label": "Rental Items",
       "options": "Cortex Rental Transaction Item"
+    },
+    {
+      "fieldname": "sb_totals",
+      "fieldtype": "Section Break",
+      "label": "Totaux"
     },
     {
       "fieldname": "subtotal",
@@ -103,7 +145,25 @@
       "fieldname": "tax_rate",
       "fieldtype": "Percent",
       "label": "Tax Rate (%)",
-      "default": "0.0"
+      "default": "0.0",
+      "read_only": 1,
+      "description": "Calculé par Cortex selon les réglages financiers de la société."
+    },
+    {
+      "fieldname": "tps_amount",
+      "fieldtype": "Currency",
+      "label": "TPS",
+      "read_only": 1
+    },
+    {
+      "fieldname": "tvq_amount",
+      "fieldtype": "Currency",
+      "label": "TVQ",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cb_totals",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "tax_amount",
@@ -119,18 +179,34 @@
       "in_list_view": 1
     },
     {
+      "fieldname": "sb_erpnext",
+      "fieldtype": "Section Break",
+      "label": "Documents comptables liés",
+      "collapsible": 1
+    },
+    {
       "fieldname": "erpnext_quotation",
       "fieldtype": "Link",
-      "label": "ERPNext Quotation",
+      "label": "Quotation",
       "options": "Quotation",
       "read_only": 1
     },
     {
+      "fieldname": "cb_erp",
+      "fieldtype": "Column Break"
+    },
+    {
       "fieldname": "erpnext_sales_order",
       "fieldtype": "Link",
-      "label": "ERPNext Sales Order",
+      "label": "Sales Order",
       "options": "Sales Order",
       "read_only": 1
+    },
+    {
+      "fieldname": "sb_notes",
+      "fieldtype": "Section Break",
+      "label": "Notes",
+      "collapsible": 1
     },
     {
       "fieldname": "notes",
@@ -153,21 +229,33 @@
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 1
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Rental Manager",
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 0
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     },
     {
       "role": "Rental Operator",
       "read": 1,
       "write": 1,
       "create": 1,
-      "delete": 0
+      "delete": 0,
+      "print": 1,
+      "email": 1
     },
     {
       "role": "Agent Service Account",
@@ -175,6 +263,66 @@
       "write": 0,
       "create": 0,
       "delete": 0
+    },
+    {
+      "role": "Cortex Operations Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
+    },
+    {
+      "role": "Cortex Counter Staff",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "print": 1,
+      "email": 1
+    },
+    {
+      "role": "Cortex Finance Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
+    },
+    {
+      "role": "Cortex Account Reviewer",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "share": 1
+    },
+    {
+      "role": "Cortex Inventory Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "share": 1
+    }
+  ],
+  "modified": "2026-09-30 23:10:00.000000",
+  "links": [
+    {
+      "link_doctype": "Cortex Rental Invoice",
+      "link_fieldname": "rental_transaction"
     }
   ]
 }
