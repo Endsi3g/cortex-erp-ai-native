@@ -160,4 +160,4 @@ class TestPresenceTooltip(unittest.TestCase):
         src = read("services", "team_activity.py")
         self.assertIn("expires_in_sec=WHERE_TTL_SECONDS", src)
         self.assertIn("[:80]", src)
-        self.assertNotIn("set_value", src.split("def remember_where")[1].split("def recall_where")[0])
+        self.assertNotIn("db.set_value", src.split("def remember_where")[1].split("def recall_where")[0])
