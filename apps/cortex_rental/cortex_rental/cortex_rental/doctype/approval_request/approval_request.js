@@ -9,6 +9,13 @@ frappe.ui.form.on("Approval Request", {
 			return;
 		}
 		frm.disable_save(); // une décision se prend avec les boutons, jamais en enregistrant le formulaire
+		// Le code interne (« rental.transaction.transition_to_contract ») n'est jamais montré : un résumé lisible le remplace.
+		frm.toggle_display("action", false);
+		if (!frm.is_new()) {
+			const esc = frappe.utils.escape_html;
+			frm.layout.wrapper.find(".cx-appr-summary").remove();
+			frm.layout.wrapper.prepend(`<div class="cx-appr-summary"><b>${esc(cortex.approvalActionLabel(frm.doc.action))}</b><span>${frm.doc.entity_id ? `<a href="/app/${frappe.router.slug(frm.doc.entity_type)}/${encodeURIComponent(frm.doc.entity_id)}">${esc(frm.doc.entity_id)}</a> · ` : ""}${__("demandée par")} ${esc(frm.doc.requested_by_id || "")}</span></div>`);
+		}
 		const entry = cortex.APPROVAL_STATES[frm.doc.status];
 		if (entry && !frm.is_new()) frm.page.set_indicator(entry[0], entry[1]);
 		if (frm.is_new() || frm.doc.status !== "Pending") return;
@@ -20,6 +27,7 @@ frappe.ui.form.on("Approval Request", {
 			if (o.can_approve) frm.add_custom_button(__("Approuver"), () => decide(frm, "approve")).removeClass("btn-default").addClass("btn-primary");
 			if (o.can_reject) frm.add_custom_button(__("Refuser"), () => decide(frm, "reject"));
 			if (o.can_withdraw) frm.add_custom_button(__("Retirer ma demande"), () => decide(frm, "withdraw"));
+			if (o.can_explain_policy) frm.add_custom_button(__("Comprendre et décider"), () => cortex.selfApprovalDialog(() => frm.reload_doc()));
 			if (frm.doc.entity_type && frm.doc.entity_id) {
 				frm.add_custom_button(__("Ouvrir l'élément concerné"), () => frappe.set_route("Form", frm.doc.entity_type, frm.doc.entity_id));
 			}

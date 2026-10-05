@@ -99,6 +99,7 @@ if frappe:
     @frappe.whitelist(methods=["GET"])
     def decision_options(name: str):
         """Ce que la personne connectée peut faire de cette demande (le serveur reste seul juge à la décision)."""
+        from cortex_rental.services import approval_policy
         from cortex_rental.cortex_rental.doctype.approval_request.approval_request import (
             APPROVER_ROLES,
             other_approvers,
@@ -115,21 +116,48 @@ if frappe:
         if not pending:
             return {"can_approve": False, "can_reject": False, "can_withdraw": False, "note": ""}
         if mine:
-            sole = is_approver and sole_approver_may_self_approve(doc.company, user)
-            note = (
-                "Vous êtes la seule personne autorisée de votre société : votre approbation sera notée comme une auto-approbation."
-                if sole
-                else (
-                    "Vous avez fait cette demande : une autre personne autorisée doit la décider."
+            sole_allowed = is_approver and sole_approver_may_self_approve(doc.company, user)
+            alone = not other_approvers(doc.company, user)
+            policy = approval_policy.get_policy(doc.company, user)
+            if sole_allowed:
+                note = "Vous êtes la seule personne autorisée de votre société : votre approbation sera notée comme une auto-approbation."
+            elif alone:
+                note = (
+                    "Vous êtes la seule personne autorisée de votre société : personne ne peut approuver cette demande. "
+                    "Ajoutez une personne autorisée dans « Équipe et rôles »"
                     + (
-                        ""
-                        if other_approvers(doc.company, user)
-                        else " Aucune autre personne autorisée n'existe dans votre société : ajoutez-en une dans « Équipe et rôles »."
+                        " ou lisez ce que change l'auto-approbation avant de l'activer."
+                        if policy["can_manage"]
+                        else "."
                     )
                 )
-            )
-            return {"can_approve": sole, "can_reject": False, "can_withdraw": True, "self_approval": sole, "note": note}
+            else:
+                note = "Vous avez fait cette demande : une autre personne autorisée doit la décider."
+            return {
+                "can_approve": sole_allowed,
+                "can_reject": False,
+                "can_withdraw": True,
+                "self_approval": sole_allowed,
+                "can_explain_policy": bool(alone and policy["can_manage"] and not sole_allowed),
+                "note": note,
+            }
         return {"can_approve": is_approver, "can_reject": is_approver, "can_withdraw": False, "note": ""}
+
+    @frappe.whitelist(methods=["GET"])
+    def self_approval_policy():
+        """État de la règle « le seul approbateur décide de ses propres demandes », avec ses bénéfices et ses dangers."""
+        from cortex_rental.services import approval_policy
+
+        return approval_policy.get_policy(get_company_context(), frappe.session.user)
+
+    @frappe.whitelist(methods=["POST"])
+    def set_self_approval(enabled: int = 0, acknowledged: int = 0):
+        """Active ou désactive la règle (propriétaire seulement). L'activation exige d'avoir confirmé la lecture des risques."""
+        from cortex_rental.services import approval_policy
+
+        return approval_policy.set_self_approval(
+            get_company_context(), frappe.session.user, bool(int(enabled)), bool(int(acknowledged))
+        )
 
     @frappe.whitelist(methods=["POST"])
     def decide_approval(name: str, decision: str, reason: str = None):

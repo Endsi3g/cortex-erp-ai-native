@@ -197,6 +197,14 @@ Principe : un événement saisi à un endroit doit se voir partout où il compte
 
 La pilule de la barre du haut n'affiche que les avatars des personnes en ligne avec leur point vert (aucun texte « N en ligne »). Au survol ou au focus, une infobulle liste chaque personne et ce qu'elle fait : l'écran affiché (« Disponibilité · Lighting », « Locations · CR-TRX-… »), sinon sa dernière action. L'écran est envoyé par le battement de cœur (`presence.ping(where)`), gardé 3 minutes en mémoire (texte brut, 80 caractères, jamais écrit dans un dossier) et visible seulement par les membres de la même société. Un clic ouvre toujours l'activité récente de l'équipe.
 
+## Auto-approbation, export, logo, statistiques allégées (2026-10-06)
+
+- **Auto-approbation du propriétaire seul : désactivée par défaut** (patch `disable_sole_approver_default` remet à zéro l'ancien défaut). Chaque société l'active elle-même, **seul le propriétaire**, après avoir lu une fenêtre qui explique ce que cela change (`services/approval_policy.py` : bénéfices, dangers, conseil) et coché « J'ai compris les risques » ; le serveur refuse l'activation sans cette confirmation et l'inscrit à l'audit (`cortex.approvals.self_approval_changed`). La fenêtre est offerte depuis un bandeau de la liste des approbations (quand la personne est la seule autorisée), depuis le formulaire d'une demande bloquée (« Comprendre et décider ») et depuis *Mon compte › Société et rôles*. La règle des deux personnes revient d'elle-même dès qu'une autre personne autorisée existe.
+- **Libellé lisible** : le code interne de l'action (`rental.transaction.transition_to_contract`) n'est plus montré; le formulaire affiche « Confirmer un contrat · CR-TRX-… · demandée par … » (`cortex.approvalActionLabel`).
+- **Statistiques allégées** : un résumé (4 chiffres et le graphique), puis une ligne pliable par domaine avec son résumé (Locations, Matériel, Facturation, Approbations, IA); le détail des tuiles se déplie à la demande.
+- **Exporter** : un seul bouton « Exporter » ouvre une fenêtre qui demande **PDF ou CSV** (`cortex.exportData`, `public/js/cortex_export.js`). Le PDF est généré dans le navigateur (lettre à l'horizontale, pagination, accents; aucun service externe). Disponible sur *Activité* (moi ou équipe, jusqu'à 500 lignes) et *Mes approbations*. Vérifié : PDF ouvert et lu, CSV téléchargé.
+- **Logo de la société** : étape « Ajouter le logo de votre entreprise » dans le guide de démarrage, carte « Logo de la société » (propriétaire seulement) dans *Société et rôles*; PNG, JPEG ou WebP de 2 Mo au plus (SVG refusé), copie publique, audit; il s'affiche dans la barre latérale, les devis envoyés et l'accueil. **L'onboarding complet reste à concevoir avec Kael** (le guide actuel est une liste d'étapes natives).
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

@@ -82,10 +82,11 @@ class TestApprovalRules(unittest.TestCase):
         self.assertIn("self_approved", src)
         self.assertIn("Retirer ma demande", src)
 
-    def test_the_sole_approver_rule_is_a_company_setting_on_by_default(self):
+    def test_the_sole_approver_rule_is_a_company_setting_off_by_default(self):
         data = json.loads(read("cortex_rental", "doctype", "cortex_finance_settings", "cortex_finance_settings.json"))
         field = next(f for f in data["fields"] if f["fieldname"] == "allow_sole_approver_self_approval")
-        self.assertEqual(field["default"], "1")
+        self.assertEqual(field["default"], "0")
+        self.assertIn("if not flag", read("cortex_rental", "doctype", "approval_request", "approval_request.py"))
 
     def test_withdraw_is_for_the_author_only(self):
         src = read("cortex_rental", "doctype", "approval_request", "approval_request.py")
@@ -161,3 +162,48 @@ class TestPresenceTooltip(unittest.TestCase):
         self.assertIn("expires_in_sec=WHERE_TTL_SECONDS", src)
         self.assertIn("[:80]", src)
         self.assertNotIn("db.set_value", src.split("def remember_where")[1].split("def recall_where")[0])
+
+
+class TestApprovalPolicyAndExport(unittest.TestCase):
+    def test_enabling_the_rule_needs_the_owner_and_an_acknowledgement_and_is_audited(self):
+        src = read("services", "approval_policy.py")
+        self.assertIn("can_manage_team(user)", src)
+        self.assertIn("if enabled and not acknowledged", src)
+        self.assertIn("cortex.approvals.self_approval_changed", src)
+
+    def test_benefits_and_dangers_are_written_once_and_shown_in_the_dialog(self):
+        src = read("services", "approval_policy.py")
+        self.assertIn("BENEFITS", src)
+        self.assertIn("DANGERS", src)
+        dialog = read("public", "js", "cortex_policy.js")
+        self.assertIn("p.benefits", dialog)
+        self.assertIn("p.dangers", dialog)
+        self.assertIn("J'ai compris les risques", dialog)
+
+    def test_a_patch_resets_the_old_default(self):
+        self.assertIn("disable_sole_approver_default", read("patches.txt"))
+
+    def test_the_internal_action_code_is_never_shown_on_the_approval_form(self):
+        form = read("cortex_rental", "doctype", "approval_request", "approval_request.js")
+        self.assertIn('frm.toggle_display("action", false)', form)
+        self.assertIn("approvalActionLabel", form)
+
+    def test_export_is_one_button_that_asks_for_the_format(self):
+        page = read("cortex_rental", "page", "cortex_account", "cortex_account.js")
+        self.assertNotIn("Télécharger (CSV)", page)
+        self.assertIn("cortex.exportData", page)
+        export = read("public", "js", "cortex_export.js")
+        self.assertIn("buildPdf", export)
+        self.assertIn("buildCsv", export)
+        self.assertIn('choice("pdf"', export)
+
+    def test_the_logo_is_owner_only_public_and_never_svg(self):
+        src = read("services", "administration.py").split("def set_company_logo")[1].split("# ---- appareils")[0]
+        self.assertIn("_require_team_admin(company)", src)
+        self.assertIn('LOGO_EXT = (".png", ".jpg", ".jpeg", ".webp")', read("services", "administration.py"))
+        self.assertIn('"is_private": 0', src)
+        self.assertIn("cortex.company.logo_changed", src)
+
+    def test_the_logo_is_a_step_of_the_onboarding(self):
+        data = json.loads(read("cortex_rental", "module_onboarding", "cortex_rental", "cortex_rental.json"))
+        self.assertIn("Ajouter le logo de votre entreprise", [s["step"] for s in data["steps"]])

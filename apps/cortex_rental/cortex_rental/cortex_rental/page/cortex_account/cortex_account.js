@@ -73,8 +73,8 @@ cortex.AccountPage = class AccountPage {
 	}
 
 	// Carte pliable : le titre reste visible, le contenu se replie (pour garder la page courte).
-	fold(title, hint, inner, open, count) {
-		return $(`<section class="cx-acct-card cx-fold"><details${open ? " open" : ""}><summary><span><h2>${title}</h2>${hint ? `<p>${hint}</p>` : ""}</span>${count != null ? `<em class="cx-fold-count">${count}</em>` : '<em class="cx-fold-count"></em>'}<i class="cx-fold-chev" aria-hidden="true"></i></summary><div class="cx-fold-body">${inner}</div></details></section>`);
+	fold(title, hint, inner, open, count, summary) {
+		return $(`<section class="cx-acct-card cx-fold"><details${open ? " open" : ""}><summary><span><h2>${title}</h2>${hint ? `<p>${hint}</p>` : ""}</span>${summary ? `<em class="cx-fold-sum">${summary}</em>` : ""}${count != null ? `<em class="cx-fold-count">${count}</em>` : '<em class="cx-fold-count"></em>'}<i class="cx-fold-chev" aria-hidden="true"></i></summary><div class="cx-fold-body">${inner}</div></details></section>`);
 	}
 
 	field(id, label, value, attrs) {
@@ -240,27 +240,34 @@ cortex.AccountPage = class AccountPage {
 		this.fillStats(holder);
 	}
 
+	// Page allégée : un graphique, puis une ligne par domaine avec son résumé ; le détail (les tuiles) se déplie à la demande.
 	fillStats(holder) {
 		this.call("stats", { period: this.period }).then((s) => {
 			const w = s.work, a = s.approvals, e = s.equipment, m = s.money, c = s.conversion;
 			const go = (kind, page) => ({ page: page || "activite", kind, period: this.period });
 			const k = (l, v, sub, tone, g) => this.kpi(l, v, sub, tone, g);
-			// Les tuiles se répartissent en rangées égales (8 tuiles : 4 + 4), sans trou à droite.
-			const group = (title, hint, inner) => {
+			const tiles = (inner) => {
 				const count = (inner.match(/class="cx-kpi(?![-\w])/g) || []).length - (inner.match(/class="cx-kpi wide/g) || []).length;
-				const cols = count <= 6 ? Math.max(count, 1) : Math.ceil(count / 2);
-				return `<section class="cx-acct-card"><header><h2>${title}</h2>${hint ? `<p>${hint}</p>` : ""}</header><div class="cx-kpis" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${inner}</div></section>`;
+				const cols = count <= 4 ? Math.max(count, 1) : Math.ceil(count / 2);
+				return `<div class="cx-kpis" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${inner}</div>`;
 			};
+			const row = (title, summary, inner, open) => this.fold(title, "", tiles(inner), open, null, summary);
 			const max = Math.max(1, ...s.daily.map((d) => d.count));
 			const bars = s.daily.map((d) => `<i title="${this.esc(d.date)} : ${d.count}" style="height:${Math.max(3, Math.round((d.count / max) * 100))}%" class="${d.count ? "on" : ""}"></i>`).join("");
 			const top = e.top_items.length ? `<ol class="cx-top">${e.top_items.map((t) => `<li><span>${this.esc(t.item)}</span><b>${this.n(t.units)} ${__("unités")}</b></li>`).join("")}</ol>` : "";
-			holder.find(".cx-acct-statsbody").html(
-				`<section class="cx-acct-card"><header><h2>${__("Activité des 30 derniers jours")}</h2><p>${this.n(s.actions_total)} ${__("actions")} · ${this.n(s.logins)} ${__("connexions")} (${s.since ? __("depuis le {0}", [this.esc(s.since)]) : __("depuis toujours")}) · <a href="#" data-go="activite" data-period="${this.period}">${__("Voir le détail : qui a fait quoi")}</a></p></header><div class="cx-bars" role="img" aria-label="${__("Actions par jour")}">${bars}</div><div class="cx-bars-axis"><span>${this.esc(s.daily[0].date)}</span><span>${this.esc(s.daily[s.daily.length - 1].date)}</span></div></section>` +
-					group(__("Locations"), "", k(__("Devis créés"), this.n(w.quotes_created), c.rate == null ? "" : `${c.rate} % ${__("devenus réservations")}`, "", go("quotes_created")) + k(__("Réservations"), this.n(w.reservations), "", "", go("reservations")) + k(__("Contrats confirmés"), this.n(w.contracts), "", "", go("contracts")) + k(__("Clôturées"), this.n(w.closed), "", "", go("closed")) + k(__("Annulées"), this.n(w.cancelled), "", "", go("cancelled")) + k(__("Litiges ouverts"), this.n(w.disputes), "", w.disputes ? "warn" : "", go("disputes")) + k(__("Devis partagés"), this.n(w.quotes_shared), "", "", go("quotes_shared")) + k(__("Clients ajoutés"), this.n(w.customers_added), "", "", go("customers_added"))) +
-					group(__("Matériel emprunté"), "", k(__("Locations sorties"), this.n(e.rentals_checked_out), "", "", go("checkouts")) + k(__("Unités sorties"), this.n(e.units_checked_out)) + k(__("Unités retournées"), this.n(e.units_returned), "", "", go("returns")) + k(__("Retours abîmés"), this.n(e.returns_with_damage), "", e.returns_with_damage ? "warn" : "") + k(__("Manquants"), this.n(e.items_missing), "", e.items_missing ? "warn" : "") + (top ? `<div class="cx-kpi wide"><span class="cx-kpi-l">${__("Équipements les plus sortis")}</span>${top}</div>` : "")) +
-					group(__("Facturation"), "", k(__("Factures émises"), this.n(w.invoices_issued), "", "", go("invoices_issued")) + k(__("Paiements enregistrés"), this.n(w.payments_recorded), this.money(m.payments_recorded), "", go("payments_recorded")) + k(__("Valeur des devis créés"), this.money(m.quoted_value))) +
-					group(__("Approbations"), "", k(__("Demandées par moi"), this.n(a.requested), "", "", { page: "approbations" }) + k(__("Approuvées par moi"), this.n(a.approved_by_me), "", "", { page: "approbations" }) + k(__("Refusées par moi"), this.n(a.rejected_by_me), "", "", { page: "approbations" }) + k(__("Retirées"), this.n(a.withdrawn), "", "", { page: "approbations" }) + k(__("Mes demandes en attente"), this.n(a.my_requests_pending), "", a.my_requests_pending ? "warn" : "", { page: "approbations" }) + k(__("À décider (autres)"), this.n(a.mine_to_decide), "", a.mine_to_decide ? "warn" : "", { page: "approbations" })) +
-					group(__("Assistant IA"), "", s.ai.visible ? k(__("Demandes"), this.n(s.ai.calls)) + k(__("Jetons"), this.n(s.ai.tokens)) + k(__("Coût"), this.money(s.ai.cost)) : `<p class="cx-acct-muted">${__("Votre rôle ne donne pas accès à l'usage de l'IA.")}</p>`)
+			const pieces = (...p) => p.filter(Boolean).join(" · ");
+			const top3 = this.card(
+				__("Résumé"),
+				`${this.n(s.actions_total)} ${__("actions")} · ${this.n(s.logins)} ${__("connexions")} · ${s.since ? __("depuis le {0}", [this.esc(s.since)]) : __("depuis toujours")} · <a href="#" data-go="activite" data-period="${this.period}">${__("Voir le détail : qui a fait quoi")}</a>`,
+				`<div class="cx-headline">${[[__("Devis créés"), w.quotes_created, c.rate == null ? "" : `${c.rate} % ${__("devenus réservations")}`], [__("Réservations"), w.reservations, ""], [__("Locations sorties"), e.rentals_checked_out, ""], [__("Paiements enregistrés"), this.money(m.payments_recorded), ""]].map(([l, v, sub]) => `<div><b>${typeof v === "number" ? this.n(v) : v}</b><span>${l}</span>${sub ? `<small>${sub}</small>` : ""}</div>`).join("")}</div><div class="cx-bars" role="img" aria-label="${__("Actions par jour")}">${bars}</div><div class="cx-bars-axis"><span>${this.esc(s.daily[0].date)}</span><span>${this.esc(s.daily[s.daily.length - 1].date)}</span></div>`
+			);
+			holder.find(".cx-acct-statsbody").empty().append(
+				top3,
+				row(__("Locations"), pieces(`${this.n(w.quotes_created)} ${__("devis")}`, `${this.n(w.contracts)} ${__("contrats")}`, `${this.n(w.closed)} ${__("clôturées")}`), k(__("Devis créés"), this.n(w.quotes_created), "", "", go("quotes_created")) + k(__("Réservations"), this.n(w.reservations), "", "", go("reservations")) + k(__("Contrats confirmés"), this.n(w.contracts), "", "", go("contracts")) + k(__("Clôturées"), this.n(w.closed), "", "", go("closed")) + k(__("Annulées"), this.n(w.cancelled), "", "", go("cancelled")) + k(__("Litiges ouverts"), this.n(w.disputes), "", w.disputes ? "warn" : "", go("disputes")) + k(__("Devis partagés"), this.n(w.quotes_shared), "", "", go("quotes_shared")) + k(__("Clients ajoutés"), this.n(w.customers_added), "", "", go("customers_added")), false),
+				row(__("Matériel emprunté"), pieces(`${this.n(e.units_checked_out)} ${__("unités sorties")}`, `${this.n(e.units_returned)} ${__("retournées")}`, e.returns_with_damage || e.items_missing ? `${this.n(e.returns_with_damage + e.items_missing)} ${__("à surveiller")}` : ""), k(__("Locations sorties"), this.n(e.rentals_checked_out), "", "", go("checkouts")) + k(__("Unités sorties"), this.n(e.units_checked_out)) + k(__("Unités retournées"), this.n(e.units_returned), "", "", go("returns")) + k(__("Retours abîmés"), this.n(e.returns_with_damage), "", e.returns_with_damage ? "warn" : "") + k(__("Manquants"), this.n(e.items_missing), "", e.items_missing ? "warn" : "") + (top ? `<div class="cx-kpi wide"><span class="cx-kpi-l">${__("Équipements les plus sortis")}</span>${top}</div>` : "")),
+				row(__("Facturation"), pieces(`${this.n(w.invoices_issued)} ${__("factures")}`, this.money(m.quoted_value) + " " + __("de devis")), k(__("Factures émises"), this.n(w.invoices_issued), "", "", go("invoices_issued")) + k(__("Paiements enregistrés"), this.n(w.payments_recorded), this.money(m.payments_recorded), "", go("payments_recorded")) + k(__("Valeur des devis créés"), this.money(m.quoted_value))),
+				row(__("Approbations"), pieces(`${this.n(a.approved_by_me + a.rejected_by_me)} ${__("décisions")}`, `${this.n(a.requested)} ${__("demandes")}`, a.my_requests_pending ? `${this.n(a.my_requests_pending)} ${__("en attente")}` : ""), k(__("Demandées par moi"), this.n(a.requested), "", "", { page: "approbations" }) + k(__("Approuvées par moi"), this.n(a.approved_by_me), "", "", { page: "approbations" }) + k(__("Refusées par moi"), this.n(a.rejected_by_me), "", "", { page: "approbations" }) + k(__("Retirées"), this.n(a.withdrawn), "", "", { page: "approbations" }) + k(__("Mes demandes en attente"), this.n(a.my_requests_pending), "", a.my_requests_pending ? "warn" : "", { page: "approbations" }) + k(__("À décider (autres)"), this.n(a.mine_to_decide), "", a.mine_to_decide ? "warn" : "", { page: "approbations" })),
+				s.ai.visible ? row(__("Assistant IA"), pieces(`${this.n(s.ai.calls)} ${__("demandes")}`, this.money(s.ai.cost)), k(__("Demandes"), this.n(s.ai.calls)) + k(__("Jetons"), this.n(s.ai.tokens)) + k(__("Coût"), this.money(s.ai.cost))) : $()
 			);
 		});
 	}
@@ -281,8 +288,27 @@ cortex.AccountPage = class AccountPage {
 			const pending = r.requested.filter((x) => x.status === "Pending").length;
 			const headDecided = [__("Demande"), __("Élément"), __("Statut"), __("Demandée par"), __("Décidée le"), __("Motif")];
 			const headAsked = [__("Demande"), __("Élément"), __("Statut"), __("Décidée par"), __("Décidée le"), __("Motif")];
+			const exportRows = r.decided.map((x) => ({ type: __("Décision"), ...x })).concat(r.requested.map((x) => ({ type: __("Demande"), ...x })));
+			holder.on("click", "[data-act=export]", () =>
+				cortex.exportData({
+					title: __("Mes approbations"),
+					subtitle: `${r.decided.length} ${__("décision(s)")} · ${r.requested.length} ${__("demande(s)")}`,
+					filename: "mes-approbations",
+					columns: [
+						{ key: "type", label: __("Type"), weight: 0.9 },
+						{ key: "what", label: __("Demande"), weight: 1.8 },
+						{ key: "entity_id", label: __("Élément"), weight: 1.5 },
+						{ key: "status_label", label: __("Statut"), weight: 1 },
+						{ key: "requested_by", label: __("Demandée par"), weight: 1.7 },
+						{ key: "decided_by", label: __("Décidée par"), weight: 1.7 },
+						{ key: "decided_at", label: __("Décidée le"), weight: 1.2 },
+						{ key: "reason", label: __("Motif"), weight: 2 },
+					],
+					rows: exportRows,
+				})
+			);
 			holder.empty().append(
-				this.card("", "", `<div class="cx-kpis inline">${this.kpi(__("Approuvées par moi"), this.n(approved))}${this.kpi(__("Refusées par moi"), this.n(rejected))}${this.kpi(__("Mes demandes"), this.n(r.requested.length))}${this.kpi(__("En attente"), this.n(pending), "", pending ? "warn" : "")}</div><div class="cx-cta-row"><a class="btn btn-primary btn-sm" href="/app/approval-request">${__("Demander une approbation")}</a><a class="btn btn-default btn-sm" href="/app/approval-request?status=Pending">${__("Voir celles à décider")}</a></div>`),
+				this.card("", "", `<div class="cx-kpis inline">${this.kpi(__("Approuvées par moi"), this.n(approved))}${this.kpi(__("Refusées par moi"), this.n(rejected))}${this.kpi(__("Mes demandes"), this.n(r.requested.length))}${this.kpi(__("En attente"), this.n(pending), "", pending ? "warn" : "")}</div><div class="cx-cta-row"><a class="btn btn-primary btn-sm" href="/app/approval-request">${__("Demander une approbation")}</a><a class="btn btn-default btn-sm" href="/app/approval-request?status=Pending">${__("Voir celles à décider")}</a><button type="button" class="btn btn-default btn-sm cx-push" data-act="export">${__("Exporter")}</button></div>`),
 				this.card(__("Mes décisions"), __("Les demandes des autres que vous avez approuvées ou refusées, avec le motif."), r.decided.length ? this.table(headDecided, rows(r.decided, "asked")) : this.empty(__("Aucune décision pour l'instant."))),
 				this.card(__("Mes demandes"), __("Ce que vous avez soumis, et ce qui en est advenu."), r.requested.length ? this.table(headAsked, rows(r.requested, "decided")) : this.empty(__("Aucune demande pour l'instant.")))
 			);
@@ -301,7 +327,7 @@ cortex.AccountPage = class AccountPage {
 				<div class="cx-seg" role="group" aria-label="${__("Qui")}"><button type="button" data-scope="me" class="${this.hist.scope === "me" ? "on" : ""}">${__("Moi")}</button><button type="button" data-scope="team" class="${this.hist.scope === "team" ? "on" : ""}" hidden>${__("Toute l'équipe")}</button></div>
 				<label class="cx-acct-inline"><span>${__("Action")}</span><select id="cx-h-kind">${kinds.map(([v, l]) => `<option value="${v}"${v === this.hist.kind ? " selected" : ""}>${l}</option>`).join("")}</select></label>
 				${this.periodSelect(this.hist.period, "cx-h-period")}
-				<button type="button" class="btn btn-default btn-sm cx-push" data-act="csv">${__("Télécharger (CSV)")}</button>
+				<button type="button" class="btn btn-default btn-sm cx-push" data-act="export">${__("Exporter")}</button>
 			</div>
 			<ul class="cx-acct-list cx-timeline"><li class="cx-acct-muted">${__("Chargement…")}</li></ul>
 			<div class="cx-acct-actions center"><button type="button" class="btn btn-default btn-sm" data-act="more" hidden>${__("Voir plus")}</button><span class="cx-acct-muted" data-role="count"></span></div>`
@@ -318,7 +344,7 @@ cortex.AccountPage = class AccountPage {
 			reload();
 		});
 		card.on("click", "[data-act=more]", () => this.loadHistory(card, false));
-		card.on("click", "[data-act=csv]", () => this.exportHistory());
+		card.on("click", "[data-act=export]", () => this.exportHistory());
 		this.$body.append(card);
 		this.loadHistory(card, true);
 	}
@@ -340,15 +366,32 @@ cortex.AccountPage = class AccountPage {
 		});
 	}
 
-	exportHistory() {
-		const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-		const lines = [["Date", "Personne", "Action", "Type", "Élément", "Détail", "Demandée par", "Confirmée par"].map(q).join(",")].concat(this.hist.items.map((a) => [a.at, a.actor, a.text, a.entity_type, a.entity_id, a.detail, a.requested_by, a.confirmed_by].map(q).join(",")));
-		const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
-		const link = document.createElement("a");
-		link.href = URL.createObjectURL(blob);
-		link.download = `historique-${this.hist.scope === "team" ? "equipe" : "personnel"}-${frappe.datetime.get_today()}.csv`;
-		link.click();
-		URL.revokeObjectURL(link.href);
+	// Un seul bouton : la fenêtre « Exporter » demande PDF ou CSV. On charge jusqu'à 500 lignes du filtre courant.
+	async exportHistory() {
+		const h = this.hist;
+		const rows = [];
+		let offset = 0;
+		for (let guard = 0; guard < 5; guard++) {
+			const r = await this.call("history", { category: "", kind: h.kind, period: h.period, limit: 100, offset, scope: h.scope });
+			rows.push(...r.items);
+			offset += r.items.length;
+			if (!r.has_more || !r.items.length) break;
+		}
+		const periods = { 7: __("7 jours"), 30: __("30 jours"), 90: __("90 jours"), 365: __("12 mois"), all: __("depuis toujours") };
+		cortex.exportData({
+			title: h.scope === "team" ? __("Activité de l'équipe") : __("Mon activité"),
+			subtitle: `${__("Période")} : ${periods[h.period] || h.period} · ${rows.length} ${__("ligne(s)")}`,
+			filename: h.scope === "team" ? "activite-equipe" : "mon-activite",
+			columns: [
+				{ key: "at", label: __("Date"), weight: 1.1 },
+				{ key: "actor", label: __("Personne"), weight: 1.3 },
+				{ key: "text", label: __("Action"), weight: 1.8 },
+				{ key: "entity_id", label: __("Élément"), weight: 1.5 },
+				{ key: "who", label: __("Demandée / confirmée par"), weight: 2 },
+				{ key: "detail", label: __("Détail"), weight: 2.2 },
+			],
+			rows: rows.map((a) => ({ ...a, who: [a.requested_by && `${__("demandée par")} ${a.requested_by}`, a.confirmed_by && `${__("confirmée par")} ${a.confirmed_by}`].filter(Boolean).join(" · ") })),
+		});
 	}
 
 	// ---------- Sécurité : une seule colonne ----------
@@ -528,6 +571,42 @@ cortex.AccountPage = class AccountPage {
 		this.$body.append(inbox, prefs, mail);
 	}
 
+	// Cartes réservées au propriétaire : logo de la société et règle d'auto-approbation (avec son explication).
+	ownerCards(after, d) {
+		const logo = this.card(
+			__("Logo de la société"),
+			__("Il apparaît dans la barre latérale, sur les devis envoyés à vos clients et à l'accueil de votre équipe. PNG, JPEG ou WebP, 2 Mo au plus."),
+			`<div class="cx-logo-row"><div class="cx-logo-preview">${d.company_logo ? `<img src="${this.esc(d.company_logo)}" alt="${__("Logo actuel")}">` : `<span class="cx-acct-muted">${__("Aucun logo")}</span>`}</div><div class="cx-hero-actions"><button type="button" class="btn btn-primary btn-sm" data-act="logo">${d.company_logo ? __("Changer le logo") : __("Ajouter un logo")}</button>${d.company_logo ? `<button type="button" class="btn btn-link btn-sm" data-act="logo-remove">${__("Retirer")}</button>` : ""}</div></div>`
+		);
+		const done = () => window.location.reload();
+		logo.on("click", "[data-act=logo]", () =>
+			new frappe.ui.FileUploader({
+				as_dataurl: false,
+				allow_multiple: false,
+				restrictions: { allowed_file_types: [".png", ".jpg", ".jpeg", ".webp"], max_file_size: 2 * 1024 * 1024 },
+				on_success: (file) =>
+					this.call("set_company_logo", { file_url: file.file_url }, "POST", "administration").then((r) => {
+						const data = (r && r.data) || r || {};
+						if (data.ok === false) return frappe.msgprint(this.esc(data.message || ""));
+						done();
+					}),
+			})
+		);
+		logo.on("click", "[data-act=logo-remove]", () => this.call("set_company_logo", { file_url: "" }, "POST", "administration").then(done));
+		const rule = this.card(
+			__("Approbations"),
+			__("Par défaut, une personne ne peut pas approuver sa propre demande : une deuxième personne autorisée doit la décider."),
+			`<p class="cx-acct-muted" data-role="policy">${__("Chargement…")}</p><div class="cx-cta-row"><button type="button" class="btn btn-default btn-sm" data-act="policy">${__("Comprendre et décider")}</button></div>`
+		);
+		const refresh = () =>
+			this.call("self_approval_policy", {}, "GET", "approval_queue").then((p) => {
+				rule.find("[data-role=policy]").text(p.enabled ? (p.sole_approver ? __("Auto-approbation activée : vous pouvez approuver vos propres demandes, car vous êtes la seule personne autorisée.") : __("Auto-approbation activée, mais elle ne s'applique pas : une autre personne autorisée existe.")) : __("Auto-approbation désactivée (réglage prudent)."));
+			});
+		rule.on("click", "[data-act=policy]", () => cortex.selfApprovalDialog(refresh));
+		refresh();
+		after.after(logo, rule);
+	}
+
 	// ---------- Société et rôles : une seule colonne ----------
 	renderCompany(d) {
 		const head = this.card(
@@ -539,6 +618,7 @@ cortex.AccountPage = class AccountPage {
 		const rights = this.card(__("Mes droits"), __("Ce que votre compte peut faire, écran par écran. Ils découlent de votre rôle : un administrateur peut les ajuster dans « Équipe et règles »."), `<div class="cx-acct-muted">${__("Chargement…")}</div>`);
 		const team = this.card(__("Mon équipe"), __("Les personnes actives de votre société et leur rôle."), `<div class="cx-acct-muted">${__("Chargement…")}</div>`);
 		this.call("company_overview").then((o) => {
+			if (o.can_manage_team) this.ownerCards(head, d);
 			const mark = (v) => (v ? `<span class="cx-yes" aria-label="${__("oui")}">✓</span>` : `<span class="cx-no" aria-label="${__("non")}">—</span>`);
 			rights.find(".cx-acct-muted").replaceWith(
 				this.table([__("Écran"), __("Voir"), __("Créer"), __("Modifier"), ""], o.rights.map((r) => `<tr><td>${this.esc(__(r.area))}</td><td class="c">${mark(r.read)}</td><td class="c">${mark(r.create)}</td><td class="c">${mark(r.write)}</td><td class="r">${r.href ? `<a href="${this.esc(r.href)}">${__("Ouvrir")}</a>` : ""}</td></tr>`), "rights")

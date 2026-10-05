@@ -1,11 +1,3 @@
-cortex.APPROVAL_ACTIONS = {
-	"transition_to_contract": __("Confirmer un contrat"),
-	"transition_to_reservation": __("Confirmer une réservation"),
-	"transition_to_checked out": __("Faire sortir le matériel"),
-	"transition_to_closed": __("Clôturer la location"),
-	"transition_to_cancelled": __("Annuler la location"),
-};
-
 // Une demande d'approbation naît d'un geste précis (« Demander le contrat » sur une réservation) : le formulaire brut
 // n'est pas offert. Ce bouton ouvre le même geste depuis la liste.
 cortex.requestContractApproval = function () {
@@ -36,6 +28,16 @@ cortex.requestContractApproval = function () {
 
 frappe.listview_settings["Approval Request"] = {
 	onload(listview) {
+		// Si vous êtes la seule personne autorisée et que la règle est désactivée, vos demandes ne peuvent pas être approuvées :
+		// on le dit clairement, avec un chemin pour comprendre et décider (propriétaire seulement).
+		frappe.call({ method: "cortex_rental.api.v1.approval_queue.self_approval_policy", type: "GET" }).then((r) => {
+			const p = r.message;
+			if (!p || !p.sole_approver || !p.can_manage || p.enabled) return;
+			if (listview.page.main.find(".cx-policy-banner").length) return;
+			const banner = $(`<div class="cx-policy-banner"><span>${__("Vous êtes la seule personne autorisée à approuver : vos propres demandes ne peuvent pas être approuvées.")}</span><span><a class="btn btn-default btn-xs" href="/app/user">${__("Ajouter une personne")}</a> <button type="button" class="btn btn-primary btn-xs">${__("Comprendre et décider")}</button></span></div>`);
+			banner.find("button").on("click", () => cortex.selfApprovalDialog(() => banner.remove()));
+			listview.page.main.prepend(banner);
+		});
 		// Frappe cache le bouton principal quand la création directe est interdite : on ajoute un bouton à nous.
 		listview.page.add_inner_button(__("Demander une approbation"), () => cortex.requestContractApproval()).addClass("btn-primary").removeClass("btn-default");
 	},
@@ -45,6 +47,6 @@ frappe.listview_settings["Approval Request"] = {
 	},
 	formatters: {
 		// Le code interne (« rental.transaction.transition_to_contract ») devient une phrase lisible.
-		action: (value) => cortex.APPROVAL_ACTIONS[String(value || "").split(".").pop()] || value,
+		action: (value) => cortex.approvalActionLabel(value),
 	},
 };

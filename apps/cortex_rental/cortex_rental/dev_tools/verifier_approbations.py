@@ -136,6 +136,20 @@ def solo():
         sim.as_user(user)
         return approval_queue.decision_options(name)
 
+    # Par défaut l'auto-approbation est désactivée : le propriétaire seul ne peut pas décider de sa demande.
+    frappe.db.set_value("Cortex Finance Settings", {"company": SOLO}, "allow_sole_approver_self_approval", 0)
+    off = new_request(SOLO_USER)
+    out["seul_desactive_options"] = options(SOLO_USER, off)
+    out["seul_desactive_approuve"] = decide(SOLO_USER, off, "approve", "essai")
+    decide(SOLO_USER, off, "withdraw", "retrait de l'essai")
+    # Le propriétaire l'active lui-même, après avoir confirmé la lecture des risques.
+    sim.as_user(SOLO_USER)
+    try:
+        approval_queue.set_self_approval(enabled=1, acknowledged=0)
+        out["activation_sans_confirmation"] = "ACCEPTÉE (ne devrait pas)"
+    except Exception as exc:  # noqa: BLE001
+        out["activation_sans_confirmation"] = f"refusée : {str(exc)[:80]}"
+    approval_queue.set_self_approval(enabled=1, acknowledged=1)
     a = new_request(SOLO_USER)
     out["seul_options"] = options(SOLO_USER, a)
     out["seul_approuve_sa_demande"] = decide(SOLO_USER, a, "approve", "Je suis seul")
@@ -166,3 +180,40 @@ def solo():
     # désactiver un membre ferme ses sessions
     frappe.db.commit()
     print(json.dumps(out, ensure_ascii=False, indent=1))
+
+
+def solo_prepare():
+    """État de départ pour les captures : propriétaire seul, règle désactivée, une demande en attente."""
+    frappe.set_user("Administrator")
+    if frappe.db.exists("User", SECOND_USER):
+        frappe.db.set_value("User", SECOND_USER, "enabled", 0)
+    frappe.db.set_value("Cortex Finance Settings", {"company": SOLO}, "allow_sole_approver_self_approval", 0)
+    customer = frappe.get_all("Customer", filters={"cortex_company": SOLO}, pluck="name", limit_page_length=1)
+    if not customer:
+        customer = [
+            frappe.get_doc(
+                {
+                    "doctype": "Customer",
+                    "customer_name": "Client essai",
+                    "customer_type": "Company",
+                    "cortex_company": SOLO,
+                }
+            )
+            .insert(ignore_permissions=True)
+            .name
+        ]
+    doc = frappe.get_doc(
+        {
+            "doctype": "Approval Request",
+            "company": SOLO,
+            "action": "rental.transaction.transition_to_contract",
+            "entity_type": "Customer",
+            "entity_id": customer[0],
+            "status": "Pending",
+            "requested_by_type": "Human",
+            "requested_by_id": SOLO_USER,
+            "decision_reason": "Contrat soumis à l'approbation humaine",
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    print(doc.name)

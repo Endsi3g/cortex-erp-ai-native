@@ -311,6 +311,64 @@ def set_member_enabled(company: str, email: str, enabled: bool) -> Dict[str, Any
     return get_team(company)
 
 
+# ---- logo de la société --------------------------------------------------------------------------
+
+LOGO_EXT = (".png", ".jpg", ".jpeg", ".webp")
+LOGO_MAX_BYTES = 2 * 1024 * 1024
+
+
+def set_company_logo(company: str, file_url: str) -> Dict[str, Any]:
+    """Définit (ou retire) le logo de la société. Propriétaire seulement ; image PNG, JPEG ou WebP de 2 Mo au plus.
+
+    Le logo s'affiche dans la barre latérale, sur les devis envoyés aux clients et à l'accueil : on en fait une copie
+    publique sous un nom unique. Le SVG est refusé (il peut contenir du code)."""
+    import os
+
+    _require_team_admin(company)
+    file_url = (file_url or "").strip()
+    if not file_url:
+        frappe.db.set_value("Company", company, "company_logo", None)
+        AuditService.record_mutation(
+            company=company,
+            action="cortex.company.logo_changed",
+            entity_type="Company",
+            entity_id=company,
+            after_state={"logo": None},
+        )
+        return {"logo": ""}
+    if not file_url.lower().endswith(LOGO_EXT):
+        raise SignupError("invalid_logo", "Choisissez une image PNG, JPEG ou WebP (le SVG n'est pas accepté).")
+    name = frappe.db.get_value("File", {"file_url": file_url, "owner": frappe.session.user}, "name")
+    if not name:
+        raise SignupError("not_yours", "Cette image n'a pas été téléversée par vous.")
+    file_doc = frappe.get_doc("File", name)
+    content = file_doc.get_content()
+    if len(content) > LOGO_MAX_BYTES:
+        raise SignupError("logo_too_big", "Le logo dépasse 2 Mo : choisissez une image plus légère.")
+    public = file_url
+    if file_doc.is_private:
+        copy = frappe.get_doc(
+            {
+                "doctype": "File",
+                "file_name": f"logo-{frappe.generate_hash(length=10)}{os.path.splitext(file_url)[1].lower()}",
+                "content": content,
+                "is_private": 0,
+            }
+        ).insert(ignore_permissions=True)
+        file_doc.delete(ignore_permissions=True)
+        public = copy.file_url
+    frappe.db.set_value("Company", company, "company_logo", public)
+    frappe.clear_cache(user=frappe.session.user)  # la barre latérale lit le logo au démarrage de la session
+    AuditService.record_mutation(
+        company=company,
+        action="cortex.company.logo_changed",
+        entity_type="Company",
+        entity_id=company,
+        after_state={"logo": public},
+    )
+    return {"logo": public}
+
+
 # ---- appareils de l'équipe ------------------------------------------------------------------------
 
 

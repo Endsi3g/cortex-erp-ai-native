@@ -76,6 +76,11 @@ if frappe:
             lambda: {"state": administration.set_member_enabled(get_company_context(), email, bool(int(enabled)))}
         )
 
+    @frappe.whitelist(methods=["POST"])
+    def set_company_logo(file_url: str = ""):
+        require_human_staff_role()
+        return guarded(lambda: administration.set_company_logo(get_company_context(), file_url))
+
     @frappe.whitelist(methods=["GET"])
     def team_devices():
         require_human_staff_role()

@@ -39,14 +39,14 @@ def other_approvers(company: str, requester: str) -> list:
 def sole_approver_may_self_approve(company: str, requester: str) -> bool:
     """Une seule personne autorisée (le demandeur) : sans cette règle, l'approbation resterait bloquée à jamais.
 
-    Réglable par société (« Permettre au seul approbateur de décider de ses propres demandes », activé par défaut).
+    Désactivée par défaut ; chaque société l'active elle-même après avoir lu les bénéfices et les dangers.
     La décision est inscrite au journal d'audit comme une auto-approbation.
     """
     if not frappe:
         return False
     flag = frappe.db.get_value("Cortex Finance Settings", {"company": company}, "allow_sole_approver_self_approval")
-    if flag is not None and str(flag) in ("0", ""):
-        return False
+    if not flag or str(flag) in ("0", ""):
+        return False  # désactivée par défaut : la société l'active elle-même (services/approval_policy.py)
     return not other_approvers(company, requester)
 
 
