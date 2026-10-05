@@ -83,7 +83,7 @@
 		},
 	};
 
-	const REPORT_OWNER = { "Disponibilité du parc": "availability", "Prochains départs et retours": "operations", "Activité des clients": "customers" };
+	const REPORT_OWNER = { "Disponibilité du parc": "availability", "Prochains départs et retours": "operations", "Activité des clients": "customers", "Utilisation du parc": "catalog" };
 	const STORE = "cortex_nav_collapsed";
 	const GROUP_STORE = "cortex_nav_groups";
 	const SHORT = window.matchMedia("(max-width: 1100px)");

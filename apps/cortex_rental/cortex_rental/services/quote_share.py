@@ -149,6 +149,14 @@ def create_share(
     doc.flags.from_quote_share = True
     doc.insert(ignore_permissions=True)
     url = get_url(f"/devis/{token}")
+    # Le matériel reste retenu tant que le lien est valide (revérifié sous verrou ; jamais raccourci).
+    hold = {"status": "", "note": ""}
+    try:
+        from cortex_rental.services import holds
+
+        hold = holds.extend_to(tx, expires)
+    except Exception:
+        frappe.log_error(title="Cortex quote hold extension failed")
     sent = False
     if channel == "Email":
         sent = _send_email(doc, snapshot, url, sender)
@@ -163,7 +171,15 @@ def create_share(
         tx.name,
         {"share": doc.name, "channel": channel, "email_sent": sent},
     )
-    return {"name": doc.name, "url": url, "channel": channel, "email_sent": sent, "expires_at": str(expires)}
+    return {
+        "name": doc.name,
+        "url": url,
+        "channel": channel,
+        "email_sent": sent,
+        "expires_at": str(expires),
+        "hold_status": hold.get("status") or "",
+        "hold_note": hold.get("note") or "",
+    }
 
 
 def _send_email(doc, snapshot: Dict[str, Any], url: str, sender: str) -> bool:

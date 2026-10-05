@@ -189,6 +189,14 @@ if frappe:
         page, page_size = page_args(page, page_size)
         return envelope(list_customers_handler(get_company_context(), search, page, page_size))
 
+    @frappe.whitelist(methods=["GET"])
+    def summary(customer: str):
+        """Vue 360° d'un client : devis ouverts, locations en cours, solde dû, dernière location."""
+        require_human_staff_role()
+        from cortex_rental.services import customer_360
+
+        return customer_360.summary(customer, get_company_context())
+
     @frappe.whitelist(methods=["POST"])
     @log_tool_call("create_customer_draft", scope="agent:customers:draft")
     def create_customer_draft():

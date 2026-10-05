@@ -35,6 +35,8 @@ DEFAULTS: Dict[str, Any] = {
     "late_fee_grace_minutes": 60,
     "late_fee_percent": 100.0,
     "late_fee_cap_days": 0.0,
+    "damage_billing_enabled": 0,
+    "missing_billing_percent": 100.0,
 }
 CENT = 0.005
 
@@ -167,6 +169,50 @@ def compute_late_fee(tx, settings: Dict[str, Any]) -> Tuple[float, int]:
     return flt(daily * days * flt(settings.get("late_fee_percent")) / 100.0, 2), days
 
 
+def compute_damage_lines(tx, settings: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Lignes « Dommages et pertes » issues des retours terminés : réparation estimée (abîmé) ou valeur de remplacement (manquant)."""
+    if not settings.get("damage_billing_enabled"):
+        return []
+    rows = frappe.db.sql(
+        """SELECT ci.item_code, ci.serial_no, ci.`condition`, ci.expected_qty, ci.returned_qty, ci.estimated_repair_cost
+           FROM `tabCortex Check-In Item` ci JOIN `tabCortex Check-In` c ON c.name = ci.parent
+           WHERE c.transaction = %s AND c.status = 'Completed' AND ci.`condition` IN ('Damaged', 'Missing')""",
+        tx.name,
+        as_dict=True,
+    )
+    lines: List[Dict[str, Any]] = []
+    for row in rows:
+        name = frappe.db.get_value("Item", row.item_code, "item_name") or row.item_code
+        ref = f" ({row.serial_no})" if row.serial_no else ""
+        if row.condition == "Damaged":
+            amount = flt(row.estimated_repair_cost, 2)
+            description = f"Dommages : {name}{ref} (réparation estimée)"
+            qty = 1
+        else:
+            qty = flt(row.expected_qty) or 1
+            value = flt(
+                frappe.db.get_value(
+                    "Cortex Rental Item Profile",
+                    {"company": tx.company, "item_code": row.item_code},
+                    "replacement_value",
+                )
+            )
+            amount = flt(value * qty * flt(settings.get("missing_billing_percent")) / 100.0, 2)
+            description = f"Perte : {name}{ref} × {qty:g} (valeur de remplacement)"
+        if amount > 0:
+            lines.append(
+                {
+                    "description": description,
+                    "line_kind": "Damage",
+                    "qty": qty,
+                    "days": 1,
+                    "rate": amount / qty,
+                    "amount": amount,
+                }
+            )
+    return lines
+
+
 def create_final_invoice(tx):
     """Facture à la clôture : lignes louées, frais de retard éventuels, moins l'acompte déjà facturé."""
     existing = _active_invoice(tx.name, "Final")
@@ -201,6 +247,7 @@ def create_final_invoice(tx):
                 "amount": fee,
             }
         )
+    lines.extend(compute_damage_lines(tx, settings))
     deposits = frappe.get_all(
         INVOICE,
         filters={"rental_transaction": tx.name, "invoice_type": "Deposit", "status": ["!=", "Cancelled"]},

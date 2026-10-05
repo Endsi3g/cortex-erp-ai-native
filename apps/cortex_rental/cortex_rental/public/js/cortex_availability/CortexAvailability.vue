@@ -72,17 +72,27 @@ function overlapping(item, ymd) {
 	return (item.blocks || []).filter((b) => b.starts_at < dayEnd && b.ends_at > dayStart);
 }
 
+// Un devis retient du matériel tant que sa retenue est valide (calculée par le serveur : hold_until).
+function holding(b) {
+	return b.rental_state === "Quote" && b.hold_until && b.hold_until > nowString();
+}
+function nowString() {
+	const d = new Date();
+	return `${dateString(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+}
+
 function cell(item, ymd) {
 	const blocks = overlapping(item, ymd);
 	const blocking = blocks.filter((b) => BLOCKING.includes(b.rental_state));
+	const held = blocks.filter(holding).reduce((sum, b) => sum + Number(b.qty || 0), 0);
 	const booked = blocking.reduce((sum, b) => sum + Number(b.qty || 0), 0);
 	const fleet = Number(item.fleet_quantity || 0);
-	const free = fleet - booked;
+	const free = fleet - booked - held;
 	let status = "ok";
 	if (fleet <= 0) status = "none";
 	else if (free <= 0) status = "full";
-	else if (booked > 0) status = "partial";
-	return { blocks, free, booked, fleet, status, quotes: blocks.length - blocking.length };
+	else if (booked + held > 0) status = "partial";
+	return { blocks, free, booked, held, fleet, status, quotes: 0 };
 }
 
 const rows = computed(() => {
@@ -105,11 +115,37 @@ function fillPct(c) {
 	if (c.fleet <= 0) return 0;
 	return Math.max(0, Math.min(100, Math.round((c.booked / c.fleet) * 100)));
 }
+function holdPct(c) {
+	if (c.fleet <= 0) return 0;
+	return Math.max(0, Math.min(100, Math.round(((c.booked + c.held) / c.fleet) * 100)));
+}
+
+// Locations et retenues de la période affichée (une ligne par dossier), pour remplir la page de choses utiles.
+const timeline = computed(() => {
+	const map = new Map();
+	rows.value.forEach((row) =>
+		(row.item.blocks || []).forEach((b) => {
+			const entry = map.get(b.transaction) || { ...b, items: [], qty: 0 };
+			entry.items.push(row.item.item_name);
+			entry.qty += Number(b.qty || 0);
+			map.set(b.transaction, entry);
+		})
+	);
+	return [...map.values()]
+		.filter((e) => e.rental_state !== "Quote" || holding(e))
+		.sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))
+		.slice(0, 14);
+});
+const heldCount = computed(() => timeline.value.filter((e) => e.rental_state === "Quote").length);
+function shortDate(value) {
+	const d = new Date(String(value).replace(" ", "T"));
+	return d.toLocaleDateString("fr-CA", { day: "numeric", month: "short" }).replace(".", "");
+}
 
 const STATUS_TEXT = { ok: "libre", partial: "partiellement réservé", full: "complet", none: "aucun parc" };
 
 function cellLabel(row, day, c) {
-	return `${row.item.item_name}, ${day.weekday} ${day.day} ${day.month} : ${Math.max(c.free, 0)} sur ${c.fleet} disponible${c.free > 1 ? "s" : ""}, ${STATUS_TEXT[c.status]}`;
+	return `${row.item.item_name}, ${day.weekday} ${day.day} ${day.month} : ${Math.max(c.free, 0)} sur ${c.fleet} disponible${c.free > 1 ? "s" : ""}, ${STATUS_TEXT[c.status]}${c.held ? `, dont ${c.held} retenu${c.held > 1 ? "s" : ""} par un devis` : ""}`;
 }
 
 async function load() {
@@ -218,7 +254,7 @@ defineExpose({ load, setCategory });
 			<ul class="cx-avail-legend" aria-label="Légende">
 				<li><span class="cx-dot cx-dot-partial"></span> En partie réservé</li>
 				<li><span class="cx-dot cx-dot-full"></span> Complet</li>
-				<li><span class="cx-dot cx-dot-quote"></span> Devis (ne bloque pas)</li>
+				<li><span class="cx-dot cx-dot-hold"></span> Retenu par un devis</li>
 			</ul>
 		</div>
 
@@ -262,7 +298,7 @@ defineExpose({ load, setCategory });
 								type="button"
 								class="cx-cell"
 								:class="[`cx-cell-${c.status}`, { 'cx-cell-quote': c.quotes > 0 }]"
-								:style="{ '--pct': fillPct(c) + '%' }"
+								:style="{ '--pct': fillPct(c) + '%', '--tot': holdPct(c) + '%' }"
 								:aria-label="cellLabel(row, days[i], c)"
 								:aria-pressed="selected && selected.row === row && selected.day === days[i]"
 								@click="select(row, days[i], c)"
@@ -274,6 +310,21 @@ defineExpose({ load, setCategory });
 				</tbody>
 			</table>
 		</div>
+
+		<section v-if="!loading && !error && timeline.length" class="cx-avail-timeline" aria-label="Locations et retenues de la période">
+			<header>
+				<h2>Sur la période</h2>
+				<p>{{ timeline.length }} dossier{{ timeline.length > 1 ? "s" : "" }}<span v-if="heldCount"> · {{ heldCount }} devis qui retiennent du matériel</span></p>
+			</header>
+			<ul>
+				<li v-for="e in timeline" :key="e.transaction">
+					<a href="#" @click.prevent="openRental(e.transaction)">{{ e.transaction }}</a>
+					<span class="cx-tl-state" :class="`cx-tl-${e.rental_state === 'Quote' ? 'hold' : 'book'}`">{{ e.rental_state === "Quote" ? "Devis · retenue" : STATE_LABELS[e.rental_state] || e.rental_state }}</span>
+					<span class="cx-tl-main"><strong>{{ e.customer }}</strong> · {{ e.items.slice(0, 2).join(", ") }}<span v-if="e.items.length > 2"> +{{ e.items.length - 2 }}</span></span>
+					<span class="cx-tl-when">{{ shortDate(e.starts_at) }} → {{ shortDate(e.ends_at) }}<span v-if="e.rental_state === 'Quote'"> · jusqu'au {{ shortDate(e.hold_until) }}</span></span>
+				</li>
+			</ul>
+		</section>
 
 		<aside v-if="selected" class="cx-avail-detail" aria-live="polite">
 			<div class="cx-avail-detail-head">
@@ -288,7 +339,7 @@ defineExpose({ load, setCategory });
 			<ul v-if="selected.cell.blocks.length" class="cx-avail-blocks">
 				<li v-for="b in selected.cell.blocks" :key="b.transaction + b.starts_at">
 					<a href="#" @click.prevent="openRental(b.transaction)">{{ b.transaction }}</a>
-					— {{ STATE_LABELS[b.rental_state] || b.rental_state }}, {{ b.customer }}, {{ b.qty }} unité{{
+					— {{ b.rental_state === "Quote" ? (b.hold_until ? "Devis (retient le matériel jusqu'au " + b.hold_until.slice(0, 16) + ")" : "Devis (sans retenue)") : STATE_LABELS[b.rental_state] || b.rental_state }}, {{ b.customer }}, {{ b.qty }} unité{{
 						b.qty > 1 ? "s" : ""
 					}}
 					({{ b.starts_at.slice(0, 16) }} → {{ b.ends_at.slice(0, 16) }})
@@ -479,10 +530,11 @@ defineExpose({ load, setCategory });
 .cx-dot-partial { background: #e4e4e7; border: 1px solid #a1a1aa; }
 .cx-dot-full { background: var(--full-bg); border: 1px solid var(--full); }
 .cx-dot-quote { border: 1px dashed var(--muted); }
+.cx-dot-hold { background: repeating-linear-gradient(135deg, rgba(180, 83, 9, 0.35) 0 3px, transparent 3px 6px); border: 1px solid #b45309; }
 .cx-avail-scroll {
 	overflow: auto;
-	max-height: calc(100vh - 250px);
-	min-height: 360px;
+	max-height: calc(100vh - 230px);
+	min-height: 420px;
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	background: #fff;
@@ -576,10 +628,12 @@ thead .cx-sticky {
 .cx-cell {
 	width: 100%;
 	min-width: 46px;
-	height: 38px;
+	height: 46px;
 	border-radius: 8px;
 	border: 1px solid transparent;
-	background: linear-gradient(to top, rgba(63, 63, 70, 0.14) var(--pct, 0%), transparent var(--pct, 0%));
+	background:
+		linear-gradient(to top, rgba(63, 63, 70, 0.16) var(--pct, 0%), transparent var(--pct, 0%)),
+		repeating-linear-gradient(135deg, rgba(180, 83, 9, 0.2) 0 4px, transparent 4px 8px) bottom / 100% var(--tot, 0%) no-repeat;
 	color: #3f3f46;
 	font: inherit;
 	font-size: 14px;
@@ -602,6 +656,70 @@ thead .cx-sticky {
 .cx-cell-none { color: #a1a1aa; }
 .cx-cell-quote { border: 1px dashed var(--muted); }
 .cx-cell[aria-pressed="true"] { box-shadow: 0 0 0 2px #09090b; }
+.cx-avail-timeline {
+	margin-top: 18px;
+	padding: 14px 16px 6px;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: #fff;
+}
+.cx-avail-timeline h2 {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 650;
+}
+.cx-avail-timeline header p {
+	margin: 2px 0 8px;
+	color: var(--muted);
+	font-size: 12.5px;
+}
+.cx-avail-timeline ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.cx-avail-timeline li {
+	display: grid;
+	grid-template-columns: 150px 130px 1fr auto;
+	gap: 4px 14px;
+	align-items: center;
+	padding: 9px 0;
+	border-top: 1px solid #f1f1f2;
+	font-size: 13px;
+}
+.cx-tl-state {
+	justify-self: start;
+	padding: 2px 9px;
+	border-radius: 999px;
+	font-size: 12px;
+}
+.cx-tl-book {
+	background: #eef3ef;
+	color: #3f6a52;
+}
+.cx-tl-hold {
+	background: #fdf0e0;
+	color: #8a4b00;
+}
+.cx-tl-main {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.cx-tl-when {
+	color: var(--muted);
+	white-space: nowrap;
+}
+@media (max-width: 760px) {
+	.cx-avail-timeline li {
+		grid-template-columns: 1fr auto;
+	}
+	.cx-tl-main {
+		grid-column: 1 / -1;
+		white-space: normal;
+	}
+}
 .cx-avail-detail {
 	margin-top: 16px;
 	padding: 14px 16px;

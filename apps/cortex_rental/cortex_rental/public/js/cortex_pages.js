@@ -37,6 +37,7 @@
 		"Disponibilité du parc": "Pour une période donnée : le parc, ce qui est réservé et ce qui reste libre.",
 		"Prochains départs et retours": "Ce qui doit partir et revenir dans les prochains jours, y compris les retours en retard.",
 		"Activité des clients": "Nombre de locations et montant par client.",
+		"Utilisation du parc": "Jours loués, taux d'utilisation et revenu par équipement, pour savoir quoi racheter et quoi retirer.",
 		"Créances par client": "Les factures encore ouvertes, classées selon leur retard de paiement.",
 		"Taxes perçues": "TPS et TVQ facturées par mois : la base de votre déclaration de taxes.",
 		"Versements de consignation": "Ce qui est dû à chaque propriétaire en consignation.",

@@ -8,6 +8,7 @@ frappe.ui.form.on("Cortex Rental Transaction", {
 		if (frm.is_new()) return;
 		cortex_rental_transaction.show_readiness(frm);
 		cortex_rental_transaction.add_actions(frm);
+		cortex_rental_transaction.show_hold(frm);
 		cortex_rental_transaction.show_shares(frm);
 	},
 });
@@ -128,6 +129,39 @@ const cortex_rental_transaction = {
 			},
 		});
 		dialog.show();
+	},
+
+	// ---- Retenue du matériel : un devis retient les unités dans la disponibilité (services/holds.py) ----
+	show_hold(frm) {
+		if (frm.doc.rental_state !== "Quote") return;
+		const group = __("Actions");
+		const until = frm.doc.hold_until ? moment(frm.doc.hold_until) : null;
+		const active = frm.doc.hold_status === "Active" && until && until.isAfter(moment());
+		if (active) {
+			frm.dashboard.add_comment(__("Matériel retenu dans la disponibilité jusqu'au {0}. La réservation reste la seule garantie.", [cortex.shortDateTime(frm.doc.hold_until)]), "green", true);
+			frm.add_custom_button(__("Libérer la retenue"), () => this.hold_action(frm, "release_hold", __("Matériel libéré.")), group);
+		} else if (frm.doc.hold_status === "Insufficient") {
+			frm.dashboard.add_comment(frappe.utils.escape_html(frm.doc.hold_note || __("Disponibilité insuffisante : aucune retenue.")), "red", true);
+			frm.add_custom_button(__("Reprendre la retenue"), () => this.hold_action(frm, "renew_hold", null), group);
+		} else if (frm.doc.hold_status === "Released") {
+			frm.dashboard.add_comment(__("Retenue libérée : le matériel n'est plus gardé pour ce devis."), "orange", true);
+			frm.add_custom_button(__("Reprendre la retenue"), () => this.hold_action(frm, "renew_hold", null), group);
+		} else if (frm.doc.hold_status === "Active") {
+			frm.dashboard.add_comment(__("La retenue a expiré : le matériel n'est plus gardé pour ce devis."), "orange", true);
+			frm.add_custom_button(__("Reprendre la retenue"), () => this.hold_action(frm, "renew_hold", null), group);
+		}
+	},
+
+	hold_action(frm, method, done) {
+		cortex.call(`rentals.${method}`, { name: frm.doc.name }, { type: "POST" }).then((r) => {
+			if (method === "renew_hold") {
+				const ok = r && r.status === "Active";
+				frappe.show_alert({ message: ok ? __("Matériel retenu jusqu'au {0}.", [cortex.shortDateTime(r.until)]) : __("Disponibilité insuffisante : aucune retenue."), indicator: ok ? "green" : "red" }, 7);
+			} else {
+				frappe.show_alert({ message: done, indicator: "green" });
+			}
+			return frm.reload_doc();
+		});
 	},
 
 	show_shares(frm) {
@@ -307,10 +341,11 @@ const cortex_rental_transaction = {
 					in_place_edit: true,
 					data: lines,
 					fields: [
-						{ fieldname: "item_code", fieldtype: "Link", options: "Item", label: __("Article"), in_list_view: 1, read_only: 1, columns: 3 },
+						{ fieldname: "item_code", fieldtype: "Link", options: "Item", label: __("Article"), in_list_view: 1, read_only: 1, columns: 2 },
 						{ fieldname: "serial_no", fieldtype: "Data", label: __("N° de série"), in_list_view: 1, read_only: 1, columns: 2 },
 						{ fieldname: "returned_qty", fieldtype: "Float", label: __("Qté reçue"), in_list_view: 1, columns: 1 },
 						{ fieldname: "condition", fieldtype: "Select", label: __("État"), options: "Good\nDamaged\nMissing", in_list_view: 1, columns: 2 },
+						{ fieldname: "estimated_repair_cost", fieldtype: "Currency", label: __("Coût estimé ($)"), in_list_view: 1, columns: 1, description: __("Si abîmé") },
 						{
 							fieldname: "disposition",
 							fieldtype: "Select",
@@ -345,6 +380,8 @@ const cortex_rental_transaction = {
 					returned_qty: row.returned_qty,
 					condition: row.condition,
 					disposition: row.disposition,
+					estimated_repair_cost: row.condition === "Damaged" ? row.estimated_repair_cost || 0 : 0,
+					damage_severity: row.condition === "Damaged" ? "Functional" : "None",
 				}));
 				cortex
 					.call(

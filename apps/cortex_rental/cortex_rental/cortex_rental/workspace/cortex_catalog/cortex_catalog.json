@@ -2,7 +2,7 @@
  "docstatus": 0,
  "idx": 0,
  "creation": "2026-09-30 08:03:00.000000",
- "modified": "2026-09-30 09:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "module": "Cortex Rental",
@@ -19,7 +19,7 @@
  "hide_custom": 0,
  "indicator_color": "",
  "restrict_to_domain": "",
- "content": "[{\"id\": \"c56ce92f8c\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Équipements par catégorie\", \"col\": 12}}, {\"id\": \"aef99f39e4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Équipements au catalogue\", \"col\": 3}}, {\"id\": \"fd2de9d2cc\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Séries actives\", \"col\": 3}}, {\"id\": \"aeb04e2b33\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Kits et forfaits\", \"col\": 3}}, {\"id\": \"94a60f6b79\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Valeur de remplacement du parc\", \"col\": 3}}, {\"id\": \"732fa08903\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"1568fe6f19\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"dc57a7dee2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profils d’équipement\", \"col\": 3}}, {\"id\": \"fc4d89262e\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouveau profil\", \"col\": 3}}, {\"id\": \"4ef4bde029\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Articles\", \"col\": 3}}, {\"id\": \"73824750a5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Numéros de série\", \"col\": 3}}, {\"id\": \"f475c0fd97\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kits et forfaits\", \"col\": 3}}, {\"id\": \"a14f271fb1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Import de données\", \"col\": 3}}, {\"id\": \"f1419cb029\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"39a38ed7ed\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"3cc3695cc0\", \"type\": \"card\", \"data\": {\"card_name\": \"Catalogue\", \"col\": 4}}, {\"id\": \"4f5423d60a\", \"type\": \"card\", \"data\": {\"card_name\": \"Données\", \"col\": 4}}]",
+ "content": "[{\"id\": \"c56ce92f8c\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Équipements par catégorie\", \"col\": 12}}, {\"id\": \"aef99f39e4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Équipements au catalogue\", \"col\": 3}}, {\"id\": \"fd2de9d2cc\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Séries actives\", \"col\": 3}}, {\"id\": \"aeb04e2b33\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Kits et forfaits\", \"col\": 3}}, {\"id\": \"94a60f6b79\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Valeur de remplacement du parc\", \"col\": 3}}, {\"id\": \"732fa08903\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"1568fe6f19\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"dc57a7dee2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profils d’équipement\", \"col\": 3}}, {\"id\": \"fc4d89262e\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Nouveau profil\", \"col\": 3}}, {\"id\": \"4ef4bde029\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Articles\", \"col\": 3}}, {\"id\": \"73824750a5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Numéros de série\", \"col\": 3}}, {\"id\": \"f475c0fd97\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kits et forfaits\", \"col\": 3}}, {\"id\": \"b7e31c0a54\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Utilisation du parc\", \"col\": 3}}, {\"id\": \"a14f271fb1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Import de données\", \"col\": 3}}, {\"id\": \"f1419cb029\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"39a38ed7ed\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"3cc3695cc0\", \"type\": \"card\", \"data\": {\"card_name\": \"Catalogue\", \"col\": 4}}, {\"id\": \"4f5423d60a\", \"type\": \"card\", \"data\": {\"card_name\": \"Données\", \"col\": 4}}]",
  "charts": [
   {
    "chart_name": "Équipements par catégorie",
@@ -75,6 +75,14 @@
    "color": "#066336"
   },
   {
+   "label": "Utilisation du parc",
+   "link_to": "Utilisation du parc",
+   "type": "Report",
+   "doc_view": "",
+   "color": "#066336",
+   "report_ref_doctype": "Cortex Rental Item Profile"
+  },
+  {
    "label": "Kits et forfaits",
    "link_to": "Product Bundle",
    "type": "DocType",
@@ -95,7 +103,7 @@
    "label": "Catalogue",
    "hidden": 0,
    "is_query_report": 0,
-   "link_count": 4,
+   "link_count": 5,
    "onboard": 0
   },
   {
@@ -141,6 +149,18 @@
    "is_query_report": 0,
    "link_count": 0,
    "dependencies": ""
+  },
+  {
+   "type": "Link",
+   "label": "Utilisation du parc",
+   "link_to": "Utilisation du parc",
+   "link_type": "Report",
+   "hidden": 0,
+   "onboard": 0,
+   "is_query_report": 1,
+   "link_count": 0,
+   "dependencies": "",
+   "report_ref_doctype": "Cortex Rental Item Profile"
   },
   {
    "type": "Card Break",

@@ -177,6 +177,38 @@ def finance_summary():
 
 
 @tool(
+    "customer_summary",
+    "Résume un client : devis ouverts, locations en cours, retours en retard, solde dû et dernière location.",
+    {"customer": {"type": "string", "description": "Identifiant exact du client (utiliser search_customers)"}},
+    ["customer"],
+)
+def customer_summary(customer: str):
+    from cortex_rental.services import customer_360
+
+    return customer_360.summary(customer, _company())
+
+
+@tool(
+    "late_returns",
+    "Liste les retours en retard : locations sorties dont la date de fin est passée.",
+    {"limit": {"type": "integer"}},
+)
+def late_returns(limit: int = 10):
+    rows = frappe.get_list(
+        "Cortex Rental Transaction",
+        filters={
+            "company": _company(),
+            "rental_state": ["in", ["Checked Out", "Partially Returned"]],
+            "ends_at": ["<", frappe.utils.now_datetime()],
+        },
+        fields=["name", "customer", "ends_at", "grand_total"],
+        order_by="ends_at asc",
+        limit_page_length=max(1, min(int(limit or 10), 25)),
+    )
+    return {"late": [{**dict(r), "ends_at": str(r.ends_at)} for r in rows]}
+
+
+@tool(
     "create_quote_draft",
     "PROPOSE un devis (prix calculés par le serveur). Ne crée rien : la personne ouvre le compositeur et décide.",
     {

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Retenue du matériel par un devis** (ADR-008) : le devis retient le matériel dans la disponibilité (72 h par défaut, réglable, expiration sans tâche planifiée), grille hachurée et section « Sur la période », boutons Libérer / Reprendre. **Rappels horaires** (retenue qui expire, retour en retard, devis sans réponse, facture échue). **Frais de dommages et de pertes** optionnels à la facture finale (compte 4200). **Fiche client 360°**, rapport **Utilisation du parc**, outils de lecture de l'assistant (`customer_summary`, `late_returns`). Course de 12 devis simultanés vérifiée (une seule retenue).
 - **Actions complètes d'une location** : Annuler, Ouvrir un litige et Clôturer le dossier (API `rentals.change_state`); correctif du retour par numéro de série (une ligne de plusieurs unités sérialisées restait à moitié retournée); création de demandes d'approbation permise aux gestionnaires; Approuver/Refuser et Enregistrer un paiement en boutons directs.
 - **Mon compte** : profil, sécurité (mot de passe, appareils), notifications, société et rôles, usage de l'IA, activité.
 - **Disponibilité** plus grande et épurée (remplissage proportionnel, en-têtes fixes). **Devis** : confirmation par case à cocher, bouton d'envoi retardé, refus serveur sans confirmation, PDF dans la barre d'actions, barres de répartition. Tableau de bord aéré, groupes Opérations et Assistant épinglés.

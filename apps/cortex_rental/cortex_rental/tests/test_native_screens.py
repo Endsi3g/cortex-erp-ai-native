@@ -303,6 +303,7 @@ class TestScriptReports(unittest.TestCase):
                 "Journal comptable",
                 "Balance de vérification",
                 "Utilisation IA",
+                "Utilisation du parc",
             },
         )
         for name, report in reports.items():

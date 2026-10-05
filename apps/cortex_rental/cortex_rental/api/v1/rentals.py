@@ -445,6 +445,30 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["POST"])
+    def renew_hold(name: str):
+        """Reprend la retenue d'un devis (revérifiée sous verrou) : utile quand elle a expiré ou que le devis a changé."""
+        require_human_staff_role()
+        doc = _owned_transaction(name, get_company_context())
+        if doc.rental_state != "Quote":
+            frappe.throw("Seul un devis retient le matériel.", frappe.ValidationError)
+        from cortex_rental.services import holds
+
+        result = holds.evaluate(doc)
+        return {"status": result["status"], "until": str(result["until"] or ""), "note": result["note"]}
+
+    @frappe.whitelist(methods=["POST"])
+    def release_hold(name: str):
+        """Libère le matériel retenu par un devis (il redevient disponible pour les autres)."""
+        require_human_staff_role()
+        doc = _owned_transaction(name, get_company_context())
+        if doc.rental_state != "Quote":
+            frappe.throw("Seul un devis retient le matériel.", frappe.ValidationError)
+        from cortex_rental.services import holds
+
+        holds.release(name, "Libérée par une personne autorisée")
+        return {"status": "Released"}
+
+    @frappe.whitelist(methods=["POST"])
     def change_state(name: str, to_state: str, reason: str = "", version: int = None):
         """Clôturer, annuler ou ouvrir un litige. Le serveur applique la machine d'états (transitions permises seulement)."""
         require_human_staff_role()

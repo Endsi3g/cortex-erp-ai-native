@@ -54,6 +54,9 @@ app_include_js = [
     "/assets/cortex_rental/js/cortex_i18n.js",
 ]
 
+# Fiche client 360° (devis ouverts, locations en cours, solde dû).
+doctype_js = {"Customer": "public/js/cortex_customer.js"}
+
 # Visitors who are not signed in get French pages (see auth_hooks.french_for_guests).
 before_request = ["cortex_rental.auth_hooks.french_for_guests"]
 
@@ -69,6 +72,9 @@ before_request = ["cortex_rental.auth_hooks.french_for_guests"]
 # Order/Serial No override behavior is an open follow-up, not something
 # to invent here.
 doc_events = {}
+
+# Rappels : retenues qui expirent, retours en retard, devis sans réponse, factures échues (services/reminders.py).
+scheduler_events = {"hourly": ["cortex_rental.services.reminders.hourly"]}
 
 # Permission Query Hooks for Multi-Tenancy
 # ----------------------------------------

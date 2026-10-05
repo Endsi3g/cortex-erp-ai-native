@@ -224,7 +224,7 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
         rows = frappe.db.sql(
             """
             SELECT t.name AS transaction, t.rental_state, t.customer,
-                   t.starts_at, t.ends_at, ti.item_code, ti.qty
+                   t.starts_at, t.ends_at, ti.item_code, ti.qty, t.hold_status, t.hold_until
             FROM `tabCortex Rental Transaction Item` ti
             JOIN `tabCortex Rental Transaction` t ON t.name = ti.parent
             WHERE t.company = %(company)s
@@ -252,6 +252,8 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
                     "starts_at": str(row.starts_at),
                     "ends_at": str(row.ends_at),
                     "qty": float(row.qty),
+                    # Un devis ne retient le matériel que tant que sa retenue est valide.
+                    "hold_until": str(row.hold_until) if row.hold_status == "Active" and row.hold_until else None,
                 }
             )
 

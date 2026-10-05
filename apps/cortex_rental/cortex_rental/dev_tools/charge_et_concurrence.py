@@ -162,6 +162,53 @@ def race_last_unit(code, customers, workers=12):
     return names
 
 
+def race_quote_holds(code, customers, workers=12):
+    """12 comptoirs créent EN MÊME TEMPS un devis pour la seule unité d'un article : une seule retenue doit être active."""
+    start = (datetime.now() + timedelta(days=4000 + int(time.time()) % 3000)).replace(
+        hour=9, minute=0, second=0, microsecond=0
+    )
+    end = start + timedelta(days=2)
+    sessions = [session(COUNTERS[i % len(COUNTERS)]) for i in range(workers)]
+    barrier = threading.Barrier(workers)
+
+    def attempt(i):
+        def go():
+            barrier.wait()
+            return post(
+                sessions[i],
+                "cortex_rental.api.v1.rentals.create_quote_draft",
+                customer_id=customers[i],
+                starts_at=start.strftime("%Y-%m-%d %H:%M:%S"),
+                ends_at=end.strftime("%Y-%m-%d %H:%M:%S"),
+                items=json.dumps([{"item_code": code, "quantity": 1}]),
+            )
+
+        return go
+
+    outcomes = run_threads([attempt(i) for i in range(workers)])
+    names = [
+        o[0].json()["message"]["entity_id"]
+        for o in outcomes
+        if not isinstance(o, Exception) and o[0].status_code == 200
+    ]
+    frappe.db.rollback()
+    rows = frappe.get_all(
+        "Cortex Rental Transaction",
+        filters={"name": ["in", names]},
+        fields=["name", "hold_status"],
+        limit_page_length=100,
+    )
+    active = sum(1 for r in rows if r.hold_status == "Active")
+    RESULTS["course_retenues_devis"] = {
+        "devis_crees": len(names),
+        "retenues_actives": active,
+        "retenues_refusees_faute_de_stock": sum(1 for r in rows if r.hold_status == "Insufficient"),
+        "attendu": "exactement 1 retenue active",
+        "verdict": "OK" if active == 1 and len(names) == workers else "ÉCHEC",
+    }
+    return names
+
+
 def race_approval(customers, workers=8):
     """Une demande d'approbation décidée 8 fois en même temps : une seule décision doit compter."""
     frappe.set_user("Administrator")
@@ -396,7 +443,10 @@ def run():
     frappe.set_user("Administrator")
     customers = frappe.get_all("Customer", filters={"cortex_company": COMPANY}, pluck="name", limit=20)
     code = ensure_scarce_item()
+    frappe.db.set_value("Cortex Finance Settings", COMPANY, "quote_hold_enabled", 1)  # la retenue est ce qu'on éprouve
+    frappe.db.commit()
     race_last_unit(code, customers)
+    race_quote_holds(code, customers)
     race_approval(customers)
     idempotence(customers)
     benchmarks()

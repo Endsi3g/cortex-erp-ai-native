@@ -179,6 +179,40 @@
       "in_list_view": 1
     },
     {
+      "fieldname": "sb_hold",
+      "fieldtype": "Section Break",
+      "label": "Retenue du matériel",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "hold_status",
+      "fieldtype": "Select",
+      "label": "Retenue",
+      "options": "\nActive\nInsufficient\nReleased",
+      "read_only": 1,
+      "description": "Un devis retient le matériel dans la disponibilité jusqu'à la date ci-contre (réglable par société). La réservation reste la seule garantie."
+    },
+    {
+      "fieldname": "hold_until",
+      "fieldtype": "Datetime",
+      "label": "Retenu jusqu'au",
+      "read_only": 1
+    },
+    {
+      "fieldname": "hold_notified",
+      "fieldtype": "Check",
+      "label": "Rappel envoyé",
+      "hidden": 1,
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "hold_note",
+      "fieldtype": "Small Text",
+      "label": "Détail de la retenue",
+      "read_only": 1
+    },
+    {
       "fieldname": "sb_erpnext",
       "fieldtype": "Section Break",
       "label": "Documents comptables liés",
@@ -318,7 +352,7 @@
       "share": 1
     }
   ],
-  "modified": "2026-09-30 23:10:00.000000",
+  "modified": "2026-10-06 09:00:00.000000",
   "links": [
     {
       "link_doctype": "Cortex Rental Invoice",

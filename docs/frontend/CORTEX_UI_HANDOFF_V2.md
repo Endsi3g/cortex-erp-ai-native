@@ -166,6 +166,18 @@ Flux attendu : Vue → API Frappe authentifiée → service Cortex → (a) Onyx 
 - **Formulaires sur téléphone** (`cortex-mobile.css`) : deux champs par ligne, repères de fuseau masqués, titre sur deux lignes, débordement de 3 px corrigé sur toutes les pages.
 - **Rapport Utilisation IA** corrigé (agrégation côté serveur).
 
+## Fonctions interconnectées : retenue, rappels, dommages, client 360, utilisation du parc (2026-10-05)
+
+Principe : un événement saisi à un endroit doit se voir partout où il compte, sans ressaisie.
+
+- **Retenue par un devis** (ADR-008) : créer un devis retient le matériel dans la disponibilité (réglage par société, 72 h par défaut, plafond 60 jours; prolongée au partage du lien). Les unités retenues sont déduites pour les autres devis et locations, ne comptent jamais contre le devis lui-même, et le matériel redevient libre à l'expiration **sans tâche planifiée** (la requête ne compte que les retenues actives non échues). La retenue se prend sous le verrou de réservation par équipement; si le stock manque, le devis est créé **sans retenue** avec la raison affichée. Boutons « Libérer / Reprendre la retenue » (`rentals.release_hold`, `rentals.renew_hold`). La retenue **n'est pas une garantie** : seule la réservation l'est. Grille de disponibilité : cellules hachurées « Retenu par un devis » et section « Sur la période ». Vérifié sur le bench; course de 12 devis simultanés pour 1 unité → exactement 1 retenue active, la course de la dernière unité reste à 1 réservation.
+- **Rappels** (`services/reminders.py`, planificateur horaire) : retenue qui expire dans 24 h, retour en retard, devis sans réponse, facture échue. Notification pour la personne responsable, sans doublon sur 24 h; **aucun dossier n'est modifié**. Non vérifié avec une vraie planification dans le temps (testé en appelant les fonctions).
+- **Dommages et pertes** (réglage par société, **désactivé par défaut**) : au retour, « Abîmé » facture le coût de réparation estimé (nouvelle colonne « Coût estimé ($) » du dialogue de retour) et « Manquant » facture la valeur de remplacement × un pourcentage (100 % par défaut). Lignes « Dommages et pertes » de la facture finale, écriture dans un compte distinct (4200). Vérifié : 250 $ + valeur de remplacement, écritures équilibrées. **À confirmer avec le comptable : les taxes sont calculées sur ces lignes comme sur la location.**
+- **Fiche client 360°** (`customers.summary`, `public/js/cortex_customer.js`) : solde dû, total facturé, locations, retours en retard, devis ouverts (avec retenue), locations en cours; boutons « Nouveau devis » et « Voir ses locations ». Valeurs lues dans les dossiers, **aucune cote ni risque inventé**; les montants n'apparaissent que si la personne a accès aux factures.
+- **Rapport « Utilisation du parc »** (Catalogue) : par équipement, jours loués, taux d'utilisation, revenus, revenus par unité, rendement sur la valeur de remplacement, avec une remarque (très demandé / peu loué). Locations Contrat, Sorti, Retourné et Clos seulement.
+- **Assistant IA** : deux outils de lecture ajoutés (`customer_summary`, `late_returns`) sous les droits de la personne; ils n'écrivent rien.
+- Vérification : `dev_tools/verifier_interconnexions.py` (dommages, écritures, rapport, client 360°, outils) et `charge_et_concurrence.py` (course des retenues).
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :
