@@ -13,6 +13,7 @@
 		"cortex-ai": "L'assistant consulte vos données et prépare des propositions. Vous décidez : rien n'est confirmé sans votre approbation.",
 		"cortex-home": "L'assistant consulte vos données et prépare des propositions. Vous décidez : rien n'est confirmé sans votre approbation.",
 		"cortex-admin": "Équipe et rôles, règles tarifaires, réglages de l'assistant et journal d'audit de votre société.",
+		"cortex-account": "Votre profil, votre mot de passe, vos appareils, vos notifications et votre activité.",
 		"cortex-availability": "Combien d'unités de chaque équipement restent libres, jour par jour. Indicatif : le serveur revérifie au moment de réserver.",
 		// Listes (DocTypes)
 		"cortex-rental-transaction": "Chaque location regroupe un client, une période et le matériel loué. Elle avance de Devis à Clos : réservation, contrat approuvé, sortie, retour.",
@@ -48,7 +49,7 @@
 		const parts = window.location.pathname.replace(/^\/app\/?/, "").split("/").map(decodeURIComponent);
 		const first = parts[0] || "";
 		if (first === "query-report") return parts[1];
-		if (parts.length === 1 || parts[1] === "view" || first === "cortex-availability") return first;
+		if (parts.length === 1 || parts[1] === "view" || first === "cortex-availability" || first === "cortex-account") return first;
 		return null; // formulaires : le titre est le nom de la fiche
 	}
 
@@ -71,6 +72,10 @@
 		const list = document.getElementById("navbar-breadcrumbs");
 		const p = parts();
 		const here = cortex.NAV && cortex.NAV.locate(p);
+		if (list && p[0] === "cortex-account") {
+			list.innerHTML = `<li><span class="cx-bc-group">${T("Compte")}</span></li><li><span>${T("Mon compte")}</span></li>`;
+			return;
+		}
 		if (!list || !here || p[0] === "cortex-home") return;
 		const crumbs = [{ text: T(here.group.title) }];
 		const mainSlug = here.item.href.replace(/^\/app\//, "");

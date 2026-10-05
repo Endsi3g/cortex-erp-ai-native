@@ -100,6 +100,12 @@ const grouped = computed(() => {
 	return [...map.entries()];
 });
 
+// Part du parc déjà bloquée (0 à 100) : sert au remplissage discret de la cellule.
+function fillPct(c) {
+	if (c.fleet <= 0) return 0;
+	return Math.max(0, Math.min(100, Math.round((c.booked / c.fleet) * 100)));
+}
+
 const STATUS_TEXT = { ok: "libre", partial: "partiellement réservé", full: "complet", none: "aucun parc" };
 
 function cellLabel(row, day, c) {
@@ -181,15 +187,7 @@ defineExpose({ load, setCategory });
 		<header class="cx-avail-head">
 			<div>
 				<h1 id="cx-avail-title" class="cx-avail-title">Disponibilité<span v-if="category"> · {{ __(category) }}</span></h1>
-				<p class="cx-avail-sub">
-					Unités libres de chaque équipement, jour par jour. Indicatif : le serveur revérifie au moment de réserver.
-				</p>
-			</div>
-			<div class="cx-avail-nav" role="group" aria-label="Période">
-				<button type="button" class="cx-btn" aria-label="Période précédente" @click="shift(-1)">‹</button>
-				<button type="button" class="cx-btn" @click="today">Aujourd'hui</button>
-				<button type="button" class="cx-btn" aria-label="Période suivante" @click="shift(1)">›</button>
-				<span class="cx-avail-period" aria-live="polite">{{ periodLabel }}</span>
+				<p class="cx-avail-sub">Unités libres de chaque équipement, jour par jour. Indicatif : le serveur revérifie au moment de réserver.</p>
 			</div>
 		</header>
 
@@ -206,25 +204,23 @@ defineExpose({ load, setCategory });
 			>
 		</nav>
 
-		<div class="cx-avail-filters">
-			<label class="cx-field">
-				<span>Recherche</span>
-				<input v-model="search" type="search" placeholder="Nom ou code de l'équipement" @input="onSearch" />
-			</label>
-			<label class="cx-field">
-				<span>Période affichée</span>
-				<select v-model.number="span" @change="load">
-					<option v-for="s in SPANS" :key="s.days" :value="s.days">{{ s.label }}</option>
-				</select>
-			</label>
+		<div class="cx-avail-bar">
+			<div class="cx-avail-nav" role="group" aria-label="Période">
+				<button type="button" class="cx-btn cx-icon" aria-label="Période précédente" @click="shift(-1)">‹</button>
+				<button type="button" class="cx-btn" @click="today">Aujourd'hui</button>
+				<button type="button" class="cx-btn cx-icon" aria-label="Période suivante" @click="shift(1)">›</button>
+				<span class="cx-avail-period" aria-live="polite">{{ periodLabel }}</span>
+			</div>
+			<input v-model="search" class="cx-search" type="search" aria-label="Rechercher un équipement" placeholder="Rechercher un équipement" @input="onSearch" />
+			<select v-model.number="span" class="cx-span" aria-label="Période affichée" @change="load">
+				<option v-for="s in SPANS" :key="s.days" :value="s.days">{{ s.label }}</option>
+			</select>
+			<ul class="cx-avail-legend" aria-label="Légende">
+				<li><span class="cx-dot cx-dot-partial"></span> En partie réservé</li>
+				<li><span class="cx-dot cx-dot-full"></span> Complet</li>
+				<li><span class="cx-dot cx-dot-quote"></span> Devis (ne bloque pas)</li>
+			</ul>
 		</div>
-
-		<ul class="cx-avail-legend" aria-label="Légende">
-			<li><span class="cx-dot cx-dot-ok"></span> Tout libre</li>
-			<li><span class="cx-dot cx-dot-partial"></span> Partiellement réservé</li>
-			<li><span class="cx-dot cx-dot-full"></span> Complet</li>
-			<li><span class="cx-dot cx-dot-quote"></span> Devis en cours (ne bloque pas le matériel)</li>
-		</ul>
 
 		<p v-if="error" class="cx-avail-error" role="alert">{{ error }}</p>
 
@@ -266,6 +262,7 @@ defineExpose({ load, setCategory });
 								type="button"
 								class="cx-cell"
 								:class="[`cx-cell-${c.status}`, { 'cx-cell-quote': c.quotes > 0 }]"
+								:style="{ '--pct': fillPct(c) + '%' }"
 								:aria-label="cellLabel(row, days[i], c)"
 								:aria-pressed="selected && selected.row === row && selected.day === days[i]"
 								@click="select(row, days[i], c)"
@@ -354,6 +351,39 @@ defineExpose({ load, setCategory });
 	gap: 12px;
 	align-items: flex-end;
 }
+.cx-avail-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px 12px;
+	margin: 14px 0 12px;
+}
+.cx-search {
+	height: 34px;
+	width: 240px;
+	max-width: 100%;
+	padding: 0 12px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: #fff;
+	font: inherit;
+	font-size: 13px;
+}
+.cx-span {
+	height: 34px;
+	padding: 0 8px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: #fff;
+	font: inherit;
+	font-size: 13px;
+}
+.cx-icon {
+	width: 34px;
+	padding: 0;
+	font-size: 18px;
+	line-height: 1;
+}
 .cx-avail-title {
 	margin: 0;
 	font-size: 22px;
@@ -430,9 +460,9 @@ defineExpose({ load, setCategory });
 .cx-avail-legend {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px 16px;
+	gap: 4px 14px;
 	list-style: none;
-	margin: 8px 0 12px;
+	margin: 0 0 0 auto;
 	padding: 0;
 	font-size: 12px;
 	color: var(--muted);
@@ -450,7 +480,9 @@ defineExpose({ load, setCategory });
 .cx-dot-full { background: var(--full-bg); border: 1px solid var(--full); }
 .cx-dot-quote { border: 1px dashed var(--muted); }
 .cx-avail-scroll {
-	overflow-x: auto;
+	overflow: auto;
+	max-height: calc(100vh - 250px);
+	min-height: 360px;
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	background: #fff;
@@ -464,23 +496,28 @@ defineExpose({ load, setCategory });
 }
 .cx-avail-table th,
 .cx-avail-table td {
-	padding: 1px 2px;
-	border-bottom: 1px solid #f0f0f1;
+	padding: 3px 3px;
+	border-bottom: 1px solid #f1f1f2;
 	text-align: center;
 	font-weight: 500;
 }
 .cx-avail-table thead th {
-	background: #f4f4f5;
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	min-width: 52px;
+	background: #fafafa;
 	color: var(--muted);
 	font-size: 12px;
 	white-space: nowrap;
+	padding: 8px 3px;
 }
-.cx-avail-table .cx-today {
-	background: #09090b;
-	color: #fff;
+.cx-avail-table thead .cx-today {
+	box-shadow: inset 0 -2px 0 var(--ok);
+	color: var(--ok);
 }
 .cx-avail-table .cx-today .cx-dn {
-	color: #fff;
+	color: var(--ok);
 }
 .cx-avail-table .cx-weekend:not(.cx-today) {
 	background: #fafafa;
@@ -499,20 +536,21 @@ defineExpose({ load, setCategory });
 	position: sticky;
 	left: 0;
 	z-index: 1;
-	min-width: 200px;
-	max-width: 260px;
-	padding: 2px 12px !important;
+	min-width: 220px;
+	max-width: 300px;
+	padding: 4px 14px !important;
 	text-align: left !important;
 	display: table-cell;
 	background: #fff;
 	border-right: 1px solid var(--line);
 }
 thead .cx-sticky {
-	background: #f4f4f5;
+	background: #fafafa;
+	z-index: 3;
 }
 .cx-name {
 	display: inline-block;
-	max-width: 210px;
+	max-width: 230px;
 	vertical-align: bottom;
 	font-size: 13px;
 	font-weight: 500;
@@ -527,7 +565,7 @@ thead .cx-sticky {
 	color: var(--muted);
 }
 .cx-group th {
-	background: #f4f4f5;
+	background: #fafafa;
 	text-align: left;
 	font-size: 11px;
 	letter-spacing: 0.04em;
@@ -537,14 +575,14 @@ thead .cx-sticky {
 }
 .cx-cell {
 	width: 100%;
-	min-width: 34px;
-	height: 26px;
-	border-radius: 6px;
+	min-width: 46px;
+	height: 38px;
+	border-radius: 8px;
 	border: 1px solid transparent;
-	background: transparent;
-	color: #27272a;
+	background: linear-gradient(to top, rgba(63, 63, 70, 0.14) var(--pct, 0%), transparent var(--pct, 0%));
+	color: #3f3f46;
 	font: inherit;
-	font-size: 13px;
+	font-size: 14px;
 	font-weight: 500;
 	font-variant-numeric: tabular-nums;
 	cursor: pointer;
@@ -558,8 +596,8 @@ thead .cx-sticky {
 	outline: 2px solid var(--ok);
 	outline-offset: 2px;
 }
-.cx-cell-ok { background: transparent; }
-.cx-cell-partial { background: #ececee; }
+.cx-cell-ok { color: #71717a; }
+.cx-cell-partial { color: #27272a; }
 .cx-cell-full { background: var(--full-bg); color: var(--full); font-weight: 650; }
 .cx-cell-none { color: #a1a1aa; }
 .cx-cell-quote { border: 1px dashed var(--muted); }
@@ -611,8 +649,33 @@ thead .cx-sticky {
 	animation: cx-shimmer 1.4s linear infinite;
 }
 @media (max-width: 640px) {
+	.cx-avail-scroll {
+		max-height: none;
+	}
+	.cx-avail-legend {
+		margin-left: 0;
+	}
+	.cx-search {
+		width: 100%;
+	}
+	.cx-cell {
+		min-width: 40px;
+		height: 36px;
+	}
 	.cx-sticky {
-		min-width: 130px;
+		min-width: 104px;
+		max-width: 112px;
+		padding: 4px 8px !important;
+	}
+	.cx-name {
+		display: block;
+		max-width: none;
+		white-space: normal;
+		font-size: 12.5px;
+		line-height: 1.25;
+	}
+	.cx-code {
+		margin-left: 0;
 	}
 	.cx-avail-period {
 		margin-left: 0;

@@ -224,7 +224,7 @@
 				return b;
 			};
 			menu.append(
-				entry(__("Mon profil"), () => frappe.set_route("Form", "User", me)),
+				entry(__("Mon compte"), () => frappe.set_route("cortex-account")),
 				entry(__("Aide et support"), () => frappe.new_doc("Cortex Support Request")),
 				entry(__("Se déconnecter"), () => frappe.app.logout())
 			);

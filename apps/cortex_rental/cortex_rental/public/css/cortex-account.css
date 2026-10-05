@@ -1,0 +1,223 @@
+/* Page « Mon compte » : onglets sobres, cartes de 720 px au plus, formulaires denses. */
+.cx-acct {
+	max-width: 760px;
+	padding: 8px 0 48px;
+}
+.cx-acct-tabs {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 16px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	border-bottom: 1px solid var(--cx-nav-line, #e7e6e3);
+}
+.cx-acct-tab {
+	flex: 0 0 auto;
+	padding: 9px 12px;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: transparent;
+	color: #6b6a66;
+	font-size: 13.5px;
+	cursor: pointer;
+	transition: color 0.14s ease, border-color 0.14s ease;
+}
+.cx-acct-tab:hover {
+	color: var(--cortex-text, #09090b);
+}
+.cx-acct-tab.active {
+	color: var(--cortex-text, #09090b);
+	border-bottom-color: var(--cortex-text, #09090b);
+	font-weight: 600;
+}
+.cx-acct-card {
+	margin-bottom: 14px;
+	padding: 18px 20px;
+	border: 1px solid var(--cx-nav-line, #e7e6e3);
+	border-radius: 14px;
+	background: var(--cortex-surface, #fff);
+	animation: cx-rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.cx-acct-card h2 {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 650;
+}
+.cx-acct-card header p {
+	margin: 2px 0 12px;
+	max-width: 62ch;
+	color: #6b6a66;
+	font-size: 13px;
+}
+.cx-acct-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 4px 16px;
+}
+.cx-acct-grid.one {
+	grid-template-columns: minmax(0, 360px);
+}
+.cx-acct-field {
+	display: block;
+	margin: 8px 0 0;
+}
+.cx-acct-field span {
+	display: block;
+	margin-bottom: 3px;
+	color: #6b6a66;
+	font-size: 12px;
+}
+.cx-acct-field input {
+	width: 100%;
+	height: 36px;
+	padding: 0 10px;
+	border: 1px solid var(--cx-nav-line, #e7e6e3);
+	border-radius: 8px;
+	background: var(--cortex-surface, #fff);
+	color: inherit;
+	font: inherit;
+	font-size: 14px;
+}
+.cx-acct-field input[readonly] {
+	background: #f6f6f4;
+	color: #6b6a66;
+}
+.cx-acct-field input:focus-visible {
+	outline: 2px solid var(--cortex-brand, #066336);
+	outline-offset: 1px;
+}
+.cx-acct-muted {
+	color: #6b6a66;
+	font-size: 12.5px;
+}
+.cx-acct-err {
+	margin: 10px 0 0;
+	color: #b42318;
+	font-size: 13px;
+}
+.cx-acct-actions {
+	margin-top: 14px;
+}
+.cx-acct-photo {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-bottom: 8px;
+}
+.cx-acct-photo p {
+	margin: 4px 0 0;
+	color: #6b6a66;
+	font-size: 12px;
+}
+.cx-acct-avatar {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+.cx-acct-initials {
+	display: grid;
+	place-items: center;
+	background: #e8f0ea;
+	color: #3f6a52;
+	font-size: 18px;
+	font-weight: 600;
+}
+.cx-acct-meta {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 10px 16px;
+	margin: 16px 0 0;
+	padding-top: 14px;
+	border-top: 1px solid var(--cx-nav-line, #e7e6e3);
+}
+.cx-acct-meta dt {
+	color: #6b6a66;
+	font-size: 11.5px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+.cx-acct-meta dd {
+	margin: 2px 0 0;
+	font-size: 14px;
+	font-weight: 500;
+}
+.cx-acct-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.cx-acct-list li {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 2px 12px;
+	padding: 9px 0;
+	border-bottom: 1px solid #f1f1ef;
+	font-size: 13.5px;
+}
+.cx-acct-list li:last-child {
+	border-bottom: 0;
+}
+.cx-acct-switches {
+	display: grid;
+	gap: 2px;
+}
+.cx-acct-switch {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 9px 0;
+	border-bottom: 1px solid #f1f1ef;
+	font-size: 14px;
+	cursor: pointer;
+}
+.cx-acct-switch:last-child {
+	border-bottom: 0;
+}
+.cx-acct-switch input {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--cortex-brand, #066336);
+}
+.cx-acct-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 12px;
+}
+.cx-acct-chip {
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: #eef3ef;
+	color: #3f6a52;
+	font-size: 12.5px;
+}
+.cx-acct-bar {
+	height: 8px;
+	border-radius: 4px;
+	background: #efefec;
+	overflow: hidden;
+}
+.cx-acct-bar i {
+	display: block;
+	height: 100%;
+	border-radius: 4px;
+	background: var(--cortex-brand, #066336);
+	transition: width 0.4s ease;
+}
+.cx-acct-ai p {
+	margin: 8px 0 0;
+	font-size: 13.5px;
+}
+.cx-acct-note {
+	color: #8a4b00;
+}
+@media (max-width: 640px) {
+	.cx-acct-grid {
+		grid-template-columns: 1fr;
+	}
+	.cx-acct-card {
+		padding: 14px;
+	}
+}
