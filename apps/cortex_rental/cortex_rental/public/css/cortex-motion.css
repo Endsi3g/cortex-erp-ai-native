@@ -177,7 +177,7 @@ body.cx-nav-on .page-head .page-actions {
 }
 .page-head .title-area .cx-page-sub {
 	display: block;
-	max-width: 88ch;
+	max-width: 62ch;
 	margin-top: 2px;
 	color: var(--cortex-text-secondary, #52525b);
 	font-size: 13px;

@@ -17,6 +17,14 @@ class TestNavigationContract(unittest.TestCase):
         self.nav = read("js", "cortex_nav.js")
         self.pages = read("js", "cortex_pages.js")
 
+    def group_titles(self):
+        return re.findall(r'title: "([^"]+)",\n(?:\s*(?:pinned|bottom): true,\n)*\s*items', self.nav)
+
+    def test_operations_and_assistant_are_always_open_the_rest_on_demand(self):
+        self.assertRegex(self.nav, r'title: "Opérations",\n\s*pinned: true')
+        self.assertRegex(self.nav, r'title: "Assistant",\n\s*pinned: true')
+        self.assertIn("group.pinned ||", self.nav)
+
     def test_every_group_is_collapsible_and_remembers_its_state(self):
         self.assertIn("cx-group-title", self.nav)
         self.assertIn("aria-expanded", self.nav)
@@ -35,12 +43,12 @@ class TestNavigationContract(unittest.TestCase):
         self.assertRegex(css, r"#navbar-breadcrumbs li::before\s*\{\s*content:\s*none")
 
     def test_group_labels_are_unique_and_french(self):
-        titles = re.findall(r'title: "([^"]+)",\n\s*(?:bottom: true,\n\s*)?items', self.nav)
+        titles = self.group_titles()
         self.assertEqual(len(titles), len(set(titles)))
         self.assertTrue({"Opérations", "Assistant", "Parc", "Clients et finance", "Administration"} <= set(titles))
 
     def test_the_assistant_group_is_second(self):
-        order = re.findall(r'title: "([^"]+)",\n\s*(?:bottom: true,\n\s*)?items', self.nav)
+        order = self.group_titles()
         self.assertEqual(order[1], "Assistant")
 
     def test_administration_sits_at_the_bottom(self):

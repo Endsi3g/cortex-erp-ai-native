@@ -875,3 +875,7 @@ body.cx-nav-on #navbar-breadcrumbs li a {
 .page-head .page-actions .primary-action {
 	text-transform: capitalize;
 }
+
+.cx-group-title.static {
+	cursor: default;
+}

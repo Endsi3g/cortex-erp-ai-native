@@ -23,6 +23,7 @@
 	const GROUPS = [
 		{
 			title: "Opérations",
+			pinned: true,
 			items: [
 				{ id: "home", label: "Tableau de bord", icon: "assets", href: "/app/cortex-rental", owns: ["cortex-rental"], show: ALL },
 				{ id: "rentals", label: "Locations", icon: "sell", href: "/app/cortex-rental-transaction", owns: ["cortex-rental-transaction"], show: can("Cortex Rental Transaction") },
@@ -33,6 +34,7 @@
 		},
 		{
 			title: "Assistant",
+			pinned: true,
 			items: [{ id: "assistant", label: "Assistant IA", icon: "message-1", href: "/app/cortex-home", owns: ["cortex-home", "cortex-ai"], show: ALL }],
 		},
 		{
@@ -160,14 +162,17 @@
 				});
 				if (!items.length) return;
 				// Tous les groupes se replient. Sans préférence enregistrée, seul celui de la page courante est ouvert.
+				// Opérations et Assistant sont toujours ouverts. Les autres s'ouvrent à la demande (et pour la page courante).
 				const here = cortex.NAV.locate(this.pathParts());
 				const stored = this.groups[group.title];
-				const open = stored === undefined ? !!(here && here.group === group) : stored !== false;
-				const section = el("section", { class: "cx-group" + (open ? "" : " closed") + (group.bottom ? " cx-group-bottom" : "") });
-				const title = el("button", { type: "button", class: "cx-group-title", "aria-expanded": String(open) }, `<span class="cx-label">${__(group.title)}</span><span class="cx-chev">${CHEVRON}</span>`);
+				const open = group.pinned || (stored === undefined ? !!(here && here.group === group) : stored !== false);
+				const section = el("section", { class: "cx-group" + (open ? "" : " closed") + (group.bottom ? " cx-group-bottom" : "") + (group.pinned ? " pinned" : "") });
+				const title = group.pinned
+					? el("div", { class: "cx-group-title static" }, `<span class="cx-label">${__(group.title)}</span>`)
+					: el("button", { type: "button", class: "cx-group-title", "aria-expanded": String(open) }, `<span class="cx-label">${__(group.title)}</span><span class="cx-chev">${CHEVRON}</span>`);
 				const body = el("div", { class: "cx-group-body" });
 				const inner = el("div", { class: "cx-group-inner" });
-				title.addEventListener("click", () => {
+				if (!group.pinned) title.addEventListener("click", () => {
 					const closed = section.classList.toggle("closed");
 					title.setAttribute("aria-expanded", String(!closed));
 					this.groups[group.title] = !closed;
