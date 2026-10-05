@@ -91,8 +91,15 @@ if frappe:
     # ---------------------------------------------------------------- client (sans compte)
     @frappe.whitelist(allow_guest=True, methods=["POST"])
     @rate_limit(limit=120, seconds=60 * 60)
-    def respond(token: str = "", action: str = "", message: str = "", responder_name: str = ""):
-        return quote_share.respond(token, action, message, responder_name)
+    def respond(
+        token: str = "",
+        action: str = "",
+        message: str = "",
+        responder_name: str = "",
+        confirmed: int = 0,
+        request_id: str = "",
+    ):
+        return quote_share.respond(token, action, message, responder_name, confirmed)
 
     @frappe.whitelist(allow_guest=True, methods=["POST"])
     @rate_limit(limit=20, seconds=60 * 60)

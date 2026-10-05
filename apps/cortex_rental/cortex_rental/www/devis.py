@@ -28,6 +28,11 @@ def get_context(context):
     context.title = f"Devis — {quote['company']}" if quote.get("company") else "Devis"
     context.fmt = _money
     context.num = lambda value: f"{float(value or 0):g}".replace(".", ",")
+    amounts = [float(line.get("amount") or 0) for line in quote.get("lines") or []]
+    biggest = max(amounts) if amounts else 0
+    total = float(quote.get("total") or 0)
+    context.share = lambda amount: round(float(amount or 0) / biggest * 100) if biggest else 0
+    context.pct = lambda amount: round(float(amount or 0) / total * 100, 1) if total else 0
     context.fmt_date = lambda value: frappe.utils.format_datetime(value, "d MMM yyyy, HH:mm") if value else ""
     context.fmt_day = lambda value: frappe.utils.format_datetime(value[:10], "d MMM yyyy") if value else ""
     return context

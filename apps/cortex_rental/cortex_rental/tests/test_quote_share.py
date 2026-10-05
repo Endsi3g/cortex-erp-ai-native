@@ -149,6 +149,29 @@ class TestAutoReserve(unittest.TestCase):
         self.assertIn("request_reservation", js)
 
 
+class TestAccidentalClicks(unittest.TestCase):
+    def test_server_refuses_accept_and_decline_without_confirmation(self):
+        body = read("services", "quote_share.py").split("def respond")[1].split("_find(token")[0]
+        self.assertIn('action in ("accept", "decline")', body)
+        self.assertIn("confirmed", body)
+
+    def test_page_asks_for_a_checkbox_and_delays_the_send_button(self):
+        html = read("www", "devis.html")
+        self.assertIn('id="ok"', html)
+        self.assertIn("confirmed:1", html)
+        self.assertIn("window.setTimeout(refresh,700)", html)  # anti double toucher
+        self.assertIn("if(busy||sent", html)  # un seul envoi
+
+    def test_the_four_actions_are_in_the_fixed_bar_including_pdf(self):
+        html = read("www", "devis.html")
+        for needle in ('data-pick="accept"', 'data-pick="changes"', 'data-pick="decline"', 'id="pdf"'):
+            self.assertIn(needle, html)
+
+    def test_decline_is_not_styled_as_the_primary_action(self):
+        html = read("www", "devis.html")
+        self.assertIn('send.className = pick==="decline" ? "" : "primary"', html)
+
+
 class TestText(unittest.TestCase):
     def test_clean_text_has_a_limit(self):
         self.assertLessEqual(len(quote_share.clean_text("a" * 5000)), quote_share.MAX_MESSAGE)

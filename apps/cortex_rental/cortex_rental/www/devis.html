@@ -11,28 +11,30 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:640px;margin:0 auto;padding:16px 16px calc(84px + env(safe-area-inset-bottom))}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px calc(132px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .brand img{width:28px;height:28px;object-fit:contain;border-radius:6px;flex:none}
-.brand b{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ref{color:var(--muted);font-size:12px;white-space:nowrap}
+.brand b{font-weight:600;font-size:14px;line-height:1.2;overflow-wrap:anywhere}
+.ref{color:var(--muted);font-size:12px;text-align:right;overflow-wrap:anywhere;max-width:45%}
 h1{font-size:19px;line-height:1.25;margin:16px 0 2px;font-weight:650}
 .meta{color:var(--muted);font-size:13px;margin:0}
-.meta span+span::before{content:"·";margin:0 6px}
+.meta span{display:inline-block}.meta span+span::before{content:"·";margin:0 6px}
 .say{margin:12px 0 0;padding:2px 0 2px 10px;border-left:2px solid var(--brand);color:var(--muted);font-size:13.5px;white-space:pre-line}
 .state{display:flex;gap:8px;align-items:flex-start;margin:14px 0 0;padding:10px 12px;border-radius:10px;background:var(--soft);font-size:13.5px}
 .state i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--muted)}
 .state.ok i{background:var(--ok)}.state.warn i{background:var(--warn)}.state.bad i{background:var(--bad)}
 .state b{display:block;font-weight:600;font-size:14px}
 ul.lines{list-style:none;margin:14px 0 0;padding:0;border-top:1px solid var(--line)}
-ul.lines li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+ul.lines li{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:9px 0 8px;border-bottom:1px solid var(--line)}
+.lb{grid-column:1/-1;height:3px;border-radius:2px;background:var(--soft);overflow:hidden;margin-top:5px}.lb i{display:block;height:100%;background:var(--brand);opacity:.75;border-radius:2px}
 .it{min-width:0}.it b{font-weight:500;font-size:14px;display:block}
-.it small{color:var(--muted);font-size:12px}
+.it small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
 .amt{white-space:nowrap;font-variant-numeric:tabular-nums;font-size:14px;align-self:center}
 .tot{margin:10px 0 0;font-size:13.5px}
 .tot div{display:flex;justify-content:space-between;padding:2px 0;color:var(--muted);font-variant-numeric:tabular-nums}
 .tot .grand{color:var(--text);font-weight:700;font-size:17px;padding-top:8px;margin-top:6px;border-top:1px solid var(--line)}
+.mix{margin:14px 0 0}.mix .bar2{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;background:var(--soft)}.mix .bar2 i{display:block;height:100%}.mix .leg{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px;color:var(--muted);font-size:11.5px}.mix .leg b{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:baseline}
 .dep{margin:8px 0 0;color:var(--muted);font-size:12.5px}
 .pay{margin:14px 0 0;padding:12px;border:1px solid var(--line);border-radius:12px}
 .pay .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -45,8 +47,12 @@ button.quiet{border-color:transparent;color:var(--muted);font-weight:500}
 button:disabled{opacity:.55;cursor:default}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:5}
-.bar .in{max-width:640px;margin:0 auto;display:flex;gap:8px}
-.bar .primary{flex:2}.bar .quiet{flex:1;padding:0 8px}
+.bar .in{max-width:640px;margin:0 auto;display:grid;gap:8px}
+.bar .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.bar .row3 button{border-color:var(--line);padding:0 6px;font-weight:500;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:6px}
+.bar svg{width:15px;height:15px;flex:none}
+.chk{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;font-size:14px;line-height:1.35}.chk input{width:20px;height:20px;margin:1px 0 0;flex:none;accent-color:var(--brand)}
+.sum{margin:0;padding:10px 12px;border-radius:10px;background:var(--soft);font-size:14px}
 form{margin:16px 0 0}
 label{display:block;font-size:12.5px;font-weight:500;color:var(--muted);margin:10px 0 4px}
 input,textarea{width:100%;font:inherit;font-size:16px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--soft);color:var(--text)}
@@ -87,9 +93,15 @@ textarea{min-height:76px;resize:vertical}
 
 	<ul class="lines" aria-label="Matériel">
 	{% for line in quote.lines %}
-		<li><div class="it"><b>{{ line.item_name | e }}</b><small>{{ num(line.quantity) }} × {{ num(line.billable_days) }} j × {{ fmt(line.daily_rate) }}{% if line.discount_percentage %} · −{{ num(line.discount_percentage) }} %{% endif %}</small></div><span class="amt">{{ fmt(line.amount) }}</span></li>
+		<li><div class="it"><b>{{ line.item_name | e }}</b><small>{{ num(line.quantity) }} × {{ num(line.billable_days) }} j × {{ fmt(line.daily_rate) }}{% if line.discount_percentage %} · −{{ num(line.discount_percentage) }} %{% endif %}</small></div><span class="amt">{{ fmt(line.amount) }}</span><div class="lb" aria-hidden="true"><i style="width:{{ share(line.amount) }}%"></i></div></li>
 	{% endfor %}
 	</ul>
+	{% if quote.total %}
+	<div class="mix" role="img" aria-label="Répartition du total : matériel {{ pct(quote.subtotal) }} %, TPS {{ pct(quote.tps) }} %, TVQ {{ pct(quote.tvq) }} %">
+		<div class="bar2"><i style="width:{{ pct(quote.subtotal) }}%;background:var(--brand)"></i><i style="width:{{ pct(quote.tps) }}%;background:var(--brand);opacity:.45"></i><i style="width:{{ pct(quote.tvq) }}%;background:var(--muted);opacity:.5"></i></div>
+		<div class="leg"><span><b style="background:var(--brand)"></b>Matériel {{ pct(quote.subtotal) }} %</span><span><b style="background:var(--brand);opacity:.45"></b>TPS</span><span><b style="background:var(--muted);opacity:.5"></b>TVQ</span></div>
+	</div>
+	{% endif %}
 	<div class="tot">
 		<div><span>Sous-total</span><span>{{ fmt(quote.subtotal) }}</span></div>
 		<div><span>TPS</span><span>{{ fmt(quote.tps) }}</span></div>
@@ -130,48 +142,77 @@ textarea{min-height:76px;resize:vertical}
 	{% endif %}
 
 	{% if state == "ok" %}
-	<form id="form" hidden novalidate class="noprint" aria-label="Votre réponse">
+	<form id="form" hidden novalidate class="noprint" aria-label="Votre réponse" autocomplete="off">
+		<p class="sum" id="sum"></p>
 		<div id="f-name"><label for="name">Votre nom</label><input id="name" autocomplete="name" maxlength="140"></div>
 		<div><label for="msg" id="msg-label">Message (facultatif)</label><textarea id="msg" maxlength="1000"></textarea></div>
+		<label class="chk" id="f-ok"><input type="checkbox" id="ok"><span id="ok-text"></span></label>
 		<p class="err" id="err" role="alert" hidden></p>
-		<div class="btns"><button class="quiet" type="button" id="back">Retour</button><button class="primary" type="submit" id="send">Envoyer</button></div>
+		<div class="btns"><button class="quiet" type="button" id="back">Retour</button><button class="primary" type="submit" id="send" disabled>Envoyer</button></div>
 	</form>
 	<div class="bar noprint" id="bar"><div class="in">
 		<button class="primary" type="button" data-pick="accept">Accepter le devis</button>
-		<button class="quiet" type="button" data-pick="changes">Modifier</button>
-		<button class="quiet" type="button" data-pick="decline">Refuser</button>
+		<div class="row3">
+			<button type="button" data-pick="changes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Modifier</button>
+			<button type="button" data-pick="decline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>Refuser</button>
+			<button type="button" id="pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>PDF</button>
+		</div>
 	</div></div>
 	<script>
 	(function(){
-		var token={{ token | tojson }},pick=null,bar=document.getElementById("bar"),form=document.getElementById("form");
-		var labels={accept:["Accepter le devis","Message (facultatif)"],changes:["Envoyer la demande","Quelle modification souhaitez-vous ?"],decline:["Refuser le devis","Raison (facultatif)"]};
+		var token={{ token | tojson }},total={{ fmt(quote.total) | tojson }},pick=null,busy=false,sent=false;
+		var bar=document.getElementById("bar"),form=document.getElementById("form"),send=document.getElementById("send"),ok=document.getElementById("ok"),nameEl=document.getElementById("name"),msgEl=document.getElementById("msg");
+		var requestId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.random();
+		var cfg={
+			accept:{send:"Accepter le devis",msg:"Message (facultatif)",sum:"Vous allez accepter ce devis de "+total+" (taxes incluses).",ok:"Je confirme accepter ce devis.",needName:true,needMsg:false},
+			changes:{send:"Envoyer la demande",msg:"Quelle modification souhaitez-vous ?",sum:"Vous allez demander une modification : le devis ne sera pas accepté.",ok:"",needName:false,needMsg:true},
+			decline:{send:"Refuser le devis",msg:"Raison (facultatif)",sum:"Vous allez refuser ce devis. Cette réponse est définitive pour ce lien.",ok:"Je confirme refuser ce devis.",needName:false,needMsg:false}
+		};
+		function valid(){
+			var c=cfg[pick]; if(!c) return false;
+			if(c.needName && nameEl.value.trim().length<2) return false;
+			if(c.needMsg && msgEl.value.trim().length<3) return false;
+			if(c.ok && !ok.checked) return false;
+			return true;
+		}
+		function refresh(){ send.disabled = busy || sent || !valid(); }
 		bar.addEventListener("click",function(e){
-			var b=e.target.closest("[data-pick]");if(!b)return;pick=b.dataset.pick;
-			document.getElementById("send").textContent=labels[pick][0];
-			document.getElementById("msg-label").textContent=labels[pick][1];
-			document.getElementById("f-name").hidden=pick==="decline";
-			bar.hidden=true;form.hidden=false;form.scrollIntoView({behavior:"smooth",block:"center"});
-			document.getElementById(pick==="changes"?"msg":"name").focus({preventScroll:true});
+			var b=e.target.closest("[data-pick]"); if(!b||busy||sent) return;
+			pick=b.dataset.pick; var c=cfg[pick];
+			document.getElementById("sum").textContent=c.sum;
+			send.textContent=c.send; send.className = pick==="decline" ? "" : "primary";
+			document.getElementById("msg-label").textContent=c.msg;
+			document.getElementById("f-name").hidden=!c.needName && pick!=="changes" ? true : false;
+			document.getElementById("f-ok").hidden=!c.ok; document.getElementById("ok-text").textContent=c.ok; ok.checked=false;
+			bar.hidden=true; form.hidden=false; refresh();
+			form.scrollIntoView({behavior:"smooth",block:"center"});
+			// Protection contre le double toucher : le bouton d'envoi reste inactif un court instant.
+			send.disabled=true; window.setTimeout(refresh,700);
+			(c.needMsg?msgEl:nameEl).focus({preventScroll:true});
 		});
-		document.getElementById("back").addEventListener("click",function(){form.hidden=true;bar.hidden=false;document.getElementById("err").hidden=true;});
+		[nameEl,msgEl,ok].forEach(function(el){el.addEventListener("input",refresh);el.addEventListener("change",refresh);});
+		document.getElementById("back").addEventListener("click",function(){ if(busy||sent) return; form.hidden=true; bar.hidden=false; document.getElementById("err").hidden=true; });
+		document.getElementById("pdf").addEventListener("click",function(){ window.print(); });
 		form.addEventListener("submit",function(e){
 			e.preventDefault();
-			var err=document.getElementById("err"),send=document.getElementById("send");err.hidden=true;send.disabled=true;
+			if(busy||sent||!valid()) return;
+			busy=true; refresh();
+			var err=document.getElementById("err"); err.hidden=true;
 			fetch("/api/method/cortex_rental.api.v1.quote_share.respond",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
-				body:JSON.stringify({token:token,action:pick,message:document.getElementById("msg").value,responder_name:document.getElementById("name").value})})
+				body:JSON.stringify({token:token,action:pick,message:msgEl.value,responder_name:nameEl.value,confirmed:1,request_id:requestId})})
 			.then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
 			.then(function(res){
-				if(res.ok){window.location.reload();return;}
+				if(res.ok){sent=true;refresh();window.location.reload();return;}
 				var t="Une erreur est survenue. Réessayez dans un instant.";
 				try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)t=JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
-				err.textContent=t;err.hidden=false;send.disabled=false;
-			}).catch(function(){err.textContent="Connexion impossible. Vérifiez votre réseau et réessayez.";err.hidden=false;send.disabled=false;});
+				err.textContent=t;err.hidden=false;busy=false;refresh();
+			}).catch(function(){err.textContent="Connexion impossible. Vérifiez votre réseau et réessayez.";err.hidden=false;busy=false;refresh();});
 		});
 	})();
 	</script>
-	<p class="foot noprint">Accepter ne bloque pas encore le matériel : l'entreprise confirme la disponibilité.<br><a href="#" onclick="window.print();return false">Imprimer ou enregistrer en PDF</a></p>
+	<p class="foot noprint">Accepter ne bloque pas encore le matériel : l'entreprise confirme la disponibilité.</p>
 	{% else %}
-	<p class="foot noprint"><a href="#" onclick="window.print();return false">Imprimer ou enregistrer en PDF</a></p>
+	<p class="foot noprint"><a href="#" onclick="window.print();return false">Enregistrer en PDF</a></p>
 	{% endif %}
 {% endif %}
 </main>

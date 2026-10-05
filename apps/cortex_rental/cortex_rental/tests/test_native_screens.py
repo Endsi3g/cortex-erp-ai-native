@@ -279,11 +279,12 @@ class TestFrenchTranslations(unittest.TestCase):
 
         with open(os.path.join(APP_DIR, "translations", "fr.csv"), encoding="utf-8", newline="") as handle:
             rows = list(csv.reader(handle))
-        self.assertTrue(all(len(row) == 2 and row[0] and row[1] for row in rows))
-        keys = [row[0] for row in rows]
+        # source, traduction et, facultatif, le contexte (« msgctxt » de Frappe)
+        self.assertTrue(all(len(row) in (2, 3) and row[0] and row[1] for row in rows))
+        keys = [(row[0], row[2] if len(row) == 3 else "") for row in rows]
         self.assertEqual(len(keys), len(set(keys)), "duplicate translation keys")
         for doctype in ("Cortex Rental Transaction", "Approval Request", "Consignment Payout", "Rental Pricing Rule"):
-            self.assertIn(doctype, keys)
+            self.assertIn((doctype, ""), keys)
 
 
 class TestScriptReports(unittest.TestCase):

@@ -260,9 +260,12 @@ def public_view(token: str) -> Dict[str, Any]:
     return view
 
 
-def respond(token: str, action: str, message: str = "", responder_name: str = "") -> Dict[str, Any]:
+def respond(token: str, action: str, message: str = "", responder_name: str = "", confirmed: int = 0) -> Dict[str, Any]:
+    """`confirmed` : le client a coché la confirmation (accepter, refuser). Sans elle, rien n'est enregistré."""
     if action not in ACTIONS:
         frappe.throw("Action inconnue.", frappe.ValidationError)
+    if action in ("accept", "decline") and not int(confirmed or 0):
+        frappe.throw("Confirmez votre réponse avant de l'envoyer.", frappe.ValidationError)
     doc = _find(token, for_update=True)
     if not doc:
         frappe.throw("Ce lien n'est pas valide.", frappe.DoesNotExistError)

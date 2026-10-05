@@ -13,7 +13,10 @@
 		January: "janvier", February: "février", March: "mars", April: "avril", May: "mai", June: "juin",
 		July: "juillet", August: "août", September: "septembre", October: "octobre", November: "novembre", December: "décembre",
 	};
+	// Étiquettes « Oct 2025 » des graphiques mensuels (produites en anglais par le serveur).
+	const ABBR = { Jan: "janv.", Feb: "févr.", Mar: "mars", Apr: "avr.", May: "mai", Jun: "juin", Jul: "juil.", Aug: "août", Sep: "sept.", Oct: "oct.", Nov: "nov.", Dec: "déc." };
 	const PATTERNS = [
+		[/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4})$/, (m) => `${ABBR[m[1]]} ${m[2]}`],
 		[/^(\d+) Filters? Applied$/, (m) => (m[1] === "1" ? "1 filtre appliqué" : `${m[1]} filtres appliqués`)],
 		[/^Filter based on (.+)$/, (m) => `Filtrer selon ${tr(m[1])}`],
 		[/^Cliquez pour trier par (.+)$/, (m) => `Cliquez pour trier par ${tr(m[1])}`],

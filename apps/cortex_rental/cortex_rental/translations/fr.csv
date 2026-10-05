@@ -1986,4 +1986,5 @@ Reversal,Inversion
 Line Kind,Nature de la ligne
 Late Fee,Frais de retard
 Deposit Credit,Acompte appliqué
-Dismiss,Ignorer
+Dismiss,Ignorer,Stop showing the onboarding widget.
+View List,Voir la liste
