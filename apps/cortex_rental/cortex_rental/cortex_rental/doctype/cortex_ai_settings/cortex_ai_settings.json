@@ -3,7 +3,7 @@
   "creation": "2026-10-01 02:00:00.000000",
   "doctype": "DocType",
   "engine": "InnoDB",
-  "modified": "2026-10-05 12:00:00.000000",
+  "modified": "2026-10-05 15:00:00.000000",
   "modified_by": "Administrator",
   "module": "Cortex Rental",
   "owner": "Administrator",
@@ -33,6 +33,12 @@
     "cb_budget",
     "default_monthly_budget",
     "default_monthly_token_cap",
+    "sb_economy",
+    "economy_model",
+    "economy_cap_percent",
+    "cb_economy",
+    "economy_price_input_per_mtok",
+    "economy_price_output_per_mtok",
     "sb_companies",
     "company_budgets"
   ],
@@ -146,6 +152,42 @@
       "fieldtype": "Int",
       "label": "Plafond mensuel de jetons par société",
       "default": "0"
+    },
+    {
+      "fieldname": "sb_economy",
+      "fieldtype": "Section Break",
+      "label": "Au plafond : modèle économique",
+      "description": "Quand une société atteint son plafond mensuel, l'assistant passe automatiquement à ce modèle moins coûteux et prévient la personne. Au-delà du pourcentage limite, il refuse jusqu'au mois suivant. Laissez le modèle vide pour refuser dès le plafond."
+    },
+    {
+      "fieldname": "economy_model",
+      "fieldtype": "Data",
+      "label": "Modèle économique",
+      "default": "gemini-3.1-flash-lite"
+    },
+    {
+      "fieldname": "economy_cap_percent",
+      "fieldtype": "Int",
+      "label": "Refuser à (% du budget)",
+      "default": "150"
+    },
+    {
+      "fieldname": "cb_economy",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "economy_price_input_per_mtok",
+      "fieldtype": "Currency",
+      "label": "Prix entrée du modèle économique ($ / M jetons)",
+      "precision": "4",
+      "default": "0.25"
+    },
+    {
+      "fieldname": "economy_price_output_per_mtok",
+      "fieldtype": "Currency",
+      "label": "Prix sortie du modèle économique ($ / M jetons)",
+      "precision": "4",
+      "default": "1.5"
     },
     {
       "fieldname": "sb_companies",

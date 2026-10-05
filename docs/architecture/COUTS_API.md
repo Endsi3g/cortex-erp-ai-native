@@ -51,8 +51,14 @@ Volume attendu : quelques centaines de courriels par société et par mois, donc
 
 IA 12–46 $ + courriel < 1 $ + paiement 2,9 % + 0,30 $ par acompte encaissé. Le coût fixe par société reste donc très inférieur à 100 $ pour un abonnement de 1 000 $.
 
-## 5. À décider par les cofondateurs (stratégie, prix : consensus)
+## 5. Décisions prises (2026-10-05)
 
-1. Plafond par défaut (60 $ proposé) et ce qui se passe au plafond (refus, ou passage automatique au modèle économique).
-2. Qui paie les frais de Stripe (client final ou société).
-3. Courriel : Resend (simple) ou SES (moins cher à grande échelle).
+1. **Au plafond** : l'assistant passe automatiquement à `gemini-3.1-flash-lite` (0,25 $ / 1,50 $ par M de jetons) et **prévient la personne** (bloc « Plafond d'intelligence artificielle atteint »). Il ne refuse qu'à 150 % du budget (réglable, vide = refuser dès le plafond).
+2. **Frais Stripe** : payés par la société; la grille de frais à appliquer sera **fournie par Kael** (à saisir quand elle sera connue).
+3. **Courriel** : **Amazon SES** (voir `docs/ops/COURRIEL_SES.md`).
+4. Plafond par défaut de 60 $ : à confirmer avec Xavier (stratégie et prix : consensus requis).
+
+## 6. Restant à décider par les cofondateurs
+
+1. Plafond par défaut : 60 $ par société et par mois, ou autre montant.
+2. Cortex prend-il une commission sur les paiements par carte ? (cela exigerait Stripe Connect, non construit).

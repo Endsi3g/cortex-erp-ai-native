@@ -2,192 +2,177 @@
 <html lang="fr-CA">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>{{ title }}</title>
 <style>
-:root{--bg:#f7f7f5;--card:#fff;--text:#111;--muted:#5b5b57;--line:#e7e6e3;--brand:#066336;--brand-ink:#fff;--warn:#8a4b00;--warn-bg:#fff4e0;--ok-bg:#e8f5ee}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1110;--card:#171918;--text:#f2f2f0;--muted:#a3a39e;--line:#2a2c2b;--brand:#3fbf80;--brand-ink:#06150e;--warn:#ffcf8a;--warn-bg:#2b2111;--ok-bg:#12281d}}
+:root{--bg:#fbfbfa;--text:#141414;--muted:#6a6a65;--line:#ececea;--brand:#066336;--brand-ink:#fff;--soft:#f1f1ef;--ok:#0b6b3a;--warn:#8a4b00;--bad:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#101211;--text:#f1f1ef;--muted:#a1a19b;--line:#242726;--brand:#3fbf80;--brand-ink:#06150e;--soft:#191c1b;--ok:#5fd39b;--warn:#ffcf8a;--bad:#ff9b8f}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.wrap{max-width:760px;margin:0 auto;padding:20px 16px 56px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:14px}
-.head{display:flex;align-items:center;gap:12px}
-.head img{width:44px;height:44px;object-fit:contain;border-radius:10px}
-.head .co{font-weight:600;font-size:18px}
-.head small{display:block;color:var(--muted);font-weight:400;font-size:13px}
-h1{font-size:22px;margin:18px 0 2px}
-.sub{color:var(--muted);margin:0 0 4px}
-.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin:0}
-.meta dt{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
-.meta dd{margin:2px 0 0;font-weight:500}
-table{width:100%;border-collapse:collapse;font-size:15px}
-th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;font-weight:500;border-bottom:1px solid var(--line);padding:6px 4px}
-td{padding:10px 4px;border-bottom:1px solid var(--line);vertical-align:top}
-.n{text-align:right;white-space:nowrap}
-.tot td{border:0;padding:4px}
-.tot .grand td{font-weight:700;font-size:18px;padding-top:10px}
-.msg{background:var(--ok-bg);border-radius:10px;padding:12px 14px;white-space:pre-line}
-.note{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:12px 14px;font-size:14px}
-.actions{display:grid;gap:10px;margin-top:6px}
-button,.btn{font:inherit;font-weight:600;border-radius:10px;padding:12px 16px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;min-height:46px}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px calc(84px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand img{width:28px;height:28px;object-fit:contain;border-radius:6px;flex:none}
+.brand b{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref{color:var(--muted);font-size:12px;white-space:nowrap}
+h1{font-size:19px;line-height:1.25;margin:16px 0 2px;font-weight:650}
+.meta{color:var(--muted);font-size:13px;margin:0}
+.meta span+span::before{content:"·";margin:0 6px}
+.say{margin:12px 0 0;padding:2px 0 2px 10px;border-left:2px solid var(--brand);color:var(--muted);font-size:13.5px;white-space:pre-line}
+.state{display:flex;gap:8px;align-items:flex-start;margin:14px 0 0;padding:10px 12px;border-radius:10px;background:var(--soft);font-size:13.5px}
+.state i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--muted)}
+.state.ok i{background:var(--ok)}.state.warn i{background:var(--warn)}.state.bad i{background:var(--bad)}
+.state b{display:block;font-weight:600;font-size:14px}
+ul.lines{list-style:none;margin:14px 0 0;padding:0;border-top:1px solid var(--line)}
+ul.lines li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.it{min-width:0}.it b{font-weight:500;font-size:14px;display:block}
+.it small{color:var(--muted);font-size:12px}
+.amt{white-space:nowrap;font-variant-numeric:tabular-nums;font-size:14px;align-self:center}
+.tot{margin:10px 0 0;font-size:13.5px}
+.tot div{display:flex;justify-content:space-between;padding:2px 0;color:var(--muted);font-variant-numeric:tabular-nums}
+.tot .grand{color:var(--text);font-weight:700;font-size:17px;padding-top:8px;margin-top:6px;border-top:1px solid var(--line)}
+.dep{margin:8px 0 0;color:var(--muted);font-size:12.5px}
+.pay{margin:14px 0 0;padding:12px;border:1px solid var(--line);border-radius:12px}
+.pay .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pay p{margin:0;font-size:13px;color:var(--muted)}
+.pay strong{font-size:15px;color:var(--text)}
+.alt{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);white-space:pre-line}
+button{font:inherit;font-size:14px;font-weight:600;border-radius:10px;padding:0 14px;height:42px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;touch-action:manipulation}
 button.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+button.quiet{border-color:transparent;color:var(--muted);font-weight:500}
 button:disabled{opacity:.55;cursor:default}
-label{display:block;font-size:14px;font-weight:500;margin:12px 0 4px}
-input,textarea{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
-textarea{min-height:90px;resize:vertical}
-.err{color:#b42318;font-size:14px;margin-top:8px}
-.done{text-align:center;padding:28px 12px}
-.done h2{margin:0 0 6px}
-.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:22px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:5}
+.bar .in{max-width:640px;margin:0 auto;display:flex;gap:8px}
+.bar .primary{flex:2}.bar .quiet{flex:1;padding:0 8px}
+form{margin:16px 0 0}
+label{display:block;font-size:12.5px;font-weight:500;color:var(--muted);margin:10px 0 4px}
+input,textarea{width:100%;font:inherit;font-size:16px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--soft);color:var(--text)}
+textarea{min-height:76px;resize:vertical}
+.btns{display:flex;gap:8px;margin-top:12px}.btns .primary{flex:1}
+.err{color:var(--bad);font-size:13px;margin:8px 0 0}
+.foot{margin:22px 0 0;color:var(--muted);font-size:11.5px;text-align:center}
+.foot a{color:inherit}
 [hidden]{display:none!important}
-@media (max-width:520px){.meta{grid-template-columns:1fr}th.h-days,td.c-days{display:none}}
-@media print{body{background:#fff;color:#000}.card{border-color:#ccc}.noprint{display:none!important}}
+@media (min-width:640px){.wrap{padding-top:32px}h1{font-size:21px}}
+@media print{body{background:#fff;color:#000}.bar,.pay,form,.noprint{display:none!important}.wrap{padding:0}}
 </style>
 </head>
 <body>
 <main class="wrap">
 {% set state = view.state %}
 {% if state == "not_found" %}
-	<div class="card done"><h2>Lien non valide</h2><p class="sub">Ce lien est incomplet ou a été modifié. Copiez-le en entier depuis le courriel, ou demandez-en un nouveau à l'entreprise.</p></div>
+	<div class="state bad" role="alert"><i></i><div><b>Lien non valide</b>Ce lien est incomplet ou a été modifié. Copiez-le en entier depuis le courriel, ou demandez-en un nouveau à l'entreprise.</div></div>
 {% else %}
-	<div class="head">
-		{% if quote.logo %}<img src="{{ quote.logo | e }}" alt="">{% endif %}
-		<div class="co">{{ quote.company | e }}<small>Devis {{ quote.reference | e }}</small></div>
-	</div>
+	<header class="top">
+		<div class="brand">{% if quote.logo %}<img src="{{ quote.logo | e }}" alt="">{% endif %}<b>{{ quote.company | e }}</b></div>
+		<span class="ref">Devis {{ quote.reference | e }}</span>
+	</header>
 
-	{% if state == "accepted" %}
-		<div class="card done" role="status"><h2>Devis accepté</h2><p class="sub">Merci. {{ quote.company | e }} a été avertie et vous confirmera la réservation du matériel.</p></div>
-		{% if view.payment and view.payment.needed %}
-		<section class="card noprint" aria-label="Acompte">
-			{% if view.payment.paid %}
-				<p class="msg" role="status"><strong>Acompte payé.</strong> Merci, votre paiement est bien reçu.</p>
-			{% elif view.payment.pending and not view.payment.online %}
-				<p class="note" role="status">Paiement en cours de confirmation. Cette page se mettra à jour sous peu.</p>
-			{% else %}
-				<h2 style="font-size:17px;margin:0 0 4px">Acompte à la réservation : {{ fmt(view.payment.amount) }}</h2>
-				<p class="sub" style="margin:0 0 12px">Payer l'acompte confirme votre place; vous pouvez aussi le régler plus tard avec l'entreprise.</p>
-				{% if view.payment.online %}
-				<div class="actions"><button class="primary" type="button" id="pay">Payer l'acompte par carte</button></div>
-				<p class="err" id="pay-err" role="alert" hidden></p>
-				{% endif %}
-				{% if view.payment.instructions %}<p class="msg" style="margin-top:12px"><strong>Autre façon de payer :</strong><br>{{ view.payment.instructions | e }}</p>{% endif %}
-			{% endif %}
-		</section>
-		{% if view.payment.online %}
-		<script>
-		document.getElementById("pay").addEventListener("click", function(){
-			var b=this, err=document.getElementById("pay-err"); b.disabled=true; err.hidden=true;
-			fetch("/api/method/cortex_rental.api.v1.quote_share.start_payment",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({token:{{ view_token | tojson }}})})
-			.then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
-			.then(function(res){
-				if(res.ok&&res.j.message&&res.j.message.url){window.location.href=res.j.message.url;return;}
-				var t="Le paiement n'a pas pu démarrer. Réessayez dans un instant.";
-				try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)t=JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
-				err.textContent=t;err.hidden=false;b.disabled=false;
-			}).catch(function(){err.textContent="Connexion impossible. Réessayez.";err.hidden=false;b.disabled=false;});
-		});
-		</script>
-		{% endif %}
-		{% endif %}
-	{% elif state == "declined" %}
-		<div class="card done" role="status"><h2>Réponse envoyée</h2><p class="sub">Vous avez refusé ce devis. Merci de nous l'avoir indiqué.</p></div>
-	{% elif state == "changes" %}
-		<div class="card done" role="status"><h2>Demande envoyée</h2><p class="sub">Votre demande de modification a été transmise à {{ quote.company | e }}. Vous recevrez un devis mis à jour.</p></div>
-	{% elif state == "revoked" %}
-		<div class="card done"><h2>Lien désactivé</h2><p class="sub">Ce lien a été désactivé par l'entreprise. Demandez-lui un nouveau lien.</p></div>
-	{% elif state == "expired" %}
-		<div class="card done"><h2>Devis expiré</h2><p class="sub">Ce devis n'est plus valide. Demandez à l'entreprise de vous en envoyer un nouveau.</p></div>
-	{% elif state == "outdated" %}
-		<div class="card done"><h2>Devis mis à jour</h2><p class="sub">Ce devis a été modifié depuis l'envoi de ce lien. Demandez à l'entreprise de vous envoyer le lien à jour.</p></div>
+	{% if state == "accepted" %}<div class="state ok" role="status"><i></i><div><b>Devis accepté</b>{{ quote.company | e }} a été avertie et vous confirmera la réservation du matériel.</div></div>
+	{% elif state == "declined" %}<div class="state" role="status"><i></i><div><b>Devis refusé</b>Merci de nous l'avoir indiqué.</div></div>
+	{% elif state == "changes" %}<div class="state warn" role="status"><i></i><div><b>Modification demandée</b>{{ quote.company | e }} vous enverra un devis mis à jour.</div></div>
+	{% elif state == "revoked" %}<div class="state bad" role="alert"><i></i><div><b>Lien désactivé</b>Demandez à l'entreprise de vous envoyer un nouveau lien.</div></div>
+	{% elif state == "expired" %}<div class="state bad" role="alert"><i></i><div><b>Devis expiré</b>Demandez à l'entreprise de vous en envoyer un nouveau.</div></div>
+	{% elif state == "outdated" %}<div class="state warn" role="alert"><i></i><div><b>Devis mis à jour</b>Ce devis a changé depuis l'envoi du lien. Demandez à l'entreprise le lien à jour.</div></div>
 	{% endif %}
 
 	{% if state in ("ok", "accepted", "declined", "changes") %}
-	<h1>Devis pour {{ quote.customer | e }}</h1>
-	<p class="sub">{% if quote.project %}{{ quote.project | e }} · {% endif %}Préparé par {{ quote.prepared_by | e }}</p>
+	<h1>{{ quote.customer | e }}</h1>
+	<p class="meta"><span>{{ fmt_date(quote.starts_at) }} → {{ fmt_date(quote.ends_at) }}</span><span>{{ num(quote.billable_days) }} jours facturés</span>{% if state == "ok" %}<span>Valide jusqu'au {{ fmt_day(quote.valid_until) }}</span>{% endif %}</p>
+	{% if quote.project %}<p class="meta">{{ quote.project | e }}</p>{% endif %}
+	{% if quote.message %}<p class="say">{{ quote.message | e }}</p>{% endif %}
 
-	<section class="card" aria-label="Résumé">
-		<dl class="meta">
-			<div><dt>Début</dt><dd>{{ fmt_date(quote.starts_at) }}</dd></div>
-			<div><dt>Fin</dt><dd>{{ fmt_date(quote.ends_at) }}</dd></div>
-			<div><dt>Jours facturés</dt><dd>{{ num(quote.billable_days) }}</dd></div>
-			<div><dt>Valide jusqu'au</dt><dd>{{ fmt_day(quote.valid_until) }}</dd></div>
-		</dl>
-		{% if quote.message %}<p class="msg" style="margin-top:14px">{{ quote.message | e }}</p>{% endif %}
-	</section>
+	<ul class="lines" aria-label="Matériel">
+	{% for line in quote.lines %}
+		<li><div class="it"><b>{{ line.item_name | e }}</b><small>{{ num(line.quantity) }} × {{ num(line.billable_days) }} j × {{ fmt(line.daily_rate) }}{% if line.discount_percentage %} · −{{ num(line.discount_percentage) }} %{% endif %}</small></div><span class="amt">{{ fmt(line.amount) }}</span></li>
+	{% endfor %}
+	</ul>
+	<div class="tot">
+		<div><span>Sous-total</span><span>{{ fmt(quote.subtotal) }}</span></div>
+		<div><span>TPS</span><span>{{ fmt(quote.tps) }}</span></div>
+		<div><span>TVQ</span><span>{{ fmt(quote.tvq) }}</span></div>
+		<div class="grand"><span>Total</span><span>{{ fmt(quote.total) }}</span></div>
+	</div>
+	{% if quote.deposit_total and state == "ok" %}<p class="dep">Acompte de {{ fmt(quote.deposit_total) }} ({{ num(quote.deposit_percent) }} % plus taxes) facturé à la réservation du matériel.</p>{% endif %}
+	{% endif %}
 
-	<section class="card" aria-label="Matériel">
-		<table>
-			<thead><tr><th>Matériel</th><th class="n">Qté</th><th class="n h-days">Jours</th><th class="n">Tarif/jour</th><th class="n">Montant</th></tr></thead>
-			<tbody>
-			{% for line in quote.lines %}
-				<tr><td>{{ line.item_name | e }}{% if line.discount_percentage %}<br><small style="color:var(--muted)">Remise {{ num(line.discount_percentage) }} %</small>{% endif %}</td>
-				<td class="n">{{ num(line.quantity) }}</td><td class="n c-days">{{ num(line.billable_days) }}</td><td class="n">{{ fmt(line.daily_rate) }}</td><td class="n">{{ fmt(line.amount) }}</td></tr>
-			{% endfor %}
-			</tbody>
-		</table>
-		<table class="tot" style="margin-top:10px">
-			<tr><td>Sous-total</td><td class="n">{{ fmt(quote.subtotal) }}</td></tr>
-			<tr><td>TPS</td><td class="n">{{ fmt(quote.tps) }}</td></tr>
-			<tr><td>TVQ</td><td class="n">{{ fmt(quote.tvq) }}</td></tr>
-			<tr class="grand"><td>Total</td><td class="n">{{ fmt(quote.total) }}</td></tr>
-		</table>
-		{% if quote.deposit_total %}<p class="sub" style="margin-top:10px">Un acompte de {{ fmt(quote.deposit_total) }} ({{ num(quote.deposit_percent) }} % plus taxes) sera facturé à la réservation du matériel.</p>{% endif %}
+	{% if state == "accepted" and view.payment and view.payment.needed %}
+	<section class="pay noprint" aria-label="Acompte">
+		{% if view.payment.paid %}
+			<div class="row"><p><strong>Acompte payé</strong><br>Merci, votre paiement est bien reçu.</p></div>
+		{% elif view.payment.pending and not view.payment.online %}
+			<p>Paiement en cours de confirmation. Cette page se mettra à jour sous peu.</p>
+		{% else %}
+			<div class="row"><p><strong>Acompte {{ fmt(view.payment.amount) }}</strong><br>À régler pour confirmer votre place.</p>
+			{% if view.payment.online %}<button class="primary" type="button" id="pay">Payer par carte</button>{% endif %}</div>
+			<p class="err" id="pay-err" role="alert" hidden></p>
+			{% if view.payment.instructions %}<p class="alt"><b>Autre façon de payer</b>{{ "\n" }}{{ view.payment.instructions | e }}</p>{% endif %}
+		{% endif %}
 	</section>
+	{% if view.payment.online %}
+	<script>
+	document.getElementById("pay").addEventListener("click",function(){
+		var b=this,err=document.getElementById("pay-err");b.disabled=true;err.hidden=true;
+		fetch("/api/method/cortex_rental.api.v1.quote_share.start_payment",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({token:{{ view_token | tojson }}})})
+		.then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+		.then(function(res){
+			if(res.ok&&res.j.message&&res.j.message.url){window.location.href=res.j.message.url;return;}
+			var t="Le paiement n'a pas pu démarrer. Réessayez dans un instant.";
+			try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)t=JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
+			err.textContent=t;err.hidden=false;b.disabled=false;
+		}).catch(function(){err.textContent="Connexion impossible. Réessayez.";err.hidden=false;b.disabled=false;});
+	});
+	</script>
+	{% endif %}
 	{% endif %}
 
 	{% if state == "ok" %}
-	<section class="card noprint" id="answer" aria-label="Votre réponse">
-		<p class="note">Accepter ce devis ne bloque pas encore le matériel : l'entreprise confirme la disponibilité et vous écrit pour la réservation.</p>
-		<div class="actions" id="choices">
-			<button class="primary" type="button" data-pick="accept">Accepter le devis</button>
-			<button type="button" data-pick="changes">Demander une modification</button>
-			<button type="button" data-pick="decline">Refuser</button>
-			<button type="button" onclick="window.print()">Imprimer ou enregistrer en PDF</button>
-		</div>
-		<form id="form" hidden novalidate>
-			<div id="f-name"><label for="name">Votre nom</label><input id="name" autocomplete="name" maxlength="140"></div>
-			<div><label for="msg" id="msg-label">Message (facultatif)</label><textarea id="msg" maxlength="1000"></textarea></div>
-			<p class="err" id="err" role="alert" hidden></p>
-			<div class="actions" style="margin-top:14px">
-				<button class="primary" type="submit" id="send">Envoyer</button>
-				<button type="button" id="back">Retour</button>
-			</div>
-		</form>
-	</section>
+	<form id="form" hidden novalidate class="noprint" aria-label="Votre réponse">
+		<div id="f-name"><label for="name">Votre nom</label><input id="name" autocomplete="name" maxlength="140"></div>
+		<div><label for="msg" id="msg-label">Message (facultatif)</label><textarea id="msg" maxlength="1000"></textarea></div>
+		<p class="err" id="err" role="alert" hidden></p>
+		<div class="btns"><button class="quiet" type="button" id="back">Retour</button><button class="primary" type="submit" id="send">Envoyer</button></div>
+	</form>
+	<div class="bar noprint" id="bar"><div class="in">
+		<button class="primary" type="button" data-pick="accept">Accepter le devis</button>
+		<button class="quiet" type="button" data-pick="changes">Modifier</button>
+		<button class="quiet" type="button" data-pick="decline">Refuser</button>
+	</div></div>
 	<script>
 	(function(){
-		var token = {{ token | tojson }};
-		var pick = null;
-		var choices = document.getElementById("choices"), form = document.getElementById("form");
-		var labels = {accept:["Accepter le devis","Message (facultatif)"],changes:["Envoyer la demande","Quelle modification souhaitez-vous ?"],decline:["Refuser le devis","Raison (facultatif)"]};
-		choices.addEventListener("click", function(e){
-			var b = e.target.closest("[data-pick]"); if(!b) return;
-			pick = b.dataset.pick;
-			document.getElementById("send").textContent = labels[pick][0];
-			document.getElementById("msg-label").textContent = labels[pick][1];
-			document.getElementById("f-name").hidden = pick === "decline";
-			choices.hidden = true; form.hidden = false; document.getElementById(pick === "changes" ? "msg" : "name").focus();
+		var token={{ token | tojson }},pick=null,bar=document.getElementById("bar"),form=document.getElementById("form");
+		var labels={accept:["Accepter le devis","Message (facultatif)"],changes:["Envoyer la demande","Quelle modification souhaitez-vous ?"],decline:["Refuser le devis","Raison (facultatif)"]};
+		bar.addEventListener("click",function(e){
+			var b=e.target.closest("[data-pick]");if(!b)return;pick=b.dataset.pick;
+			document.getElementById("send").textContent=labels[pick][0];
+			document.getElementById("msg-label").textContent=labels[pick][1];
+			document.getElementById("f-name").hidden=pick==="decline";
+			bar.hidden=true;form.hidden=false;form.scrollIntoView({behavior:"smooth",block:"center"});
+			document.getElementById(pick==="changes"?"msg":"name").focus({preventScroll:true});
 		});
-		document.getElementById("back").addEventListener("click", function(){ form.hidden = true; choices.hidden = false; document.getElementById("err").hidden = true; });
-		form.addEventListener("submit", function(e){
+		document.getElementById("back").addEventListener("click",function(){form.hidden=true;bar.hidden=false;document.getElementById("err").hidden=true;});
+		form.addEventListener("submit",function(e){
 			e.preventDefault();
-			var err = document.getElementById("err"), send = document.getElementById("send");
-			err.hidden = true; send.disabled = true;
-			fetch("/api/method/cortex_rental.api.v1.quote_share.respond", {
-				method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"},
-				body: JSON.stringify({token:token, action:pick, message:document.getElementById("msg").value, responder_name:document.getElementById("name").value})
-			}).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); }).then(function(res){
-				if(res.ok){ window.location.reload(); return; }
-				var text = "Une erreur est survenue. Réessayez dans un instant.";
-				try { var m = JSON.parse(res.j._server_messages || "[]"); if (m.length) text = JSON.parse(m[0]).message.replace(/<[^>]+>/g, ""); } catch(x){}
-				err.textContent = text; err.hidden = false; send.disabled = false;
-			}).catch(function(){ err.textContent = "Connexion impossible. Vérifiez votre réseau et réessayez."; err.hidden = false; send.disabled = false; });
+			var err=document.getElementById("err"),send=document.getElementById("send");err.hidden=true;send.disabled=true;
+			fetch("/api/method/cortex_rental.api.v1.quote_share.respond",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+				body:JSON.stringify({token:token,action:pick,message:document.getElementById("msg").value,responder_name:document.getElementById("name").value})})
+			.then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+			.then(function(res){
+				if(res.ok){window.location.reload();return;}
+				var t="Une erreur est survenue. Réessayez dans un instant.";
+				try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)t=JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
+				err.textContent=t;err.hidden=false;send.disabled=false;
+			}).catch(function(){err.textContent="Connexion impossible. Vérifiez votre réseau et réessayez.";err.hidden=false;send.disabled=false;});
 		});
 	})();
 	</script>
+	<p class="foot noprint">Accepter ne bloque pas encore le matériel : l'entreprise confirme la disponibilité.<br><a href="#" onclick="window.print();return false">Imprimer ou enregistrer en PDF</a></p>
+	{% else %}
+	<p class="foot noprint"><a href="#" onclick="window.print();return false">Imprimer ou enregistrer en PDF</a></p>
 	{% endif %}
-	<p class="foot">Devis de {{ quote.company | e }} · Lien privé, ne le partagez pas.</p>
 {% endif %}
 </main>
 </body>

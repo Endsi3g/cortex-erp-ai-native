@@ -178,7 +178,7 @@ body.cx-nav-on [data-page-route="Workspaces"] .layout-main-section-wrapper {
 .cx-chev {
 	display: grid;
 	place-items: center;
-	opacity: 0;
+	opacity: 0.55;
 	transform: rotate(90deg);
 	transition: transform 0.2s var(--cx-ease, cubic-bezier(0.2, 0.8, 0.2, 1)), opacity 0.14s ease;
 }
@@ -587,6 +587,15 @@ body.cx-nav-collapsed .cx-badge {
 	body.cx-nav-collapsed .cx-group-title {
 		display: flex;
 	}
+	/* Dans le tiroir du téléphone, les groupes repliés restent repliés (le mode « rail » est réservé à l'ordinateur) */
+	body.cx-nav-collapsed .cx-group.closed .cx-group-body {
+		grid-template-rows: 0fr;
+	}
+	body.cx-nav-collapsed .cx-group + .cx-group {
+		margin-top: 0;
+		padding-top: 0;
+		border-top: 0;
+	}
 	body.cx-nav-collapsed .cx-nav-item,
 	body.cx-nav-collapsed .cx-new {
 		justify-content: flex-start;
@@ -827,7 +836,42 @@ body.cx-nav-collapsed .cx-account-menu {
 		justify-content: flex-start;
 		padding: 6px 8px;
 	}
-	body.cx-nav-collapsed .cx-account-text {
+	body.cx-nav-collapsed #cx-nav .cx-account-text {
 		display: flex;
 	}
+}
+
+
+/* Fil d'Ariane Cortex : « Groupe › Page › Fiche », sans flèche au début */
+body.cx-nav-on #navbar-breadcrumbs li::before {
+	content: none !important;
+}
+body.cx-nav-on #navbar-breadcrumbs li + li::before {
+	content: "›" !important;
+	margin: 0 6px;
+	color: #a3a29d;
+}
+body.cx-nav-on #navbar-breadcrumbs li {
+	display: inline-flex;
+	align-items: center;
+	font-size: 13px;
+}
+body.cx-nav-on #navbar-breadcrumbs .cx-bc-group {
+	color: #8a8984;
+}
+body.cx-nav-on #navbar-breadcrumbs li:last-child a,
+body.cx-nav-on #navbar-breadcrumbs li:last-child span {
+	color: var(--cortex-text, #09090b);
+	font-weight: 500;
+}
+body.cx-nav-on #navbar-breadcrumbs li a::before,
+body.cx-nav-on #navbar-breadcrumbs li a::after {
+	content: none !important;
+}
+body.cx-nav-on #navbar-breadcrumbs li a {
+	padding: 0;
+	margin: 0;
+}
+.page-head .page-actions .primary-action {
+	text-transform: capitalize;
 }

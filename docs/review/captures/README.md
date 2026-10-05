@@ -15,3 +15,8 @@ Prises le 2026-09-30 avec le compte propriétaire de la société simulée (91 j
 | 30, 31 | Connexion, demande d'accès |
 
 Pour régénérer : voir l'audit (`docs/audit/AUDIT_SIMULATION_90_JOURS.md`, § 2).
+
+## 2026-10-05 — revue UI/UX avec le partenaire (`2026-10-05/`)
+
+Nouvelle série après : barre latérale à groupes repliables (profil en bas, société en haut), fil d'Ariane « Groupe › Page »,
+titres alignés (Locations…), page de devis refondue. `01`–`12` ordinateur (1440 px), `13` devis ordinateur, `m01`–`m06` téléphone (390 px).

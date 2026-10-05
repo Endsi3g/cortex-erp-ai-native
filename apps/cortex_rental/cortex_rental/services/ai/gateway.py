@@ -146,6 +146,15 @@ class AIGateway:
         request_id: str = "",
     ) -> GatewayResult:
         budget.check(company, self.settings)
+        # Plafond mensuel atteint : on continue avec le modèle économique et on le dit à la personne.
+        economy = bool(budget.status(company, self.settings).get("economy"))
+        prices = None
+        if economy:
+            self._provider = build_provider(self.settings, model=self.settings["economy_model"].strip())
+            prices = {
+                "price_input_per_mtok": self.settings.get("economy_price_input_per_mtok"),
+                "price_output_per_mtok": self.settings.get("economy_price_output_per_mtok"),
+            }
         provider = self.provider()
         exposed = tools.exposed(allowed_tools)
         exposed_names = {t.name for t in exposed}
@@ -177,6 +186,7 @@ class AIGateway:
                 self.settings,
                 request_id=request_id,
                 tool_calls=len(result.tool_calls),
+                prices=prices,
             )
             if result.tool_calls and step < max_steps:
                 messages.append(self.provider().assistant_message(result))
@@ -201,7 +211,21 @@ class AIGateway:
         text = text or EMPTY_ANSWER
         status = budget.status(company, self.settings)
         blocks = [{"type": "assistant_text", "text": text, "source_ids": []}] + result_blocks
-        if status["warning"]:
+        if economy:
+            blocks.append(
+                {
+                    "type": "risk",
+                    "severity": "warning",
+                    "title": "Plafond d'intelligence artificielle atteint",
+                    "explanation": (
+                        "Votre société a atteint son plafond mensuel d'IA : l'assistant répond maintenant avec un modèle "
+                        "plus économique, un peu moins puissant. Le plafond se renouvelle au début du mois; un "
+                        "administrateur peut aussi l'ajuster."
+                    ),
+                    "source_ids": [],
+                }
+            )
+        elif status["warning"]:
             blocks.append(
                 {
                     "type": "risk",

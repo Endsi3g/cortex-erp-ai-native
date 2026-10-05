@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Plafond d'IA** : passage automatique au modèle économique (`gemini-3.1-flash-lite`) avec avis à la personne; refus seulement à 150 % du budget. Patch `set_ai_economy_defaults`.
+- **Page de devis** refondue (épurée, dense, pensée pour les petits écrans). Barre latérale : groupes tous repliables; fil d'Ariane « Groupe › Page › Fiche » en français; titres de pages alignés sur la barre latérale (Locations, Approbations, Catalogue…); dates de liste en français. Guide Amazon SES.
 - **Après l'acceptation d'un devis** : alerte en direct avec bouton « Réserver », réservation automatique optionnelle par société (au nom de la personne qui a partagé, disponibilité revérifiée), paiement de l'acompte dans le portail (Stripe Checkout avec les clés de la société, webhook signé, paiement unique par session) avec instructions manuelles en repli.
 - **Coûts d'API** (`docs/architecture/COUTS_API.md`) : prix de `gemini-3.8-flash` (0,75 $ / 3,75 $ par M de jetons) et plafond de 60 $ par société et par mois proposés par défaut (patch `set_ai_pricing_defaults`); comparaison Stripe, Resend et SES.
 - Profil de la personne connectée en bas de la barre latérale.

@@ -23,6 +23,11 @@ DEFAULTS: Dict[str, Any] = {
     "default_monthly_budget": 60.0,
     "default_monthly_token_cap": 0,
     "warn_percent": 80,
+    # Au plafond : modèle économique (Gemini 3.1 Flash-Lite, 0,25 $ / 1,50 $ par M de jetons) jusqu'à 150 % du budget.
+    "economy_model": "gemini-3.1-flash-lite",
+    "economy_price_input_per_mtok": 0.25,
+    "economy_price_output_per_mtok": 1.50,
+    "economy_cap_percent": 150,
 }
 
 

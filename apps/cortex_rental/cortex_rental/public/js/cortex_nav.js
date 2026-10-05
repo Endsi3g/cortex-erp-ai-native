@@ -62,6 +62,25 @@
 		},
 	];
 
+	// Un seul endroit pour savoir où se trouve une page dans la navigation (barre latérale, fil d'Ariane, titres).
+	cortex.NAV = {
+		groups: GROUPS,
+		locate(parts) {
+			const first = parts[0] || "";
+			for (const group of GROUPS) {
+				for (const item of group.items) {
+					if (first === "query-report") {
+						const owner = REPORT_OWNER[parts[1]] || ((item.reports || []).includes(parts[1]) ? item.id : null);
+						if (owner === item.id) return { group, item };
+					} else if ((item.owns || []).includes(first)) {
+						return { group, item };
+					}
+				}
+			}
+			return null;
+		},
+	};
+
 	const REPORT_OWNER = { "Disponibilité du parc": "availability", "Prochains départs et retours": "operations", "Activité des clients": "customers" };
 	const STORE = "cortex_nav_collapsed";
 	const GROUP_STORE = "cortex_nav_groups";
@@ -140,7 +159,10 @@
 					}
 				});
 				if (!items.length) return;
-				const open = this.groups[group.title] !== false;
+				// Tous les groupes se replient. Sans préférence enregistrée, seul celui de la page courante est ouvert.
+				const here = cortex.NAV.locate(this.pathParts());
+				const stored = this.groups[group.title];
+				const open = stored === undefined ? !!(here && here.group === group) : stored !== false;
 				const section = el("section", { class: "cx-group" + (open ? "" : " closed") + (group.bottom ? " cx-group-bottom" : "") });
 				const title = el("button", { type: "button", class: "cx-group-title", "aria-expanded": String(open) }, `<span class="cx-label">${__(group.title)}</span><span class="cx-chev">${CHEVRON}</span>`);
 				const body = el("div", { class: "cx-group-body" });
@@ -310,6 +332,10 @@
 					this.refreshTeam();
 				}
 			});
+		}
+
+		pathParts() {
+			return window.location.pathname.replace(/^\/app\/?/, "").split("/").map(decodeURIComponent);
 		}
 
 		// --- état actif

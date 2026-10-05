@@ -52,7 +52,59 @@
 		return null; // formulaires : le titre est le nom de la fiche
 	}
 
+	const parts = () => window.location.pathname.replace(/^\/app\/?/, "").split("/").map(decodeURIComponent);
+
+	// Le titre de la page est celui de l'entrée de la barre latérale (« Locations », pas « Location »).
+	function alignTitle(page) {
+		const here = cortex.NAV && cortex.NAV.locate(parts());
+		const p = parts();
+		if (!here || p[0] === "query-report" || p[0] === "cortex-home") return;
+		if (!(p.length === 1 || p[1] === "view")) return;
+		if (here.item.href.replace(/^\/app\//, "") !== p[0]) return;
+		const title = page.querySelector(".page-head .title-text");
+		const label = T(here.item.label);
+		if (title && title.textContent !== label) title.textContent = label;
+	}
+
+	// Fil d'Ariane : « Groupe › Page › Fiche », dans la langue de l'interface.
+	function breadcrumbs() {
+		const list = document.getElementById("navbar-breadcrumbs");
+		const p = parts();
+		const here = cortex.NAV && cortex.NAV.locate(p);
+		if (!list || !here || p[0] === "cortex-home") return;
+		const crumbs = [{ text: T(here.group.title) }];
+		const mainSlug = here.item.href.replace(/^\/app\//, "");
+		crumbs.push({ text: T(here.item.label), href: here.item.href, last: p[0] === mainSlug && (p.length === 1 || p[1] === "view") });
+		if (p[0] === "query-report") crumbs.push({ text: T(p[1]) });
+		else if (p[0] !== mainSlug) crumbs.push({ text: T(p[0].replace(/-/g, " ")), href: `/app/${p[0]}` });
+		if (p[0] === mainSlug && p.length > 1 && p[1] !== "view") {
+			crumbs.push({ text: p[1].startsWith("new-") ? T("Nouveau") : here.item.categories ? T(p[1]) : p[1] });
+		}
+		list.innerHTML = "";
+		crumbs.forEach((crumb, index) => {
+			const li = document.createElement("li");
+			const isLast = index === crumbs.length - 1;
+			if (crumb.href && !isLast) {
+				const a = document.createElement("a");
+				a.href = crumb.href;
+				a.textContent = crumb.text;
+				li.appendChild(a);
+			} else {
+				const span = document.createElement("span");
+				span.textContent = crumb.text;
+				if (index === 0) span.className = "cx-bc-group";
+				li.appendChild(span);
+			}
+			list.appendChild(li);
+		});
+		list.style.display = "";
+	}
+
 	function apply() {
+		document.querySelectorAll(".page-container").forEach((page) => {
+			if (page.style.display !== "none") alignTitle(page);
+		});
+		breadcrumbs();
 		const sub = SUBTITLES[key()];
 		document.querySelectorAll(".page-container").forEach((page) => {
 			if (page.style.display === "none") return;
@@ -85,6 +137,11 @@
 	}
 
 	$(document).on("startup", () => {
+		const native = frappe.breadcrumbs.update.bind(frappe.breadcrumbs);
+		frappe.breadcrumbs.update = function () {
+			native();
+			breadcrumbs();
+		};
 		schedule();
 		new MutationObserver(schedule).observe(document.getElementById("body") || document.body, { childList: true, subtree: true });
 	});

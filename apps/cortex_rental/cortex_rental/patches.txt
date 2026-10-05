@@ -18,3 +18,4 @@ cortex_rental.patches.create_finance_settings
 cortex_rental.patches.set_cortex_help_menu
 cortex_rental.patches.backfill_journal_entries
 cortex_rental.patches.set_ai_pricing_defaults
+cortex_rental.patches.set_ai_economy_defaults
