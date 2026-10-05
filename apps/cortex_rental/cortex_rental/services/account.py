@@ -39,6 +39,12 @@ def _roles_label(user: str) -> List[str]:
     return sorted(r for r in roles if r.startswith("Cortex ") or r in ("Rental Manager", "Rental Operator", "Auditor"))
 
 
+def _role(user: str) -> Dict[str, Any]:
+    from cortex_rental.services import account_insights
+
+    return account_insights.role_summary(user)
+
+
 def get_account() -> Dict[str, Any]:
     user = _user()
     doc = frappe.db.get_value(
@@ -78,6 +84,7 @@ def get_account() -> Dict[str, Any]:
         "company_title": frappe.db.get_value("Company", company, "company_name") if company else "",
         "company_logo": (frappe.db.get_value("Company", company, "company_logo") or "") if company else "",
         "roles": _roles_label(user),
+        "role": _role(user),
         "notifications": get_notifications(user),
     }
 
@@ -107,9 +114,16 @@ def update_photo(file_url: str) -> Dict[str, Any]:
     if file_url:
         if not file_url.lower().endswith(IMAGE_EXT):
             frappe.throw("Choisissez une image (PNG, JPEG, WebP ou GIF).", frappe.ValidationError)
-        owner = frappe.db.get_value("File", {"file_url": file_url}, "owner")
-        if owner != user:
+        name = frappe.db.get_value("File", {"file_url": file_url, "owner": user}, "name")
+        if not name:
             frappe.throw("Cette image n'a pas été téléversée par vous.", frappe.PermissionError)
+        file_doc = frappe.get_doc("File", name)
+        if file_doc.is_private:
+            # Une photo de profil se voit par toute l'équipe (barre du haut, activité) : elle doit être publique,
+            # sinon les autres personnes reçoivent une erreur 403 en la chargeant.
+            file_doc.is_private = 0
+            file_doc.save(ignore_permissions=True)
+            file_url = file_doc.file_url
     frappe.db.set_value("User", user, "user_image", file_url or None)
     frappe.clear_cache(user=user)
     return {"image": file_url}

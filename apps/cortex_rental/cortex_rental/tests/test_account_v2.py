@@ -102,3 +102,48 @@ class TestInsightsAreReadOnlyAndScoped(unittest.TestCase):
 
     def test_reminders_respect_personal_preferences(self):
         self.assertIn("account_insights.wants(user, pref)", read("services", "reminders.py"))
+
+
+class TestAccountPagesAndRoles(unittest.TestCase):
+    PAGES = ("profil", "statistiques", "approbations", "activite", "securite", "notifications", "societe")
+
+    def test_each_account_page_is_a_dedicated_entry_in_the_sidebar(self):
+        nav = read("public", "js", "cortex_nav.js")
+        self.assertIn('title: "Mon compte"', nav)
+        for page in self.PAGES:
+            self.assertIn(f'href: "/app/cortex-account/{page}"', nav)
+            self.assertIn(f'owns: ["cortex-account/{page}"]', nav)
+
+    def test_each_account_page_has_a_subtitle(self):
+        pages = read("public", "js", "cortex_pages.js")
+        for page in self.PAGES:
+            self.assertIn(f'"cortex-account/{page}":', pages)
+
+    def test_roles_are_shown_as_one_plain_profile_never_as_a_pile_of_pills(self):
+        src = read("services", "account_insights.py")
+        for label in ("Propriétaire", "Gestionnaire", "Comptoir", "Inventaire", "Finance", "Lecture seule"):
+            self.assertIn(f'"{label}"', src)
+        page = read("cortex_rental", "page", "cortex_account", "cortex_account.js")
+        self.assertNotIn("cx-acct-chip", page)
+
+    def test_the_page_is_single_column_and_left_aligned(self):
+        css = read("public", "css", "cortex-account.css")
+        self.assertNotIn("cx-acct-cols", read("cortex_rental", "page", "cortex_account", "cortex_account.js"))
+        self.assertIn(".cx-acct-body {\n\tdisplay: grid;", css)
+
+    def test_statistics_open_the_list_that_composes_them(self):
+        page = read("cortex_rental", "page", "cortex_account", "cortex_account.js")
+        self.assertIn("data-go=", page)
+        src = read("services", "account_insights.py")
+        for kind in ("quotes_created", "checkouts", "returns", "payments_recorded"):
+            self.assertIn(f'"{kind}":', src)
+
+    def test_team_activity_is_only_for_people_who_can_read_the_audit_log(self):
+        body = read("services", "account_insights.py").split("def history(")[1].split("# -----")[0]
+        self.assertIn('frappe.has_permission("Audit Event", "read")', body)
+        self.assertIn("confirmed_by", body)
+
+    def test_profile_photo_is_a_real_circle_and_uploadable(self):
+        css = read("public", "css", "cortex-account.css")
+        self.assertIn("aspect-ratio: 1 / 1;", css)
+        self.assertIn("FileUploader", read("cortex_rental", "page", "cortex_account", "cortex_account.js"))

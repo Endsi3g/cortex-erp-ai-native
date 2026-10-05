@@ -1840,21 +1840,21 @@ Purchase Receipt Trends,Tendances des réceptions d'achat
 Warehouse wise Stock Value,Valeur du stock par entrepôt
 Category-wise Asset Value,Valeur des actifs par catégorie
 Completed Operation,Opérations terminées
-Cortex System Manager,Gestionnaire système Cortex
-Cortex Operations Manager,Gestionnaire des opérations Cortex
-Cortex Counter Staff,Personnel de comptoir Cortex
-Cortex Inventory Manager,Gestionnaire d'inventaire Cortex
-Cortex Finance Manager,Gestionnaire des finances Cortex
-Cortex Consignment Manager,Gestionnaire de consignation Cortex
-Cortex Account Reviewer,Réviseur de comptes Cortex
+Cortex System Manager,Propriétaire
+Cortex Operations Manager,Opérations (sorties et retours)
+Cortex Counter Staff,Comptoir
+Cortex Inventory Manager,Inventaire
+Cortex Finance Manager,Finance
+Cortex Consignment Manager,Consignation
+Cortex Account Reviewer,Approbation des demandes
 Cortex Read Only,Lecture seule Cortex
 Cortex Migration Worker,Agent de migration Cortex
 Cortex Agent Intake,Agent d'accueil des demandes Cortex
 Cortex Agent Availability,Agent de disponibilité Cortex
 Cortex Agent Reporting,Agent de rapports Cortex
 Agent Service Account,Compte de service d'agent
-Rental Manager,Gestionnaire de location
-Rental Operator,Opérateur de location
+Rental Manager,Gestion des locations
+Rental Operator,Locations au comptoir
 Pricing Manager,Gestionnaire de tarification
 Bank and Cash Payment Voucher,Bon de paiement bancaire et comptant
 Cheque Printing Format,Format d'impression de chèque

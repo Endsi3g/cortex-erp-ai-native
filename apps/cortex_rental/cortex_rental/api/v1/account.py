@@ -64,9 +64,16 @@ if frappe:
         return account_insights.stats(user, company, period)
 
     @frappe.whitelist(methods=["GET"])
-    def history(category: str = "", period: str = "90", limit: int = 30, offset: int = 0):
+    def history(
+        category: str = "", period: str = "90", limit: int = 30, offset: int = 0, scope: str = "me", kind: str = ""
+    ):
         user, company = _me()
-        return account_insights.history(user, company, category, period, limit, offset)
+        return account_insights.history(user, company, category, period, limit, offset, scope, kind)
+
+    @frappe.whitelist(methods=["GET"])
+    def todo():
+        user, company = _me()
+        return {"items": account_insights.todo(user, company)}
 
     @frappe.whitelist(methods=["GET"])
     def my_approvals():
@@ -99,8 +106,8 @@ if frappe:
 
         user, company = _me()
         return {
+            "role": account_insights.role_summary(user),
             "rights": account_insights.rights(user),
-            "roles": [{"role": r, "help": account_insights.ROLE_HELP.get(r, "")} for r in account._roles_label(user)],
             "team": account_insights.team_roster(company, user, administration.can_manage_team(user)),
             "can_manage_team": bool(administration.can_manage_team(user)),
         }

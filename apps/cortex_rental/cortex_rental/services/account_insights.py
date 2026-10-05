@@ -49,6 +49,27 @@ PERSONAL_TEXT = {
     "cortex.account.session_revoked": ("Appareil déconnecté", "securite"),
     "cortex.account.sessions_revoked": ("Appareils déconnectés", "securite"),
 }
+# Chaque chiffre de « Statistiques » ouvre la liste des actions qui le composent (même source, même filtre).
+KINDS = {
+    "quotes_created": ["cortex.rental_transaction.draft_created"],
+    "reservations": ["cortex.rental_transaction.transition_to_reservation"],
+    "contracts": ["cortex.rental_transaction.transition_to_contract"],
+    "checkouts": ["cortex.rental_transaction.transition_to_checked out"],
+    "returns": ["cortex.check_in.completed", "cortex.rental_transaction.transition_to_returned"],
+    "closed": ["cortex.rental_transaction.transition_to_closed"],
+    "cancelled": ["cortex.rental_transaction.transition_to_cancelled"],
+    "disputes": ["cortex.rental_transaction.transition_to_disputed"],
+    "quotes_shared": ["cortex.quote.shared"],
+    "customers_added": ["cortex.customer.draft_created"],
+    "invoices_issued": ["cortex.invoice.issued"],
+    "payments_recorded": ["cortex.payment.recorded"],
+    "approvals": [
+        "cortex.approval_request.submitted",
+        "rental.approval.approved",
+        "rental.approval.rejected",
+        "rental.approval.withdrawn",
+    ],
+}
 CATEGORIES = {
     "location": "Locations",
     "approbation": "Approbations",
@@ -67,6 +88,21 @@ def _since(period: str) -> Optional[Any]:
 def _humanize(action: str) -> str:
     tail = (action or "").rsplit(".", 1)[-1].replace("_", " ").strip()
     return tail[:1].upper() + tail[1:] if tail else "Action"
+
+
+_DETAIL_FR = [
+    (re.compile(r"^Approved via (.+)$"), r"Approuvée via \1"),
+    (re.compile(r"^Confirmed by authorized staff$"), "Confirmé par une personne autorisée"),
+    (re.compile(r"^Rejected via (.+)$"), r"Refusée via \1"),
+]
+
+
+def _detail_fr(text: str) -> str:
+    """Les motifs écrits par le système en anglais s'affichent en français ; ceux saisis par une personne restent tels quels."""
+    for pattern, repl in _DETAIL_FR:
+        if pattern.match(text or ""):
+            return pattern.sub(repl, text)
+    return text
 
 
 def action_info(action: str) -> Dict[str, str]:
@@ -277,11 +313,28 @@ def daily_series(user: str, company: str, days: int) -> List[Dict[str, Any]]:
 
 # ---------------------------------------------------------------------------------------------- historique
 def history(
-    user: str, company: str, category: str = "", period: str = "90", limit: int = 30, offset: int = 0
+    user: str,
+    company: str,
+    category: str = "",
+    period: str = "90",
+    limit: int = 30,
+    offset: int = 0,
+    scope: str = "me",
+    kind: str = "",
 ) -> Dict[str, Any]:
-    actions = [a for a, (_t, cat) in PERSONAL_TEXT.items() if not category or cat == category]
-    filters: Dict[str, Any] = {"company": company, "actor_id": user, "actor_type": "Human"}
-    if category:
+    """Journal d'audit de la personne (`scope=me`) ou de toute la société (`scope=team`, réservé à qui peut lire le
+    journal d'audit). Chaque ligne dit qui a agi et, pour une approbation, qui a demandé et qui a décidé."""
+    team = scope == "team"
+    if team and not frappe.has_permission("Audit Event", "read"):
+        frappe.throw("Votre rôle ne permet pas de consulter l'activité de l'équipe.", frappe.PermissionError)
+    if kind and kind in KINDS:
+        actions = KINDS[kind]
+    else:
+        actions = [a for a, (_t, cat) in PERSONAL_TEXT.items() if not category or cat == category]
+    filters: Dict[str, Any] = {"company": company, "actor_type": "Human"}
+    if not team:
+        filters["actor_id"] = user
+    if category or kind:
         filters["action"] = ["in", actions or ["-"]]
     since = _since(period)
     if since:
@@ -292,11 +345,28 @@ def history(
     rows = frappe.get_all(
         "Audit Event",
         filters=filters,
-        fields=["action", "entity_type", "entity_id", "creation", "after_state"],
+        fields=["action", "actor_id", "entity_type", "entity_id", "creation", "after_state"],
         order_by="creation desc",
         start=offset,
         page_length=limit,
     )
+    names = {
+        u.name: u.full_name or u.name
+        for u in frappe.get_all(
+            "User", filters={"name": ["in", list({r.actor_id for r in rows}) or [""]]}, fields=["name", "full_name"]
+        )
+    }
+    # Qui a demandé et qui a décidé : lu dans la demande d'approbation de la même location.
+    entities = list({r.entity_id for r in rows if r.entity_id})
+    approvals: Dict[str, Any] = {}
+    if entities:
+        for ap in frappe.get_all(
+            "Approval Request",
+            filters={"company": company, "entity_id": ["in", entities]},
+            fields=["entity_id", "requested_by_id", "decided_by", "status", "decided_at"],
+            order_by="creation asc",
+        ):
+            approvals[ap.entity_id] = ap
     items = []
     for row in rows:
         info = action_info(row.action)
@@ -305,20 +375,53 @@ def history(
             try:
                 state = frappe.parse_json(row.after_state)
                 if isinstance(state, dict):
-                    detail = str(state.get("decision_reason") or state.get("reason") or "")[:160]
+                    detail = _detail_fr(str(state.get("decision_reason") or state.get("reason") or "")[:160])
+                    if state.get("self_approved"):
+                        detail = ("Auto-approbation (seule personne autorisée). " + detail).strip()
             except Exception:  # noqa: BLE001
                 detail = ""
+        ap = (
+            approvals.get(row.entity_id)
+            if info["category"] == "approbation" or row.action.endswith("transition_to_contract")
+            else None
+        )
         items.append(
             {
                 "text": info["text"],
                 "category": info["category"],
+                "actor": names.get(row.actor_id, row.actor_id),
+                "you": row.actor_id == user,
                 "entity_type": row.entity_type,
                 "entity_id": row.entity_id,
                 "at": str(row.creation)[:16],
                 "detail": detail,
+                "requested_by": names.get(ap.requested_by_id, ap.requested_by_id) if ap else "",
+                "confirmed_by": (names.get(ap.decided_by, ap.decided_by) if ap and ap.decided_by else ""),
             }
         )
-    return {"items": items, "total": total, "has_more": offset + len(items) < total, "categories": CATEGORIES}
+    # Les noms des demandeurs/décideurs peuvent ne pas être dans `names` : on les résout en une requête.
+    missing = {
+        i[k]
+        for i in items
+        for k in ("requested_by", "confirmed_by")
+        if i[k] and i[k] not in names.values() and "@" in i[k]
+    }
+    if missing:
+        full = {
+            u.name: u.full_name or u.name
+            for u in frappe.get_all("User", filters={"name": ["in", list(missing)]}, fields=["name", "full_name"])
+        }
+        for i in items:
+            for k in ("requested_by", "confirmed_by"):
+                i[k] = full.get(i[k], i[k])
+    return {
+        "items": items,
+        "total": total,
+        "has_more": offset + len(items) < total,
+        "categories": CATEGORIES,
+        "scope": "team" if team else "me",
+        "can_team": bool(frappe.has_permission("Audit Event", "read")),
+    }
 
 
 # ---------------------------------------------------------------------------------------------- approbations
@@ -476,41 +579,88 @@ def update_preferences(user: str, values: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------------------------- société et droits
-RIGHTS_AREAS = [
-    ("Locations et devis", "Cortex Rental Transaction"),
-    ("Approbations", "Approval Request"),
-    ("Catalogue d'équipements", "Cortex Rental Item Profile"),
-    ("Clients", "Customer"),
-    ("Factures", "Cortex Rental Invoice"),
-    ("Paiements", "Cortex Rental Payment"),
-    ("Écritures comptables", "Cortex Journal Entry"),
-    ("Retours de matériel", "Cortex Check-In"),
-    ("Règles tarifaires", "Rental Pricing Rule"),
-    ("Journal d'audit", "Audit Event"),
-    ("Consignation", "Consignment Payout"),
-    ("Usage de l'IA", "Cortex AI Usage"),
+# Rôles regroupés en profils clairs : la personne lit « Gestionnaire », pas une liste de rôles techniques.
+PROFILES = [
+    (
+        "owner",
+        "Propriétaire",
+        "Gère l'équipe, les règles et tous les réglages de la société, en plus de tout le reste.",
+        {"Cortex System Manager"},
+    ),
+    (
+        "manager",
+        "Gestionnaire",
+        "Gère les locations, la disponibilité, les approbations et la consignation.",
+        {"Rental Manager", "Cortex Operations Manager", "Cortex Account Reviewer", "Cortex Consignment Manager"},
+    ),
+    ("finance", "Finance", "Gère la facturation, les paiements et les états financiers.", {"Cortex Finance Manager"}),
+    (
+        "inventory",
+        "Inventaire",
+        "Gère le catalogue, les numéros de série et l'état du parc.",
+        {"Cortex Inventory Manager"},
+    ),
+    (
+        "counter",
+        "Comptoir",
+        "Prépare les devis et fait les sorties et les retours de matériel.",
+        {"Cortex Counter Staff", "Rental Operator"},
+    ),
+    ("viewer", "Lecture seule", "Consulte l'information et le journal d'audit, sans rien modifier.", {"Auditor"}),
 ]
-ROLE_HELP = {
-    "Rental Manager": "Gère les locations, la disponibilité et les approbations.",
-    "Rental Operator": "Fait les sorties et les retours de matériel.",
-    "Cortex Operations Manager": "Supervise les opérations : locations, sorties et retours.",
-    "Cortex Counter Staff": "Travaille au comptoir : devis, sorties et retours.",
-    "Cortex Inventory Manager": "Gère le catalogue, les numéros de série et l'état du parc.",
-    "Cortex Finance Manager": "Gère la facturation, les paiements et les états financiers.",
-    "Cortex Account Reviewer": "Peut approuver ou refuser des demandes.",
-    "Cortex Consignment Manager": "Gère les propriétaires en consignation et leurs versements.",
-    "Cortex System Manager": "Propriétaire : gère l'équipe, les règles et tous les réglages.",
-    "Auditor": "Consulte l'information et le journal d'audit, sans rien modifier.",
-}
+
+
+def role_summary(user: str) -> Dict[str, Any]:
+    """Le profil de la personne en une phrase : « Propriétaire », « Gestionnaire · Finance »… (sans rôles techniques)."""
+    roles = set(frappe.get_roles(user))
+    if "Cortex System Manager" in roles:
+        key, label, help_text, _ = PROFILES[0]
+        return {"key": key, "label": label, "help": help_text, "profiles": [label]}
+    found = [
+        (key, label, text)
+        for key, label, text, needed in PROFILES[1:]
+        if needed <= roles
+        or (key == "counter" and "Cortex Counter Staff" in roles)
+        or (key == "manager" and "Rental Manager" in roles)
+    ]
+    if not found:
+        return {
+            "key": "none",
+            "label": "Aucun accès",
+            "help": "Aucun rôle Cortex ne vous est attribué : demandez à un administrateur.",
+            "profiles": [],
+        }
+    return {
+        "key": found[0][0],
+        "label": " · ".join(f[1] for f in found),
+        "help": " ".join(f[2] for f in found),
+        "profiles": [f[1] for f in found],
+    }
+
+
+RIGHTS_AREAS = [
+    ("Locations et devis", "Cortex Rental Transaction", "/app/cortex-rental-transaction"),
+    ("Approbations", "Approval Request", "/app/approval-request"),
+    ("Catalogue d'équipements", "Cortex Rental Item Profile", "/app/cortex-rental-item-profile"),
+    ("Clients", "Customer", "/app/customer"),
+    ("Factures", "Cortex Rental Invoice", "/app/cortex-rental-invoice"),
+    ("Paiements", "Cortex Rental Payment", "/app/cortex-rental-payment"),
+    ("Écritures comptables", "Cortex Journal Entry", "/app/cortex-journal-entry"),
+    ("Retours de matériel", "Cortex Check-In", "/app/cortex-check-in"),
+    ("Règles tarifaires", "Rental Pricing Rule", "/app/rental-pricing-rule"),
+    ("Journal d'audit", "Audit Event", "/app/audit-event"),
+    ("Consignation", "Consignment Payout", "/app/consignment-payout"),
+    ("Usage de l'IA", "Cortex AI Usage", ""),
+]
 
 
 def rights(user: str) -> List[Dict[str, Any]]:
     result = []
-    for label, doctype in RIGHTS_AREAS:
+    for label, doctype, href in RIGHTS_AREAS:
         if not frappe.db.exists("DocType", doctype):
             continue
         can = {p: bool(frappe.has_permission(doctype, p, user=user)) for p in ("read", "create", "write")}
-        result.append({"area": label, **can})
+        result.append({"area": label, "href": href if can["read"] else "", **can})
     return result
 
 
@@ -528,14 +678,91 @@ def team_roster(company: str, me: str, show_emails: bool) -> List[Dict[str, Any]
     )
     out = []
     for u in users:
-        roles = sorted(r for r in frappe.get_roles(u.name) if r in ROLE_HELP)
         out.append(
             {
                 "name": u.full_name or u.name,
                 "email": u.name if show_emails or u.name == me else "",
                 "you": u.name == me,
-                "roles": roles,
+                "role": role_summary(u.name)["label"],
                 "last_active": str(u.last_active or u.last_login or "")[:16],
             }
         )
     return out
+
+
+# ---------------------------------------------------------------------------------------------- à faire
+def todo(user: str, company: str) -> List[Dict[str, Any]]:
+    """Ce qui attend la personne maintenant, chaque ligne avec son lien d'action (aucun chiffre inventé)."""
+    me = encode_filter(user)
+    items: List[Dict[str, Any]] = []
+
+    def add(label: str, count: int, href: str, tone: str = "") -> None:
+        items.append({"label": label, "count": int(count), "href": href, "tone": tone if count else ""})
+
+    tx = "Cortex Rental Transaction"
+    if frappe.has_permission(tx, "read"):
+        add(
+            "Mes devis dont la retenue expire dans 24 h",
+            frappe.db.count(
+                tx,
+                {
+                    "company": company,
+                    "owner": user,
+                    "rental_state": "Quote",
+                    "hold_status": "Active",
+                    "hold_until": ["between", [now_datetime(), add_days(now_datetime(), 1)]],
+                },
+            ),
+            f"/app/cortex-rental-transaction?owner={me}&rental_state=Quote&hold_status=Active",
+            "warn",
+        )
+        add(
+            "Mes réservations en attente de contrat",
+            frappe.db.count(tx, {"company": company, "owner": user, "rental_state": "Reservation"}),
+            f"/app/cortex-rental-transaction?owner={me}&rental_state=Reservation",
+        )
+        add(
+            "Retours en retard (mes locations)",
+            frappe.db.count(
+                tx,
+                {
+                    "company": company,
+                    "owner": user,
+                    "rental_state": ["in", ["Checked Out", "Partially Returned"]],
+                    "ends_at": ["<", now_datetime()],
+                },
+            ),
+            f"/app/cortex-rental-transaction?owner={me}&rental_state=Checked%20Out",
+            "bad",
+        )
+    if frappe.has_permission("Approval Request", "read"):
+        add(
+            "Approbations à décider",
+            frappe.db.count(
+                "Approval Request", {"company": company, "status": "Pending", "requested_by_id": ["!=", user]}
+            ),
+            "/app/approval-request?status=Pending",
+            "warn",
+        )
+        add(
+            "Mes demandes en attente d'une décision",
+            frappe.db.count("Approval Request", {"company": company, "status": "Pending", "requested_by_id": user}),
+            f"/app/approval-request?status=Pending&requested_by_id={me}",
+        )
+    if frappe.has_permission("Cortex Rental Invoice", "read"):
+        add(
+            "Factures échues et impayées",
+            frappe.db.count(
+                "Cortex Rental Invoice",
+                {"company": company, "status": ["in", ["Issued", "Partially Paid"]], "due_date": ["<", today()]},
+            ),
+            "/app/cortex-rental-invoice?status=Issued",
+            "bad",
+        )
+    return items
+
+
+def encode_filter(value: str) -> str:
+    from urllib.parse import quote
+
+    return quote(value, safe="")

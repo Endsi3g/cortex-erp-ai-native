@@ -72,7 +72,7 @@ class TestAccountContract(unittest.TestCase):
         self.assertIn(
             '"name": "cortex-account"', read("cortex_rental", "page", "cortex_account", "cortex_account.json")
         )
-        self.assertIn('frappe.set_route("cortex-account")', read("public", "js", "cortex_nav.js"))
+        self.assertIn('frappe.set_route("cortex-account", "profil")', read("public", "js", "cortex_nav.js"))
 
     def test_page_escapes_what_it_prints(self):
         js = read("cortex_rental", "page", "cortex_account", "cortex_account.js")

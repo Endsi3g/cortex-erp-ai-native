@@ -54,6 +54,19 @@
 			],
 		},
 		{
+			// Chaque entrée est une page dédiée de « Mon compte » (/app/cortex-account/<page>).
+			title: "Mon compte",
+			items: [
+				{ id: "acct-profil", label: "Profil", icon: "customer", href: "/app/cortex-account/profil", owns: ["cortex-account/profil"], show: ALL },
+				{ id: "acct-statistiques", label: "Statistiques", icon: "chart", href: "/app/cortex-account/statistiques", owns: ["cortex-account/statistiques"], show: ALL },
+				{ id: "acct-approbations", label: "Mes approbations", icon: "quality", href: "/app/cortex-account/approbations", owns: ["cortex-account/approbations"], show: ALL },
+				{ id: "acct-activite", label: "Activité", icon: "list", href: "/app/cortex-account/activite", owns: ["cortex-account/activite"], show: ALL },
+				{ id: "acct-securite", label: "Sécurité", icon: "lock", href: "/app/cortex-account/securite", owns: ["cortex-account/securite"], show: ALL },
+				{ id: "acct-notifications", label: "Notifications", icon: "notification", href: "/app/cortex-account/notifications", owns: ["cortex-account/notifications"], show: ALL },
+				{ id: "acct-societe", label: "Société et rôles", icon: "users", href: "/app/cortex-account/societe", owns: ["cortex-account/societe"], show: ALL },
+			],
+		},
+		{
 			title: "Administration",
 			bottom: true,
 			items: [
@@ -74,7 +87,7 @@
 					if (first === "query-report") {
 						const owner = REPORT_OWNER[parts[1]] || ((item.reports || []).includes(parts[1]) ? item.id : null);
 						if (owner === item.id) return { group, item };
-					} else if ((item.owns || []).includes(first)) {
+					} else if ((item.owns || []).includes(first) || (item.owns || []).includes(`${first}/${parts[1] || "profil"}`)) {
 						return { group, item };
 					}
 				}
@@ -224,7 +237,7 @@
 				return b;
 			};
 			menu.append(
-				entry(__("Mon compte"), () => frappe.set_route("cortex-account")),
+				entry(__("Mon compte"), () => frappe.set_route("cortex-account", "profil")),
 				entry(__("Aide et support"), () => frappe.new_doc("Cortex Support Request")),
 				entry(__("Se déconnecter"), () => frappe.app.logout())
 			);
@@ -353,7 +366,7 @@
 			const first = parts[0] || "";
 			if (first === "query-report") return REPORT_OWNER[parts[1]] || (this.nodes.finance && this.nodes.finance.item.reports.includes(parts[1]) ? "finance" : "rentals");
 			for (const [id, node] of Object.entries(this.nodes)) {
-				if (node.item && node.item.owns && node.item.owns.includes(first)) return id;
+				if (node.item && node.item.owns && (node.item.owns.includes(first) || node.item.owns.includes(`${first}/${parts[1] || "profil"}`))) return id;
 			}
 			return null;
 		}
