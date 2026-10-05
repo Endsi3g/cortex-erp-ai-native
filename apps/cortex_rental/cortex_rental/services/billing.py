@@ -279,7 +279,9 @@ def record_payment(
     reference: Optional[str] = None,
     kind: str = "Payment",
     notes: Optional[str] = None,
+    ignore_permissions: bool = False,
 ):
+    """`ignore_permissions` : seulement pour un paiement confirmé par le fournisseur (webhook signé), jamais pour un appel d'un utilisateur."""
     company = frappe.db.get_value(INVOICE, invoice, "company")
     if not company:
         frappe.throw("Facture introuvable.", frappe.DoesNotExistError)
@@ -296,7 +298,7 @@ def record_payment(
             "notes": notes or "",
         }
     )
-    doc.insert()
+    doc.insert(ignore_permissions=ignore_permissions)
     return doc
 
 

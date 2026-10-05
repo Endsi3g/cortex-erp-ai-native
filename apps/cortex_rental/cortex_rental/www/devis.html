@@ -58,6 +58,38 @@ textarea{min-height:90px;resize:vertical}
 
 	{% if state == "accepted" %}
 		<div class="card done" role="status"><h2>Devis accepté</h2><p class="sub">Merci. {{ quote.company | e }} a été avertie et vous confirmera la réservation du matériel.</p></div>
+		{% if view.payment and view.payment.needed %}
+		<section class="card noprint" aria-label="Acompte">
+			{% if view.payment.paid %}
+				<p class="msg" role="status"><strong>Acompte payé.</strong> Merci, votre paiement est bien reçu.</p>
+			{% elif view.payment.pending and not view.payment.online %}
+				<p class="note" role="status">Paiement en cours de confirmation. Cette page se mettra à jour sous peu.</p>
+			{% else %}
+				<h2 style="font-size:17px;margin:0 0 4px">Acompte à la réservation : {{ fmt(view.payment.amount) }}</h2>
+				<p class="sub" style="margin:0 0 12px">Payer l'acompte confirme votre place; vous pouvez aussi le régler plus tard avec l'entreprise.</p>
+				{% if view.payment.online %}
+				<div class="actions"><button class="primary" type="button" id="pay">Payer l'acompte par carte</button></div>
+				<p class="err" id="pay-err" role="alert" hidden></p>
+				{% endif %}
+				{% if view.payment.instructions %}<p class="msg" style="margin-top:12px"><strong>Autre façon de payer :</strong><br>{{ view.payment.instructions | e }}</p>{% endif %}
+			{% endif %}
+		</section>
+		{% if view.payment.online %}
+		<script>
+		document.getElementById("pay").addEventListener("click", function(){
+			var b=this, err=document.getElementById("pay-err"); b.disabled=true; err.hidden=true;
+			fetch("/api/method/cortex_rental.api.v1.quote_share.start_payment",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({token:{{ view_token | tojson }}})})
+			.then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+			.then(function(res){
+				if(res.ok&&res.j.message&&res.j.message.url){window.location.href=res.j.message.url;return;}
+				var t="Le paiement n'a pas pu démarrer. Réessayez dans un instant.";
+				try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)t=JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
+				err.textContent=t;err.hidden=false;b.disabled=false;
+			}).catch(function(){err.textContent="Connexion impossible. Réessayez.";err.hidden=false;b.disabled=false;});
+		});
+		</script>
+		{% endif %}
+		{% endif %}
 	{% elif state == "declined" %}
 		<div class="card done" role="status"><h2>Réponse envoyée</h2><p class="sub">Vous avez refusé ce devis. Merci de nous l'avoir indiqué.</p></div>
 	{% elif state == "changes" %}

@@ -157,6 +157,7 @@
 				scroll.appendChild(section);
 			});
 			nav.appendChild(scroll);
+			nav.appendChild(this.account());
 
 			const backdrop = el("div", { id: "cx-nav-backdrop" });
 			backdrop.addEventListener("click", () => this.closeDrawer());
@@ -171,6 +172,47 @@
 				navbarBrand.parentNode.insertBefore(burger, navbarBrand);
 				this.nodes.burger = burger;
 			}
+		}
+
+		// Profil en bas de la barre (comme Claude) : avatar, nom, courriel et menu (profil, déconnexion).
+		account() {
+			const me = frappe.session.user;
+			const name = frappe.session.user_fullname || me;
+			const image = frappe.user_info(me).image;
+			const esc = frappe.utils.escape_html;
+			const mark = image
+				? `<img class="cx-avatar" src="${esc(image)}" alt="" width="30" height="30">`
+				: `<span class="cx-avatar cx-avatar-initials" style="background:${tint(me)}">${esc(initials(name))}</span>`;
+			const box = el("div", { class: "cx-account" });
+			const trigger = el("button", { type: "button", class: "cx-account-btn", "aria-haspopup": "menu", "aria-expanded": "false", title: name });
+			trigger.innerHTML = `${mark}<span class="cx-label cx-account-text"><strong>${esc(name)}</strong><small>${esc(me)}</small></span><span class="cx-label cx-account-more">${CHEVRON}</span>`;
+			const menu = el("div", { class: "cx-account-menu", role: "menu", hidden: "" });
+			const entry = (label, run) => {
+				const b = el("button", { type: "button", role: "menuitem", class: "cx-account-item" }, esc(label));
+				b.addEventListener("click", () => {
+					menu.hidden = true;
+					trigger.setAttribute("aria-expanded", "false");
+					run();
+				});
+				return b;
+			};
+			menu.append(
+				entry(__("Mon profil"), () => frappe.set_route("Form", "User", me)),
+				entry(__("Aide et support"), () => frappe.new_doc("Cortex Support Request")),
+				entry(__("Se déconnecter"), () => frappe.app.logout())
+			);
+			trigger.addEventListener("click", () => {
+				menu.hidden = !menu.hidden;
+				trigger.setAttribute("aria-expanded", String(!menu.hidden));
+			});
+			document.addEventListener("click", (e) => {
+				if (!menu.hidden && !box.contains(e.target)) {
+					menu.hidden = true;
+					trigger.setAttribute("aria-expanded", "false");
+				}
+			});
+			box.append(menu, trigger);
+			return box;
 		}
 
 		// Société de la personne connectée : logo et nom, sous la marque (lecture seule, fournis par le serveur).
@@ -357,7 +399,26 @@
 				});
 		}
 
-		onLiveActivity() {
+		// Devis accepté par un client et pas encore réservé : alerte avec un bouton « Réserver ».
+		offerReservation(data) {
+			if (!data || !data.reserve || !frappe.model.can_write("Cortex Rental Transaction")) return;
+			const name = data.reserve;
+			const actions = {};
+			actions[__("Réserver")] = () =>
+				frappe.xcall("cortex_rental.api.v1.rentals.request_reservation", { name }, "POST").then((r) => {
+					const failed = r && r.errors && r.errors.length;
+					frappe.show_alert(
+						{ message: failed ? r.errors[0].message : __("Matériel réservé pour {0}.", [name]), indicator: failed ? "orange" : "green" },
+						8
+					);
+					if (cur_frm && cur_frm.doc && cur_frm.doc.name === name) cur_frm.reload_doc();
+				});
+			actions[__("Ouvrir")] = () => frappe.set_route("Form", "Cortex Rental Transaction", name);
+			frappe.show_alert({ message: `${frappe.utils.escape_html(data.actor || "")} ${frappe.utils.escape_html(data.text || "")}`, indicator: "orange" }, 20, actions);
+		}
+
+		onLiveActivity(data) {
+			this.offerReservation(data);
 			window.clearTimeout(this.liveTimer);
 			this.liveTimer = window.setTimeout(() => {
 				this.refreshTeam();

@@ -61,6 +61,9 @@ if frappe:
                 "email_status",
                 "expires_at",
                 "view_count",
+                "reservation_status",
+                "reservation_note",
+                "payment_status",
                 "last_viewed_at",
                 "responded_at",
                 "responder_name",
@@ -90,3 +93,22 @@ if frappe:
     @rate_limit(limit=120, seconds=60 * 60)
     def respond(token: str = "", action: str = "", message: str = "", responder_name: str = ""):
         return quote_share.respond(token, action, message, responder_name)
+
+    @frappe.whitelist(allow_guest=True, methods=["POST"])
+    @rate_limit(limit=20, seconds=60 * 60)
+    def start_payment(token: str = ""):
+        """Client : crée la session de paiement de l'acompte et renvoie l'adresse de la page de paiement."""
+        from cortex_rental.services.payments import PaymentError
+
+        try:
+            return quote_share.start_payment(token)
+        except PaymentError as exc:
+            frappe.throw(str(exc), frappe.ValidationError)
+
+    @frappe.whitelist(allow_guest=True, methods=["POST"])
+    def stripe_webhook():
+        """Stripe : confirmation signée d'un paiement. La signature est vérifiée avec le secret de la société concernée."""
+        frappe.local.response["http_status_code"] = 200
+        return quote_share.handle_payment_event(
+            frappe.request.get_data(), frappe.get_request_header("Stripe-Signature") or ""
+        )

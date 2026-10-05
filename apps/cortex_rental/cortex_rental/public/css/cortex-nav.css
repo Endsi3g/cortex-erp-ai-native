@@ -720,3 +720,114 @@ body.cx-nav-collapsed .cx-company {
 	margin: 0 6px 10px;
 	background: var(--cx-nav-line, #ecebe6);
 }
+
+
+/* Profil en bas de la barre latérale */
+.cx-account {
+	position: relative;
+	flex: 0 0 auto;
+	padding: 8px 10px 10px;
+	border-top: 1px solid var(--cx-nav-line, #e7e6e3);
+}
+.cx-account-btn {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 6px 8px;
+	border: 0;
+	border-radius: 10px;
+	background: transparent;
+	color: var(--cortex-text, #09090b);
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.14s ease;
+}
+.cx-account-btn:hover,
+.cx-account-btn[aria-expanded="true"] {
+	background: var(--cx-nav-hover);
+}
+.cx-avatar {
+	flex: 0 0 30px;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+.cx-avatar-initials {
+	display: grid;
+	place-items: center;
+	font-size: 12px;
+	font-weight: 600;
+	color: #3f3f46;
+}
+.cx-account-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1 1 auto;
+	line-height: 1.25;
+}
+.cx-account-text strong {
+	font-size: 13px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.cx-account-text small {
+	font-size: 11px;
+	color: #6b6a66;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.cx-account-more {
+	color: #6b6a66;
+	transform: rotate(-90deg);
+}
+.cx-account-menu {
+	position: absolute;
+	left: 10px;
+	right: 10px;
+	bottom: calc(100% - 4px);
+	padding: 6px;
+	border: 1px solid var(--cx-nav-line, #e7e6e3);
+	border-radius: 12px;
+	background: var(--cortex-surface, #fff);
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+	z-index: 5;
+}
+.cx-account-item {
+	display: block;
+	width: 100%;
+	padding: 8px 10px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--cortex-text, #09090b);
+	font-size: 14px;
+	text-align: left;
+	cursor: pointer;
+}
+.cx-account-item:hover {
+	background: var(--cx-nav-hover);
+}
+body.cx-nav-collapsed .cx-account-btn {
+	justify-content: center;
+	padding: 6px 0;
+}
+body.cx-nav-collapsed .cx-account-menu {
+	left: 6px;
+	right: auto;
+	width: 190px;
+}
+@media (max-width: 768px) {
+	body.cx-nav-collapsed .cx-account-btn {
+		justify-content: flex-start;
+		padding: 6px 8px;
+	}
+	body.cx-nav-collapsed .cx-account-text {
+		display: flex;
+	}
+}

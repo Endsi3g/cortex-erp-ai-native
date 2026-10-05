@@ -253,6 +253,8 @@ def public_view(token: str) -> Dict[str, Any]:
     snapshot = json.loads(doc.snapshot_json or "{}")
     state = effective_state(doc)
     view = {"state": state, "quote": snapshot, "responded_at": str(doc.responded_at or "")}
+    if state == "accepted":
+        view["payment"] = payment_view(doc, snapshot)
     if state == "ok":
         view["token_hint"] = doc.name
     return view
@@ -289,7 +291,8 @@ def respond(token: str, action: str, message: str = "", responder_name: str = ""
         doc.rental_transaction,
         {"share": doc.name, "responder": name, "message": text},
     )
-    _notify_team(doc, status, who, snapshot)
+    follow = _after_accept(doc, who) if status == "Accepted" else {}
+    _notify_team(doc, status, who, snapshot, follow)
     return {"state": {"Accepted": "accepted", "Declined": "declined", "Changes Requested": "changes"}[status]}
 
 
@@ -317,9 +320,95 @@ def _audit(company: str, actor_type: str, actor_id: str, action: str, entity: st
     )
 
 
-def _notify_team(doc, status: str, who: str, snapshot: Dict[str, Any]) -> None:
+def company_options(company: str) -> Dict[str, Any]:
+    """Réglages de devis et de paiement de la société (les clés restent côté serveur)."""
+    from frappe.utils.password import get_decrypted_password
+
+    row = (
+        frappe.db.get_value(
+            "Cortex Finance Settings",
+            company,
+            ["auto_reserve_on_accept", "online_payment_enabled", "payment_instructions"],
+            as_dict=True,
+        )
+        or {}
+    )
+    secret = webhook = ""
+    if row.get("online_payment_enabled"):
+        secret = (
+            get_decrypted_password("Cortex Finance Settings", company, "stripe_secret_key", raise_exception=False) or ""
+        )
+        webhook = (
+            get_decrypted_password("Cortex Finance Settings", company, "stripe_webhook_secret", raise_exception=False)
+            or ""
+        )
+    return {
+        "auto_reserve": bool(row.get("auto_reserve_on_accept")),
+        "online_payment": bool(row.get("online_payment_enabled") and secret and webhook),
+        "instructions": row.get("payment_instructions") or "",
+        "secret_key": secret,
+        "webhook_secret": webhook,
+    }
+
+
+def _after_accept(doc, who: str) -> Dict[str, Any]:
+    """Si la société l'a demandé, réserve le matériel quand le serveur confirme la disponibilité. Sinon, l'équipe réserve."""
+    options = company_options(doc.company)
+    if not options["auto_reserve"]:
+        return {"reserved": False, "auto": False}
+    previous = frappe.session.user
+    point = "cortex_auto_reserve"
+    frappe.db.savepoint(point)
+    try:
+        # Au nom de la personne qui a envoyé le devis : ses droits bornent l'opération, l'audit le dit.
+        frappe.set_user(doc.owner)
+        tx = frappe.get_doc("Cortex Rental Transaction", doc.rental_transaction)
+        tx.transition_to(
+            "Reservation",
+            reason=f"Réservation automatique : {who} a accepté le devis et la disponibilité est confirmée.",
+        )
+        frappe.set_user(previous)
+        frappe.db.set_value(
+            SHARE, doc.name, {"reservation_status": "Reserved", "reservation_note": "Réservé automatiquement."}
+        )
+        return {"reserved": True, "auto": True}
+    except Exception as exc:  # noqa: BLE001 - toute raison (disponibilité, droits, état) renvoie vers l'équipe, rien n'est caché
+        frappe.set_user(previous)
+        try:
+            frappe.db.rollback(save_point=point)
+        except Exception:
+            # La réservation valide d'abord sous verrou (avec un commit) : le point de reprise peut ne plus exister, et
+            # rien n'a été écrit par la réservation refusée.
+            pass
+        message = str(getattr(exc, "message", None) or exc)[:300]
+        frappe.clear_messages()
+        frappe.db.set_value(
+            SHARE,
+            doc.name,
+            {
+                "reservation_status": "Needs Review",
+                "reservation_note": f"Réservation automatique impossible : {message}",
+            },
+        )
+        return {"reserved": False, "auto": True, "note": message}
+
+
+def _notify_team(doc, status: str, who: str, snapshot: Dict[str, Any], follow: Optional[Dict[str, Any]] = None) -> None:
     """Prévient la personne qui a préparé le devis (notification) et toute l'équipe de la société (temps réel)."""
+    follow = follow or {}
     text = ACTION_TEXT[status]
+    if status == "Accepted":
+        if follow.get("reserved"):
+            text += " (matériel réservé automatiquement)"
+        elif follow.get("auto"):
+            text += " : réservation automatique impossible, à traiter"
+        else:
+            text += " : à réserver"
+    _tell(doc, who, text, doc.rental_transaction if status == "Accepted" and not follow.get("reserved") else "")
+
+
+def _tell(doc, who: str, text: str, reserve: str = "") -> None:
+    """Notification pour la personne qui a préparé le devis + événement en direct (avec bouton « Réserver » si `reserve`)."""
     try:
         from cortex_rental.services import team_activity
 
@@ -330,7 +419,7 @@ def _notify_team(doc, status: str, who: str, snapshot: Dict[str, Any]) -> None:
                     "doctype": "Notification Log",
                     "for_user": owner,
                     "type": "Alert",
-                    "subject": f"{who} {text} {doc.rental_transaction}",
+                    "subject": f"{who} {text} — {doc.rental_transaction}",
                     "document_type": "Cortex Rental Transaction",
                     "document_name": doc.rental_transaction,
                 }
@@ -342,7 +431,108 @@ def _notify_team(doc, status: str, who: str, snapshot: Dict[str, Any]) -> None:
                 "text": text,
                 "entity_type": "Cortex Rental Transaction",
                 "entity_id": doc.rental_transaction,
+                "reserve": reserve,
             },
         )
     except Exception:
         frappe.log_error(title="Cortex quote response notification failed")
+
+
+# ------------------------------------------------------------------ paiement de l'acompte
+def payment_view(doc, snapshot: Dict[str, Any]) -> Dict[str, Any]:
+    options = company_options(doc.company)
+    invoice = (
+        frappe.db.get_value("Cortex Rental Invoice", doc.deposit_invoice, ["balance", "status"], as_dict=True)
+        if doc.deposit_invoice
+        else None
+    )
+    paid = bool(invoice and invoice.status == "Paid") or doc.payment_status == "Paid"
+    amount = float(invoice.balance) if invoice and not paid else float(snapshot.get("deposit_total") or 0)
+    return {
+        "amount": amount,
+        "online": options["online_payment"] and amount > 0 and not paid,
+        "paid": paid,
+        "pending": doc.payment_status == "Pending" and not paid,
+        "instructions": options["instructions"],
+        "needed": bool(snapshot.get("deposit_total")),
+    }
+
+
+def start_payment(token: str) -> Dict[str, Any]:
+    """Crée la session de paiement Stripe de l'acompte (facture d'acompte créée au besoin) et renvoie son adresse."""
+    from cortex_rental.services import billing, payments
+
+    doc = _find(token, for_update=True)
+    if not doc or doc.status != "Accepted":
+        frappe.throw("Acceptez d'abord le devis pour payer l'acompte.", frappe.ValidationError)
+    options = company_options(doc.company)
+    if not options["online_payment"]:
+        frappe.throw("Le paiement en ligne n'est pas offert par cette entreprise.", frappe.ValidationError)
+    tx = frappe.get_doc("Cortex Rental Transaction", doc.rental_transaction)
+    invoice = billing.create_deposit_invoice(tx)
+    if not invoice or float(invoice.balance or 0) <= 0:
+        frappe.throw("Aucun acompte n'est à payer pour ce devis.", frappe.ValidationError)
+    snapshot = json.loads(doc.snapshot_json or "{}")
+    cents = int(round(float(invoice.balance) * 100))
+    base = get_url(f"/devis/{token}")
+    form = payments.checkout_form(
+        cents,
+        snapshot.get("currency") or "CAD",
+        f"Acompte — {snapshot.get('company', '')} — devis {tx.name}",
+        base + "?paiement=ok",
+        base,
+        {"share": doc.name, "invoice": invoice.name, "company": doc.company},
+    )
+    session = payments.create_checkout_session(options["secret_key"], form, idempotency_key=f"{doc.name}-{cents}")
+    frappe.db.set_value(
+        SHARE,
+        doc.name,
+        {"deposit_invoice": invoice.name, "payment_status": "Pending", "payment_session_id": session.get("id", "")},
+    )
+    return {"url": session.get("url")}
+
+
+def handle_payment_event(payload: bytes, signature: str) -> Dict[str, Any]:
+    """Webhook Stripe : la société est retrouvée par la session, puis la signature est vérifiée avec SON secret."""
+    from cortex_rental.services import billing, payments
+
+    try:
+        event = json.loads(payload.decode("utf-8"))
+        session = (event.get("data") or {}).get("object") or {}
+        share_name = (session.get("metadata") or {}).get("share") or ""
+    except (ValueError, AttributeError):
+        frappe.throw("Requête invalide.", frappe.ValidationError)
+    doc = frappe.get_doc(SHARE, share_name) if share_name and frappe.db.exists(SHARE, share_name) else None
+    if not doc:
+        frappe.throw("Requête invalide.", frappe.ValidationError)
+    options = company_options(doc.company)
+    if not payments.verify_signature(payload, signature, options["webhook_secret"]):
+        frappe.throw("Signature invalide.", frappe.AuthenticationError)
+    if event.get("type") != "checkout.session.completed" or session.get("payment_status") != "paid":
+        return {"ignored": True}
+    if session.get("id") != doc.payment_session_id or not doc.deposit_invoice:
+        return {"ignored": True}
+    reference = session.get("id")
+    if frappe.db.exists("Cortex Rental Payment", {"invoice": doc.deposit_invoice, "reference": reference}):
+        return {"duplicate": True}  # Stripe peut renvoyer l'événement : un seul paiement par session
+    amount = float(session.get("amount_total") or 0) / 100.0
+    billing.record_payment(
+        invoice=doc.deposit_invoice,
+        amount=amount,
+        method="Card",
+        reference=reference,
+        notes="Acompte payé dans le portail du devis (Stripe).",
+        ignore_permissions=True,
+    )
+    frappe.db.set_value(SHARE, doc.name, "payment_status", "Paid")
+    snapshot = json.loads(doc.snapshot_json or "{}")
+    _tell(doc, snapshot.get("customer") or "Le client", "a payé l'acompte en ligne")
+    _audit(
+        doc.company,
+        "System",
+        "stripe",
+        "cortex.quote.deposit_paid",
+        doc.rental_transaction,
+        {"share": doc.name, "invoice": doc.deposit_invoice, "amount": amount},
+    )
+    return {"paid": True}

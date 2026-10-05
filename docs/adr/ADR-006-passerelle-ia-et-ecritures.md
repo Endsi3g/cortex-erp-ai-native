@@ -36,9 +36,9 @@ Vérifié sur la simulation de 91 jours : 542 écritures, 0 déséquilibrée, cl
 
 ## Conséquences et limites
 
-- Le **nom exact du modèle** `gemini-3.8-flash` est une hypothèse du propriétaire : à confirmer chez Google. Sans clé API, l'assistant répond
+- Le modèle `gemini-3.8-flash` est **confirmé** sur la documentation de Google (2026-10-05) ; son tarif (0,75 $ / 3,75 $ par M de jetons) est annoncé jusqu'au 31 déc. 2026. Sans clé API, l'assistant répond
   par un message de configuration; les appels réels au fournisseur n'ont pas été exécutés ici (tests avec un fournisseur simulé).
-- Le **plafond de coût** et les **prix** sont à saisir; tant qu'ils sont à 0, aucun refus n'est appliqué.
+- Prix et plafond par défaut : voir `docs/architecture/COUTS_API.md` (60 $ par société et par mois, avertissement à 80 %); modifiables par société.
 - Le grand livre d'ERPNext n'est toujours pas alimenté : le journal Cortex sert de source au comptable (export de rapport). Un
   plan comptable propre à chaque comptable se règle dans les réglages financiers.
 - Hors périmètre : dépôt de garantie distinct, notes de crédit, relances automatiques, recherche documentaire.

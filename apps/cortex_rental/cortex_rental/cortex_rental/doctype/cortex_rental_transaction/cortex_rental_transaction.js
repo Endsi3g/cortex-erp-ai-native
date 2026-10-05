@@ -107,6 +107,16 @@ const cortex_rental_transaction = {
 			const who = latest.responder_name ? ` (${frappe.utils.escape_html(latest.responder_name)})` : "";
 			const seen = latest.view_count ? __("vu {0} fois", [latest.view_count]) : __("pas encore ouvert");
 			frm.dashboard.add_comment(`${__("Devis partagé")} : ${names[latest.effective_status] || latest.effective_status}${who}${note} · ${seen}`, colors[latest.effective_status] || "blue", true);
+			if (latest.effective_status === "Accepted" && frm.doc.rental_state === "Quote") {
+				frm.add_custom_button(__("Réserver maintenant"), () => this.reserve(frm), __("Actions"));
+				if (latest.reservation_status === "Needs Review" && latest.reservation_note) {
+					frm.dashboard.add_comment(frappe.utils.escape_html(latest.reservation_note), "orange", true);
+				}
+			}
+			if (latest.effective_status === "Accepted" && latest.payment_status) {
+				const pay = { Paid: __("acompte payé en ligne"), Pending: __("paiement de l'acompte en cours") }[latest.payment_status];
+				if (pay) frm.dashboard.add_comment(__("Portail : {0}.", [pay]), latest.payment_status === "Paid" ? "green" : "blue", true);
+			}
 			if (latest.effective_status === "Active") {
 				frm.add_custom_button(__("Révoquer le lien"), () => cortex.call("quote_share.revoke_share", { name: latest.name }).then(() => frm.reload_doc()), __("Actions"));
 			}

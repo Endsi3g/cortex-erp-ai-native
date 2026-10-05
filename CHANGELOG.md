@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Après l'acceptation d'un devis** : alerte en direct avec bouton « Réserver », réservation automatique optionnelle par société (au nom de la personne qui a partagé, disponibilité revérifiée), paiement de l'acompte dans le portail (Stripe Checkout avec les clés de la société, webhook signé, paiement unique par session) avec instructions manuelles en repli.
+- **Coûts d'API** (`docs/architecture/COUTS_API.md`) : prix de `gemini-3.8-flash` (0,75 $ / 3,75 $ par M de jetons) et plafond de 60 $ par société et par mois proposés par défaut (patch `set_ai_pricing_defaults`); comparaison Stripe, Resend et SES.
+- Profil de la personne connectée en bas de la barre latérale.
 - **Portail de devis** (ADR-007) : `/devis/<jeton>` sans compte (lien à copier ou courriel), jeton haché, instantané du devis, accepter / refuser / demander une modification, audit (acteur « Customer »), notification et activité en temps réel, boutons sur la location. Accepter ne réserve rien.
 - Barre latérale : carte de la société, Administration en bas; guide vidéo titré; formulaires mobiles plus courts; rapport *Utilisation IA* corrigé; débordement mobile de 3 px corrigé.
 - **Passerelle IA** (`services/ai/`, ADR-006) : Gemini (défaut `gemini-3.8-flash`, à confirmer) dont le modèle se change dans *Cortex AI Settings*, modèle de repli optionnel, clé chiffrée côté serveur, boucle d'outils sous les droits de la personne connectée (lecture + propositions, rien n'écrit ni n'approuve), budget mensuel en dollars/jetons par société (*Cortex AI Usage*, *Cortex AI Budget*, rapport *Utilisation IA*; plafond à déterminer, 0 = aucun), historique de conversation transmis au modèle, messages d'erreur clairs. Moteur par `cortex_chat_provider` (`gateway` par défaut, `onyx`, `mock`).

@@ -21,6 +21,8 @@ def get_context(context):
     view = _view(token)
     context.view = view
     context.token = token if view.get("state") == "ok" else ""
+    # Le jeton sert aussi à payer l'acompte après l'acceptation (la page ne l'affiche jamais en clair).
+    context.view_token = token if view.get("state") in ("ok", "accepted") else ""
     quote = view.get("quote") or {}
     context.quote = quote
     context.title = f"Devis — {quote['company']}" if quote.get("company") else "Devis"

@@ -3,7 +3,7 @@
   "creation": "2026-10-01 03:00:00.000000",
   "doctype": "DocType",
   "engine": "InnoDB",
-  "modified": "2026-10-01 03:00:00.000000",
+  "modified": "2026-10-05 13:00:00.000000",
   "modified_by": "Administrator",
   "module": "Cortex Rental",
   "name": "Cortex Quote Share",
@@ -36,6 +36,13 @@
     "responded_at",
     "responder_name",
     "response_message",
+    "sb_follow",
+    "reservation_status",
+    "reservation_note",
+    "cb4",
+    "deposit_invoice",
+    "payment_status",
+    "payment_session_id",
     "sb_tech",
     "rental_version",
     "token_hash",
@@ -182,6 +189,49 @@
       "fieldname": "response_message",
       "fieldtype": "Small Text",
       "label": "Message du client",
+      "read_only": 1
+    },
+    {
+      "fieldname": "sb_follow",
+      "fieldtype": "Section Break",
+      "label": "Suite donnée"
+    },
+    {
+      "fieldname": "reservation_status",
+      "fieldtype": "Select",
+      "label": "Réservation après acceptation",
+      "options": "\nReserved\nNeeds Review",
+      "read_only": 1
+    },
+    {
+      "fieldname": "reservation_note",
+      "fieldtype": "Small Text",
+      "label": "Note de réservation",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cb4",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "deposit_invoice",
+      "fieldtype": "Link",
+      "label": "Facture d'acompte",
+      "options": "Cortex Rental Invoice",
+      "read_only": 1
+    },
+    {
+      "fieldname": "payment_status",
+      "fieldtype": "Select",
+      "label": "Paiement de l'acompte",
+      "options": "Not Started\nPending\nPaid",
+      "default": "Not Started",
+      "read_only": 1
+    },
+    {
+      "fieldname": "payment_session_id",
+      "fieldtype": "Data",
+      "label": "Session de paiement",
       "read_only": 1
     },
     {

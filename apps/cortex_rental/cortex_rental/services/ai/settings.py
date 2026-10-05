@@ -18,9 +18,9 @@ DEFAULTS: Dict[str, Any] = {
     "max_output_tokens": 1024,
     "max_tool_steps": 5,
     "timeout_seconds": 60,
-    "price_input_per_mtok": 0.0,
-    "price_output_per_mtok": 0.0,
-    "default_monthly_budget": 0.0,
+    "price_input_per_mtok": 0.75,
+    "price_output_per_mtok": 3.75,
+    "default_monthly_budget": 60.0,
     "default_monthly_token_cap": 0,
     "warn_percent": 80,
 }

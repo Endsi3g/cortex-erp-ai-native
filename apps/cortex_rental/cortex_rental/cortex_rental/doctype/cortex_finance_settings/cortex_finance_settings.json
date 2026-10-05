@@ -3,7 +3,7 @@
   "creation": "2026-09-30 23:00:00.000000",
   "doctype": "DocType",
   "engine": "InnoDB",
-  "modified": "2026-10-01 01:00:00.000000",
+  "modified": "2026-10-05 13:00:00.000000",
   "modified_by": "Administrator",
   "module": "Cortex Rental",
   "name": "Cortex Finance Settings",
@@ -32,6 +32,14 @@
     "cb_late",
     "late_fee_percent",
     "late_fee_cap_days",
+    "sb_quotes",
+    "auto_reserve_on_accept",
+    "sb_online_payment",
+    "online_payment_enabled",
+    "stripe_secret_key",
+    "stripe_webhook_secret",
+    "cb_online_payment",
+    "payment_instructions",
     "sb_accounts",
     "acct_receivable",
     "acct_cash",
@@ -153,6 +161,52 @@
       "default": "0",
       "precision": "2",
       "depends_on": "late_fee_enabled"
+    },
+    {
+      "fieldname": "sb_quotes",
+      "fieldtype": "Section Break",
+      "label": "Devis partagés avec les clients"
+    },
+    {
+      "fieldname": "auto_reserve_on_accept",
+      "fieldtype": "Check",
+      "label": "Réserver automatiquement quand le client accepte",
+      "default": "0",
+      "description": "Si la disponibilité est confirmée par le serveur au moment de l'acceptation, le matériel est réservé sans intervention (au nom de la personne qui a envoyé le devis). Sinon, l'équipe est avertie et réserve à la main. Désactivé par défaut."
+    },
+    {
+      "fieldname": "sb_online_payment",
+      "fieldtype": "Section Break",
+      "label": "Paiement de l'acompte en ligne"
+    },
+    {
+      "fieldname": "online_payment_enabled",
+      "fieldtype": "Check",
+      "label": "Permettre de payer l'acompte dans le portail",
+      "default": "0",
+      "description": "Nécessite un compte Stripe de la société (clés ci-dessous). Sans clés, le portail affiche seulement les instructions de paiement."
+    },
+    {
+      "fieldname": "stripe_secret_key",
+      "fieldtype": "Password",
+      "label": "Clé secrète Stripe",
+      "description": "Stockée chiffrée, jamais envoyée au navigateur."
+    },
+    {
+      "fieldname": "stripe_webhook_secret",
+      "fieldtype": "Password",
+      "label": "Secret du webhook Stripe",
+      "description": "Adresse du webhook à saisir dans Stripe : /api/method/cortex_rental.api.v1.quote_share.stripe_webhook (événement checkout.session.completed)."
+    },
+    {
+      "fieldname": "cb_online_payment",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "payment_instructions",
+      "fieldtype": "Small Text",
+      "label": "Instructions de paiement manuel",
+      "description": "Affichées au client après l'acceptation (ex. virement Interac, chèque). Facultatif."
     },
     {
       "fieldname": "sb_accounts",

@@ -3,7 +3,7 @@
   "creation": "2026-10-01 02:00:00.000000",
   "doctype": "DocType",
   "engine": "InnoDB",
-  "modified": "2026-10-01 02:00:00.000000",
+  "modified": "2026-10-05 12:00:00.000000",
   "modified_by": "Administrator",
   "module": "Cortex Rental",
   "owner": "Administrator",
@@ -115,21 +115,21 @@
       "fieldname": "sb_budget",
       "fieldtype": "Section Break",
       "label": "Prix et plafond mensuel par défaut",
-      "description": "Le plafond est à déterminer. 0 veut dire « aucun plafond ». Sans prix, seuls les jetons sont comptés (le coût reste à 0 $)."
+      "description": "Prix de gemini-3.8-flash (USD par million de jetons, tarif affiché jusqu'au 31 déc. 2026) et plafond proposé de 60 $ par société et par mois : voir docs/architecture/COUTS_API.md. 0 = aucun plafond."
     },
     {
       "fieldname": "price_input_per_mtok",
       "fieldtype": "Currency",
       "label": "Prix par million de jetons en entrée ($)",
       "precision": "4",
-      "default": "0"
+      "default": "0.75"
     },
     {
       "fieldname": "price_output_per_mtok",
       "fieldtype": "Currency",
       "label": "Prix par million de jetons en sortie ($)",
       "precision": "4",
-      "default": "0"
+      "default": "3.75"
     },
     {
       "fieldname": "cb_budget",
@@ -139,7 +139,7 @@
       "fieldname": "default_monthly_budget",
       "fieldtype": "Currency",
       "label": "Budget mensuel par société ($)",
-      "default": "0"
+      "default": "60"
     },
     {
       "fieldname": "default_monthly_token_cap",
