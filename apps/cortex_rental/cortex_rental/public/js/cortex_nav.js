@@ -53,6 +53,7 @@
 		},
 		{
 			title: "Administration",
+			bottom: true,
 			items: [
 				{ id: "admin", label: "Équipe et règles", icon: "setting-gear", href: "/app/cortex-admin", owns: ["cortex-admin", "rental-pricing-rule", "user", "audit-event", "cortex-ai-settings"], show: workspace("Cortex Admin") },
 				{ id: "website", label: "Site Web", icon: "website", href: "/app/website", owns: ["website"], show: hasRole("System Manager", "Website Manager") },
@@ -122,6 +123,8 @@
 			nav.appendChild(head);
 
 			const scroll = el("div", { class: "cx-nav-scroll" });
+			const identity = this.identity();
+			if (identity) scroll.appendChild(identity);
 			if (can("Cortex Rental Transaction")() && frappe.model.can_create("Cortex Rental Transaction")) {
 				const create = el("a", { class: "cx-new", href: "/app/cortex-rental-transaction/new", title: __("Nouvelle location") }, `<span class="cx-new-plus">${PLUS}</span><span class="cx-label">${__("Nouvelle location")}</span>`);
 				create.addEventListener("click", (e) => this.go(e, create.getAttribute("href")));
@@ -138,7 +141,7 @@
 				});
 				if (!items.length) return;
 				const open = this.groups[group.title] !== false;
-				const section = el("section", { class: "cx-group" + (open ? "" : " closed") });
+				const section = el("section", { class: "cx-group" + (open ? "" : " closed") + (group.bottom ? " cx-group-bottom" : "") });
 				const title = el("button", { type: "button", class: "cx-group-title", "aria-expanded": String(open) }, `<span class="cx-label">${__(group.title)}</span><span class="cx-chev">${CHEVRON}</span>`);
 				const body = el("div", { class: "cx-group-body" });
 				const inner = el("div", { class: "cx-group-inner" });
@@ -168,6 +171,19 @@
 				navbarBrand.parentNode.insertBefore(burger, navbarBrand);
 				this.nodes.burger = burger;
 			}
+		}
+
+		// Société de la personne connectée : logo et nom, sous la marque (lecture seule, fournis par le serveur).
+		identity() {
+			const home = (frappe.boot && frappe.boot.cortex_home) || {};
+			if (!home.company) return null;
+			const card = el("a", { class: "cx-company", href: "/app/cortex-rental", title: home.company });
+			const mark = home.company_logo
+				? `<img src="${frappe.utils.escape_html(home.company_logo)}" alt="" width="28" height="28">`
+				: `<span class="cx-company-initials" style="background:${tint(home.company)}">${frappe.utils.escape_html(initials(home.company))}</span>`;
+			card.innerHTML = `${mark}<span class="cx-label cx-company-text"><strong>${frappe.utils.escape_html(home.company)}</strong><small>${__("Votre société")}</small></span>`;
+			card.addEventListener("click", (e) => this.go(e, "/app/cortex-rental"));
+			return card;
 		}
 
 		item(item) {

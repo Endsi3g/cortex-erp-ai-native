@@ -149,6 +149,14 @@ Flux attendu : Vue → API Frappe authentifiée → service Cortex → (a) Onyx 
 - Onyx Lite local est adapté au chat/agents mais ne fournit pas l’indexation RAG complète. Déploiement standard si la recherche sur corpus et les connecteurs sont requis, avec ressources suffisantes.
 - Ollama est un fournisseur de modèles, pas un ERP ni un moteur de règles. En développement local, `qwen3:8b` (Q4_K_M) est installé, configuré comme fournisseur Onyx et a répondu à une génération Ollama. Le compte administrateur Onyx existe et son authentification a été vérifiée. Le nom du modèle, l’URL et le jeton de chat sont configurés côté serveur Frappe; ne les copier ni dans ce document ni dans le frontend. Cette validation locale ne signifie pas que le chat Cortex→Onyx et les outils métier ont passé une recette de bout en bout. `qwen3.5:9b` a été écarté après un appel d’outil CPU de 2 min 45 s.
 
+## Portail de devis, société dans la barre latérale, formulaires mobiles (2026-10-05)
+
+- **Portail de devis** (ADR-007) : page publique `/devis/<jeton>` (`www/devis.*`, sans compte, responsive, imprimable) ; l'équipe crée un lien à copier ou envoyé par courriel depuis la location (« Partager avec le client »). Le client accepte, refuse ou demande une modification ; la réponse est auditée, avertit l'équipe, et **ne réserve rien**. Vérifié sur le bench : création, consultation anonyme, acceptation, double réponse refusée, lien périmé/révoqué. Le courriel sortant n'est pas configuré sur le bench (échec propre, lien affiché).
+- **Barre latérale** : carte « Votre société » (logo et nom, fournis par `boot.cortex_home`) sous la marque ; groupe Administration séparé tout en bas.
+- **Guide de démarrage** : bloc « Guide vidéo de Cortex Rental » (titre, description) au-dessus de l'emplacement « à venir ».
+- **Formulaires sur téléphone** (`cortex-mobile.css`) : deux champs par ligne, repères de fuseau masqués, titre sur deux lignes, débordement de 3 px corrigé sur toutes les pages.
+- **Rapport Utilisation IA** corrigé (agrégation côté serveur).
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :
@@ -158,7 +166,7 @@ Flux attendu : Vue → API Frappe authentifiée → service Cortex → (a) Onyx 
 - **Limites honnêtes :** aucune clé API du modèle n'est saisie sur le bench (*Cortex AI Settings*) : l'accueil affiche alors le message de configuration renvoyé par le serveur au lieu d'une réponse; l'identifiant `gemini-3.8-flash` est à confirmer chez le fournisseur; les appels réels n'ont pas été testés (fournisseur simulé). Le plafond de coût est à déterminer (0 = aucun plafond). Les libellés d'ERPNext non traduits par Frappe restent en anglais. Un site vide affiche des zéros et des graphiques vides (pas de données de démonstration inventées). La grille de disponibilité est indicative (elle déduit « parc − quantités bloquantes du jour » des réservations renvoyées par le serveur) ; la vérification qui fait foi reste celle du serveur à la réservation. Sous 900 px, les tables de formulaire défilent horizontalement dans leur cadre.
 - **Non reconstruit :** les écrans à deux colonnes de l’AI Workspace, le scan par caméra (le champ Code-barres de Frappe accepte un lecteur ou la saisie), les équipes/assignations.
 - **Écritures comptables (vérifié sur 91 jours) :** journal à partie double par société (542 écritures, 0 déséquilibrée, écarts clients/encaisse/taxes à 0), rapports *Journal comptable* et *Balance de vérification*; le grand livre d'ERPNext n'est pas alimenté.
-- **À recetter :** parcours contrat → facturation → envoi client, droits réels par rôle, export vers le logiciel du comptable, conversation avec un vrai modèle (clé requise) et ses outils. Ne qualifie pas le produit de prêt pour la production.
+- **À recetter :** envoi réel du courriel de devis (compte de messagerie), parcours contrat → facturation → envoi client, droits réels par rôle, export vers le logiciel du comptable, conversation avec un vrai modèle (clé requise) et ses outils. Ne qualifie pas le produit de prêt pour la production.
 
 ## Definition of Done pour une évolution
 

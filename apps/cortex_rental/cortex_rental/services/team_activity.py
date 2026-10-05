@@ -30,6 +30,10 @@ ACTION_TEXT = {
     "cortex.approval_request.submitted": "a demandé une approbation",
     "rental.approval.approved": "a approuvé une demande",
     "rental.approval.rejected": "a refusé une demande",
+    "cortex.quote.shared": "a partagé un devis avec un client",
+    "cortex.quote.accepted": "a accepté le devis",
+    "cortex.quote.declined": "a refusé le devis",
+    "cortex.quote.changes_requested": "demande une modification du devis",
     "cortex.invoice.issued": "a émis une facture",
     "cortex.payment.recorded": "a enregistré un paiement",
     "cortex.customer.draft_created": "a ajouté un client",
@@ -73,7 +77,7 @@ def team_snapshot(company: str, me: str, limit: int = 12) -> Dict[str, Any]:
     threshold = add_to_date(now_datetime(), minutes=-ONLINE_WINDOW_MINUTES)
     events = frappe.get_all(
         "Audit Event",
-        filters={"company": company, "actor_type": "Human", "action": ["in", list(ACTION_TEXT)]},
+        filters={"company": company, "actor_type": ["in", ["Human", "Customer"]], "action": ["in", list(ACTION_TEXT)]},
         fields=["actor_id", "action", "entity_type", "entity_id", "creation"],
         order_by="creation desc",
         limit_page_length=limit * 3,

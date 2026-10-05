@@ -109,6 +109,22 @@ a[role="button"][data-toggle="dropdown"]:focus-visible,
 }
 
 /* Guide de démarrage : emplacement de la vidéo (16:9), à droite de la description. */
+.cx-video-block {
+	margin-top: 12px;
+	max-width: 420px;
+}
+.cx-video-title {
+	margin: 0 0 4px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--cortex-text, #09090b);
+}
+.cx-video-text {
+	margin: 0 0 8px;
+	font-size: 13px;
+	line-height: 1.45;
+	color: #52525b;
+}
 .cx-video-placeholder {
 	display: flex;
 	flex-direction: column;
@@ -117,7 +133,6 @@ a[role="button"][data-toggle="dropdown"]:focus-visible,
 	gap: 8px;
 	aspect-ratio: 16 / 9;
 	max-width: 420px;
-	margin-top: 12px;
 	border: 1px dashed #8a8a8a;
 	border-radius: 10px;
 	background: #f4f4f5;

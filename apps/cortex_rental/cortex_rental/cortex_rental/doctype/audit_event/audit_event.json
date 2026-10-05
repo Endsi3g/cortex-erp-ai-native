@@ -3,6 +3,7 @@
   "autoname": "hash",
   "creation": "2026-08-29 00:00:00.000000",
   "doctype": "DocType",
+  "modified": "2026-10-05 10:00:00.000000",
   "engine": "InnoDB",
   "field_order": [
     "company",
@@ -33,7 +34,7 @@
       "in_list_view": 1,
       "in_standard_filter": 1,
       "label": "Actor Type",
-      "options": "Human\nAgent\nSystem",
+      "options": "Human\nAgent\nSystem\nCustomer",
       "reqd": 1
     },
     {

@@ -22,6 +22,10 @@ app_color = "#047857"
 # desk.html only, never web.html — this app has no public-facing pages
 # beyond the one authenticated www/onyx-assistant.html, which loads its
 # own styling and isn't part of the Desk chrome these files target.
+website_route_rules = [
+    {"from_route": "/devis/<token>", "to_route": "devis"},
+]
+
 app_include_css = [
     "/assets/cortex_rental/css/cortex-tokens.css",
     "/assets/cortex_rental/css/cortex-theme.css",
@@ -30,6 +34,7 @@ app_include_css = [
     "/assets/cortex_rental/css/cortex-motion.css",
     "/assets/cortex_rental/css/cortex-nav.css",
     "/assets/cortex_rental/css/cortex-a11y.css",
+    "/assets/cortex_rental/css/cortex-mobile.css",
 ]
 
 # Global floating Cortex Copilot launcher — mounted on every Desk page

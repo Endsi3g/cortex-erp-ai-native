@@ -1,0 +1,91 @@
+/* Téléphone : formulaires plus courts (deux champs par ligne, repères discrets, titre lisible). */
+@media (max-width: 768px) {
+	/* Les marges négatives de la rangée d'en-tête dépassaient de 3 px (conteneur à 12 px de marge) */
+	.page-head .page-head-content {
+		margin-left: -12px;
+		margin-right: -12px;
+	}
+	/* Titre complet sur deux lignes au lieu de « Nouveau(ell… » */
+	.page-head .title-text,
+	.page-head .title-area .title-text {
+		white-space: normal;
+		overflow: visible;
+		text-overflow: clip;
+		max-width: 100%;
+		line-height: 1.25;
+	}
+	.page-head .title-area {
+		flex-wrap: wrap;
+		gap: 4px 8px;
+	}
+	.page-head .page-actions .btn-primary,
+	.page-head .page-actions .primary-action {
+		text-transform: none;
+	}
+
+	/* Sections à deux colonnes : deux champs côte à côte */
+	.form-layout .form-section .section-body:has(> .form-column:nth-child(2)) {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		column-gap: 10px;
+	}
+	.form-layout .form-section .section-body:has(> .form-column:nth-child(3)) {
+		grid-template-columns: 1fr;
+	}
+	.form-layout .form-section .form-column {
+		width: auto !important;
+		max-width: none;
+		min-width: 0;
+		padding: 0 !important;
+		border: 0 !important;
+	}
+	.form-layout .form-section .section-body {
+		padding: 0 15px;
+	}
+	.page-head .page-actions .primary-action::first-letter {
+		text-transform: uppercase;
+	}
+	/* Sections de cases à cocher : plus serrées */
+	.form-layout .form-section .frappe-control[data-fieldtype="Check"] {
+		margin-bottom: 4px;
+	}
+	.form-layout .form-section {
+		padding-top: 10px;
+		padding-bottom: 6px;
+	}
+	.form-layout .form-section .section-head {
+		font-size: 14px;
+		margin-bottom: 6px;
+	}
+	.form-layout .form-section .frappe-control {
+		margin-bottom: 8px;
+	}
+	.form-layout .form-section .control-label {
+		margin-bottom: 3px;
+		font-size: 12px;
+	}
+	/* Le fuseau horaire se répète sous chaque date : on le garde sur ordinateur seulement */
+	.form-layout .frappe-control[data-fieldtype="Datetime"] .help-box {
+		display: none;
+	}
+	.form-layout .form-control {
+		height: 34px;
+	}
+	/* Texte d'aide : une seule ligne discrète */
+	.form-layout .help-box {
+		font-size: 11px;
+		line-height: 1.3;
+	}
+}
+
+/* Société dans le tiroir du téléphone : le texte reste sur deux lignes */
+@media (max-width: 768px) {
+	body.cx-nav-collapsed #cx-nav .cx-company-text {
+		display: flex;
+	}
+	body.cx-nav-collapsed .cx-company {
+		justify-content: flex-start;
+		padding: 8px;
+		border-color: var(--cx-nav-line, #e7e6e3);
+	}
+}

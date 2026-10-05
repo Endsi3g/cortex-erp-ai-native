@@ -1,0 +1,260 @@
+{
+  "actions": [],
+  "creation": "2026-10-01 03:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "modified": "2026-10-01 03:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "name": "Cortex Quote Share",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 0,
+  "autoname": "hash",
+  "field_order": [
+    "company",
+    "rental_transaction",
+    "customer_name",
+    "cb1",
+    "status",
+    "channel",
+    "expires_at",
+    "sb_recipient",
+    "recipient_name",
+    "recipient_email",
+    "cb2",
+    "email_status",
+    "sent_at",
+    "message",
+    "sb_activity",
+    "view_count",
+    "first_viewed_at",
+    "last_viewed_at",
+    "cb3",
+    "responded_at",
+    "responder_name",
+    "response_message",
+    "sb_tech",
+    "rental_version",
+    "token_hash",
+    "snapshot_json"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "rental_transaction",
+      "fieldtype": "Link",
+      "label": "Location",
+      "options": "Cortex Rental Transaction",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "customer_name",
+      "fieldtype": "Data",
+      "label": "Client",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "cb1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "État",
+      "options": "Active\nAccepted\nDeclined\nChanges Requested\nRevoked",
+      "default": "Active",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "channel",
+      "fieldtype": "Select",
+      "label": "Canal",
+      "options": "Link\nEmail",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "expires_at",
+      "fieldtype": "Datetime",
+      "label": "Valide jusqu'au",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "sb_recipient",
+      "fieldtype": "Section Break",
+      "label": "Destinataire"
+    },
+    {
+      "fieldname": "recipient_name",
+      "fieldtype": "Data",
+      "label": "Nom du destinataire",
+      "read_only": 1
+    },
+    {
+      "fieldname": "recipient_email",
+      "fieldtype": "Data",
+      "label": "Courriel",
+      "options": "Email",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cb2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "email_status",
+      "fieldtype": "Select",
+      "label": "Courriel",
+      "options": "Not Sent\nSent\nFailed",
+      "default": "Not Sent",
+      "read_only": 1
+    },
+    {
+      "fieldname": "sent_at",
+      "fieldtype": "Datetime",
+      "label": "Envoyé le",
+      "read_only": 1
+    },
+    {
+      "fieldname": "message",
+      "fieldtype": "Small Text",
+      "label": "Message joint",
+      "read_only": 1
+    },
+    {
+      "fieldname": "sb_activity",
+      "fieldtype": "Section Break",
+      "label": "Activité du client"
+    },
+    {
+      "fieldname": "view_count",
+      "fieldtype": "Int",
+      "label": "Consultations",
+      "read_only": 1
+    },
+    {
+      "fieldname": "first_viewed_at",
+      "fieldtype": "Datetime",
+      "label": "Première consultation",
+      "read_only": 1
+    },
+    {
+      "fieldname": "last_viewed_at",
+      "fieldtype": "Datetime",
+      "label": "Dernière consultation",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cb3",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "responded_at",
+      "fieldtype": "Datetime",
+      "label": "Réponse le",
+      "read_only": 1
+    },
+    {
+      "fieldname": "responder_name",
+      "fieldtype": "Data",
+      "label": "Répondant",
+      "read_only": 1
+    },
+    {
+      "fieldname": "response_message",
+      "fieldtype": "Small Text",
+      "label": "Message du client",
+      "read_only": 1
+    },
+    {
+      "fieldname": "sb_tech",
+      "fieldtype": "Section Break",
+      "label": "Technique",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "rental_version",
+      "fieldtype": "Int",
+      "label": "Version du devis partagé",
+      "read_only": 1
+    },
+    {
+      "fieldname": "token_hash",
+      "fieldtype": "Data",
+      "label": "Empreinte du jeton",
+      "read_only": 1,
+      "hidden": 1,
+      "unique": 1,
+      "description": "Seule l'empreinte est conservée ; le lien complet n'est montré qu'une fois."
+    },
+    {
+      "fieldname": "snapshot_json",
+      "fieldtype": "Long Text",
+      "label": "Instantané du devis",
+      "read_only": 1,
+      "hidden": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Rental Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Rental Operator",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Cortex Operations Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Cortex Counter Staff",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Cortex Finance Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Auditor",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

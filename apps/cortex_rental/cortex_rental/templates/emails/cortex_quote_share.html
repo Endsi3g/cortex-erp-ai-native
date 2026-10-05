@@ -1,0 +1,7 @@
+<p>Bonjour{% if recipient_name %} {{ recipient_name | e }}{% endif %},</p>
+<p>{{ sender_name | e }} de <strong>{{ company | e }}</strong> vous transmet un devis pour <strong>{{ customer | e }}</strong>.</p>
+{% if message %}<p style="padding:12px 14px;background:#f6f6f4;border-radius:8px;white-space:pre-line">{{ message | e }}</p>{% endif %}
+<p>Total : <strong>{{ total }}</strong> (taxes incluses). Valide jusqu'au {{ valid_until }}.</p>
+<p style="margin:24px 0"><a style="display:inline-block;padding:12px 22px;background:#066336;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px" href="{{ link }}">Consulter le devis</a></p>
+<p>Vous pourrez l'accepter, le refuser ou demander une modification directement sur la page, sans créer de compte.</p>
+<p style="color:#595959;font-size:13px">Lien à copier-coller : <a href="{{ link }}">{{ link }}</a><br>Vous n'attendiez pas ce message ? Vous pouvez simplement l'ignorer.</p>

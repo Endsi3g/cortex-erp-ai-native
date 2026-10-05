@@ -25,15 +25,18 @@
 	// n'est fournie (champ « intro_video_url » de l'étape), on affiche un emplacement clairement marqué « à venir ».
 	function addVideoPlaceholder() {
 		document.querySelectorAll(".onboarding-step-body").forEach((body) => {
-			if (!body.textContent.trim() || body.querySelector(".video-player, .cx-video-placeholder")) return;
-			const box = document.createElement("div");
-			box.className = "cx-video-placeholder";
-			box.setAttribute("role", "img");
-			box.setAttribute("aria-label", __("Vidéo du guide : à venir"));
-			box.innerHTML =
+			if (!body.textContent.trim() || body.querySelector(".video-player, .cx-video-block")) return;
+			const block = document.createElement("div");
+			block.className = "cx-video-block";
+			block.innerHTML =
+				'<h4 class="cx-video-title">' + __("Guide vidéo de Cortex Rental") + "</h4>" +
+				'<p class="cx-video-text">' +
+				__("Cette vidéo vous guidera pas à pas dans l'utilisation de Cortex Rental : créer une location, réserver le matériel, faire approuver le contrat, enregistrer les sorties et les retours, puis facturer.") +
+				"</p>" +
+				'<div class="cx-video-placeholder" role="img" aria-label="' + __("Vidéo du guide : à venir") + '">' +
 				'<svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg>' +
-				"<span>" + __("Vidéo du guide : à venir") + "</span>";
-			body.appendChild(box);
+				"<span>" + __("Vidéo du guide : à venir") + "</span></div>";
+			body.appendChild(block);
 		});
 	}
 

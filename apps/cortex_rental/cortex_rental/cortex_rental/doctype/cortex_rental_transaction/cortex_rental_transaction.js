@@ -8,6 +8,7 @@ frappe.ui.form.on("Cortex Rental Transaction", {
 		if (frm.is_new()) return;
 		cortex_rental_transaction.show_readiness(frm);
 		cortex_rental_transaction.add_actions(frm);
+		cortex_rental_transaction.show_shares(frm);
 	},
 });
 
@@ -32,6 +33,7 @@ const cortex_rental_transaction = {
 		const state = frm.doc.rental_state;
 		const group = __("Actions");
 		if (state === "Quote") {
+			frm.add_custom_button(__("Partager avec le client"), () => this.share(frm), group);
 			frm.add_custom_button(__("Réserver le matériel"), () => this.reserve(frm), group);
 		} else if (state === "Reservation") {
 			frm.add_custom_button(__("Demander le contrat"), () => this.request_contract(frm), group);
@@ -41,6 +43,74 @@ const cortex_rental_transaction = {
 			frm.add_custom_button(__("Retour du matériel"), () => this.checkin(frm), group);
 		}
 		frm.page.set_inner_btn_group_as_primary(group);
+	},
+
+	// ---- Devis partagé : lien à copier ou courriel ; le client répond sur une page publique, sans compte ----
+	share(frm) {
+		const dialog = new frappe.ui.Dialog({
+			title: __("Partager le devis {0}", [frm.doc.name]),
+			fields: [
+				{
+					fieldname: "channel",
+					fieldtype: "Select",
+					label: __("Comment l'envoyer ?"),
+					options: [
+						{ value: "Link", label: __("Lien à copier (partageable)") },
+						{ value: "Email", label: __("Courriel au client") },
+					],
+					default: "Email",
+				},
+				{ fieldname: "recipient_email", fieldtype: "Data", options: "Email", label: __("Courriel"), depends_on: "eval:doc.channel=='Email'", mandatory_depends_on: "eval:doc.channel=='Email'" },
+				{ fieldname: "recipient_name", fieldtype: "Data", label: __("Nom du destinataire"), depends_on: "eval:doc.channel=='Email'" },
+				{ fieldname: "message", fieldtype: "Small Text", label: __("Message pour le client (facultatif)") },
+				{ fieldname: "valid_days", fieldtype: "Int", label: __("Valide pendant (jours)"), default: 14 },
+				{ fieldname: "result", fieldtype: "HTML" },
+			],
+			primary_action_label: __("Créer le lien"),
+			primary_action: (values) => {
+				cortex
+					.call("quote_share.create_share", {
+						rental_id: frm.doc.name,
+						channel: values.channel,
+						recipient_email: values.recipient_email || "",
+						recipient_name: values.recipient_name || "",
+						message: values.message || "",
+						valid_days: values.valid_days || 14,
+					})
+					.then((r) => {
+						if (!r) return;
+						const url = frappe.utils.escape_html(r.url);
+						const mail = r.channel === "Email" ? (r.email_sent ? __("Courriel envoyé.") : __("Le courriel n'a pas pu partir : copiez le lien et envoyez-le vous-même.")) : "";
+						dialog.get_field("result").$wrapper.html(
+							`<p class="text-muted">${mail} ${__("Ce lien n'est montré qu'une fois.")}</p><input class="form-control" readonly value="${url}" onclick="this.select()">`
+						);
+						dialog.set_primary_action(__("Copier le lien"), () => {
+							frappe.utils.copy_to_clipboard(r.url);
+							dialog.hide();
+						});
+						frm.reload_doc();
+					});
+			},
+		});
+		dialog.show();
+	},
+
+	show_shares(frm) {
+		if (!["Quote", "Reservation"].includes(frm.doc.rental_state)) return;
+		cortex.call("quote_share.list_shares", { rental_id: frm.doc.name }, { type: "GET", freeze: false }).then((r) => {
+			const shares = (r && r.shares) || [];
+			const latest = shares[0];
+			if (!latest) return;
+			const names = { Active: __("En attente du client"), Accepted: __("Accepté par le client"), Declined: __("Refusé par le client"), "Changes Requested": __("Modification demandée"), Revoked: __("Révoqué"), Expired: __("Expiré") };
+			const colors = { Active: "blue", Accepted: "green", Declined: "red", "Changes Requested": "orange", Revoked: "gray", Expired: "gray" };
+			const note = latest.response_message ? ` — « ${frappe.utils.escape_html(latest.response_message)} »` : "";
+			const who = latest.responder_name ? ` (${frappe.utils.escape_html(latest.responder_name)})` : "";
+			const seen = latest.view_count ? __("vu {0} fois", [latest.view_count]) : __("pas encore ouvert");
+			frm.dashboard.add_comment(`${__("Devis partagé")} : ${names[latest.effective_status] || latest.effective_status}${who}${note} · ${seen}`, colors[latest.effective_status] || "blue", true);
+			if (latest.effective_status === "Active") {
+				frm.add_custom_button(__("Révoquer le lien"), () => cortex.call("quote_share.revoke_share", { name: latest.name }).then(() => frm.reload_doc()), __("Actions"));
+			}
+		});
 	},
 
 	report(frm, message) {

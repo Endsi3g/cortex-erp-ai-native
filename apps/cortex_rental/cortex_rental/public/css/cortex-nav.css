@@ -108,6 +108,8 @@ body.cx-nav-on [data-page-route="Workspaces"] .layout-main-section-wrapper {
 }
 
 .cx-nav-scroll {
+	display: flex;
+	flex-direction: column;
 	flex: 1 1 auto;
 	overflow-y: auto;
 	overflow-x: hidden;
@@ -649,4 +651,72 @@ body.cx-nav-collapsed .cx-badge {
 		transition: none !important;
 		animation: none !important;
 	}
+}
+
+
+/* Société : logo et nom sous la marque */
+.cx-company {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 2px 0 10px;
+	padding: 8px;
+	border: 1px solid var(--cx-nav-line, #ecebe6);
+	border-radius: 10px;
+	color: var(--cortex-text, #09090b) !important;
+	text-decoration: none !important;
+	transition: background 0.14s ease;
+}
+.cx-company:hover {
+	background: var(--cx-nav-hover);
+}
+.cx-company img,
+.cx-company-initials {
+	flex: 0 0 28px;
+	width: 28px;
+	height: 28px;
+	border-radius: 7px;
+	object-fit: contain;
+}
+.cx-company-initials {
+	display: grid;
+	place-items: center;
+	font-size: 11px;
+	font-weight: 600;
+	color: #3f3f46;
+}
+.cx-company-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	line-height: 1.25;
+}
+.cx-company-text strong {
+	font-size: 13px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.cx-company-text small {
+	font-size: 11px;
+	color: #6b6a66;
+}
+body.cx-nav-collapsed .cx-company {
+	justify-content: center;
+	padding: 6px 0;
+	border-color: transparent;
+}
+
+/* Administration : séparée du reste, tout en bas, avec un grand espace */
+.cx-group-bottom {
+	margin-top: auto;
+	padding-top: 40px;
+}
+.cx-group-bottom::before {
+	content: "";
+	display: block;
+	height: 1px;
+	margin: 0 6px 10px;
+	background: var(--cx-nav-line, #ecebe6);
 }
