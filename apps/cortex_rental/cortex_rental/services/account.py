@@ -75,6 +75,8 @@ def get_account() -> Dict[str, Any]:
         "member_since": str(doc.creation)[:10],
         "last_login": str(doc.last_login or "")[:16],
         "company": company,
+        "company_title": frappe.db.get_value("Company", company, "company_name") if company else "",
+        "company_logo": (frappe.db.get_value("Company", company, "company_logo") or "") if company else "",
         "roles": _roles_label(user),
         "notifications": get_notifications(user),
     }
@@ -142,34 +144,43 @@ def change_password(old_password: str, new_password: str) -> Dict[str, Any]:
 
 
 def list_sessions() -> Dict[str, Any]:
+    from cortex_rental.services import devices
+
+    return devices.list_for(_user(), frappe.session.sid)
+
+
+def _audit(action: str, after: Dict[str, Any]) -> None:
+    """Trace dans le journal d'audit de la société ; ne bloque jamais l'action."""
+    try:
+        from cortex_rental.permissions.agent_scopes import get_company_context
+        from cortex_rental.services.audit import AuditService
+
+        user = frappe.session.user
+        AuditService.record_mutation(
+            company=get_company_context(), action=action, entity_type="User", entity_id=user, after_state=after
+        )
+    except Exception:  # noqa: BLE001
+        frappe.log_error(title="Cortex account audit failed")
+
+
+def sign_out_session(device_id: str) -> Dict[str, Any]:
+    """Déconnecte un appareil précis de MA liste (jamais celui d'une autre personne)."""
+    from cortex_rental.services import devices
+
     user = _user()
-    rows = frappe.db.sql(
-        "SELECT sid, ipaddress, lastupdate FROM `tabSessions` WHERE user=%s ORDER BY lastupdate DESC",
-        (user,),
-        as_dict=True,
-    )
-    current = frappe.session.sid
-    return {
-        "sessions": [
-            {
-                "id": r.sid[-6:],
-                "current": r.sid == current,
-                "ip": r.ipaddress or "",
-                "last_active": str(r.lastupdate)[:16],
-            }
-            for r in rows
-        ]
-    }
+    result = devices.revoke(user, (device_id or "").strip(), frappe.session.sid, by=user)
+    _audit("cortex.account.session_revoked", {"device": result["label"], "scope": "device"})
+    return result
 
 
 def sign_out_other_sessions() -> Dict[str, Any]:
-    user = _user()
-    others = frappe.db.sql("SELECT sid FROM `tabSessions` WHERE user=%s AND sid!=%s", (user, frappe.session.sid))
-    from frappe.sessions import delete_session
+    from cortex_rental.services import devices
 
-    for (sid,) in others:
-        delete_session(sid, reason="Session Expired")
-    return {"closed": len(others)}
+    user = _user()
+    closed = devices.revoke_all(user, keep_sid=frappe.session.sid, by=user)
+    if closed:
+        _audit("cortex.account.sessions_revoked", {"closed": closed, "scope": "others"})
+    return {"closed": closed}
 
 
 def get_notifications(user: str = "") -> Dict[str, Any]:

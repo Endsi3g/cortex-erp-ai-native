@@ -1,0 +1,144 @@
+{
+  "actions": [],
+  "creation": "2026-10-06 09:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "modified": "2026-10-06 09:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "owner": "Administrator",
+  "name": "Cortex Device Session",
+  "autoname": "hash",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 0,
+  "states": [],
+  "field_order": [
+    "user",
+    "session_key",
+    "device_label",
+    "device_type",
+    "cb",
+    "browser",
+    "browser_version",
+    "os",
+    "os_version",
+    "model",
+    "sb",
+    "ip_address",
+    "signed_in_at",
+    "revoked",
+    "revoked_at",
+    "revoked_by",
+    "user_agent"
+  ],
+  "fields": [
+    {
+      "fieldname": "user",
+      "fieldtype": "Link",
+      "label": "Utilisateur",
+      "options": "User",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "session_key",
+      "fieldtype": "Data",
+      "label": "Empreinte de la session",
+      "unique": 1,
+      "reqd": 1,
+      "read_only": 1,
+      "description": "Empreinte SHA-256 de l'identifiant de session ; l'identifiant lui-même n'est jamais conservé ici."
+    },
+    {
+      "fieldname": "device_label",
+      "fieldtype": "Data",
+      "label": "Appareil",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "device_type",
+      "fieldtype": "Select",
+      "label": "Type",
+      "options": "\nComputer\nPhone\nTablet\nOther"
+    },
+    {
+      "fieldname": "cb",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "browser",
+      "fieldtype": "Data",
+      "label": "Navigateur"
+    },
+    {
+      "fieldname": "browser_version",
+      "fieldtype": "Data",
+      "label": "Version du navigateur"
+    },
+    {
+      "fieldname": "os",
+      "fieldtype": "Data",
+      "label": "Système"
+    },
+    {
+      "fieldname": "os_version",
+      "fieldtype": "Data",
+      "label": "Version du système"
+    },
+    {
+      "fieldname": "model",
+      "fieldtype": "Data",
+      "label": "Modèle"
+    },
+    {
+      "fieldname": "sb",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "ip_address",
+      "fieldtype": "Data",
+      "label": "Adresse IP",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "signed_in_at",
+      "fieldtype": "Datetime",
+      "label": "Connecté le"
+    },
+    {
+      "fieldname": "revoked",
+      "fieldtype": "Check",
+      "label": "Déconnecté à distance"
+    },
+    {
+      "fieldname": "revoked_at",
+      "fieldtype": "Datetime",
+      "label": "Déconnecté le"
+    },
+    {
+      "fieldname": "revoked_by",
+      "fieldtype": "Link",
+      "label": "Déconnecté par",
+      "options": "User"
+    },
+    {
+      "fieldname": "user_agent",
+      "fieldtype": "Small Text",
+      "label": "Agent utilisateur (brut)",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

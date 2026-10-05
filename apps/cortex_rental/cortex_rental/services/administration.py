@@ -295,6 +295,11 @@ def set_member_enabled(company: str, email: str, enabled: bool) -> Dict[str, Any
         raise SignupError("owner_locked", "Le compte du propriétaire ne se désactive pas ici.")
     was = bool(frappe.db.get_value("User", email, "enabled"))
     frappe.db.set_value("User", email, "enabled", int(enabled))
+    if not enabled:
+        # Une personne désactivée perd tout de suite ses appareils connectés (sinon sa session resterait ouverte).
+        from cortex_rental.services import devices
+
+        devices.revoke_all(email, keep_sid=None, by=frappe.session.user)
     AuditService.record_mutation(
         company=company,
         action="cortex.team.member_enabled" if enabled else "cortex.team.member_disabled",
@@ -304,6 +309,55 @@ def set_member_enabled(company: str, email: str, enabled: bool) -> Dict[str, Any
         after_state={"enabled": bool(enabled)},
     )
     return get_team(company)
+
+
+# ---- appareils de l'équipe ------------------------------------------------------------------------
+
+
+def team_devices(company: str) -> Dict[str, Any]:
+    """Pour chaque membre, ses sessions actives (appareil, système, adresse IP, dernière activité)."""
+    _require_team_admin(company)
+    from cortex_rental.services import devices
+
+    rows = []
+    for row in frappe.get_all(
+        "User",
+        filters={"name": ["in", _member_emails(company) or [""]], "enabled": 1},
+        fields=["name", "full_name"],
+        order_by="full_name asc",
+    ):
+        sessions = devices.list_for(row.name, frappe.session.sid)["sessions"]
+        rows.append(
+            {
+                "email": row.name,
+                "full_name": row.full_name or row.name,
+                "you": row.name == frappe.session.user,
+                "sessions": sessions,
+            }
+        )
+    return {"members": rows}
+
+
+def sign_out_member(company: str, email: str, device_id: str = "") -> Dict[str, Any]:
+    """Ferme les sessions d'un membre de l'équipe (un seul appareil, ou tous), avec une trace dans le journal d'audit."""
+    _require_team_admin(company)
+    _require_member(company, email)
+    from cortex_rental.services import devices
+
+    me = frappe.session.user
+    if device_id:
+        closed = devices.revoke(email, device_id, frappe.session.sid, by=me)["closed"]
+    else:
+        closed = devices.revoke_all(email, keep_sid=frappe.session.sid if email == me else None, by=me)
+    AuditService.record_mutation(
+        company=company,
+        action="cortex.account.session_revoked",
+        entity_type="User",
+        entity_id=email,
+        before_state=None,
+        after_state={"closed": closed, "scope": "device" if device_id else "all", "by": me},
+    )
+    return {"closed": closed}
 
 
 # ---- imports --------------------------------------------------------------------------------------

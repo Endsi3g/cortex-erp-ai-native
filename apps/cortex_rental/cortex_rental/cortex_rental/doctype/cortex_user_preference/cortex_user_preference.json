@@ -1,0 +1,75 @@
+{
+  "actions": [],
+  "creation": "2026-10-06 09:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "modified": "2026-10-06 09:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "owner": "Administrator",
+  "name": "Cortex User Preference",
+  "autoname": "field:user",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 0,
+  "states": [],
+  "field_order": [
+    "user",
+    "notify_hold_expiring",
+    "notify_late_returns",
+    "notify_quote_unanswered",
+    "notify_unpaid_invoices",
+    "notify_quote_response"
+  ],
+  "fields": [
+    {
+      "fieldname": "user",
+      "fieldtype": "Link",
+      "label": "Utilisateur",
+      "options": "User",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "notify_hold_expiring",
+      "fieldtype": "Check",
+      "label": "Retenue de devis qui expire",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_late_returns",
+      "fieldtype": "Check",
+      "label": "Retours en retard",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_quote_unanswered",
+      "fieldtype": "Check",
+      "label": "Devis sans réponse",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_unpaid_invoices",
+      "fieldtype": "Check",
+      "label": "Factures échues",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_quote_response",
+      "fieldtype": "Check",
+      "label": "Réponse d'un client à un devis",
+      "default": "1"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

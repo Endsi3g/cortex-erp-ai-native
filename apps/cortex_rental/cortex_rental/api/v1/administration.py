@@ -77,6 +77,16 @@ if frappe:
         )
 
     @frappe.whitelist(methods=["GET"])
+    def team_devices():
+        require_human_staff_role()
+        return guarded(lambda: administration.team_devices(get_company_context()))
+
+    @frappe.whitelist(methods=["POST"])
+    def sign_out_member(email: str = "", device_id: str = ""):
+        require_human_staff_role()
+        return guarded(lambda: administration.sign_out_member(get_company_context(), email, device_id))
+
+    @frappe.whitelist(methods=["GET"])
     def get_imports():
         require_human_staff_role()
         if not frappe.has_permission("Data Import", "read"):

@@ -1,0 +1,104 @@
+"""Mon compte v2 : appareils, statistiques, approbations (règle des deux personnes et seul approbateur)."""
+
+import json
+import os
+import unittest
+
+from cortex_rental.services.devices import device_label, fingerprint, parse_user_agent
+
+BASE = os.path.dirname(os.path.dirname(__file__))
+
+
+def read(*parts):
+    with open(os.path.join(BASE, *parts), encoding="utf-8") as handle:
+        return handle.read()
+
+
+IOS = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1"
+EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0"
+PIXEL = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36"
+
+
+class TestUserAgentParsing(unittest.TestCase):
+    def test_iphone_is_identified_as_ios_phone_with_safari(self):
+        info = parse_user_agent(IOS)
+        self.assertEqual(
+            (info["os"], info["os_version"], info["device_type"], info["browser"]), ("iOS", "18", "Phone", "Safari")
+        )
+
+    def test_edge_is_not_mistaken_for_chrome_and_windows_version_is_honest(self):
+        info = parse_user_agent(EDGE)
+        self.assertEqual(info["browser"], "Edge")
+        self.assertEqual(info["os_version"], "10 ou 11")  # NT 10.0 ne distingue pas Windows 10 de 11
+
+    def test_android_model_is_read(self):
+        info = parse_user_agent(PIXEL)
+        self.assertEqual((info["model"], info["device_type"]), ("Pixel 8", "Phone"))
+
+    def test_an_empty_agent_is_never_guessed(self):
+        self.assertEqual(device_label(parse_user_agent("")), "Appareil non identifié")
+
+    def test_the_session_id_is_never_stored_only_its_hash(self):
+        self.assertNotEqual(fingerprint("abc"), "abc")
+        self.assertEqual(len(fingerprint("abc")), 64)
+        src = read("services", "devices.py")
+        self.assertNotIn('"sid":', src)
+
+
+class TestRevocation(unittest.TestCase):
+    def test_a_person_can_only_revoke_their_own_sessions(self):
+        src = read("services", "account.py")
+        body = src.split("def sign_out_session")[1].split("def sign_out_other_sessions")[0]
+        self.assertIn("_user()", body)
+        self.assertIn("devices.revoke(user,", body)
+
+    def test_the_current_device_cannot_be_revoked_from_the_list(self):
+        self.assertIn("current_sid", read("services", "devices.py").split("def revoke(")[1].split("def revoke_all")[0])
+
+    def test_team_revocation_requires_the_owner_and_membership_and_is_audited(self):
+        body = read("services", "administration.py").split("def sign_out_member")[1].split("# ---- imports")[0]
+        for needle in ("_require_team_admin(company)", "_require_member(company, email)", "record_mutation"):
+            self.assertIn(needle, body)
+
+    def test_disabling_a_member_closes_their_sessions(self):
+        body = read("services", "administration.py").split("def set_member_enabled")[1].split("def team_devices")[0]
+        self.assertIn("devices.revoke_all(email", body)
+
+    def test_login_is_tracked_by_a_session_hook(self):
+        self.assertIn('on_session_creation = ["cortex_rental.services.devices.on_login"]', read("hooks.py"))
+
+
+class TestApprovalRules(unittest.TestCase):
+    def test_raw_approval_form_is_not_offered_and_a_dialog_replaces_it(self):
+        data = json.loads(read("cortex_rental", "doctype", "approval_request", "approval_request.json"))
+        self.assertEqual(data.get("in_create"), 1)
+        self.assertIn(
+            "requestContractApproval", read("cortex_rental", "doctype", "approval_request", "approval_request_list.js")
+        )
+
+    def test_requester_cannot_approve_or_reject_their_own_request_unless_sole_approver(self):
+        src = read("cortex_rental", "doctype", "approval_request", "approval_request.py")
+        self.assertIn("sole_approver_may_self_approve(self.company, current_user)", src)
+        self.assertIn("self_approved", src)
+        self.assertIn("Retirer ma demande", src)
+
+    def test_the_sole_approver_rule_is_a_company_setting_on_by_default(self):
+        data = json.loads(read("cortex_rental", "doctype", "cortex_finance_settings", "cortex_finance_settings.json"))
+        field = next(f for f in data["fields"] if f["fieldname"] == "allow_sole_approver_self_approval")
+        self.assertEqual(field["default"], "1")
+
+    def test_withdraw_is_for_the_author_only(self):
+        src = read("cortex_rental", "doctype", "approval_request", "approval_request.py")
+        self.assertIn("Seule la personne qui a fait la demande peut la retirer", src)
+
+
+class TestInsightsAreReadOnlyAndScoped(unittest.TestCase):
+    def test_every_endpoint_acts_on_the_signed_in_person_only(self):
+        src = read("api", "v1", "account.py")
+        for name in ("stats", "history", "my_approvals", "login_history", "inbox", "preferences"):
+            body = src.split(f"def {name}(")[1].split("@frappe.whitelist")[0]
+            self.assertTrue("_me()" in body or "account._user()" in body, name)
+            self.assertNotIn("user:", body.split("):")[0], name)  # aucun paramètre ne désigne une autre personne
+
+    def test_reminders_respect_personal_preferences(self):
+        self.assertIn("account_insights.wants(user, pref)", read("services", "reminders.py"))

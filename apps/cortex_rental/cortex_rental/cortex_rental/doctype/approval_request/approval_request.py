@@ -15,6 +15,41 @@ from cortex_rental.cortex_rental.doctype.audit_event.audit_event import log_audi
 from cortex_rental.labels import approval_label
 
 
+APPROVER_ROLES = {"System Manager", "Administrator", "Rental Manager", "Cortex Account Reviewer"}
+
+
+def other_approvers(company: str, requester: str) -> list:
+    """Personnes actives de la société, autres que le demandeur, qui ont un rôle d'approbation."""
+    if not frappe:
+        return []
+    members = frappe.get_all(
+        "User Permission", filters={"allow": "Company", "for_value": company}, pluck="user", distinct=True
+    )
+    found = []
+    for user in members:
+        if user in (requester, "Administrator", "Guest"):
+            continue
+        if not frappe.db.get_value("User", user, "enabled"):
+            continue
+        if APPROVER_ROLES.intersection(frappe.get_roles(user)):
+            found.append(user)
+    return found
+
+
+def sole_approver_may_self_approve(company: str, requester: str) -> bool:
+    """Une seule personne autorisée (le demandeur) : sans cette règle, l'approbation resterait bloquée à jamais.
+
+    Réglable par société (« Permettre au seul approbateur de décider de ses propres demandes », activé par défaut).
+    La décision est inscrite au journal d'audit comme une auto-approbation.
+    """
+    if not frappe:
+        return False
+    flag = frappe.db.get_value("Cortex Finance Settings", {"company": company}, "allow_sole_approver_self_approval")
+    if flag is not None and str(flag) in ("0", ""):
+        return False
+    return not other_approvers(company, requester)
+
+
 class ApprovalRequest(Document):
     """
     Supervision queue entity for sensitive AI agent actions.
@@ -69,11 +104,15 @@ class ApprovalRequest(Document):
                     frappe.PermissionError,
                 )
 
+            self_approved = False
             if self.requested_by_type == "Human" and self.requested_by_id == current_user:
-                frappe.throw(
-                    "La personne qui soumet une demande ne peut pas l’approuver elle-même.",
-                    frappe.PermissionError,
-                )
+                if not sole_approver_may_self_approve(self.company, current_user):
+                    frappe.throw(
+                        "La personne qui soumet une demande ne peut pas l’approuver elle-même : une autre personne "
+                        "autorisée de votre société doit la décider.",
+                        frappe.PermissionError,
+                    )
+                self_approved = True
 
             if self.status != "Pending":
                 frappe.throw(
@@ -99,7 +138,15 @@ class ApprovalRequest(Document):
                 action="rental.approval.approved",
                 entity_type=self.entity_type,
                 entity_id=self.entity_id,
-                after_state={"status": "Approved", "decision_reason": reason},
+                after_state={
+                    "status": "Approved",
+                    "decision_reason": reason,
+                    **(
+                        {"self_approved": True, "note": "Seule personne autorisée de la société"}
+                        if self_approved
+                        else {}
+                    ),
+                },
             )
         else:
             self.status = "Approved"
@@ -144,6 +191,33 @@ class ApprovalRequest(Document):
 
         return None
 
+    def withdraw(self, reason: Optional[str] = None):
+        """La personne qui a fait la demande la retire (rien n'est exécuté)."""
+        if not frappe:
+            self.status = "Rejected"
+            return
+        current_user = frappe.session.user
+        self._assert_human_decider(self)
+        if not (self.requested_by_type == "Human" and self.requested_by_id == current_user):
+            frappe.throw("Seule la personne qui a fait la demande peut la retirer.", frappe.PermissionError)
+        text = (reason or "").strip() or "Demande retirée par son auteur"
+        self.flags.ignore_permissions = True  # l'auteur est vérifié ci-dessus ; son rôle peut ne pas avoir « écrire »
+        self.flags.decision_in_progress = True
+        self.status = "Rejected"
+        self.decided_by = current_user
+        self.decision_reason = f"Retirée : {text}"
+        self.decided_at = frappe.utils.now_datetime()
+        self.save()
+        log_audit_event(
+            company=self.company,
+            actor_type="Human",
+            actor_id=current_user,
+            action="rental.approval.withdrawn",
+            entity_type=self.entity_type,
+            entity_id=self.entity_id,
+            after_state={"status": "Rejected", "decision_reason": self.decision_reason},
+        )
+
     def reject(self, reason: str):
         if not reason or not reason.strip():
             if frappe:
@@ -154,6 +228,11 @@ class ApprovalRequest(Document):
         if frappe:
             self._assert_human_decider(self)
             current_user = frappe.session.user
+            if self.requested_by_type == "Human" and self.requested_by_id == current_user:
+                frappe.throw(
+                    "Vous avez fait cette demande : utilisez « Retirer ma demande » pour l'annuler.",
+                    frappe.PermissionError,
+                )
             self.flags.decision_in_progress = True
             self.status = "Rejected"
             self.decided_by = current_user

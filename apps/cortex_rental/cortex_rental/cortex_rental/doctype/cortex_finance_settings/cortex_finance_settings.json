@@ -3,7 +3,7 @@
   "creation": "2026-09-30 23:00:00.000000",
   "doctype": "DocType",
   "engine": "InnoDB",
-  "modified": "2026-10-06 10:00:00.000000",
+  "modified": "2026-10-06 09:00:00.000000",
   "modified_by": "Administrator",
   "module": "Cortex Rental",
   "name": "Cortex Finance Settings",
@@ -53,7 +53,8 @@
     "acct_tvq",
     "acct_revenue",
     "acct_late_fees",
-    "acct_damages"
+    "acct_damages",
+    "allow_sole_approver_self_approval"
   ],
   "fields": [
     {
@@ -298,6 +299,13 @@
       "fieldtype": "Data",
       "label": "Compte : dommages et pertes facturés",
       "default": "4200 - Dommages et pertes facturés"
+    },
+    {
+      "fieldname": "allow_sole_approver_self_approval",
+      "fieldtype": "Check",
+      "label": "Le seul approbateur peut décider de ses propres demandes",
+      "default": "1",
+      "description": "Si une seule personne de la société peut approuver, elle peut décider de sa propre demande (notée « auto-approbation » dans le journal d'audit). Dès qu'une autre personne autorisée existe, la règle des deux personnes s'applique."
     }
   ],
   "permissions": [

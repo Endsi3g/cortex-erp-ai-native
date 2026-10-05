@@ -63,8 +63,10 @@ class TestAccountContract(unittest.TestCase):
         self.assertNotIn("allow_guest", read("api", "v1", "account.py"))
 
     def test_session_ids_are_never_returned_in_full(self):
-        body = read("services", "account.py").split("def list_sessions")[1].split("\ndef ")[0]
-        self.assertIn("sid[-6:]", body)
+        # Seule une empreinte tronquée (16 caractères du SHA-256) est renvoyée, jamais l'identifiant de session.
+        body = read("services", "devices.py").split("def list_for")[1].split("\ndef ")[0]
+        self.assertIn("key[:16]", body)
+        self.assertNotIn('"sid"', body)
 
     def test_page_is_registered_and_reachable_from_the_profile_menu(self):
         self.assertIn(

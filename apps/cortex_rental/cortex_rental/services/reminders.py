@@ -15,9 +15,14 @@ except ImportError:
 SKIP_USERS = ("Administrator", "Guest")
 
 
-def _notify(user: str, subject: str, doctype: str, name: str) -> bool:
+def _notify(user: str, subject: str, doctype: str, name: str, pref: str = "") -> bool:
     if not user or user in SKIP_USERS:
         return False
+    if pref:
+        from cortex_rental.services import account_insights
+
+        if not account_insights.wants(user, pref):
+            return False  # la personne a désactivé cette alerte dans « Mon compte »
     since = add_to_date(now_datetime(), hours=-24)
     if frappe.db.exists(
         "Notification Log",
@@ -58,6 +63,7 @@ def holds_expiring() -> int:
             f"La retenue du devis {row.name} expire bientôt : prolongez-la ou réservez.",
             "Cortex Rental Transaction",
             row.name,
+            "notify_hold_expiring",
         ):
             count += 1
         frappe.db.set_value("Cortex Rental Transaction", row.name, "hold_notified", 1, update_modified=False)
@@ -80,6 +86,7 @@ def late_returns() -> int:
             f"Retour en retard : {r.name} ({r.customer}) devait revenir le {str(r.ends_at)[:16]}.",
             "Cortex Rental Transaction",
             r.name,
+            "notify_late_returns",
         )
     )
 
@@ -103,6 +110,7 @@ def quotes_without_answer() -> int:
             f"{r.customer_name} n'a pas répondu au devis {r.rental_transaction} ({'ouvert' if r.view_count else 'jamais ouvert'}) : le lien expire dans moins de 48 h.",
             "Cortex Rental Transaction",
             r.rental_transaction,
+            "notify_quote_unanswered",
         )
     )
 
@@ -127,6 +135,7 @@ def unpaid_invoices() -> int:
             f"Facture {r.name} échue et impayée ({r.customer}) : solde {r.balance:.2f} $.",
             "Cortex Rental Invoice",
             r.name,
+            "notify_unpaid_invoices",
         ):
             count += 1
     return count

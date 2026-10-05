@@ -74,7 +74,13 @@ before_request = ["cortex_rental.auth_hooks.french_for_guests"]
 doc_events = {}
 
 # Rappels : retenues qui expirent, retours en retard, devis sans réponse, factures échues (services/reminders.py).
-scheduler_events = {"hourly": ["cortex_rental.services.reminders.hourly"]}
+scheduler_events = {
+    "hourly": ["cortex_rental.services.reminders.hourly"],
+    "daily": ["cortex_rental.services.devices.prune"],
+}
+
+# Appareils connectés : on garde l'agent utilisateur à l'ouverture de chaque session (services/devices.py).
+on_session_creation = ["cortex_rental.services.devices.on_login"]
 
 # Permission Query Hooks for Multi-Tenancy
 # ----------------------------------------

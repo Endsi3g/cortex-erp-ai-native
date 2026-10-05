@@ -6,7 +6,14 @@ try:
 except ImportError:
     frappe = None
 
-from cortex_rental.services import account
+from cortex_rental.services import account, account_insights
+
+
+def _me():
+    from cortex_rental.permissions.agent_scopes import get_company_context
+
+    return account._user(), get_company_context()
+
 
 if frappe:
 
@@ -32,6 +39,10 @@ if frappe:
         return account.list_sessions()
 
     @frappe.whitelist(methods=["POST"])
+    def sign_out_session(device_id: str = ""):
+        return account.sign_out_session(device_id)
+
+    @frappe.whitelist(methods=["POST"])
     def sign_out_other_sessions():
         return account.sign_out_other_sessions()
 
@@ -46,3 +57,50 @@ if frappe:
     @frappe.whitelist(methods=["GET"])
     def ai_usage():
         return account.ai_usage()
+
+    @frappe.whitelist(methods=["GET"])
+    def stats(period: str = "30"):
+        user, company = _me()
+        return account_insights.stats(user, company, period)
+
+    @frappe.whitelist(methods=["GET"])
+    def history(category: str = "", period: str = "90", limit: int = 30, offset: int = 0):
+        user, company = _me()
+        return account_insights.history(user, company, category, period, limit, offset)
+
+    @frappe.whitelist(methods=["GET"])
+    def my_approvals():
+        user, company = _me()
+        return account_insights.my_approvals(user, company)
+
+    @frappe.whitelist(methods=["GET"])
+    def login_history(limit: int = 25):
+        return account_insights.login_history(account._user(), limit)
+
+    @frappe.whitelist(methods=["GET"])
+    def inbox(limit: int = 30):
+        return account_insights.inbox(account._user(), limit)
+
+    @frappe.whitelist(methods=["POST"])
+    def mark_all_read():
+        return {"marked": account_insights.mark_all_read(account._user())}
+
+    @frappe.whitelist(methods=["GET"])
+    def preferences():
+        return account_insights.preferences(account._user())
+
+    @frappe.whitelist(methods=["POST"])
+    def update_preferences(values: str = "{}"):
+        return account_insights.update_preferences(account._user(), frappe.parse_json(values) or {})
+
+    @frappe.whitelist(methods=["GET"])
+    def company_overview():
+        from cortex_rental.services import administration
+
+        user, company = _me()
+        return {
+            "rights": account_insights.rights(user),
+            "roles": [{"role": r, "help": account_insights.ROLE_HELP.get(r, "")} for r in account._roles_label(user)],
+            "team": account_insights.team_roster(company, user, administration.can_manage_team(user)),
+            "can_manage_team": bool(administration.can_manage_team(user)),
+        }

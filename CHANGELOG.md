@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Mon compte v2** : 7 onglets denses (profil, statistiques, approbations, activité complète avec export, sécurité, notifications, société et rôles avec droits), appareils connectés identifiés (navigateur, système, modèle, adresse IP) avec **déconnexion à distance** d'un appareil ou de tous, appareils de l'équipe pour les administrateurs, historique des connexions, alertes personnelles.
+- **Approbations** : plus de formulaire brut (bouton « Demander une approbation »), « Retirer ma demande », auto-approbation du propriétaire seul (réglage, journal d'audit), règle des deux personnes sinon. `dev_tools/verifier_approbations.py`.
 - **Retenue du matériel par un devis** (ADR-008) : le devis retient le matériel dans la disponibilité (72 h par défaut, réglable, expiration sans tâche planifiée), grille hachurée et section « Sur la période », boutons Libérer / Reprendre. **Rappels horaires** (retenue qui expire, retour en retard, devis sans réponse, facture échue). **Frais de dommages et de pertes** optionnels à la facture finale (compte 4200). **Fiche client 360°**, rapport **Utilisation du parc**, outils de lecture de l'assistant (`customer_summary`, `late_returns`). Course de 12 devis simultanés vérifiée (une seule retenue).
 - **Actions complètes d'une location** : Annuler, Ouvrir un litige et Clôturer le dossier (API `rentals.change_state`); correctif du retour par numéro de série (une ligne de plusieurs unités sérialisées restait à moitié retournée); création de demandes d'approbation permise aux gestionnaires; Approuver/Refuser et Enregistrer un paiement en boutons directs.
 - **Mon compte** : profil, sécurité (mot de passe, appareils), notifications, société et rôles, usage de l'IA, activité.

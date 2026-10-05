@@ -96,15 +96,53 @@ if frappe:
             frappe.throw("Demande d’approbation introuvable.", frappe.PermissionError)
         return {"data": _serialize(doc)}
 
-    @frappe.whitelist(methods=["POST"])
-    def decide_approval(name: str, decision: str, reason: str = None):
-        _require_approver()
+    @frappe.whitelist(methods=["GET"])
+    def decision_options(name: str):
+        """Ce que la personne connectée peut faire de cette demande (le serveur reste seul juge à la décision)."""
+        from cortex_rental.cortex_rental.doctype.approval_request.approval_request import (
+            APPROVER_ROLES,
+            other_approvers,
+            sole_approver_may_self_approve,
+        )
+
         doc = frappe.get_doc("Approval Request", name)
         if doc.company != get_company_context():
             frappe.throw("Demande d’approbation introuvable.", frappe.PermissionError)
+        user = frappe.session.user
+        pending = doc.status == "Pending"
+        is_approver = bool(APPROVER_ROLES.intersection(frappe.get_roles(user)))
+        mine = doc.requested_by_type == "Human" and doc.requested_by_id == user
+        if not pending:
+            return {"can_approve": False, "can_reject": False, "can_withdraw": False, "note": ""}
+        if mine:
+            sole = is_approver and sole_approver_may_self_approve(doc.company, user)
+            note = (
+                "Vous êtes la seule personne autorisée de votre société : votre approbation sera notée comme une auto-approbation."
+                if sole
+                else (
+                    "Vous avez fait cette demande : une autre personne autorisée doit la décider."
+                    + (
+                        ""
+                        if other_approvers(doc.company, user)
+                        else " Aucune autre personne autorisée n'existe dans votre société : ajoutez-en une dans « Équipe et rôles »."
+                    )
+                )
+            )
+            return {"can_approve": sole, "can_reject": False, "can_withdraw": True, "self_approval": sole, "note": note}
+        return {"can_approve": is_approver, "can_reject": is_approver, "can_withdraw": False, "note": ""}
+
+    @frappe.whitelist(methods=["POST"])
+    def decide_approval(name: str, decision: str, reason: str = None):
         decision = (decision or "").lower()
+        if decision != "withdraw":
+            _require_approver()
+        doc = frappe.get_doc("Approval Request", name)
+        if doc.company != get_company_context():
+            frappe.throw("Demande d’approbation introuvable.", frappe.PermissionError)
         if decision == "approve":
             doc.approve(reason=reason)
+        elif decision == "withdraw":
+            doc.withdraw(reason=reason)
         elif decision == "reject":
             if not reason or len(reason.strip()) < 3:
                 frappe.throw(
@@ -113,7 +151,7 @@ if frappe:
                 )
             doc.reject(reason=reason)
         else:
-            frappe.throw("La décision doit être « approuver » ou « refuser ».", frappe.ValidationError)
+            frappe.throw("La décision doit être « approuver », « refuser » ou « retirer ».", frappe.ValidationError)
         return {
             "request_id": frappe.generate_hash(length=16),
             "entity_id": name,

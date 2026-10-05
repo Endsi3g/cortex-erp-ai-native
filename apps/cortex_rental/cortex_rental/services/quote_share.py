@@ -432,7 +432,9 @@ def _tell(doc, who: str, text: str, reserve: str = "") -> None:
         from cortex_rental.services import team_activity
 
         owner = frappe.db.get_value("Cortex Rental Transaction", doc.rental_transaction, "owner")
-        if owner and owner not in ("Administrator", "Guest"):
+        from cortex_rental.services import account_insights
+
+        if owner and owner not in ("Administrator", "Guest") and account_insights.wants(owner, "notify_quote_response"):
             frappe.get_doc(
                 {
                     "doctype": "Notification Log",
