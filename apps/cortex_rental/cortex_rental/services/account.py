@@ -4,6 +4,7 @@ Tout s'applique à la personne connectée seulement (jamais à une autre) : aucu
 utilisateur. La société et les rôles sont lus, jamais modifiés ici (l'administration d'équipe a son propre écran).
 """
 
+import os
 import re
 from typing import Any, Dict, List
 
@@ -121,9 +122,18 @@ def update_photo(file_url: str) -> Dict[str, Any]:
         if file_doc.is_private:
             # Une photo de profil se voit par toute l'équipe (barre du haut, activité) : elle doit être publique,
             # sinon les autres personnes reçoivent une erreur 403 en la chargeant.
-            file_doc.is_private = 0
-            file_doc.save(ignore_permissions=True)
-            file_url = file_doc.file_url
+            # On en fait une copie publique sous un nom unique (déplacer l'original échoue si un fichier du même nom existe).
+            ext = os.path.splitext(file_url)[1].lower()
+            public = frappe.get_doc(
+                {
+                    "doctype": "File",
+                    "file_name": f"photo-{frappe.generate_hash(length=10)}{ext}",
+                    "content": file_doc.get_content(),
+                    "is_private": 0,
+                }
+            ).insert(ignore_permissions=True)
+            file_doc.delete(ignore_permissions=True)
+            file_url = public.file_url
     frappe.db.set_value("User", user, "user_image", file_url or None)
     frappe.clear_cache(user=user)
     return {"image": file_url}
