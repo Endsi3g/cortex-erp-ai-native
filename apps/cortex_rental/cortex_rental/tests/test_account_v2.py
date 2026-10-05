@@ -147,3 +147,17 @@ class TestAccountPagesAndRoles(unittest.TestCase):
         css = read("public", "css", "cortex-account.css")
         self.assertIn("aspect-ratio: 1 / 1;", css)
         self.assertIn("FileUploader", read("cortex_rental", "page", "cortex_account", "cortex_account.js"))
+
+
+class TestPresenceTooltip(unittest.TestCase):
+    def test_the_pill_shows_only_avatars_and_the_detail_is_a_tooltip(self):
+        nav = read("public", "js", "cortex_nav.js")
+        self.assertNotIn("cx-pill-count", nav)
+        self.assertIn('role: "tooltip"', nav)
+        self.assertIn("describeRoute()", nav)
+
+    def test_the_screen_a_person_is_on_is_text_only_short_lived_and_never_written_to_records(self):
+        src = read("services", "team_activity.py")
+        self.assertIn("expires_in_sec=WHERE_TTL_SECONDS", src)
+        self.assertIn("[:80]", src)
+        self.assertNotIn("set_value", src.split("def remember_where")[1].split("def recall_where")[0])

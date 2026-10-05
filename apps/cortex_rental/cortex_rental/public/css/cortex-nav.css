@@ -879,3 +879,104 @@ body.cx-nav-on #navbar-breadcrumbs li a {
 .cx-group-title.static {
 	cursor: default;
 }
+
+/* ---- Équipe en ligne : seulement des avatars avec leur point vert ; le détail est dans l'infobulle ---- */
+.cx-presence-li {
+	display: flex;
+	align-items: center;
+	margin-right: 10px;
+}
+.cx-pill {
+	display: inline-flex;
+	align-items: center;
+	height: 32px;
+	padding: 0 8px 0 12px;
+	gap: 0;
+}
+.cx-pill .cx-stack {
+	display: flex;
+	align-items: center;
+	padding-left: 0;
+}
+.cx-pill .cx-stack .cx-avatar {
+	flex: 0 0 24px;
+	width: 24px;
+	height: 24px;
+	margin-left: -6px;
+}
+.cx-pill .cx-stack .cx-avatar:first-child {
+	margin-left: 0;
+}
+.cx-more-count {
+	margin-left: 6px;
+	color: var(--cortex-text-secondary, #52525b);
+	font-size: 11.5px;
+	font-weight: 600;
+}
+.cx-presence-li.live .cx-avatar.online .cx-presence {
+	animation: cx-live 2s infinite;
+}
+.cx-presence-tip {
+	position: fixed;
+	z-index: 1040;
+	width: 280px;
+	padding: 12px 14px;
+	border: 1px solid var(--cortex-border, #e4e4e7);
+	border-radius: 12px;
+	background: var(--cortex-surface, #fff);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+	pointer-events: none;
+}
+.cx-presence-tip[hidden] {
+	display: none;
+}
+.cx-presence-tip h4 {
+	margin: 0 0 8px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--cortex-text-secondary, #52525b);
+}
+.cx-presence-tip ul {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.cx-presence-tip li {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.cx-presence-tip .cx-avatar {
+	flex: 0 0 28px;
+	width: 28px;
+	height: 28px;
+	font-size: 10px;
+}
+.cx-tip-text {
+	display: grid;
+	min-width: 0;
+}
+.cx-tip-text b {
+	font-size: 13px;
+	font-weight: 600;
+}
+.cx-tip-text small {
+	overflow: hidden;
+	color: var(--cortex-text-secondary, #52525b);
+	font-size: 12px;
+	line-height: 1.35;
+}
+.cx-presence-tip p {
+	margin: 10px 0 0;
+	padding-top: 8px;
+	border-top: 1px solid var(--cortex-border, #ecebe6);
+	color: #8a8984;
+	font-size: 11.5px;
+}
+@media (max-width: 640px) {
+	.cx-presence-tip {
+		width: min(280px, calc(100vw - 16px));
+	}
+}

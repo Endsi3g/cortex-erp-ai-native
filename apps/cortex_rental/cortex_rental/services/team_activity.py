@@ -5,6 +5,7 @@ cœur reçu dans les 3 dernières minutes (`presence.ping`). Les actions viennen
 activité n'est inventée.
 """
 
+import re
 from typing import Any, Dict, List
 
 try:
@@ -45,6 +46,22 @@ ACTION_TEXT = {
     "cortex.team.role_changed": "a changé des rôles",
     "cortex.onboarding.member_invited": "a invité un membre",
 }
+
+
+WHERE_KEY = "cortex_presence_where:"
+WHERE_TTL_SECONDS = (ONLINE_WINDOW_MINUTES + 0) * 60
+
+
+def remember_where(user: str, where: str) -> None:
+    """Garde l'écran affiché par la personne (texte brut, 80 caractères) pendant la fenêtre « en ligne »."""
+    text = " ".join(re.sub(r"<[^>]*>", "", where or "").split())[:80]
+    if not text:
+        return
+    frappe.cache.set_value(WHERE_KEY + user, text, expires_in_sec=WHERE_TTL_SECONDS)
+
+
+def recall_where(user: str) -> str:
+    return frappe.cache.get_value(WHERE_KEY + user) or ""
 
 
 def action_text(action: str) -> str:
@@ -97,6 +114,7 @@ def team_snapshot(company: str, me: str, limit: int = 12) -> Dict[str, Any]:
                 "is_me": user.name == me,
                 "last_action": action_text(event.action) if event else "",
                 "last_action_at": str(event.creation) if event else "",
+                "doing": recall_where(user.name) if user.last_active and user.last_active >= threshold else "",
             }
         )
     team.sort(key=lambda m: (not m["online"], m["full_name"].lower()))

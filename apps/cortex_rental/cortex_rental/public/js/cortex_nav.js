@@ -308,13 +308,23 @@
 			const list = document.querySelector("header.navbar .navbar-collapse ul.navbar-nav");
 			if (!list || list.querySelector(".cx-presence-li")) return;
 			const li = el("li", { class: "nav-item cx-presence-li", hidden: "" });
-			li.innerHTML = `<button type="button" class="cx-pill" aria-expanded="false" aria-controls="cx-activity" title="${__("Équipe en ligne")}"><span class="cx-stack"></span><span class="cx-pill-count"></span></button>`;
+			li.innerHTML = `<button type="button" class="cx-pill" aria-expanded="false" aria-controls="cx-activity" aria-describedby="cx-presence-tip" aria-label="${__("Équipe en ligne")}"><span class="cx-stack"></span></button>`;
 			list.insertBefore(li, list.firstChild);
 			const panel = el("div", { id: "cx-activity", class: "cx-activity", role: "dialog", "aria-label": __("Activité de l'équipe"), hidden: "" });
 			document.body.appendChild(panel);
+			// Infobulle : qui est en ligne et ce que chaque personne fait (écran affiché, sinon dernière action).
+			const tip = el("div", { id: "cx-presence-tip", class: "cx-presence-tip", role: "tooltip", hidden: "" });
+			document.body.appendChild(tip);
 			this.nodes.presence = li;
 			this.nodes.activity = panel;
-			li.querySelector(".cx-pill").addEventListener("click", () => this.toggleActivity());
+			this.nodes.tip = tip;
+			const pill = li.querySelector(".cx-pill");
+			pill.addEventListener("click", () => {
+				this.showTip(false);
+				this.toggleActivity();
+			});
+			["mouseenter", "focus"].forEach((ev) => pill.addEventListener(ev, () => this.showTip(true)));
+			["mouseleave", "blur"].forEach((ev) => pill.addEventListener(ev, () => this.showTip(false)));
 			document.addEventListener("click", (e) => {
 				if (!panel.hidden && !panel.contains(e.target) && !li.contains(e.target)) this.toggleActivity(false);
 			});
@@ -431,7 +441,36 @@
 		// --- équipe et activité
 		ping() {
 			if (document.visibilityState === "hidden") return;
-			frappe.xcall("cortex_rental.api.v1.presence.ping", {}, "POST").catch(() => {});
+			frappe.xcall("cortex_rental.api.v1.presence.ping", { where: this.describeRoute() }, "POST").catch(() => {});
+		}
+
+		// L'écran affiché, en français (« Disponibilité », « Locations · CR-TRX-2026-00012 »), pour l'infobulle de l'équipe.
+		describeRoute() {
+			const p = this.pathParts();
+			const first = p[0] || "";
+			if (!first) return __("Accueil");
+			const here = cortex.NAV.locate(p);
+			if (first === "query-report") return `${__("Rapport")} · ${p[1] || ""}`;
+			if (here) {
+				const base = __(here.item.label);
+				if (first === "cortex-account" || p.length < 2 || p[1] === "view") return base;
+				return `${base} · ${p[1].startsWith("new-") ? __("nouvelle fiche") : p[1]}`;
+			}
+			return first.replace(/-/g, " ");
+		}
+
+		showTip(show) {
+			const tip = this.nodes.tip;
+			const pill = this.nodes.presence && this.nodes.presence.querySelector(".cx-pill");
+			if (!tip || !pill) return;
+			if (!show || !tip.firstChild || (this.nodes.activity && !this.nodes.activity.hidden)) {
+				tip.hidden = true;
+				return;
+			}
+			tip.hidden = false;
+			const box = pill.getBoundingClientRect();
+			tip.style.top = `${Math.round(box.bottom + 8)}px`;
+			tip.style.right = `${Math.max(8, Math.round(window.innerWidth - box.right))}px`;
 		}
 
 		refreshTeam() {
@@ -486,12 +525,37 @@
 				return;
 			}
 			li.hidden = false;
-			li.querySelector(".cx-pill-count").textContent = __("{0} en ligne", [data.online_count]);
 			li.classList.toggle("live", data.online_count > 0);
+			const online = data.team.filter((m) => m.online);
+			li.querySelector(".cx-pill").setAttribute("aria-label", online.length === 1 ? __("1 personne en ligne") : __("{0} personnes en ligne", [online.length]));
 			const stack = li.querySelector(".cx-stack");
 			stack.innerHTML = "";
-			data.team.filter((m) => m.online).slice(0, 3).forEach((m) => stack.appendChild(this.avatar(m)));
+			online.slice(0, 4).forEach((m) => stack.appendChild(this.avatar(m)));
+			if (online.length > 4) stack.appendChild(el("span", { class: "cx-more-count" }, `+${online.length - 4}`));
+			this.renderTip(online);
 			this.renderActivity(data);
+		}
+
+		renderTip(online) {
+			const tip = this.nodes.tip;
+			if (!tip) return;
+			tip.innerHTML = "";
+			if (!online.length) return;
+			tip.appendChild(el("h4", {}, online.length === 1 ? __("1 personne en ligne") : __("{0} personnes en ligne", [online.length])));
+			const list = el("ul");
+			online.forEach((m) => {
+				const row = el("li");
+				const text = el("span", { class: "cx-tip-text" });
+				const name = el("b");
+				name.textContent = m.is_me ? `${m.full_name} (${__("vous")})` : m.full_name;
+				const what = el("small");
+				what.textContent = m.doing ? `${__("Sur")} ${m.doing}` : m.last_action ? `${m.last_action} · ${frappe.datetime.prettyDate(m.last_action_at)}` : __("En ligne");
+				text.append(name, what);
+				row.append(this.avatar(m), text);
+				list.appendChild(row);
+			});
+			tip.appendChild(list);
+			tip.appendChild(el("p", {}, __("Cliquez pour l'activité récente de l'équipe.")));
 		}
 
 		renderActivity(data) {

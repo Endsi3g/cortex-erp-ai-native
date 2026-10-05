@@ -193,6 +193,10 @@ Principe : un événement saisi à un endroit doit se voir partout où il compte
 - **Photo de profil** : cercle réel (80 px, `aspect-ratio`), téléversement d'une vraie image (PNG, JPEG, WebP, 3 Mo; vérifiée sur le bench) en cliquant la photo; elle remplace aussi l'avatar de la barre latérale.
 - **Interconnexion** : chaque chiffre des 30 derniers jours (profil) et des statistiques ouvre la liste qui le compose (*Activité* filtrée par type et période); *Activité* a un mode « Toute l'équipe » (qui a fait quoi, qui a demandé, **qui a confirmé**) pour qui peut lire le journal d'audit; « Ce qui m'attend » (retenues qui expirent, réservations sans contrat, retours en retard, approbations à décider, factures échues) a un bouton d'action par ligne; des raccourcis (nouvelle location, mes devis, mes demandes, mes appareils); la page *Société* offre « Gérer l'équipe et les rôles », « Appareils de l'équipe » et « Activité de l'équipe » aux administrateurs.
 
+## Équipe en ligne : infobulle (2026-10-06)
+
+La pilule de la barre du haut n'affiche que les avatars des personnes en ligne avec leur point vert (aucun texte « N en ligne »). Au survol ou au focus, une infobulle liste chaque personne et ce qu'elle fait : l'écran affiché (« Disponibilité · Lighting », « Locations · CR-TRX-… »), sinon sa dernière action. L'écran est envoyé par le battement de cœur (`presence.ping(where)`), gardé 3 minutes en mémoire (texte brut, 80 caractères, jamais écrit dans un dossier) et visible seulement par les membres de la même société. Un clic ouvre toujours l'activité récente de l'équipe.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :
