@@ -35,14 +35,49 @@ const cortex_rental_transaction = {
 		if (state === "Quote") {
 			frm.add_custom_button(__("Partager avec le client"), () => this.share(frm), group);
 			frm.add_custom_button(__("Réserver le matériel"), () => this.reserve(frm), group);
+			frm.add_custom_button(__("Annuler le devis"), () => this.change_state(frm, "Cancelled"), group);
 		} else if (state === "Reservation") {
 			frm.add_custom_button(__("Demander le contrat"), () => this.request_contract(frm), group);
+			frm.add_custom_button(__("Annuler la location"), () => this.change_state(frm, "Cancelled"), group);
 		} else if (state === "Contract") {
 			frm.add_custom_button(__("Sortie du matériel"), () => this.checkout(frm), group);
+			frm.add_custom_button(__("Annuler la location"), () => this.change_state(frm, "Cancelled"), group);
 		} else if (state === "Checked Out") {
 			frm.add_custom_button(__("Retour du matériel"), () => this.checkin(frm), group);
+			frm.add_custom_button(__("Ouvrir un litige"), () => this.change_state(frm, "Disputed"), group);
+		} else if (state === "Returned") {
+			frm.add_custom_button(__("Clôturer le dossier"), () => this.change_state(frm, "Closed"), group);
+		} else if (state === "Disputed") {
+			frm.add_custom_button(__("Clôturer le dossier"), () => this.change_state(frm, "Closed"), group);
+			frm.add_custom_button(__("Annuler la location"), () => this.change_state(frm, "Cancelled"), group);
 		}
 		frm.page.set_inner_btn_group_as_primary(group);
+	},
+
+	// ---- Clôture, annulation, litige : la machine d'états reste côté serveur ----
+	change_state(frm, to_state) {
+		const texts = {
+			Closed: [__("Clôturer le dossier"), __("La location sera close et la facture finale émise (moins l'acompte, avec les frais de retard s'il y a lieu)."), false],
+			Cancelled: [__("Annuler"), __("Le matériel réservé est libéré. Une facture d'acompte non payée est annulée."), true],
+			Disputed: [__("Ouvrir un litige"), __("Le dossier passe en litige : il reste ouvert jusqu'à sa clôture ou son annulation."), true],
+		}[to_state];
+		const run = (reason) =>
+			cortex
+				.call("rentals.change_state", { name: frm.doc.name, to_state, reason: reason || "", version: frm.doc.version }, { type: "POST" })
+				.then((r) => {
+					if (r && r.mutation_performed) frappe.show_alert({ message: __("Dossier mis à jour."), indicator: "green" });
+					return frm.reload_doc();
+				});
+		if (texts[2]) {
+			frappe.prompt(
+				{ fieldname: "reason", fieldtype: "Small Text", label: __("Motif (obligatoire)"), reqd: 1, description: texts[1] },
+				(values) => run(values.reason),
+				texts[0],
+				texts[0]
+			);
+		} else {
+			frappe.confirm(texts[1], () => run(""));
+		}
 	},
 
 	// ---- Devis partagé : lien à copier ou courriel ; le client répond sur une page publique, sans compte ----

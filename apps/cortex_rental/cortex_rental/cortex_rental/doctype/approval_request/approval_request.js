@@ -6,10 +6,16 @@ frappe.ui.form.on("Approval Request", {
 		if (entry && !frm.is_new()) frm.page.set_indicator(entry[0], entry[1]);
 		if (frm.is_new() || frm.doc.status !== "Pending") return;
 
-		const group = __("Décision");
-		frm.add_custom_button(__("Approuver"), () => decide(frm, "approve"), group);
-		frm.add_custom_button(__("Refuser"), () => decide(frm, "reject"), group);
-		frm.page.set_inner_btn_group_as_primary(group);
+		if (frm.doc.requested_by_type === "Human" && frm.doc.requested_by_id === frappe.session.user) {
+			frm.dashboard.add_comment(__("Vous avez fait cette demande : une autre personne doit la décider."), "blue", true);
+			if (frm.doc.entity_type && frm.doc.entity_id) {
+				frm.add_custom_button(__("Ouvrir l'élément concerné"), () => frappe.set_route("Form", frm.doc.entity_type, frm.doc.entity_id));
+			}
+			return;
+		}
+		// Les deux décisions sont des boutons directs (pas cachés dans un menu) : c'est le geste principal de cet écran.
+		frm.add_custom_button(__("Approuver"), () => decide(frm, "approve")).removeClass("btn-default").addClass("btn-primary");
+		frm.add_custom_button(__("Refuser"), () => decide(frm, "reject"));
 
 		if (frm.doc.entity_type && frm.doc.entity_id) {
 			frm.add_custom_button(__("Ouvrir l'élément concerné"), () =>

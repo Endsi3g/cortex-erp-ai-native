@@ -445,6 +445,28 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["POST"])
+    def change_state(name: str, to_state: str, reason: str = "", version: int = None):
+        """Clôturer, annuler ou ouvrir un litige. Le serveur applique la machine d'états (transitions permises seulement)."""
+        require_human_staff_role()
+        if to_state not in ("Closed", "Cancelled", "Disputed"):
+            frappe.throw("Cette action n'est pas offerte ici.", frappe.ValidationError)
+        company = get_company_context()
+        doc = _owned_transaction(name, company)
+        if version is not None and int(version) != int(doc.version or 1):
+            frappe.throw("La location a changé. Recharge-la avant de continuer.", frappe.ValidationError)
+        reason = " ".join((reason or "").split())[:300]
+        if to_state in ("Cancelled", "Disputed") and len(reason) < 3:
+            frappe.throw("Indiquez un motif.", frappe.ValidationError)
+        doc.transition_to(to_state, reason=reason or "Clôture demandée par une personne autorisée")
+        return {
+            "request_id": frappe.generate_hash(length=16),
+            "entity_id": name,
+            "status": "completed",
+            "approval_required": False,
+            "mutation_performed": True,
+        }
+
+    @frappe.whitelist(methods=["POST"])
     def request_contract(name: str, version: int = None, override_reason: str = None):
         require_human_staff_role()
         company = get_company_context()

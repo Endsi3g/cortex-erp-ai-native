@@ -143,7 +143,7 @@
       "role": "Rental Manager",
       "read": 1,
       "write": 1,
-      "create": 0,
+      "create": 1,
       "delete": 0,
       "report": 1,
       "export": 1,
@@ -165,7 +165,7 @@
       "role": "Cortex Operations Manager",
       "read": 1,
       "write": 0,
-      "create": 0,
+      "create": 1,
       "delete": 0,
       "report": 1,
       "export": 1,
@@ -181,10 +181,22 @@
       "delete": 0,
       "print": 1,
       "email": 1
+    },
+    {
+      "role": "Cortex System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
     }
   ],
   "sort_field": "creation",
   "sort_order": "DESC",
   "track_changes": 1,
-  "modified": "2026-10-01 00:10:00.000000"
+  "modified": "2026-10-05 18:00:00.000000"
 }
