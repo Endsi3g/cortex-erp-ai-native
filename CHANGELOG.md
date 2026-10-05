@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Actions complètes d'une location** : Annuler, Ouvrir un litige et Clôturer le dossier (API `rentals.change_state`); correctif du retour par numéro de série (une ligne de plusieurs unités sérialisées restait à moitié retournée); création de demandes d'approbation permise aux gestionnaires; Approuver/Refuser et Enregistrer un paiement en boutons directs.
+- **Mon compte** : profil, sécurité (mot de passe, appareils), notifications, société et rôles, usage de l'IA, activité.
+- **Disponibilité** plus grande et épurée (remplissage proportionnel, en-têtes fixes). **Devis** : confirmation par case à cocher, bouton d'envoi retardé, refus serveur sans confirmation, PDF dans la barre d'actions, barres de répartition. Tableau de bord aéré, groupes Opérations et Assistant épinglés.
 - **Plafond d'IA** : passage automatique au modèle économique (`gemini-3.1-flash-lite`) avec avis à la personne; refus seulement à 150 % du budget. Patch `set_ai_economy_defaults`.
 - **Page de devis** refondue (épurée, dense, pensée pour les petits écrans). Barre latérale : groupes tous repliables; fil d'Ariane « Groupe › Page › Fiche » en français; titres de pages alignés sur la barre latérale (Locations, Approbations, Catalogue…); dates de liste en français. Guide Amazon SES.
 - **Après l'acceptation d'un devis** : alerte en direct avec bouton « Réserver », réservation automatique optionnelle par société (au nom de la personne qui a partagé, disponibilité revérifiée), paiement de l'acompte dans le portail (Stripe Checkout avec les clés de la société, webhook signé, paiement unique par session) avec instructions manuelles en repli.

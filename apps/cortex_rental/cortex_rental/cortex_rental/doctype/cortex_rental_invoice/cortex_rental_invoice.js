@@ -23,7 +23,7 @@ frappe.ui.form.on("Cortex Rental Invoice", {
 					__("Enregistrer un paiement"),
 					__("Enregistrer")
 				);
-			}, __("Actions"));
+			}).removeClass("btn-default").addClass("btn-primary");
 		}
 		if (frm.doc.rental_transaction) {
 			frm.add_custom_button(__("Ouvrir la location"), () => frappe.set_route("Form", "Cortex Rental Transaction", frm.doc.rental_transaction), __("Actions"));
