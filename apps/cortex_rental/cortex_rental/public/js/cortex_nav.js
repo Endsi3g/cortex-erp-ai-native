@@ -54,8 +54,9 @@
 			],
 		},
 		{
-			// Chaque entrée est une page dédiée de « Mon compte » (/app/cortex-account/<page>).
-			title: "Mon compte",
+			// Administration regroupe « Mon compte » (sept pages dédiées, /app/cortex-account/<page>) et les réglages de la société.
+			title: "Administration",
+			bottom: true,
 			items: [
 				{ id: "acct-profil", label: "Profil", icon: "customer", href: "/app/cortex-account/profil", owns: ["cortex-account/profil"], show: ALL },
 				{ id: "acct-statistiques", label: "Statistiques", icon: "chart", href: "/app/cortex-account/statistiques", owns: ["cortex-account/statistiques"], show: ALL },
@@ -64,12 +65,6 @@
 				{ id: "acct-securite", label: "Sécurité", icon: "lock", href: "/app/cortex-account/securite", owns: ["cortex-account/securite"], show: ALL },
 				{ id: "acct-notifications", label: "Notifications", icon: "notification", href: "/app/cortex-account/notifications", owns: ["cortex-account/notifications"], show: ALL },
 				{ id: "acct-societe", label: "Société et rôles", icon: "users", href: "/app/cortex-account/societe", owns: ["cortex-account/societe"], show: ALL },
-			],
-		},
-		{
-			title: "Administration",
-			bottom: true,
-			items: [
 				{ id: "admin", label: "Équipe et règles", icon: "setting-gear", href: "/app/cortex-admin", owns: ["cortex-admin", "rental-pricing-rule", "user", "audit-event", "cortex-ai-settings"], show: workspace("Cortex Admin") },
 				{ id: "website", label: "Site Web", icon: "website", href: "/app/website", owns: ["website"], show: hasRole("System Manager", "Website Manager") },
 				{ id: "settings", label: "Paramètres", icon: "setting", href: "/app/erpnext-settings", owns: ["erpnext-settings", "integrations", "build"], show: hasRole("System Manager") },

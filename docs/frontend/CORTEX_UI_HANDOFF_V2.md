@@ -205,6 +205,11 @@ La pilule de la barre du haut n'affiche que les avatars des personnes en ligne a
 - **Exporter** : un seul bouton « Exporter » ouvre une fenêtre qui demande **PDF ou CSV** (`cortex.exportData`, `public/js/cortex_export.js`). Le PDF est généré dans le navigateur (lettre à l'horizontale, pagination, accents; aucun service externe). Disponible sur *Activité* (moi ou équipe, jusqu'à 500 lignes) et *Mes approbations*. Vérifié : PDF ouvert et lu, CSV téléchargé.
 - **Logo de la société** : étape « Ajouter le logo de votre entreprise » dans le guide de démarrage, carte « Logo de la société » (propriétaire seulement) dans *Société et rôles*; PNG, JPEG ou WebP de 2 Mo au plus (SVG refusé), copie publique, audit; il s'affiche dans la barre latérale, les devis envoyés et l'accueil. **L'onboarding complet reste à concevoir avec Kael** (le guide actuel est une liste d'étapes natives).
 
+## Administration fusionnée, dossier relié (2026-10-06)
+
+- **« Mon compte » est fusionné dans « Administration »** (groupe du bas de la barre latérale) : Profil, Statistiques, Mes approbations, Activité, Sécurité, Notifications, Société et rôles, puis Équipe et règles, Site Web, Paramètres. Les routes restent `/app/cortex-account/<page>`; le fil d'Ariane lit « Administration › Page ».
+- **Dossier relié** (`services/dossier.py`, `api/v1/dossier.py`, `public/js/cortex_dossier.js`) : en haut d'une **location**, d'une **facture** et d'un **paiement**, les liens vers tout ce qui s'y rattache (client, factures et solde dû, paiements, approbation et qui l'a décidée, retenue, retours, écritures comptables, auteur) et un « Historique du dossier » (qui a fait quoi, qui a demandé, qui a confirmé). Lecture seule, limitée à la société et aux droits de la personne. **Ordre de priorité des liens d'action (décision de Kael : commencer par les écrans les plus importants)** : 1. location, 2. facture, 3. paiement (faits); suivants : approbation, fiche client (déjà reliés), grille de disponibilité, tableau de bord.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

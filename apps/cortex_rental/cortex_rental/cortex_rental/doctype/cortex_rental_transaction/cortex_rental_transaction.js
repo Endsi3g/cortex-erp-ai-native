@@ -10,6 +10,7 @@ frappe.ui.form.on("Cortex Rental Transaction", {
 		cortex_rental_transaction.add_actions(frm);
 		cortex_rental_transaction.show_hold(frm);
 		cortex_rental_transaction.show_shares(frm);
+		cortex.dossier(frm);
 	},
 });
 

@@ -110,10 +110,11 @@ class TestAccountPagesAndRoles(unittest.TestCase):
 
     def test_each_account_page_is_a_dedicated_entry_in_the_sidebar(self):
         nav = read("public", "js", "cortex_nav.js")
-        self.assertIn('title: "Mon compte"', nav)
+        admin = nav.split('title: "Administration"')[1]
+        self.assertNotIn('title: "Mon compte"', nav)  # fusionné dans « Administration »
         for page in self.PAGES:
-            self.assertIn(f'href: "/app/cortex-account/{page}"', nav)
-            self.assertIn(f'owns: ["cortex-account/{page}"]', nav)
+            self.assertIn(f'href: "/app/cortex-account/{page}"', admin)
+            self.assertIn(f'owns: ["cortex-account/{page}"]', admin)
 
     def test_each_account_page_has_a_subtitle(self):
         pages = read("public", "js", "cortex_pages.js")
@@ -207,3 +208,23 @@ class TestApprovalPolicyAndExport(unittest.TestCase):
     def test_the_logo_is_a_step_of_the_onboarding(self):
         data = json.loads(read("cortex_rental", "module_onboarding", "cortex_rental", "cortex_rental.json"))
         self.assertIn("Ajouter le logo de votre entreprise", [s["step"] for s in data["steps"]])
+
+
+class TestLinkedDossier(unittest.TestCase):
+    def test_forms_show_their_linked_dossier(self):
+        for doctype in ("cortex_rental_transaction", "cortex_rental_invoice", "cortex_rental_payment"):
+            self.assertIn("cortex.dossier(frm)", read("cortex_rental", "doctype", doctype, f"{doctype}.js"))
+
+    def test_the_dossier_is_read_only_company_scoped_and_permission_checked(self):
+        src = read("services", "dossier.py")
+        self.assertIn("doc.company != company", src)
+        self.assertIn('frappe.has_permission(doctype, "read", doc)', src)
+        self.assertNotIn(".save(", src)
+        self.assertNotIn(".insert(", src)
+        for doctype in ("INVOICE", "PAYMENT", '"Approval Request"', '"Audit Event"'):
+            self.assertIn(f"_can({doctype})", src)
+
+    def test_the_dossier_is_registered(self):
+        hooks = read("hooks.py")
+        self.assertIn("cortex_dossier.js", hooks)
+        self.assertIn("cortex-dossier.css", hooks)

@@ -36,6 +36,7 @@ app_include_css = [
     "/assets/cortex_rental/css/cortex-a11y.css",
     "/assets/cortex_rental/css/cortex-mobile.css",
     "/assets/cortex_rental/css/cortex-account.css",
+    "/assets/cortex_rental/css/cortex-dossier.css",
 ]
 
 # Global floating Cortex Copilot launcher — mounted on every Desk page
@@ -50,6 +51,7 @@ app_include_js = [
     "/assets/cortex_rental/js/cortex_nav.js",
     "/assets/cortex_rental/js/cortex_pages.js",
     "/assets/cortex_rental/js/cortex_policy.js",
+    "/assets/cortex_rental/js/cortex_dossier.js",
     "/assets/cortex_rental/js/cortex_export.js",
     "/assets/cortex_rental/js/cortex_views.js",
     "/assets/cortex_rental/js/cortex_a11y.js",
