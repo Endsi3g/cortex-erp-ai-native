@@ -105,8 +105,9 @@ maintenance_mode 1`) n'est nécessaire que si un correctif touche beaucoup de li
 
 ## 7. Charge et limites mesurées
 
-Mesures du 2026-10-06 (voir `docs/audit/STRESS_TEST_2026-10-06.md`) sur un serveur de 4 cœurs : voir le rapport pour les
-chiffres exacts (courses de concurrence, 40 utilisateurs simultanés, fuzz de 6 210 requêtes hostiles, isolation entre sociétés).
+Mesures du 2026-10-06 (détail dans `docs/audit/STRESS_TEST_2026-10-06.md`) sur 4 cœurs avec gunicorn 4×2 : 65 requêtes/s
+à 40 utilisateurs simultanés sans temps de réflexion (0 échec, p95 1,2 s), 4 courses de concurrence correctes, 0 erreur
+5xx sur 6 210 requêtes hostiles, 0 fuite entre sociétés sur 101 contrôles, intégrité comptable parfaite sur 91 jours simulés.
 
 Limites de débit en place (réglables dans `services/defense.py` et les décorateurs) :
 

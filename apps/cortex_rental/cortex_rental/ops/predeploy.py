@@ -92,11 +92,17 @@ def _site_checks() -> List[Result]:
     def scheduler():
         from frappe.utils.scheduler import is_scheduler_disabled
 
-        return (
-            (FAIL, "planificateur", "désactivé : rappels et expirations ne tourneront pas.")
-            if is_scheduler_disabled()
-            else (OK, "planificateur", "actif")
-        )
+        from cortex_rental.services import health
+
+        if is_scheduler_disabled():
+            return (FAIL, "planificateur", "désactivé : rappels et expirations ne tourneront pas.")
+        if not health._scheduler():
+            return (
+                WARN,
+                "planificateur",
+                "activé, mais aucune tâche exécutée récemment : `bench schedule` tourne-t-il ?",
+            )
+        return (OK, "planificateur", "actif et récemment exécuté")
 
     def admin_password():
         for candidate in DEFAULT_PASSWORDS:
@@ -182,12 +188,13 @@ def _site_checks() -> List[Result]:
     def assets():
         import os
 
-        path = os.path.join(frappe.get_app_path("cortex_rental"), "..", "..", "..", "sites", "assets", "cortex_rental")
-        return (
-            (OK, "ressources construites", "présentes")
-            if os.path.isdir(os.path.abspath(path))
-            else (FAIL, "ressources construites", "dossier assets absent : bench build --app cortex_rental")
+        built_dir = os.path.join(frappe.utils.get_bench_path(), "sites", "assets")
+        built = os.path.isdir(os.path.join(built_dir, "cortex_rental")) and os.path.isdir(
+            os.path.join(built_dir, "frappe", "dist")
         )
+        if built:
+            return (OK, "ressources construites", "présentes")
+        return (FAIL, "ressources construites", "dossier assets absent : bench build --app cortex_rental")
 
     for function in (
         migrations,
