@@ -82,17 +82,8 @@ fi
 
 # 5. Build the Desk bundles (Frappe's own esbuild pipeline: *.bundle.js and CSS; no separate front-end build).
 if [ -d "${BENCH_DIR}/apps/cortex_rental" ]; then
-    # `bench build --app cortex_rental` only compiles this app. Without the Frappe/ERPNext bundles
-    # (website.bundle.css, frappe-web.bundle.js, desk.bundle.*) the portal pages (/login, /me) render
-    # as unstyled HTML and the Desk does not start, so build every app when they are missing.
-    if ls "${SITES_DIR}"/assets/frappe/dist/css/website.bundle.*.css >/dev/null 2>&1 \
-        && ls "${SITES_DIR}"/assets/frappe/dist/js/desk.bundle.*.js >/dev/null 2>&1; then
-        echo "Building cortex_rental frontend bundles..."
-        bench build --app cortex_rental || true
-    else
-        echo "Frappe/ERPNext bundles missing: building all apps..."
-        bench build || echo "WARNING: bench build failed; portal and Desk pages will be unstyled."
-    fi
+    echo "Building frontend bundles (Frappe, ERPNext, Cortex)..."
+    bench build || echo "WARNING: bench build failed; portal and Desk pages will be unstyled."
 fi
 
 # 6. Ensure Procfile exists

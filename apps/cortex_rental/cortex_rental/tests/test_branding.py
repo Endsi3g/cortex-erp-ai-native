@@ -53,6 +53,8 @@ class TestNoErpnextInVisibleText(unittest.TestCase):
         offenders = []
         for pattern in patterns:
             for path in glob.glob(os.path.join(root, pattern), recursive=True):
+                if not os.path.isfile(path):
+                    continue
                 with open(path, encoding="utf-8") as handle:
                     if re.search(r"erp\s?next", handle.read(), re.IGNORECASE):
                         offenders.append(os.path.relpath(path, root))
