@@ -221,6 +221,14 @@ Décidé avec Kael : **assistant plein écran à l'arrivée** + **liste qui rest
 - **Vérifié en navigateur** avec une société neuve (`dev_tools/verifier_onboarding.py`) : redirection à l'arrivée, refus sans adresse puis sans logo, téléversement du logo, refus sans mobile, passage des étapes facultatives, retour à l'entreprise (champs conservés), récapitulatif, fin; mobile 390 px sans débordement; comptes de démonstration non redirigés (sociétés marquées terminées).
 - **Limites** : aucun courriel d'invitation réel envoyé en essai (dépend du service courriel); l'import de catalogue passe par l'outil natif *Data Import*.
 
+## Préparation à la production (2026-10-06)
+
+- **Stress test et fuzz** : `docs/audit/STRESS_TEST_2026-10-06.md` (0 erreur 5xx sur 6 210 requêtes hostiles, 4 courses de concurrence correctes, 0 fuite entre sociétés, 65 req/s à 40 utilisateurs sur gunicorn, 91 jours simulés sans violation d'intégrité).
+- **Code défensif** : `services/defense.py` (vrais octets des images, frein global, limites par action, 429 au verrouillage, en-têtes de sécurité), `@defense.safe_input` sur tous les endpoints (valeur invalide = 417 en français), pagination bornée, dates et lignes de devis validées, test de contrat statique (`tests/test_defense.py`).
+- **Comportement visible** : un trop grand nombre d'appels répond « Trop de demandes en peu de temps » (429); le compte se verrouille 5 minutes après 5 échecs de connexion; une période de location dont la fin précède le début est refusée (elle était facturée 1 jour).
+- **Exploitation** : `docs/ops/DEPLOIEMENT.md`, `infra/production/` (nginx, supervisor, sauvegarde), `ops/predeploy.py` (contrôle avant mise en ligne), `health.health` et `health.ready`.
+- **Reste à faire avant des clients payants** : clés réelles (courriel, Gemini, Stripe) à éprouver, TLS/domaine, revue de sécurité externe, 2FA des propriétaires, essai de charge du serveur de sockets.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

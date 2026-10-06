@@ -100,7 +100,7 @@ maintenance_mode 1`) n'est nécessaire que si un correctif touche beaucoup de li
 - **La clé `encryption_key` du site se sauvegarde séparément** : sans elle, les secrets chiffrés (clés d'API, Stripe) sont
   illisibles après restauration.
 - **Restaurer** : `bench --site app.exemple.ca restore <base.sql.gz> --with-public-files <fichiers.tar> --with-private-files <privés.tar>`
-  puis `bench --site app.exemple.ca migrate`. **Faites un essai de restauration trimestriel** sur un serveur à part : une
+  puis `bench --site app.exemple.ca migrate`. **Essai fait le 2026-10-06** : sauvegarde de `cortex.local` par `backup.sh` (somme de contrôle vérifiée), restauration dans un site neuf, 592 locations de part et d'autre. **Refaites un essai de restauration trimestriel** sur un serveur à part : une
   sauvegarde qu'on n'a jamais restaurée n'est pas une sauvegarde.
 
 ## 7. Charge et limites mesurées

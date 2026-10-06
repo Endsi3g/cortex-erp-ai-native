@@ -15,6 +15,7 @@ limites de débit ont été relevées (×1000) pendant les essais pour ne pas fa
 | Simulation de 91 jours (589 locations, 345 factures, 630 écritures) | **0 violation d'intégrité**, grand livre équilibré à l'écart 0,00 $ |
 | Force brute sur la connexion | Verrouillage après 5 échecs, **429 + `Retry-After`** (était 500) |
 | Fichiers déguisés (SVG/HTML nommé `.png`) pour le logo et la photo | Refusés (vrais octets vérifiés) |
+| Sauvegarde puis restauration dans un site neuf (`infra/production/backup.sh`) | Sommes de contrôle valides, 592 locations restaurées sur 592 |
 | Textes de 100 000 caractères envoyés partout | Aucune colonne > 5 000 caractères en base |
 
 ## 2. Fuzz : 23 causes d'erreur 500 trouvées et corrigées
