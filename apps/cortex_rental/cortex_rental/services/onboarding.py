@@ -321,6 +321,12 @@ def save_company_profile(company: str, data: Dict[str, Any]) -> Dict[str, Any]:
     return get_state(company)
 
 
+def _timezones() -> set:
+    import pytz
+
+    return set(pytz.all_timezones)
+
+
 def save_owner_profile(company: str, data: Dict[str, Any]) -> Dict[str, Any]:
     """Étape « Vous, le propriétaire » : nom et téléphone de la personne-ressource (obligatoires pour le soutien)."""
     _require_owner(company)
@@ -329,6 +335,10 @@ def save_owner_profile(company: str, data: Dict[str, Any]) -> Dict[str, Any]:
     phone = _phone(data.get("mobile_no"), "Votre téléphone")
     time_zone = (data.get("time_zone") or "").strip() or tenant_provisioning.DEFAULT_TIMEZONE
     user = frappe.session.user
+    if time_zone not in _timezones():
+        raise SignupError("invalid_time_zone", "Choisissez un fuseau horaire de la liste.")
+    if frappe.db.exists("User", {"mobile_no": phone, "name": ["!=", user]}):
+        raise SignupError("phone_taken", "Ce numéro de téléphone est déjà utilisé par un autre compte.")
     if user != "Administrator":
         frappe.db.set_value(
             "User",

@@ -14,6 +14,8 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense  # noqa: E402
+
 NOTIFICATION_FIELDS = {
     "enable_email_notifications": "Recevoir des courriels de notification",
     "enable_email_mention": "Quand on me mentionne",
@@ -25,6 +27,7 @@ MIN_PASSWORD = 10
 NAME_LIMIT = 80
 PHONE_RE = re.compile(r"^[0-9+()\-.\s]{7,20}$")
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".webp", ".gif")
+PHOTO_MAX_BYTES = 5 * 1024 * 1024
 
 
 def _user() -> str:
@@ -99,6 +102,8 @@ def update_profile(first_name: str, last_name: str = "", mobile_no: str = "") ->
         frappe.throw("Le prénom est obligatoire.", frappe.ValidationError)
     if phone and not PHONE_RE.match(phone):
         frappe.throw("Le numéro de téléphone n'est pas valide.", frappe.ValidationError)
+    if phone and frappe.db.exists("User", {"mobile_no": phone, "name": ["!=", user]}):
+        frappe.throw("Ce numéro de téléphone est déjà utilisé par un autre compte.", frappe.ValidationError)
     # Écriture ciblée : seuls ces trois champs de sa propre fiche, jamais rôles ni société.
     frappe.db.set_value(
         "User",
@@ -119,6 +124,11 @@ def update_photo(file_url: str) -> Dict[str, Any]:
         if not name:
             frappe.throw("Cette image n'a pas été téléversée par vous.", frappe.PermissionError)
         file_doc = frappe.get_doc("File", name)
+        content = file_doc.get_content()
+        if len(content) > PHOTO_MAX_BYTES:
+            frappe.throw("La photo dépasse 5 Mo : choisissez une image plus légère.", frappe.ValidationError)
+        if not defense.sniff_image(content, allowed=("png", "jpg", "webp", "gif")):
+            frappe.throw("Ce fichier n'est pas une vraie image (PNG, JPEG, WebP ou GIF).", frappe.ValidationError)
         if file_doc.is_private:
             # Une photo de profil se voit par toute l'équipe (barre du haut, activité) : elle doit être publique,
             # sinon les autres personnes reçoivent une erreur 403 en la chargeant.
@@ -128,7 +138,7 @@ def update_photo(file_url: str) -> Dict[str, Any]:
                 {
                     "doctype": "File",
                     "file_name": f"photo-{frappe.generate_hash(length=10)}{ext}",
-                    "content": file_doc.get_content(),
+                    "content": content,
                     "is_private": 0,
                 }
             ).insert(ignore_permissions=True)
@@ -239,7 +249,7 @@ def my_activity(limit: int = 15) -> Dict[str, Any]:
         filters={"company": company, "actor_id": user, "action": ["in", list(team_activity.ACTION_TEXT)]},
         fields=["action", "entity_type", "entity_id", "creation"],
         order_by="creation desc",
-        limit_page_length=max(1, min(int(limit or 15), 50)),
+        limit_page_length=max(1, min(cint(limit) or 15, 50)),
     )
     return {
         "activity": [

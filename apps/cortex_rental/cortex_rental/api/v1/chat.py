@@ -17,6 +17,7 @@ except ImportError:
 
 from pydantic import ValidationError
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import (
     require_human_staff_role,
     get_company_context,
@@ -106,6 +107,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def create_session():
         require_human_staff_role()
         company = get_company_context()
@@ -116,6 +118,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def send_message():
         require_human_staff_role()
         company = get_company_context()
@@ -124,6 +127,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_session():
         require_human_staff_role()
         name = frappe.local.form_dict.get("name")
@@ -136,6 +140,7 @@ if frappe:
         return {"data": result}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_messages():
         require_human_staff_role()
         name = frappe.local.form_dict.get("name")
@@ -148,6 +153,7 @@ if frappe:
         return {"data": result}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_sessions():
         require_human_staff_role()
         company = get_company_context()
@@ -155,6 +161,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def pin_context():
         require_human_staff_role()
         payload = frappe.local.form_dict
@@ -169,6 +176,7 @@ if frappe:
         return {"data": {"pinned": True}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def clear_context():
         require_human_staff_role()
         payload = frappe.local.form_dict

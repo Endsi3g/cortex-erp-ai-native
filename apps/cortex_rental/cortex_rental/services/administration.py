@@ -13,6 +13,7 @@ except ImportError:
     frappe = None
 
 from cortex_rental.services import tenant_provisioning
+from cortex_rental.services import defense
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.signup_rules import SignupError, clean_name
 
@@ -345,6 +346,9 @@ def set_company_logo(company: str, file_url: str) -> Dict[str, Any]:
     content = file_doc.get_content()
     if len(content) > LOGO_MAX_BYTES:
         raise SignupError("logo_too_big", "Le logo dépasse 2 Mo : choisissez une image plus légère.")
+    # On ne se fie pas à l'extension : les premiers octets doivent être ceux d'un PNG, d'un JPEG ou d'un WebP.
+    if not defense.sniff_image(content):
+        raise SignupError("invalid_logo", "Ce fichier n'est pas une vraie image PNG, JPEG ou WebP.")
     public = file_url
     if file_doc.is_private:
         copy = frappe.get_doc(

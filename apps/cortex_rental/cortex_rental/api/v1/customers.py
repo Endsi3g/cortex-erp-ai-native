@@ -6,6 +6,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.api.v1._shared import envelope, page_args, to_float
 from cortex_rental.permissions.agent_scopes import get_company_context, require_agent_scope, require_human_staff_role
 from cortex_rental.services.audit import AuditService
@@ -139,7 +140,9 @@ def list_customers_handler(company: str, search: str, page: int, page_size: int)
 
 
 def create_customer_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
-    name = payload.get("customer_name") or payload.get("name")
+    name = " ".join(str(payload.get("customer_name") or payload.get("name") or "").split())[:140]
+    if not name:
+        raise ValueError("Le nom du client est obligatoire.")
     email = payload.get("email")
     phone = payload.get("phone")
 
@@ -174,6 +177,7 @@ def create_customer_draft_handler(payload: Dict[str, Any], company: str, actor_i
 if frappe:
 
     @frappe.whitelist(methods=["GET", "POST"])
+    @defense.safe_input
     @log_tool_call("search_customers", scope="agent:customers:read")
     def search_customers(query: str = ""):
         require_agent_scope("agent:customers:read")
@@ -182,6 +186,7 @@ if frappe:
         return {"data": data, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_customers(search: str = None, page: int = 1, page_size: int = 20):
         require_human_staff_role()
         if not frappe.has_permission("Customer", "read"):
@@ -190,6 +195,7 @@ if frappe:
         return envelope(list_customers_handler(get_company_context(), search, page, page_size))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def summary(customer: str):
         """Vue 360° d'un client : devis ouverts, locations en cours, solde dû, dernière location."""
         require_human_staff_role()
@@ -198,6 +204,7 @@ if frappe:
         return customer_360.summary(customer, get_company_context())
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("create_customer_draft", scope="agent:customers:draft")
     def create_customer_draft():
         require_agent_scope("agent:customers:draft")

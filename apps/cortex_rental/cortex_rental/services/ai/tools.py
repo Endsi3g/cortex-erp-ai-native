@@ -115,7 +115,7 @@ def list_rentals(state: str = "", limit: int = 10):
         filters=filters,
         fields=["name", "customer", "rental_state", "starts_at", "ends_at", "grand_total"],
         order_by="modified desc",
-        limit_page_length=max(1, min(int(limit or 10), 25)),
+        limit_page_length=max(1, min(_as_int(limit, 10), 25)),
     )
     return {"rentals": [{**dict(r), "starts_at": str(r.starts_at), "ends_at": str(r.ends_at)} for r in rows]}
 
@@ -131,7 +131,7 @@ def list_pending_approvals(limit: int = 10):
         filters={"company": _company(), "status": "Pending"},
         fields=["name", "action", "entity_id", "requested_by_id", "creation"],
         order_by="creation desc",
-        limit_page_length=max(1, min(int(limit or 10), 25)),
+        limit_page_length=max(1, min(_as_int(limit, 10), 25)),
     )
     return {"pending": [{**dict(r), "creation": str(r.creation)} for r in rows]}
 
@@ -203,7 +203,7 @@ def late_returns(limit: int = 10):
         },
         fields=["name", "customer", "ends_at", "grand_total"],
         order_by="ends_at asc",
-        limit_page_length=max(1, min(int(limit or 10), 25)),
+        limit_page_length=max(1, min(_as_int(limit, 10), 25)),
     )
     return {"late": [{**dict(r), "ends_at": str(r.ends_at)} for r in rows]}
 
@@ -283,3 +283,11 @@ def execute(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as exc:  # noqa: BLE001 - toute erreur (droits, validation) est renvoyée au modèle, jamais masquée en succès
         message = getattr(exc, "message", None) or str(exc)
         return {"error": str(message)[:300]}
+
+
+def _as_int(value, default: int) -> int:
+    """Les arguments des outils viennent du modèle : un nombre mal formé ne doit jamais faire échouer l'outil."""
+    try:
+        return int(float(str(value).strip()))
+    except (TypeError, ValueError, OverflowError):
+        return default

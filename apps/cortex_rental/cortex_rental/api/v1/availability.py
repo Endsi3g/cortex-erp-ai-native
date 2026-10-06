@@ -5,6 +5,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import (
     require_agent_scope,
     require_human_staff_role,
@@ -39,6 +40,7 @@ def check_availability_handler(payload: Dict[str, Any], company: str) -> List[Di
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def check_for_staff():
         require_human_staff_role()
         company = get_company_context()
@@ -65,6 +67,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_alternatives(item_code: str, starts_at: str, ends_at: str):
         require_human_staff_role()
         company = get_company_context()
@@ -115,6 +118,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("check_inventory_availability", scope="agent:availability:read")
     def check_availability():
         require_agent_scope("agent:availability:read")
@@ -288,6 +292,7 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_matrix():
         require_human_staff_role()
         company = get_company_context()

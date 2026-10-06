@@ -12,12 +12,16 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import get_company_context, require_human_staff_role
 from cortex_rental.services import quote_share
+
+WEBHOOK_MAX_BYTES = 1024 * 1024
 
 if frappe:
     # ---------------------------------------------------------------- équipe
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def create_share(
         rental_id: str,
         channel: str = "Link",
@@ -44,6 +48,7 @@ if frappe:
         )
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_shares(rental_id: str):
         require_human_staff_role()
         company = get_company_context()
@@ -83,6 +88,7 @@ if frappe:
         return {"shares": out}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def revoke_share(name: str):
         require_human_staff_role()
         quote_share.revoke(name, get_company_context(), frappe.session.user)
@@ -90,6 +96,7 @@ if frappe:
 
     # ---------------------------------------------------------------- client (sans compte)
     @frappe.whitelist(allow_guest=True, methods=["POST"])
+    @defense.safe_input
     @rate_limit(limit=120, seconds=60 * 60)
     def respond(
         token: str = "",
@@ -102,6 +109,7 @@ if frappe:
         return quote_share.respond(token, action, message, responder_name, confirmed)
 
     @frappe.whitelist(allow_guest=True, methods=["POST"])
+    @defense.safe_input
     @rate_limit(limit=20, seconds=60 * 60)
     def start_payment(token: str = ""):
         """Client : crée la session de paiement de l'acompte et renvoie l'adresse de la page de paiement."""
@@ -113,9 +121,15 @@ if frappe:
             frappe.throw(str(exc), frappe.ValidationError)
 
     @frappe.whitelist(allow_guest=True, methods=["POST"])
+    @defense.safe_input
+    @rate_limit(limit=600, seconds=60)
     def stripe_webhook():
         """Stripe : confirmation signée d'un paiement. La signature est vérifiée avec le secret de la société concernée."""
         frappe.local.response["http_status_code"] = 200
+        # Un événement Stripe fait quelques Ko : on refuse sans la lire une charge anormalement grosse (avant la signature).
+        if (frappe.request.content_length or 0) > WEBHOOK_MAX_BYTES:
+            frappe.local.response["http_status_code"] = 413
+            return {"ok": False, "code": "too_large"}
         return quote_share.handle_payment_event(
             frappe.request.get_data(), frappe.get_request_header("Stripe-Signature") or ""
         )

@@ -5,6 +5,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import (
     require_human_staff_role,
     get_company_context,
@@ -94,6 +95,7 @@ def submit_checkin_handler(payload: Dict[str, Any], company: str, actor_id: str)
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_active_transactions(query: Optional[str] = None):
         require_human_staff_role()
         company = get_company_context()
@@ -101,6 +103,7 @@ if frappe:
         return {"data": results, "meta": {"company": company, "count": len(results)}}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def lookup_scan(scan_code: str):
         require_human_staff_role()
         company = get_company_context()
@@ -108,6 +111,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def submit_checkin():
         require_human_staff_role()
         company = get_company_context()
@@ -122,6 +126,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def complete_checkin_api():
         require_human_staff_role()
         company = get_company_context()

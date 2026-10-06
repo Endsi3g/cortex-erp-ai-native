@@ -5,10 +5,13 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
+
 
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_session_context():
         user = frappe.session.user
         if not user or user == "Guest":

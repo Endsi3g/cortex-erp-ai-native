@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict
 
 try:
@@ -5,6 +6,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.audit import AuditService
@@ -12,11 +14,39 @@ from cortex_rental.services.idempotency import get_idempotency_key_header, with_
 from cortex_rental.services.agent_telemetry import log_tool_call
 
 
+MAX_LINES = 200
+
+
+def clean_lines(raw: Any) -> list:
+    """Lignes d'un devis venant d'un client HTTP : liste (ou JSON) d'objets, quantités et montants raisonnables."""
+    if isinstance(raw, str):
+        raw = json.loads(raw) if raw.strip() else []
+    if raw in (None, ""):
+        return []
+    if not isinstance(raw, list) or not all(isinstance(line, dict) for line in raw):
+        raise ValueError("Les lignes du devis doivent être une liste d'objets.")
+    if len(raw) > MAX_LINES:
+        raise ValueError(f"Un devis ne peut pas dépasser {MAX_LINES} lignes.")
+    for line in raw:
+        quantity = float(line.get("quantity") or 1.0)
+        rate = float(line.get("unit_rate") or 0.0)
+        discount = float(line.get("discount_percentage") or 0.0)
+        if not (0 < quantity <= 10_000) or quantity != quantity:
+            raise ValueError("La quantité d'une ligne doit être entre 1 et 10 000.")
+        if not (0 <= rate <= 10_000_000) or rate != rate:
+            raise ValueError("Le tarif d'une ligne n'est pas valide.")
+        if not (0 <= discount <= 100) or discount != discount:
+            raise ValueError("Le rabais d'une ligne doit être entre 0 et 100 %.")
+    return raw
+
+
 def create_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
     starts_at = payload.get("starts_at")
     ends_at = payload.get("ends_at")
     customer_id = payload.get("customer_id")
-    lines = payload.get("lines") or []
+    lines = clean_lines(payload.get("lines"))
+    if not starts_at or not ends_at:
+        raise ValueError("Les dates de début et de fin sont obligatoires.")
 
     calendar_days, billable_days = PricingService.compute_billable_days(starts_at, ends_at, company)
 
@@ -108,7 +138,7 @@ def preview_pricing_handler(payload: Dict[str, Any], company: str) -> Dict[str, 
     if not starts_at or not ends_at:
         raise ValueError("Les dates de début et de fin sont obligatoires.")
 
-    lines = payload.get("lines") or []
+    lines = clean_lines(payload.get("lines"))
     calendar_days, billable_days = PricingService.compute_billable_days(starts_at, ends_at, company)
 
     total_amount = 0.0
@@ -141,6 +171,7 @@ def preview_pricing_handler(payload: Dict[str, Any], company: str) -> Dict[str, 
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("preview_pricing", scope="agent:quote:draft")
     def preview_pricing():
         require_agent_scope("agent:quote:draft")
@@ -154,6 +185,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("create_quote_draft", scope="agent:quote:draft")
     def create_quote_draft():
         require_agent_scope("agent:quote:draft")

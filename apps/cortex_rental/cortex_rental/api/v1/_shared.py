@@ -24,8 +24,20 @@ def envelope(data: Dict[str, Any]) -> Dict[str, Any]:
     return {"data": {"provenance": "api", "last_synced_at": now_iso(), **data}}
 
 
+MAX_PAGE = 100_000
+
+
+def to_int(value: Any, default: int, low: int, high: int) -> int:
+    """Entier tolérant : une valeur absente, vide, non numérique ou démesurée donne le défaut ou la borne, jamais une erreur."""
+    try:
+        number = int(float(str(value).strip()))
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return max(low, min(number, high))
+
+
 def page_args(page: Any, page_size: Any) -> Tuple[int, int]:
-    return max(1, int(page or 1)), min(MAX_PAGE_SIZE, max(1, int(page_size or 20)))
+    return to_int(page, 1, 1, MAX_PAGE), to_int(page_size, 20, 1, MAX_PAGE_SIZE)
 
 
 def parse_json(value: Any, default: Any) -> Any:

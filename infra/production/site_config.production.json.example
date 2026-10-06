@@ -1,0 +1,19 @@
+{
+  "developer_mode": 0,
+  "allow_tests": 0,
+  "host_name": "https://app.exemple.ca",
+  "encryption_key": "GÉNÉRÉ PAR bench new-site : à sauvegarder séparément de la base de données",
+  "db_name": "…",
+  "db_password": "…",
+  "max_file_size": 10485760,
+  "auto_email_id": "ne-pas-repondre@exemple.ca",
+  "mail_server": "…",
+  "mail_port": 587,
+  "use_tls": 1,
+  "mail_login": "…",
+  "mail_password": "…",
+  "cortex_chat_provider": "gateway",
+  "session_expiry": "168:00:00",
+  "allow_cors": "",
+  "_commentaire": "Retirer ce champ. Ne jamais définir cortex_rate_limit_factor en production (essais de charge seulement)."
+}

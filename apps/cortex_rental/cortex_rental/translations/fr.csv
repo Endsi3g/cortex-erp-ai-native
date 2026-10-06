@@ -1989,3 +1989,5 @@ Deposit Credit,Acompte appliqué
 Dismiss,Ignorer,Stop showing the onboarding widget.
 View List,Voir la liste
 Closed,Clos
+Your account has been locked and will resume after {0} seconds,Votre compte est verrouillé après trop de tentatives. Il sera de nouveau accessible dans {0} secondes.
+Invalid login credentials,Identifiant ou mot de passe invalide.

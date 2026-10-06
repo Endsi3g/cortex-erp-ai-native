@@ -340,7 +340,7 @@ def history(
     if since:
         filters["creation"] = [">=", since]
     limit = max(1, min(cint(limit) or 30, 100))
-    offset = max(0, cint(offset))
+    offset = max(0, min(cint(offset), 100_000))
     total = frappe.db.count("Audit Event", filters=filters)
     rows = frappe.get_all(
         "Audit Event",

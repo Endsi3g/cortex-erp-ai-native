@@ -5,6 +5,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.agent_telemetry import log_tool_call
@@ -78,6 +79,7 @@ def search_items_handler(query: str, company: str, category: Optional[str] = Non
 if frappe:
 
     @frappe.whitelist(methods=["GET", "POST"])
+    @defense.safe_input
     @log_tool_call("search_rental_items", scope="agent:items:read")
     def search_items(query: str = "", category: Optional[str] = None):
         require_agent_scope("agent:items:read")

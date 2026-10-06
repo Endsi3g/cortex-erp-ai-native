@@ -50,7 +50,7 @@ class TestClientCanOnlyAnswer(unittest.TestCase):
 
     def test_guest_respond_is_rate_limited(self):
         source = read("api", "v1", "quote_share.py")
-        self.assertRegex(source, r"allow_guest=True.*\n\s*@rate_limit")
+        self.assertRegex(source, r"allow_guest=True.*\n(\s*@[^\n]*\n)*\s*@rate_limit")
 
     def test_staff_endpoints_require_a_human_staff_role(self):
         source = read("api", "v1", "quote_share.py")

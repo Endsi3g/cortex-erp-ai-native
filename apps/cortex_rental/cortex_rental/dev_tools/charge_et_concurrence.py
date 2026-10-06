@@ -8,6 +8,7 @@ Résultat : /tmp/cortex_stress_metrics.json.
 """
 
 import json
+import os
 import statistics
 import threading
 import time
@@ -18,13 +19,20 @@ import requests
 
 from cortex_rental.dev_tools.simulate_company import COMPANY, COUNTERS, MANAGER, PASSWORD
 
-BASE = "http://localhost:8000"
+# Serveur ciblé : le serveur de développement (8000) ou, pour des chiffres réalistes, gunicorn (ex. CORTEX_BASE=http://localhost:8001).
+BASE = os.environ.get("CORTEX_BASE", "http://localhost:8000")
+SITE_NAME = os.environ.get("CORTEX_SITE", "cortex.local")
+LOAD_USERS = int(os.environ.get("CORTEX_LOAD_USERS", "16"))
+LOAD_SECONDS = int(os.environ.get("CORTEX_LOAD_SECONDS", "20"))
 OUT = "/tmp/cortex_stress_metrics.json"
 RESULTS = {}
 
 
 def session(user):
     s = requests.Session()
+    s.headers["X-Frappe-Site-Name"] = (
+        SITE_NAME  # gunicorn résout le site par cet en-tête quand on appelle par « localhost »
+    )
     response = s.post(f"{BASE}/api/method/login", data={"usr": user, "pwd": PASSWORD}, timeout=30)
     response.raise_for_status()
     return s
@@ -342,7 +350,6 @@ def benchmarks():
         "Disponibilité du parc",
         "Prochains départs et retours",
         "Activité des clients",
-        "Relevé propriétaire",
         "Versements de consignation",
     ]
     for report in reports:
@@ -383,8 +390,8 @@ def benchmarks():
     RESULTS["lectures"] = out
 
 
-def concurrent_load(workers=16, seconds=20):
-    """Charge mixte : 16 utilisateurs qui lisent la liste, la grille et la file pendant 20 s."""
+def concurrent_load(workers=LOAD_USERS, seconds=LOAD_SECONDS):
+    """Charge mixte : N utilisateurs qui lisent la liste, la grille, la file, leur compte et la santé du service."""
     deadline = time.time() + seconds
     times, failures = [], [0]
     lock = threading.Lock()
@@ -400,6 +407,8 @@ def concurrent_load(workers=16, seconds=20):
                     {"starts_at": str(today), "ends_at": str(today + timedelta(days=14))},
                 ),
                 ("cortex_rental.api.v1.approval_queue.list_approval_requests", {"status": "pending"}),
+                ("cortex_rental.api.v1.account.stats", {}),
+                ("cortex_rental.api.v1.account.history", {"scope": "me", "limit": 15}),
             ):
                 response, ms = get(s, method, **params)
                 with lock:

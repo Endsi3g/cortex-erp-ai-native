@@ -12,6 +12,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.services import access_requests
 from cortex_rental.services.signup_rules import SignupError
 
@@ -27,6 +28,7 @@ def guarded(action: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
 if frappe:
 
     @frappe.whitelist(allow_guest=True, methods=["POST"])
+    @defense.safe_input
     @rate_limit(limit=8, seconds=60 * 60)
     def request_access(
         full_name: str = "",
@@ -49,11 +51,14 @@ if frappe:
         return guarded(lambda: access_requests.submit_request(payload, getattr(frappe.local, "request_ip", None)))
 
     @frappe.whitelist(allow_guest=True, methods=["POST"])
+    @defense.safe_input
     @rate_limit(limit=10, seconds=60 * 60)
     def resend_verification(token: str = ""):
         return guarded(lambda: access_requests.resend_verification(token))
 
     @frappe.whitelist(allow_guest=True, methods=["GET"])
+    @defense.safe_input
+    @rate_limit(limit=120, seconds=60 * 60)
     def access_status():
         """Whether the login page should offer « Demander l'accès » (no secret, cacheable)."""
         return {"signup_enabled": access_requests.signup_enabled()}

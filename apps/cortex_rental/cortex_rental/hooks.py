@@ -63,7 +63,10 @@ app_include_js = [
 doctype_js = {"Customer": "public/js/cortex_customer.js"}
 
 # Visitors who are not signed in get French pages (see auth_hooks.french_for_guests).
-before_request = ["cortex_rental.auth_hooks.french_for_guests"]
+before_request = ["cortex_rental.auth_hooks.french_for_guests", "cortex_rental.services.defense.request_brake"]
+
+# En-têtes de sécurité sur chaque réponse (voir services/defense.py).
+after_request = ["cortex_rental.services.defense.security_headers", "cortex_rental.services.defense.normalize_lockout"]
 
 # DocType Events (Audit logging & validation hooks)
 # ------------------------------------------------

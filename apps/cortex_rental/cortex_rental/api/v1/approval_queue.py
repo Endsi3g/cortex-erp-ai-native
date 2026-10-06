@@ -5,6 +5,8 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
+from cortex_rental.api.v1._shared import page_args
 from cortex_rental.permissions.agent_scopes import get_company_context
 
 
@@ -62,10 +64,11 @@ def _serialize(doc):
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_approval_requests(status="pending", page=1, page_size=20):
         _require_approver()
         company = get_company_context()
-        page, page_size = max(1, int(page)), min(100, max(1, int(page_size)))
+        page, page_size = page_args(page, page_size)
         filters = {"company": company}
         if status and status != "all":
             filters["status"] = status.title()
@@ -89,6 +92,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_approval_request(name: str):
         _require_approver()
         doc = frappe.get_doc("Approval Request", name)
@@ -97,6 +101,7 @@ if frappe:
         return {"data": _serialize(doc)}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def decision_options(name: str):
         """Ce que la personne connectée peut faire de cette demande (le serveur reste seul juge à la décision)."""
         from cortex_rental.services import approval_policy
@@ -144,6 +149,7 @@ if frappe:
         return {"can_approve": is_approver, "can_reject": is_approver, "can_withdraw": False, "note": ""}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def self_approval_policy():
         """État de la règle « le seul approbateur décide de ses propres demandes », avec ses bénéfices et ses dangers."""
         from cortex_rental.services import approval_policy
@@ -151,6 +157,7 @@ if frappe:
         return approval_policy.get_policy(get_company_context(), frappe.session.user)
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def set_self_approval(enabled: int = 0, acknowledged: int = 0):
         """Active ou désactive la règle (propriétaire seulement). L'activation exige d'avoir confirmé la lecture des risques."""
         from cortex_rental.services import approval_policy
@@ -160,6 +167,7 @@ if frappe:
         )
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def decide_approval(name: str, decision: str, reason: str = None):
         decision = (decision or "").lower()
         if decision != "withdraw":

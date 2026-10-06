@@ -12,6 +12,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.api.v1._shared import envelope, now_iso
 from cortex_rental.permissions.agent_scopes import get_company_context, require_human_staff_role
 
@@ -80,6 +81,7 @@ def overview_handler(company: str, can_decide_approvals: bool) -> Dict[str, Any]
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_operations_overview():
         require_human_staff_role()
         roles = set(frappe.get_roles(frappe.session.user))

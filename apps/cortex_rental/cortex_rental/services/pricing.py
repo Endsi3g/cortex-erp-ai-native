@@ -13,6 +13,9 @@ except ImportError:
     frappe = None
 
 
+MAX_PERIOD_DAYS = 3660  # dix ans : au-delà, c'est presque sûrement une faute de frappe
+
+
 class PricingService:
     @staticmethod
     def compute_billable_days(starts_at: str, ends_at: str, company: Optional[str] = None) -> Tuple[int, float]:
@@ -30,7 +33,16 @@ class PricingService:
         else:
             dt_end = ends_at
 
-        delta_seconds = (dt_end - dt_start).total_seconds()
+        if dt_start is None or dt_end is None:
+            raise ValueError("Les dates de début et de fin sont obligatoires.")
+        try:
+            delta_seconds = (dt_end - dt_start).total_seconds()
+        except TypeError:  # une date avec fuseau et une sans fuseau, ou un type inattendu
+            raise ValueError("Les dates de début et de fin ne sont pas comparables.") from None
+        if delta_seconds < 0:
+            raise ValueError("La fin de la location doit être après son début.")
+        if delta_seconds > MAX_PERIOD_DAYS * 86400:
+            raise ValueError(f"La période dépasse {MAX_PERIOD_DAYS} jours : vérifiez les dates.")
         calendar_days = max(1, math.ceil(delta_seconds / 86400.0))
 
         billable_days = float(calendar_days)

@@ -42,6 +42,7 @@ class TestAccountContract(unittest.TestCase):
 
     def test_profile_update_writes_only_name_and_phone_fields(self):
         body = read("services", "account.py").split("def update_profile")[1].split("\ndef ")[0]
+        body = body.split("frappe.db.set_value(")[1]  # seul l'appel d'écriture compte (pas la vérification d'unicité)
         written = re.findall(r'"(\w+)":', body)
         self.assertEqual(set(written), {"first_name", "last_name", "full_name", "mobile_no"})
 

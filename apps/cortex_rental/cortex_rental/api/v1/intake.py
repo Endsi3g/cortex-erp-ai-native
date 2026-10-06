@@ -5,6 +5,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.evidence import register_evidence
 from cortex_rental.services.extraction import record_extraction_run
@@ -37,6 +38,7 @@ def record_extraction_handler(payload: Dict[str, Any], company: str, actor_id: s
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("register_evidence", scope="agent:intake:evidence")
     def register_evidence_api():
         require_agent_scope("agent:intake:evidence")
@@ -52,6 +54,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("record_structured_extraction", scope="agent:intake:extract")
     def record_extraction():
         require_agent_scope("agent:intake:extract")
