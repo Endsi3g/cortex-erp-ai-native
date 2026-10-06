@@ -247,6 +247,7 @@ class ChatSessionService:
         message: str,
         context: Dict[str, Any],
         chat_session_id: Optional[str],
+        model_tier: Optional[str] = None,
     ) -> SendMessageResponseData:
         _check_rate_limit(user)
 
@@ -297,7 +298,7 @@ class ChatSessionService:
                 chat_session_id=upstream_session_id,
                 persona_id=agent_profile,
                 allowed_tool_ids=allowed_tool_ids,
-                context={**resolved_context, "request_id": request_id},
+                context={**resolved_context, "request_id": request_id, "model_tier": model_tier or ""},
                 history=history,
             )
         except Exception as exc:

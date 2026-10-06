@@ -40,6 +40,7 @@ class GatewayChatClient(OnyxChatClient):
                 user=user,
                 page=str(context.get("page") or ""),
                 request_id=str(context.get("request_id") or ""),
+                tier=str(context.get("model_tier") or "") or None,
             )
             return OnyxChatResult(
                 onyx_message_id=f"gw-{frappe.generate_hash(length=10)}" if frappe else "gw",

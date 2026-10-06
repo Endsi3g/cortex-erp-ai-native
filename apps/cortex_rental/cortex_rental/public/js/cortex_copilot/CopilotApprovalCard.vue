@@ -136,8 +136,8 @@ async function decide(decision) {
 
 <style scoped>
 .cp-block-approval {
-	background: var(--cortex-warning-50, #fffbeb);
-	border: 1px solid var(--cortex-warning-100, #fef3c7);
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
 	border-radius: var(--radius-md, 8px);
 	padding: var(--space-3, 12px);
 }

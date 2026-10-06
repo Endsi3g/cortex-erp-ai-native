@@ -137,7 +137,8 @@ class TestAssistantContracts(unittest.TestCase):
 
     def test_proposal_card_creates_nothing_by_itself(self):
         card = self._read("public", "js", "cortex_copilot", "CopilotProposalCard.vue")
-        self.assertNotIn("create_quote_draft", card)
+        self.assertNotIn("rentals.create_quote_draft", card)
+        self.assertNotIn("frappe.call", card)
         self.assertNotIn("customers[0]", card)
 
     def test_attachments_are_not_offered(self):
@@ -149,6 +150,41 @@ class TestAssistantContracts(unittest.TestCase):
         for name in ("CopilotFlowQuote.vue", "CopilotFlowAvailability.vue", "CopilotFlowApprovals.vue"):
             source = self._read("public", "js", "cortex_copilot", name)
             self.assertNotIn("frappe.call(", source, name)  # tout passe par apiCall, qui fixe GET/POST
+
+
+class TestChatPresentation(unittest.TestCase):
+    def _read(self, *parts):
+        with open(os.path.join(APP_DIR, *parts), encoding="utf-8") as handle:
+            return handle.read()
+
+    def test_unknown_block_type_is_never_shown_as_an_error(self):
+        conversation = self._read("public", "js", "cortex_copilot", "CopilotConversation.vue")
+        self.assertNotIn("Type de contenu non reconnu", conversation)
+        self.assertIn("assistant_text", conversation)
+
+    def test_answers_are_plain_text_not_green_cards(self):
+        for name in ("CopilotVerifiedFact.vue", "CopilotProposalCard.vue", "CopilotRiskCard.vue"):
+            source = self._read("public", "js", "cortex_copilot", name)
+            self.assertNotIn("success-50", source, name)
+            self.assertNotIn("primary-50", source, name)
+            self.assertNotIn("#f6fbf8", source, name)
+
+    def test_composer_has_no_shadow_and_is_docked(self):
+        home = self._read("public", "js", "cortex_home", "CortexHome.vue")
+        composer = home[
+            home.index(".ch-composer {") : home.index(".ch-attachments") if ".ch-attachments" in home else None
+        ]
+        self.assertIn("box-shadow: none", composer)
+        self.assertIn("overflow-y: auto", home[home.index(".ch-thread {") :][:300])
+        self.assertNotIn("position: sticky", home[home.index(".is-chat .ch-composer") :][:200])
+
+    def test_reveal_respects_reduced_motion(self):
+        text = self._read("public", "js", "cortex_copilot", "CopilotAssistantText.vue")
+        self.assertIn("prefers-reduced-motion", text)
+
+    def test_tier_is_sent_as_a_key_never_a_model_id(self):
+        schema = self._read("schemas", "chat_schemas.py")
+        self.assertIn('Literal["rapide", "equilibre", "avance"]', schema)
 
 
 if __name__ == "__main__":

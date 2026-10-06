@@ -35,6 +35,7 @@ const ACTION_CARDS = [
 provide("cortexFlows", true);
 
 const BANNER_KEY = "cortex_home_demo_banner";
+const TIER_KEY = "cortex_home_tier";
 const messages = ref([]);
 const sending = ref(false);
 const chatSessionId = ref(null);
@@ -52,13 +53,18 @@ const isListening = ref(false);
 const inputRef = ref(null);
 const searchRef = ref(null);
 const endRef = ref(null);
+const threadRef = ref(null);
 const aiStatus = ref(null); // { mode: "ai" | "demo", provider, model } — lu côté serveur, jamais deviné ici
 const bannerOn = ref(true);
+const selectedTier = ref("");
 let nextId = 1;
 let speechRec = null;
 
 const inConversation = computed(() => messages.value.length > 0 || sending.value);
 const isDemo = computed(() => !aiStatus.value || aiStatus.value.mode === "demo");
+const tiers = computed(() => (aiStatus.value && aiStatus.value.tiers) || []);
+const currentTier = computed(() => tiers.value.find((t) => t.key === selectedTier.value && t.available) || null);
+const costLabel = (tier) => (!tier.cost_index || tier.cost_index <= 1 ? "Coût de base" : `Coût ≈ ×${String(tier.cost_index).replace(".", ",")}`);
 const canConfigureAi = computed(() => {
 	try {
 		return ["System Manager", "Cortex System Manager"].some((role) => frappe.user.has_role(role));
@@ -134,9 +140,11 @@ function resize() {
 	el.style.height = Math.min(el.scrollHeight, 200) + "px";
 }
 
-function scrollToEnd() {
+// La conversation défile dans son propre cadre : la saisie reste collée au bas de l'écran.
+function scrollToEnd(instant = false) {
 	nextTick(() => {
-		if (endRef.value) endRef.value.scrollIntoView({ behavior: "smooth", block: "end" });
+		const el = threadRef.value;
+		if (el) el.scrollTo({ top: el.scrollHeight, behavior: instant === true ? "auto" : "smooth" });
 	});
 }
 
@@ -203,14 +211,15 @@ async function submit(value) {
 	scrollToEnd();
 
 	try {
-		const response = await sendMessage(message, resolveDeskContext(), chatSessionId.value);
+		const response = await sendMessage(message, resolveDeskContext(), chatSessionId.value, selectedTier.value);
 		chatSessionId.value = response.chat_session_id || chatSessionId.value;
-		push({ role: "assistant", blocks: response.blocks || [] });
+		push({ role: "assistant", blocks: response.blocks || [], fresh: true });
 		refresh();
 	} catch (err) {
 		push({
 			role: "assistant",
 			blocks: [{ type: "error", title: "Cortex ne peut pas répondre", safe_message: err.message, retry_allowed: true }],
+			fresh: true,
 		});
 	} finally {
 		sending.value = false;
@@ -336,6 +345,23 @@ async function loadStatus() {
 	} catch (e) {
 		aiStatus.value = null; // inconnu : on affiche « Démonstration » plutôt que de promettre une IA
 	}
+	// Niveau choisi : le dernier utilisé s'il est toujours offert, sinon celui par défaut des réglages.
+	let stored = "";
+	try {
+		stored = localStorage.getItem(TIER_KEY) || "";
+	} catch (e) {}
+	const offered = tiers.value.filter((t) => t.available).map((t) => t.key);
+	selectedTier.value = offered.includes(stored) ? stored : (aiStatus.value && aiStatus.value.default_tier) || "";
+}
+
+function chooseTier(tier) {
+	if (!tier.available) return;
+	selectedTier.value = tier.key;
+	try {
+		localStorage.setItem(TIER_KEY, tier.key);
+	} catch (e) {}
+	closePanels();
+	nextTick(() => inputRef.value && inputRef.value.focus());
 }
 
 // Fil d'Ariane de la barre du haut (cortex_pages.js) : « Assistant IA › Conversation », « Assistant IA » ramène à l'accueil.
@@ -420,7 +446,7 @@ defineExpose({ refresh });
 		</header>
 
 		<section class="ch-stage">
-			<p v-if="isDemo && bannerOn && aiStatus" class="ch-demo-banner" role="status">
+			<p v-if="isDemo && bannerOn && aiStatus && !inConversation" class="ch-demo-banner" role="status">
 				<span><strong>Mode démonstration.</strong> Aucun modèle d'IA n'est configuré : les réponses sont assemblées à partir de vos données réelles, sans rédaction par une IA. Les questionnaires guidés fonctionnent normalement.</span>
 				<button type="button" class="ch-demo-hide" @click="setBanner(false)">Masquer</button>
 			</p>
@@ -431,8 +457,8 @@ defineExpose({ refresh });
 					<p class="ch-subtitle">Comment puis-je vous aider aujourd'hui&nbsp;?</p>
 				</header>
 
-				<div v-else key="chat" class="ch-thread">
-					<CopilotConversation :messages="messages" :sending="sending" @continue="submit" @retry="retry" @flow="onFlow" />
+				<div v-else key="chat" ref="threadRef" class="ch-thread">
+					<CopilotConversation :messages="messages" :sending="sending" :scroll="false" @continue="submit" @retry="retry" @flow="onFlow" @progress="scrollToEnd(true)" />
 					<div ref="endRef"></div>
 				</div>
 			</Transition>
@@ -453,28 +479,45 @@ defineExpose({ refresh });
 				></textarea>
 
 				<div class="ch-toolbar">
-					<!-- État réel du moteur : lu côté serveur (IA réelle ou démonstration), jamais supposé -->
+					<!-- État réel du moteur, lu côté serveur : « Démonstration », ou le niveau Cortex choisi (jamais supposé) -->
 					<div class="ch-status-wrap">
 						<button
 							type="button"
 							class="ch-status"
 							:class="isDemo ? 'is-demo' : 'is-ai'"
 							:aria-expanded="showStatus"
-							:title="isDemo ? 'Démonstration : aucun modèle d\'IA configuré' : 'IA réelle : les réponses sont rédigées par le modèle configuré'"
+							aria-haspopup="true"
+							:title="isDemo ? 'Démonstration : aucun modèle d\'IA configuré' : 'Choisir le modèle Cortex'"
 							@click="toggleStatus"
 						>
 							<span class="ch-status-dot" aria-hidden="true"></span>
-							<span>{{ !aiStatus ? "Vérification…" : isDemo ? "Démonstration" : "IA réelle · Gemini" }}</span>
+							<span>{{ !aiStatus ? "Vérification…" : isDemo ? "Démonstration" : currentTier ? currentTier.label : "IA réelle" }}</span>
+							<svg v-if="!isDemo && tiers.length" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
 						</button>
 						<Transition name="ch-fade">
-							<div v-if="showStatus" class="ch-pop ch-status-pop" role="dialog" aria-label="État de l'assistant">
+							<div v-if="showStatus" class="ch-pop ch-status-pop" :class="{ down: !inConversation }" role="dialog" aria-label="Modèle de l'assistant">
 								<template v-if="isDemo">
 									<strong>Démonstration</strong>
 									<p>Aucun modèle d'IA n'est configuré pour cette société. Les réponses sont assemblées à partir de vos données réelles (catalogue, disponibilité, approbations) ; rien n'est rédigé par une IA.</p>
-									<p>Les questionnaires guidés et les formulaires fonctionnent normalement.</p>
+									<p>Les questionnaires guidés et les formulaires fonctionnent normalement. Les modèles Cortex apparaîtront ici dès qu'un administrateur aura saisi une clé.</p>
+								</template>
+								<template v-else-if="tiers.length">
+									<strong class="ch-tier-head">Modèle Cortex</strong>
+									<ul class="ch-tiers" aria-label="Modèles Cortex">
+										<li v-for="tier in tiers" :key="tier.key">
+											<button type="button" class="ch-tier" :class="{ on: tier.key === selectedTier, off: !tier.available }" role="menuitemradio" :aria-checked="tier.key === selectedTier" :disabled="!tier.available" @click="chooseTier(tier)">
+												<span class="ch-tier-main">
+													<span class="ch-tier-name">{{ tier.label }}</span>
+													<span class="ch-tier-desc">{{ tier.description }}</span>
+												</span>
+												<span class="ch-tier-cost">{{ tier.available ? costLabel(tier) : "Non configuré" }}</span>
+											</button>
+										</li>
+									</ul>
+									<p class="ch-tier-note">Un modèle plus puissant consomme le budget mensuel de votre société plus vite. Rien n'est jamais approuvé sans vous.</p>
 								</template>
 								<template v-else>
-									<strong>IA réelle · Gemini</strong>
+									<strong>IA réelle</strong>
 									<p>Les réponses sont rédigées par le modèle configuré, à partir de vos données et avec vos droits. Rien n'est approuvé sans vous.</p>
 								</template>
 							</div>
@@ -704,7 +747,7 @@ defineExpose({ refresh });
 	border: 1.5px solid #e5e9f2;
 	border-radius: 22px;
 	padding: 16px 18px 12px 18px;
-	box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+	box-shadow: none;
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
 	display: flex;
 	flex-direction: column;
@@ -713,7 +756,7 @@ defineExpose({ refresh });
 
 .ch-composer:focus-within {
 	border-color: #cbd5e1;
-	box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+	box-shadow: none;
 }
 
 .ch-input {
@@ -811,13 +854,13 @@ defineExpose({ refresh });
 	cursor: pointer;
 	padding: 0;
 	transition: background 0.15s ease, transform 0.12s ease, opacity 0.15s;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+	box-shadow: none;
 }
 
 .ch-send:hover:not(:disabled) {
 	background: #047857;
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(4, 120, 87, 0.3);
+	box-shadow: none;
 }
 
 .ch-send:disabled {
@@ -1117,16 +1160,36 @@ defineExpose({ refresh });
 /* ═══════════════════════════════════════
    MODE CONVERSATION (THREAD)
 ═══════════════════════════════════════ */
-.ch-thread {
-	display: flex;
-	flex-direction: column;
+/* Conversation : le cadre occupe la hauteur de l'écran, le fil défile à l'intérieur et la saisie reste collée en bas,
+   sans ombre ni fond derrière elle. */
+.cortex-home.is-chat {
+	height: calc(100vh - 48px);
+	height: calc(100dvh - 48px);
+	min-height: 0;
+	padding: 0 24px 16px;
+	overflow: hidden;
+}
+
+.is-chat .ch-stage {
+	height: 100%;
+	min-height: 0;
 	gap: 12px;
 }
 
+.ch-thread {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	padding-top: 64px;
+	scrollbar-gutter: stable;
+	overscroll-behavior: contain;
+	/* Le texte s'efface en douceur sous les boutons du haut, sans bande ni ombre. */
+	-webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 56px);
+	mask-image: linear-gradient(to bottom, transparent 0, #000 56px);
+}
+
 .is-chat .ch-composer {
-	position: sticky;
-	bottom: 20px;
-	z-index: 5;
+	flex: none;
 }
 
 /* ═══════════════════════════════════════
@@ -1567,5 +1630,96 @@ defineExpose({ refresh });
 	.ch-fade-leave-active {
 		transition: none;
 	}
+}
+
+/* ═══════════════════════════════════════
+   CHOIX DU MODÈLE CORTEX
+═══════════════════════════════════════ */
+.ch-status-pop {
+	width: 360px;
+	max-height: calc(100vh - 140px);
+	overflow-y: auto;
+}
+
+/* Sur l'écran d'accueil la saisie est au milieu de la page : le menu s'ouvre vers le bas. */
+.ch-status-pop.down {
+	top: calc(100% + 10px);
+	bottom: auto;
+}
+
+.ch-tier-head {
+	display: block;
+	margin-bottom: 8px;
+	color: #0f172a;
+}
+
+.ch-tiers {
+	display: grid;
+	gap: 4px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ch-tier {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+	padding: 9px 10px;
+	border: 1px solid transparent;
+	border-radius: 10px;
+	background: transparent;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.ch-tier:hover:not(:disabled) {
+	background: #f8fafc;
+}
+
+.ch-tier.on {
+	border-color: #bfe5cf;
+	background: #f1faf5;
+}
+
+.ch-tier.off {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+.ch-tier-main {
+	display: grid;
+	gap: 2px;
+}
+
+.ch-tier-name {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.ch-tier-desc {
+	font-size: 12px;
+	line-height: 1.4;
+	color: #64748b;
+}
+
+.ch-tier-cost {
+	flex: none;
+	font-size: 11.5px;
+	font-weight: 600;
+	color: #475569;
+	white-space: nowrap;
+}
+
+.ch-tier-note {
+	margin: 8px 2px 0;
+	font-size: 11.5px;
+	line-height: 1.45;
+	color: #64748b;
 }
 </style>

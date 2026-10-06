@@ -3,7 +3,7 @@
   "creation": "2026-10-01 02:00:00.000000",
   "doctype": "DocType",
   "engine": "InnoDB",
-  "modified": "2026-10-05 15:00:00.000000",
+  "modified": "2026-10-06 18:00:00.000000",
   "modified_by": "Administrator",
   "module": "Cortex Rental",
   "owner": "Administrator",
@@ -33,6 +33,20 @@
     "cb_budget",
     "default_monthly_budget",
     "default_monthly_token_cap",
+    "sb_tiers",
+    "default_tier",
+    "anthropic_api_key",
+    "tier_rapide_enabled",
+    "cb_tier_equilibre",
+    "tier_equilibre_enabled",
+    "tier_equilibre_model",
+    "tier_equilibre_price_input",
+    "tier_equilibre_price_output",
+    "cb_tier_avance",
+    "tier_avance_enabled",
+    "tier_avance_model",
+    "tier_avance_price_input",
+    "tier_avance_price_output",
     "sb_economy",
     "economy_model",
     "economy_cap_percent",
@@ -199,6 +213,87 @@
       "fieldtype": "Table",
       "label": "Plafonds par société",
       "options": "Cortex AI Budget"
+    },
+    {
+      "fieldname": "sb_tiers",
+      "fieldtype": "Section Break",
+      "label": "Modèles Cortex proposés aux utilisateurs",
+      "description": "Trois niveaux de puissance et de prix. « Cortex Rapide » utilise le modèle et les prix de la section Modèle ci-dessus. Les prix par million de jetons servent au budget : un modèle plus puissant consomme le budget de la société plus vite. Vérifiez les prix auprès du fournisseur."
+    },
+    {
+      "fieldname": "default_tier",
+      "fieldtype": "Select",
+      "label": "Niveau par défaut",
+      "options": "rapide\nequilibre\navance",
+      "default": "rapide"
+    },
+    {
+      "fieldname": "anthropic_api_key",
+      "fieldtype": "Password",
+      "label": "Clé API Anthropic (Claude)",
+      "description": "Requise pour les niveaux Équilibré et Avancé. Elle ne quitte jamais le serveur."
+    },
+    {
+      "fieldname": "tier_rapide_enabled",
+      "fieldtype": "Check",
+      "label": "Cortex Rapide activé",
+      "default": "1"
+    },
+    {
+      "fieldname": "cb_tier_equilibre",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "tier_equilibre_enabled",
+      "fieldtype": "Check",
+      "label": "Cortex Équilibré activé",
+      "default": "1"
+    },
+    {
+      "fieldname": "tier_equilibre_model",
+      "fieldtype": "Data",
+      "label": "Cortex Équilibré : modèle",
+      "default": "claude-sonnet-5-5"
+    },
+    {
+      "fieldname": "tier_equilibre_price_input",
+      "fieldtype": "Float",
+      "label": "Équilibré : prix entrée ($ / M jetons)",
+      "default": "3"
+    },
+    {
+      "fieldname": "tier_equilibre_price_output",
+      "fieldtype": "Float",
+      "label": "Équilibré : prix sortie ($ / M jetons)",
+      "default": "15"
+    },
+    {
+      "fieldname": "cb_tier_avance",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "tier_avance_enabled",
+      "fieldtype": "Check",
+      "label": "Cortex Avancé activé",
+      "default": "1"
+    },
+    {
+      "fieldname": "tier_avance_model",
+      "fieldtype": "Data",
+      "label": "Cortex Avancé : modèle",
+      "default": "claude-opus-5-5"
+    },
+    {
+      "fieldname": "tier_avance_price_input",
+      "fieldtype": "Float",
+      "label": "Avancé : prix entrée ($ / M jetons)",
+      "default": "15"
+    },
+    {
+      "fieldname": "tier_avance_price_output",
+      "fieldtype": "Float",
+      "label": "Avancé : prix sortie ($ / M jetons)",
+      "default": "75"
     }
   ],
   "permissions": [

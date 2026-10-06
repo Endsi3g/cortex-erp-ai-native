@@ -1,7 +1,7 @@
 """Fournisseurs de modèles. Changer de modèle = changer le champ « Modèle » des réglages de l'IA ; changer de
 fournisseur = ajouter une classe ici. Le reste de la passerelle ne connaît que l'interface `LLMProvider`.
 
-Le préfixe de l'identifiant choisit le fournisseur (`gemini-…` → Google). Aucun identifiant de modèle n'est codé en dur
+Le préfixe de l'identifiant choisit le fournisseur (`gemini-…` → Google, `claude-…` → Anthropic). Aucun identifiant de modèle n'est codé en dur
 ailleurs que dans les réglages.
 """
 
@@ -183,6 +183,113 @@ class GeminiProvider(LLMProvider):
         return AIProviderError(f"Le service d'IA a refusé la demande (erreur {exc.code}).", status=exc.code)
 
 
+class AnthropicProvider(LLMProvider):
+    """Anthropic Claude (API « Messages » avec appel d'outils)."""
+
+    name = "Anthropic Claude"
+    URL = "https://api.anthropic.com/v1/messages"
+    VERSION = "2023-06-01"
+
+    def user_message(self, text: str) -> Any:
+        return {"role": "user", "content": text}
+
+    def history_message(self, role: str, text: str) -> Any:
+        return {"role": "user" if role == "user" else "assistant", "content": text}
+
+    def assistant_message(self, result: ProviderResult) -> Any:
+        # Le contenu natif (blocs texte et tool_use) est renvoyé tel quel : l'API exige les mêmes `id` au tour suivant.
+        if result.raw:
+            return {"role": "assistant", "content": result.raw}
+        content: List[Dict[str, Any]] = []
+        if result.text:
+            content.append({"type": "text", "text": result.text})
+        for call in result.tool_calls:
+            content.append({"type": "tool_use", "id": call.id, "name": call.name, "input": call.args})
+        return {"role": "assistant", "content": content}
+
+    def tool_results_message(self, results: List[Dict[str, Any]]) -> Any:
+        return {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": r.get("id") or "",
+                    "content": json.dumps(r["result"], ensure_ascii=False, default=str),
+                    **({"is_error": True} if isinstance(r["result"], dict) and r["result"].get("error") else {}),
+                }
+                for r in results
+            ],
+        }
+
+    def request_body(self, system: str, messages: List[Any], tools: List[Dict[str, Any]]) -> Dict[str, Any]:
+        body: Dict[str, Any] = {
+            "model": self.model,
+            "system": system,
+            "messages": messages,
+            "max_tokens": self.max_output_tokens,
+            "temperature": self.temperature,
+        }
+        if tools:
+            body["tools"] = [
+                {"name": t["name"], "description": t["description"], "input_schema": t["parameters"]} for t in tools
+            ]
+        return body
+
+    def parse(self, payload: Dict[str, Any]) -> ProviderResult:
+        content = payload.get("content") or []
+        if not content and payload.get("stop_reason") == "refusal":
+            raise AIProviderError("Le modèle n'a pas pu répondre à cette demande.")
+        text_parts, calls = [], []
+        for block in content:
+            if block.get("type") == "text" and block.get("text"):
+                text_parts.append(block["text"])
+            elif block.get("type") == "tool_use":
+                calls.append(
+                    ToolCall(name=block.get("name", ""), args=block.get("input") or {}, id=block.get("id", ""))
+                )
+        usage = payload.get("usage") or {}
+        return ProviderResult(
+            text="".join(text_parts).strip(),
+            tool_calls=calls,
+            input_tokens=int(usage.get("input_tokens") or 0),
+            output_tokens=int(usage.get("output_tokens") or 0),
+            raw=content or None,
+        )
+
+    def generate(self, system: str, messages: List[Any], tools: List[Dict[str, Any]]) -> ProviderResult:
+        if not self.api_key:
+            raise AIConfigurationError("Aucune clé API Anthropic n'est configurée.")
+        data = json.dumps(self.request_body(system, messages, tools), ensure_ascii=False).encode("utf-8")
+        last: Optional[Exception] = None
+        for attempt in range(2):
+            request = urllib.request.Request(
+                self.URL,
+                data=data,
+                headers={
+                    "x-api-key": self.api_key,
+                    "anthropic-version": self.VERSION,
+                    "content-type": "application/json",
+                },
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    return self.parse(json.loads(response.read().decode("utf-8")))
+            except urllib.error.HTTPError as exc:
+                last = GeminiProvider._http_error(exc)
+                if not (isinstance(last, AIProviderError) and last.retryable) or attempt:
+                    raise last from exc
+                time.sleep(1.0)
+            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+                last = AIProviderError(
+                    "Le service d'IA n'a pas répondu à temps. Réessayez dans un instant.", retryable=True
+                )
+                if attempt:
+                    raise last from exc
+                time.sleep(1.0)
+        raise last or AIProviderError("Le service d'IA est indisponible.")
+
+
 class ScriptedProvider(LLMProvider):
     """Fournisseur de test : rejoue des réponses prévues, sans réseau. Sert aux tests et au mode développement."""
 
@@ -217,4 +324,8 @@ def provider_for(model: str, api_key: str, **options) -> LLMProvider:
     lowered = (model or "").strip().lower()
     if lowered.startswith("gemini"):
         return GeminiProvider(model.strip(), api_key, **options)
-    raise AIConfigurationError(f"Modèle d'IA non pris en charge : « {model} ». Utilisez un identifiant « gemini-… ».")
+    if lowered.startswith("claude"):
+        return AnthropicProvider(model.strip(), api_key, **options)
+    raise AIConfigurationError(
+        f"Modèle d'IA non pris en charge : « {model} ». Utilisez un identifiant « gemini-… » ou « claude-… »."
+    )

@@ -45,13 +45,14 @@ function call(method, args) {
 	});
 }
 
-export function sendMessage(message, context, chatSessionId) {
+export function sendMessage(message, context, chatSessionId, modelTier) {
 	// Le serveur répond { data: { chat_session_id, blocks, … }, meta } : on rend la partie utile (sans elle, la réponse
 	// de l'assistant s'affichait vide).
 	return call("send_message", {
 		message,
 		context: JSON.stringify(context),
 		chat_session_id: chatSessionId || undefined,
+		model_tier: modelTier || undefined,
 	}).then((response) => response.data || response);
 }
 

@@ -87,6 +87,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
             message=request.message,
             context=request.context.model_dump(),
             chat_session_id=request.chat_session_id,
+            model_tier=request.model_tier,
         )
     except ChatContextPermissionError as exc:
         if frappe:
@@ -199,12 +200,24 @@ if frappe:
         provider = str(conf.get("cortex_chat_provider", "gateway")).lower()
         if provider == "gateway":
             values = ai_settings.load()
-            if values.get("enabled") and values.get("api_key"):
-                return {"data": {"mode": "ai", "provider": "gemini", "model": values.get("model")}}
-            return {"data": {"mode": "demo", "provider": "demo", "model": "demo"}}
+            offered = [
+                {
+                    "key": t["key"],
+                    "label": t["label"],
+                    "description": t["description"],
+                    "available": t["configured"],
+                    "cost_index": t["cost_index"],
+                }
+                for t in ai_settings.tiers(values)
+                if t["enabled"]
+            ]
+            default = ai_settings.default_tier(values) if values.get("enabled") else ""
+            if values.get("enabled") and default:
+                return {"data": {"mode": "ai", "provider": "cortex", "tiers": offered, "default_tier": default}}
+            return {"data": {"mode": "demo", "provider": "demo", "model": "demo", "tiers": offered, "default_tier": ""}}
         if provider == "onyx":
-            return {"data": {"mode": "ai", "provider": "onyx", "model": "onyx"}}
-        return {"data": {"mode": "demo", "provider": "demo", "model": "demo"}}
+            return {"data": {"mode": "ai", "provider": "onyx", "model": "onyx", "tiers": [], "default_tier": ""}}
+        return {"data": {"mode": "demo", "provider": "demo", "model": "demo", "tiers": [], "default_tier": ""}}
 
     @frappe.whitelist(methods=["POST"])
     @defense.safe_input

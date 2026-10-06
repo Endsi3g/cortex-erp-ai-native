@@ -53,6 +53,8 @@ class SendMessageRequest(BaseModel):
     chat_session_id: Optional[str] = None
     message: str = Field(min_length=1, max_length=MAX_MESSAGE_LENGTH)
     context: ChatContext
+    # Niveau de modèle Cortex choisi par la personne ; le serveur vérifie qu'il est offert (jamais un identifiant de modèle).
+    model_tier: Optional[Literal["rapide", "equilibre", "avance"]] = None
 
 
 # ---------------------------------------------------------------------
@@ -96,7 +98,7 @@ class ProposalBlock(BaseModel):
     title: str
     summary: str
     impact: List[str] = Field(default_factory=list)
-    action: Literal["open_quote_composer", "create_quote_draft"]
+    action: Literal["open_quote_composer", "create_quote_draft", "open_availability_flow", "open_approvals_flow"]
     draft_id: Optional[str] = None
     requires_approval: bool = False
 

@@ -99,6 +99,14 @@ def parse_period(message: str, today_: Optional[date] = None) -> Optional[Tuple[
     return None
 
 
+_MONTHS_SHORT = ("janv.", "févr.", "mars", "avr.", "mai", "juin", "juill.", "août", "sept.", "oct.", "nov.", "déc.")
+
+
+def _fr_date(value: date) -> str:
+    """20 oct. 2026 : la date dans le format du Québec, jamais l'ISO brut."""
+    return f"{value.day} {_MONTHS_SHORT[value.month - 1]} {value.year}"
+
+
 def _today() -> date:
     return getdate(today()) if frappe else date.today()
 
@@ -131,11 +139,27 @@ def _fact(title: str, items: List[str], source_ids: List[str]) -> Dict[str, Any]
     }
 
 
+def _action(action: str, title: str) -> Dict[str, Any]:
+    """Bouton d'action discret sous une réponse : il ouvre un questionnaire, il ne crée rien."""
+    return {
+        "type": "proposal",
+        "title": title,
+        "summary": "",
+        "impact": [],
+        "action": action,
+        "requires_approval": False,
+    }
+
+
+def _progress(label: str) -> Dict[str, Any]:
+    return {"type": "tool_progress", "tool_name": label, "state": "success", "message": ""}
+
+
 def _text(text: str) -> Dict[str, Any]:
     return {"type": "assistant_text", "text": text, "source_ids": []}
 
 
-def answer(message: str) -> Dict[str, Any]:
+def _answer(message: str) -> Dict[str, Any]:
     """Retourne {text, blocks, tool_calls} pour la demande, d'après les outils sous les droits de la personne connectée."""
     from cortex_rental.permissions.agent_scopes import get_company_context
     from cortex_rental.services import availability_summary
@@ -159,7 +183,11 @@ def answer(message: str) -> Dict[str, Any]:
             items, text = ["Aucun retour en retard."], "Aucun retour en retard pour le moment."
         return {
             "text": text,
-            "blocks": [_fact("Retours en retard", items, [r["name"] for r in rows])],
+            "blocks": [
+                _progress("Recherche des retours en retard"),
+                _text(text),
+                _fact("Retours en retard", items, [r["name"] for r in rows]),
+            ],
             "tool_calls": ["late_returns"],
         }
 
@@ -175,11 +203,14 @@ def answer(message: str) -> Dict[str, Any]:
             text = f"{len(rows)} demande(s) d'approbation attendent une décision humaine."
         else:
             items, text = ["Aucune demande en attente."], "Aucune demande d'approbation en attente."
-        return {
-            "text": text,
-            "blocks": [_fact("Approbations en attente", items, [r["name"] for r in rows])],
-            "tool_calls": ["list_pending_approvals"],
-        }
+        blocks = [
+            _progress("Consultation des approbations"),
+            _text(text),
+            _fact("Approbations en attente", items, [r["name"] for r in rows]),
+        ]
+        if rows:
+            blocks.append(_action("open_approvals_flow", "Examiner les demandes"))
+        return {"text": text, "blocks": blocks, "tool_calls": ["list_pending_approvals"]}
 
     if intent == "availability":
         from cortex_rental.api.v1.availability import get_matrix_handler
@@ -198,22 +229,22 @@ def answer(message: str) -> Dict[str, Any]:
             for r in rows[:MAX_LINES]
         ]
         busy = sum(1 for r in rows if r["status"] in ("partial", "full"))
-        label = f"du {start} au {end}" if period else "des 7 prochains jours"
-        text = f"Du {start} au {end} : {busy} équipement(s) sur {len(rows)} ont des réservations ou retenues."
+        label = f"du {_fr_date(first)} au {_fr_date(last)}" if period else "des 7 prochains jours"
+        text = f"Du {_fr_date(first)} au {_fr_date(last)} : {busy} équipement(s) sur {len(rows)} ont des réservations ou retenues."
         if not period and re.search(r"\d", message):
             text += " Je n'ai pas compris la période demandée : voici les 7 prochains jours. Utilisez le questionnaire « Grille de disponibilité » pour choisir vos dates."
-        return {
-            "text": text,
-            "blocks": [
-                _text(text),
-                _fact(
-                    f"Disponibilité {label}",
-                    _more(lines, len(rows)) or ["Aucun équipement au catalogue."],
-                    [r["item_code"] for r in rows[:MAX_LINES]],
-                ),
-            ],
-            "tool_calls": ["check_inventory_availability"],
-        }
+        blocks = [
+            _progress("Vérification de la disponibilité"),
+            _text(text),
+            _fact(
+                f"Disponibilité {label}",
+                _more(lines, len(rows)) or ["Aucun équipement au catalogue."],
+                [r["item_code"] for r in rows[:MAX_LINES]],
+            ),
+            _action("open_availability_flow", "Choisir une autre période"),
+            _action("open_quote_composer", "Préparer un devis"),
+        ]
+        return {"text": text, "blocks": blocks, "tool_calls": ["check_inventory_availability"]}
 
     words = [w for w in dict.fromkeys(re.findall(r"[a-z0-9]{3,}", normalize(message))) if w not in STOPWORDS][:4]
     found: Dict[str, Dict[str, Any]] = {}
@@ -239,6 +270,7 @@ def answer(message: str) -> Dict[str, Any]:
         else "Voici votre catalogue de location."
     )
     blocks: List[Dict[str, Any]] = [
+        _progress("Recherche dans le catalogue"),
         _text(text),
         _fact(
             "Catalogue et tarifs",
@@ -247,14 +279,16 @@ def answer(message: str) -> Dict[str, Any]:
         ),
     ]
     if rows:
-        blocks.append(
-            {
-                "type": "proposal",
-                "title": "Préparer un devis",
-                "summary": "Choisissez le client, les dates et l'équipement : le prix et la disponibilité sont calculés par le serveur.",
-                "impact": ["Rien n'est créé avant votre confirmation."],
-                "action": "open_quote_composer",
-                "requires_approval": False,
-            }
-        )
+        blocks.append(_action("open_quote_composer", "Préparer un devis"))
     return {"text": text, "blocks": blocks, "tool_calls": ["search_rental_items"]}
+
+
+def answer(message: str) -> Dict[str, Any]:
+    """Réponse de démonstration ; un refus de droits devient une phrase claire, jamais une erreur technique."""
+    try:
+        return _answer(message)
+    except Exception as exc:  # noqa: BLE001
+        if frappe and isinstance(exc, frappe.PermissionError):
+            text = "Votre rôle ne permet pas de consulter cette information. Demandez l'accès à un administrateur."
+            return {"text": text, "blocks": [_text(text)], "tool_calls": []}
+        raise
