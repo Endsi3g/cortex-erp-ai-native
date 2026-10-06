@@ -220,3 +220,41 @@ if frappe:
             ),
         )
         return {"data": result, "meta": {"company": company}}
+
+
+if frappe:
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    @defense.limit_user("create_customer", 60)
+    def create_customer(customer_name: str = ""):
+        """Crée un client de la société active (équipe humaine seulement) depuis l'assistant ou le compositeur."""
+        require_human_staff_role()
+        company = get_company_context()
+        name = " ".join((customer_name or "").split())[:140]
+        if len(name) < 2:
+            raise ValueError("Le nom du client doit avoir au moins 2 caractères.")
+        if not frappe.has_permission("Customer", "create"):
+            frappe.throw("Votre rôle ne permet pas de créer un client.", frappe.PermissionError)
+        if frappe.db.exists("Customer", {"cortex_company": company, "customer_name": name}):
+            raise ValueError("Un client portant ce nom existe déjà.")
+        doc = frappe.get_doc(
+            {
+                "doctype": "Customer",
+                "customer_name": name,
+                "customer_type": "Company",
+                "customer_group": "Commercial",
+                "territory": "All Territories",
+                "cortex_company": company,
+                "disabled": 0,
+            }
+        )
+        doc.insert()
+        AuditService.record_mutation(
+            company=company,
+            action="cortex.customer.created",
+            entity_type="Customer",
+            entity_id=doc.name,
+            after_state={"customer_name": name},
+        )
+        return {"data": {"id": doc.name, "name": doc.customer_name}}

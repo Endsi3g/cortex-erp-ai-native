@@ -42,6 +42,10 @@ def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
         frappe.throw("Les dates de début et de fin de la location sont obligatoires.", frappe.ValidationError)
     calendar_days, billable_days = PricingService.compute_billable_days(starts_at, ends_at, company)
     requests = payload.get("items") or []
+    if isinstance(requests, str):  # un formulaire HTTP envoie la liste en JSON
+        requests = frappe.parse_json(requests) if requests.strip() else []
+    if not isinstance(requests, list) or not all(isinstance(r, dict) for r in requests) or len(requests) > 200:
+        frappe.throw("La liste d'équipements est invalide (200 lignes au plus).", frappe.ValidationError)
     if not requests:
         frappe.throw(
             "Ajoutez au moins un équipement avant de demander un prix.",

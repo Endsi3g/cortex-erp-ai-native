@@ -1,6 +1,6 @@
 /* Page « Mon compte » : en-tête, onglets sobres, cartes denses sur deux colonnes (une seule sur téléphone). */
 .cx-acct {
-	max-width: 1120px;
+	max-width: none;
 	padding: 8px 0 48px;
 }
 .cx-acct-tabs {

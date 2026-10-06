@@ -980,3 +980,51 @@ body.cx-nav-on #navbar-breadcrumbs li a {
 		width: min(280px, calc(100vw - 16px));
 	}
 }
+
+
+/* Société → séparateur → Nouvelle location */
+.cx-company {
+	margin: 2px 0 0;
+}
+.cx-nav-sep {
+	flex: 0 0 1px;
+	height: 1px;
+	margin: 14px 6px 14px;
+	background: #d3d2cb;
+}
+body.cx-nav-collapsed .cx-nav-sep {
+	margin: 16px 8px 16px;
+}
+body.cx-nav-collapsed .cx-company {
+	margin-bottom: 0;
+	padding: 8px 0;
+	gap: 0;
+}
+body.cx-nav-collapsed .cx-company-text {
+	display: none;
+}
+
+/* Administration : ancrée en bas, juste au-dessus du profil, avec de l'air au-dessus et un filet de séparation */
+#cx-nav .cx-nav-scroll > .cx-group.cx-group-bottom {
+	margin-top: auto;
+	padding-top: 28px;
+}
+@media (max-width: 991.98px) {
+	.cx-nav-sep {
+		margin: 12px 6px;
+	}
+}
+
+/* Pleine largeur : Frappe borne les pages à 1290 px (conteneur Bootstrap), ce qui laisse de grands vides de chaque côté
+   sur un grand écran. Le contenu occupe toute la largeur utile, avec une marge de 24 px. */
+body.cx-nav-on .page-container .container,
+body.cx-nav-on .page-container .page-head .container,
+body.cx-nav-on .page-container .page-body.container,
+body.cx-nav-on .page-container .page-head-content.container {
+	max-width: none !important;
+	width: 100%;
+}
+body.cx-nav-on .page-container .page-body.container,
+body.cx-nav-on .page-container .page-head .container {
+	padding-inline: 24px;
+}

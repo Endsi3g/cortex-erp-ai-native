@@ -57,21 +57,16 @@ DATETIME = {"type": "string", "description": "Date et heure au format AAAA-MM-JJ
 def search_rental_items(query: str):
     company = _company()
     like = f"%{query.strip()}%"
-    filters = {"company": company} if company else {}
+    if not company:
+        return {"items": []}
+    # Toujours limité à la société de la personne : jamais de repli vers le catalogue d'une autre société.
     rows = frappe.get_list(
         "Cortex Rental Item Profile",
-        filters=filters,
+        filters={"company": company},
         or_filters=[["item_name", "like", like], ["item_code", "like", like]],
         fields=["item_code", "item_name", "category", "daily_rate", "total_quantity", "is_serialized"],
         limit_page_length=15,
     )
-    if not rows and company:
-        rows = frappe.get_list(
-            "Cortex Rental Item Profile",
-            or_filters=[["item_name", "like", like], ["item_code", "like", like]],
-            fields=["item_code", "item_name", "category", "daily_rate", "total_quantity", "is_serialized"],
-            limit_page_length=15,
-        )
     return {"items": [dict(r) for r in rows]}
 
 

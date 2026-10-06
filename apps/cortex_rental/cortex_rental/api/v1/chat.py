@@ -185,3 +185,57 @@ if frappe:
             frappe.throw("La conversation est obligatoire.", frappe.ValidationError)
         _service().clear_context(session_name, user=frappe.session.user)
         return {"data": {"pinned": False}}
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def status():
+        """Ce qui répond vraiment aux questions : le modèle d'IA configuré, ou le mode démonstration (sans IA).
+
+        L'interface affiche cet état tel quel (« IA réelle » ou « Démonstration ») : elle ne le devine jamais."""
+        require_human_staff_role()
+        from cortex_rental.services.ai import settings as ai_settings
+
+        conf = frappe.conf
+        provider = str(conf.get("cortex_chat_provider", "gateway")).lower()
+        if provider == "gateway":
+            values = ai_settings.load()
+            if values.get("enabled") and values.get("api_key"):
+                return {"data": {"mode": "ai", "provider": "gemini", "model": values.get("model")}}
+            return {"data": {"mode": "demo", "provider": "demo", "model": "demo"}}
+        if provider == "onyx":
+            return {"data": {"mode": "ai", "provider": "onyx", "model": "onyx"}}
+        return {"data": {"mode": "demo", "provider": "demo", "model": "demo"}}
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    def delete_session(name: str = ""):
+        """Retire une de ses conversations de son historique.
+
+        Les messages d'une conversation ne se modifient ni ne se suppriment jamais (journal de la société) : la
+        conversation est masquée, pas détruite. L'interface le dit clairement."""
+        require_human_staff_role()
+        if not name or not frappe.db.exists("Cortex Chat Session", name):
+            frappe.throw("Conversation introuvable.", frappe.DoesNotExistError)
+        if frappe.db.get_value("Cortex Chat Session", name, "user") != frappe.session.user:
+            frappe.throw("Non autorisé : cette conversation appartient à une autre personne.", frappe.PermissionError)
+        _hide_session(name)
+        return {"data": {"deleted": name, "retained_for_audit": True}}
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    @defense.limit_user("chat_clear", 10)
+    def clear_history():
+        """Masque toutes ses propres conversations de la société active (les messages restent au journal)."""
+        require_human_staff_role()
+        company = get_company_context()
+        names = frappe.get_all(
+            "Cortex Chat Session",
+            filters={"user": frappe.session.user, "company": company, "state": ["!=", "Hidden"]},
+            pluck="name",
+        )
+        for name in names:
+            _hide_session(name)
+        return {"data": {"deleted": len(names), "retained_for_audit": True}}
+
+    def _hide_session(name: str) -> None:
+        frappe.db.set_value("Cortex Chat Session", name, "state", "Hidden")

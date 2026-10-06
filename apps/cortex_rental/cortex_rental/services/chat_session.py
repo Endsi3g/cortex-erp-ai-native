@@ -146,6 +146,8 @@ class ChatSessionService:
             raise ChatSessionNotFoundError(name)
 
         session = frappe.get_doc("Cortex Chat Session", name)
+        if session.state == "Hidden":
+            frappe.throw("Conversation introuvable.", frappe.DoesNotExistError)
         if session.user != user and "System Manager" not in frappe.get_roles(user):
             frappe.throw(
                 "Non autorisé : cette conversation appartient à une autre personne.",
@@ -161,6 +163,8 @@ class ChatSessionService:
         session = frappe.get_doc("Cortex Chat Session", name)
         if session.user != user:
             frappe.throw("Non autorisé : cette conversation appartient à une autre personne.", frappe.PermissionError)
+        if session.state == "Hidden":
+            frappe.throw("Conversation introuvable.", frappe.DoesNotExistError)
         rows = frappe.get_all(
             "Cortex Chat Message",
             filters={"chat_session": name},
@@ -190,13 +194,25 @@ class ChatSessionService:
         if not frappe:
             return []
 
-        return frappe.get_all(
+        rows = frappe.get_all(
             "Cortex Chat Session",
-            filters={"user": user, "company": company},
+            filters={"user": user, "company": company, "state": ["!=", "Hidden"]},
             fields=["name", "agent_profile", "state", "started_at", "last_message_at"],
             order_by="last_message_at desc",
             limit_page_length=50,
         )
+        for row in rows:
+            # Titre = le premier message de la personne (jamais inventé) : il sert à reconnaître la conversation.
+            first = frappe.get_all(
+                "Cortex Chat Message",
+                filters={"chat_session": row["name"], "sender_type": "Human"},
+                fields=["content_sanitized"],
+                order_by="created_at asc",
+                limit_page_length=1,
+            )
+            text = (first[0].content_sanitized or "").strip() if first else ""
+            row["title"] = text[:80] + ("…" if len(text) > 80 else "")
+        return rows
 
     # -----------------------------------------------------------------
     def pin_context(self, session_name: str, context_snapshot_name: str, user: str) -> None:

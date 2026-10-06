@@ -299,3 +299,17 @@ if frappe:
         payload = frappe.local.form_dict
         result = get_matrix_handler(payload=payload, company=company)
         return {"data": result, "meta": {"company": company}}
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def get_period_summary(starts_at: str = "", ends_at: str = "", category: str = ""):
+        """Par équipement : libre au pire jour de la période, pic de réservations et de retenues, statut. Calculé par le serveur."""
+        require_human_staff_role()
+        from cortex_rental.services import availability_summary
+
+        company = get_company_context()
+        matrix = get_matrix_handler(
+            payload={"starts_at": starts_at, "ends_at": ends_at, "category": category or None}, company=company
+        )
+        rows = availability_summary.summarize(matrix.get("items", []), starts_at, ends_at, frappe.utils.now_datetime())
+        return {"data": {"starts_at": starts_at, "ends_at": ends_at, "items": rows}, "meta": {"company": company}}

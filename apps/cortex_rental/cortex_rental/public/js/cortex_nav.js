@@ -155,7 +155,10 @@
 			const scroll = el("div", { class: "cx-nav-scroll" });
 			const identity = this.identity();
 			if (identity) scroll.appendChild(identity);
-			if (can("Cortex Rental Transaction")() && frappe.model.can_create("Cortex Rental Transaction")) {
+			const canCreate = can("Cortex Rental Transaction")() && frappe.model.can_create("Cortex Rental Transaction");
+			// Société → séparateur → Nouvelle location : deux blocs de nature différente, jamais collés (ouvert ou réduit).
+			if (identity && canCreate) scroll.appendChild(el("div", { class: "cx-nav-sep", role: "separator" }));
+			if (canCreate) {
 				const create = el("a", { class: "cx-new", href: "/app/cortex-rental-transaction/new", title: __("Nouvelle location") }, `<span class="cx-new-plus">${PLUS}</span><span class="cx-label">${__("Nouvelle location")}</span>`);
 				create.addEventListener("click", (e) => this.go(e, create.getAttribute("href")));
 				scroll.appendChild(create);

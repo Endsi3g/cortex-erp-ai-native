@@ -229,6 +229,19 @@ Décidé avec Kael : **assistant plein écran à l'arrivée** + **liste qui rest
 - **Exploitation** : `docs/ops/DEPLOIEMENT.md`, `infra/production/` (nginx, supervisor, sauvegarde), `ops/predeploy.py` (contrôle avant mise en ligne), `health.health` et `health.ready`.
 - **Reste à faire avant des clients payants** : clés réelles (courriel, Gemini, Stripe) à éprouver, TLS/domaine, revue de sécurité externe, 2FA des propriétaires, essai de charge du serveur de sockets.
 
+## Assistant IA : questionnaires guidés, mode démonstration, historique (2026-10-06)
+
+Décidé avec Kael après la refonte de l'accueil IA :
+
+- **État du moteur lu côté serveur** (`chat.status`) et affiché par une pastille dans la zone de saisie : « IA réelle · Gemini » (vert) quand un modèle est configuré et activé, « Démonstration » (ambre) sinon. L'interface ne le devine jamais ; sans réponse du serveur elle affiche « Démonstration ». Une bannière « Mode démonstration » (masquable dans les réglages, préférence locale) l'explique.
+- **Mode démonstration honnête** (`services/ai/demo.py`) : sans clé de modèle, l'assistant ne comprend que quatre demandes (disponibilité, retards de retour, approbations en attente, catalogue), répond avec les vrais outils sous les droits de la personne, comprend une période écrite (« du 20 au 22 octobre ») ou le dit quand il ne la comprend pas, et ne calcule aucun prix. Aucun jeton, coût ni « vérification » inventés. Le repli aléatoire par mots-clés a été retiré.
+- **Trois cartes = questionnaires guidés dans la conversation** (interface déterministe, sans modèle, **non enregistrés** dans l'historique du serveur) : *Nouvelle location* (client avec « nouveau client » → dates → équipement avec disponibilité calculée par le serveur → récapitulatif au prix du serveur → « Créer le devis » en brouillon, retenue lue après création), *Grille de disponibilité* (7 j / 30 j / dates + catégorie → mini-grille `availability.get_period_summary`, « Créer un devis avec ceci », « Ouvrir la grille complète »), *Demandes d'approbation* (liste, examen, Approuver / Refuser avec motif et confirmation, Retirer sa propre demande ; les droits viennent de `decision_options`, l'assistant ne décide jamais). Une proposition de l'assistant ouvre le même questionnaire : elle ne crée rien.
+- **Historique** : tiroir à droite (recherche, groupes Aujourd'hui / Cette semaine / Plus ancien, ouvrir, retirer). Les messages de conversation sont immuables (journal) : « retirer » masque la conversation (`state = Hidden`), il ne détruit pas ses messages, et l'interface le dit. Réglages (engrenage) : bannière, effacer mon historique, lien « Budget et modèle IA » pour les administrateurs.
+- **Fil d'Ariane** « Assistant IA › Conversation » dans la barre du haut ; « Assistant IA » revient à l'accueil sans toucher à l'historique. Pièces jointes : retirées tant qu'elles ne sont pas réellement traitées.
+- **Pleine largeur** : le conteneur de 1290 px de Frappe est levé sur toutes les pages ; l'assistant garde une colonne de lecture d'environ 900 px. Barre latérale : Société → séparateur → Nouvelle location (ouverte et repliée), Administration ancrée au bas, juste au-dessus du profil.
+- **Données de démonstration** : `dev_tools/jeu_de_demo.py` (`run`, `reinitialiser`) crée des devis, des réservations et trois demandes d'approbation de trois personnes différentes dans la société de simulation, retire l'article de test `SIM-STRESS-1` du catalogue, et refuse de s'exécuter hors d'un site de développement. Jamais en production.
+- **Limites connues** : le vrai modèle (Gemini) n'a pas été essayé avec une vraie clé ; les formulaires gardent la barre latérale gauche native de Frappe.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

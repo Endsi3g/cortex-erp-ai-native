@@ -86,7 +86,35 @@
 			list.style.display = "";
 			return;
 		}
-		if (!list || !here || p[0] === "cortex-home") return;
+		if (list && p[0] === "cortex-home") {
+			// « Assistant IA › Conversation » : « Assistant IA » ramène à l'écran d'accueil sans effacer l'historique.
+			const inChat = !!(window.cortex_home_state && window.cortex_home_state.inChat);
+			list.innerHTML = "";
+			const first = document.createElement("li");
+			if (inChat) {
+				const a = document.createElement("a");
+				a.href = "/app/cortex-home";
+				a.textContent = T("Assistant IA");
+				a.addEventListener("click", (event) => {
+					event.preventDefault();
+					window.dispatchEvent(new CustomEvent("cortex-home:reset"));
+				});
+				first.appendChild(a);
+				const second = document.createElement("li");
+				const span = document.createElement("span");
+				span.textContent = T("Conversation");
+				second.appendChild(span);
+				list.append(first, second);
+			} else {
+				const span = document.createElement("span");
+				span.textContent = T("Assistant IA");
+				first.appendChild(span);
+				list.appendChild(first);
+			}
+			list.style.display = "";
+			return;
+		}
+		if (!list || !here) return;
 		const crumbs = [{ text: T(here.group.title) }];
 		const mainSlug = here.item.href.replace(/^\/app\//, "");
 		crumbs.push({ text: T(here.item.label), href: here.item.href, last: p[0] === mainSlug && (p.length === 1 || p[1] === "view") });
@@ -158,6 +186,7 @@
 			breadcrumbs();
 		};
 		schedule();
+		window.addEventListener("cortex-home:state", schedule);
 		new MutationObserver(schedule).observe(document.getElementById("body") || document.body, { childList: true, subtree: true });
 	});
 	cortex.pageSubtitles = SUBTITLES;
