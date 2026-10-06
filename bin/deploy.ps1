@@ -546,16 +546,41 @@ function Deploy-Docker {
         Log-Err "Docker Compose (v2) n'est pas disponible."
         exit 1
     }
+
+    # Verification que le moteur Docker daemon repond
+    $dockerRunning = $false
+    try {
+        & docker info >$null 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            $dockerRunning = $true
+        }
+    } catch {}
+
+    if (-not $dockerRunning) {
+        Log-Err "Le moteur Docker n'est pas en cours d'execution."
+        Write-Host "Veuillez demarrer Docker Desktop (depuis le menu Demarrer ou la barre des taches)," -ForegroundColor Yellow
+        Write-Host "attendre que le moteur soit pret ('Engine running'), puis relancer :" -ForegroundColor Yellow
+        Write-Host "  .\bin\deploy.ps1 docker`n" -ForegroundColor Green
+        exit 1
+    }
     Log-Success "Docker Engine et Docker Compose sont operationnels ($dockerComposeCmd)."
 
     Log-Step "2/5" "Demarrage de la stack conteneurisee (MariaDB, Valkey, MinIO, Mailpit, Bench, FastMCP)..."
     $dockerDir = Join-Path $RepoRoot "infra\docker"
     Set-Location $dockerDir
 
+    $composeExit = 0
     if ($dockerComposeCmd -eq "docker compose") {
         & docker compose -f docker-compose.dev.yml up -d --build
+        $composeExit = $LASTEXITCODE
     } else {
         & docker-compose -f docker-compose.dev.yml up -d --build
+        $composeExit = $LASTEXITCODE
+    }
+
+    if ($composeExit -ne 0) {
+        Log-Err "Echec du demarrage des conteneurs via Docker Compose (code $composeExit)."
+        exit $composeExit
     }
 
     Log-Step "3/5" "Attente de l'initialisation saine de MariaDB 10.11+..."

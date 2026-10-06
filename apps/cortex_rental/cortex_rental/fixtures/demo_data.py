@@ -51,7 +51,7 @@ def provision_demo_data() -> Dict[str, Any]:
     transactions = _ensure_transactions(company, customer, items)
 
     frappe.db.commit()
-    print("[✓] Demo fixtures provisioned successfully!")
+    print("[OK] Demo fixtures provisioned successfully!")
 
     return {
         "status": "success",

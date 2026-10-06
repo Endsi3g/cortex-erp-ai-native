@@ -375,12 +375,20 @@ deploy_docker() {
             log_error "Docker Compose (v2) n'est pas disponible."
             exit 1
         fi
+    if ! docker info >/dev/null 2>&1; then
+        log_error "Le moteur Docker daemon n'est pas en cours d'execution."
+        echo -e "${YELLOW}Veuillez demarrer Docker Desktop ou le service Docker, puis relancer :${NC}"
+        echo -e "  ${GREEN}./bin/deploy.sh docker${NC}\n"
+        exit 1
     fi
     log_success "Docker Engine et Docker Compose sont operationnels."
 
     log_step "2/5" "Demarrage de la stack conteneurisee (MariaDB, Valkey, MinIO, Mailpit, Bench, FastMCP)..."
     cd "${REPO_ROOT}/infra/docker"
-    ${DOCKER_COMPOSE_CMD} -f docker-compose.dev.yml up -d --build
+    if ! ${DOCKER_COMPOSE_CMD} -f docker-compose.dev.yml up -d --build; then
+        log_error "Echec du demarrage des conteneurs via Docker Compose."
+        exit 1
+    fi
 
     log_step "3/5" "Attente de l'initialisation saine de MariaDB 10.11+..."
     local RETRIES=30
