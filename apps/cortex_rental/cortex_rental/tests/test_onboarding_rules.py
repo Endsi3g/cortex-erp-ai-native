@@ -73,6 +73,44 @@ class TestSteps(unittest.TestCase):
         self.assertFalse(onboarding.PHONE_RE.match("abc"))
 
 
+class TestWizardMotion(unittest.TestCase):
+    """L'assistant ne change jamais d'étape sans transition, et respecte « moins d'animations »."""
+
+    def _js(self):
+        path = os.path.join(APP_DIR, "cortex_rental", "page", "cortex_setup", "cortex_setup.js")
+        with open(path, encoding="utf-8") as handle:
+            return handle.read()
+
+    def _css(self):
+        with open(os.path.join(APP_DIR, "public", "css", "cortex-onboarding.css"), encoding="utf-8") as handle:
+            return handle.read()
+
+    def test_the_shell_is_built_once_and_steps_swap_with_an_animation(self):
+        js = self._js()
+        self.assertIn("buildShell()", js)
+        self.assertIn("updateChrome()", js)
+        self.assertIn("async swap(", js)
+        self.assertIn("getBoundingClientRect().height", js)  # la carte anime sa hauteur
+        self.assertEqual(js.count('this.$el.on("click", "[data-key]"'), 1)  # clics délégués une seule fois
+
+    def test_leaving_the_page_uses_the_frappe_hide_event_and_fades_out(self):
+        js = self._js()
+        self.assertIn('$(wrapper).on("hide"', js)
+        self.assertNotIn(
+            "on_page_hide", js
+        )  # Frappe n'appelle pas ce rappel : l'assistant resterait par-dessus l'écran
+        self.assertIn("leave(route)", js)
+
+    def test_motion_respects_the_reduced_motion_preference(self):
+        self.assertIn("prefers-reduced-motion", self._js())
+        self.assertIn("@media (prefers-reduced-motion: reduce)", self._css())
+
+    def test_progress_and_steps_are_animated_in_place(self):
+        css = self._css()
+        self.assertIn("transition: width", css)
+        self.assertIn(".cx-onb-step i {", css)
+
+
 class TestGuard(unittest.TestCase):
     def test_success_is_wrapped_with_ok(self):
         result = guarded(lambda: {"value": 1})

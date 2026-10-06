@@ -273,15 +273,19 @@ def save_company_profile(company: str, data: Dict[str, Any]) -> Dict[str, Any]:
     website = (data.get("website") or "").strip()
     if website and not website.lower().startswith(("http://", "https://")):
         website = "https://" + website
-    company_doc.country = country
-    company_doc.default_currency = currency
-    company_doc.phone_no = phone
-    company_doc.email = email
-    company_doc.website = website
+    values = {"phone_no": phone, "email": email, "website": website}
     if data.get("tax_id"):
-        company_doc.tax_id = clean_name(data["tax_id"], "Le numéro de taxes", 60)
-    company_doc.flags.ignore_permissions = True
-    company_doc.save()
+        values["tax_id"] = clean_name(data["tax_id"], "Le numéro de taxes", 60)
+    if country == company_doc.country and currency == company_doc.default_currency:
+        # Seuls les coordonnées changent : on évite le enregistrement complet d'ERPNext (près de 2 s de validations).
+        frappe.db.set_value("Company", company, values)
+        frappe.clear_document_cache("Company", company)
+    else:
+        company_doc.country = country
+        company_doc.default_currency = currency
+        company_doc.update(values)
+        company_doc.flags.ignore_permissions = True
+        company_doc.save()
 
     names = frappe.get_all(
         "Dynamic Link",

@@ -67,7 +67,7 @@
 	display: block;
 	height: 100%;
 	background: #066336;
-	transition: width 0.3s ease;
+	transition: width 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .cx-onb-main {
 	display: grid;
@@ -97,6 +97,7 @@
 	background: transparent;
 	text-align: left;
 	cursor: pointer;
+	transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 .cx-onb-step:hover:not(:disabled) {
 	background: #fff;
@@ -122,6 +123,7 @@
 	font-size: 12px;
 	font-style: normal;
 	font-weight: 600;
+	transition: background-color 0.25s ease, color 0.25s ease;
 }
 .cx-onb-step.done i {
 	background: #066336;
@@ -143,6 +145,7 @@
 	font-size: 12px;
 }
 .cx-onb-card {
+	box-sizing: border-box;
 	padding: 28px 32px;
 	border: 1px solid #e7e6e3;
 	border-radius: 16px;
@@ -270,6 +273,13 @@
 }
 .cx-onb-foot .btn-primary {
 	margin-left: auto;
+}
+.cx-onb-foot .btn {
+	transition: opacity 0.2s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+.cx-onb-foot.busy .btn {
+	opacity: 0.55;
+	pointer-events: none;
 }
 .cx-onb-stat {
 	display: flex;
@@ -504,4 +514,60 @@ body.cx-onb-open .desk-alert {
 
 .cx-onb-invite .btn {
 	margin-top: 14px;
+}
+
+/* Mouvement : la carte masque son débordement le temps d'ajuster sa hauteur; le message d'erreur descend doucement. */
+.cx-onb-card.animating {
+	overflow: hidden;
+}
+.cx-onb-err:not([hidden]) {
+	animation: cx-onb-drop 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@keyframes cx-onb-drop {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+.cx-onb .btn {
+	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+.cx-onb .btn:active:not(:disabled) {
+	transform: translateY(1px);
+}
+.cx-onb-field input,
+.cx-onb-field select {
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* La carte « Terminer la configuration » et le guide vidéo apparaissent en fondu sur l'accueil. */
+.cx-setup-card,
+.cx-guide-video {
+	animation: cx-onb-rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.cx-setup-card {
+	animation-delay: 0.05s;
+}
+@keyframes cx-onb-rise {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cx-onb *,
+	.cx-setup-card,
+	.cx-guide-video {
+		animation: none !important;
+		transition: none !important;
+	}
 }

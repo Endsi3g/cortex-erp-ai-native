@@ -11,12 +11,6 @@ frappe.pages["cortex-setup"].on_page_show = function (wrapper) {
 	if (wrapper.cx_onboarding) wrapper.cx_onboarding.show(frappe.get_route()[1]);
 };
 
-// L'assistant couvre tout l'écran (barre latérale comprise) : on le retire dès qu'on quitte la page.
-frappe.pages["cortex-setup"].on_page_hide = function (wrapper) {
-	if (wrapper.cx_onboarding) wrapper.cx_onboarding.$el.detach();
-	document.body.classList.remove("cx-onb-open");
-};
-
 cortex.OnboardingPage = class OnboardingPage {
 	constructor(wrapper) {
 		this.wrapper = wrapper;
@@ -24,22 +18,90 @@ cortex.OnboardingPage = class OnboardingPage {
 		this.state = null;
 		this.step = "company";
 		this.choices = null;
+		this.shell = false;
+		this.active = false;
+		this.token = 0;
+		this.running = [];
+		// Les clics sont délégués une seule fois : la coque reste en place d'une étape à l'autre.
+		this.$el.on("click", "[data-key]", (e) => this.go(e.currentTarget.dataset.key));
+		this.$el.on("click", "[data-act=later]", () => this.leave("cortex-rental"));
+		// L'assistant couvre tout l'écran (barre latérale comprise) : il s'efface en fondu quand on quitte la page.
+		// Frappe signale le départ d'une page par l'événement « hide » de son conteneur (pas par un rappel nommé).
+		$(wrapper).on("hide", () => this.hide());
 	}
 
+	// Pendant un enregistrement, le pied de carte s'estompe doucement (pas de double clic, retour visuel immédiat).
 	call(method, args, type) {
-		return frappe.call({ method: `cortex_rental.api.v1.onboarding.${method}`, args, type: type || "GET", freeze: false }).then((r) => r.message);
+		const write = (type || "GET") !== "GET";
+		if (write) this.$el.find(".cx-onb-foot").addClass("busy");
+		const done = () => this.$el.find(".cx-onb-foot").removeClass("busy");
+		return frappe.call({ method: `cortex_rental.api.v1.onboarding.${method}`, args, type: type || "GET", freeze: false }).then(
+			(r) => {
+				done();
+				return r.message;
+			},
+			(e) => {
+				done();
+				throw e;
+			}
+		);
 	}
 
 	esc(v) {
 		return frappe.utils.escape_html(v == null ? "" : String(v));
 	}
 
+	// ---------- mouvement : jamais de coupure sèche; rien ne bouge si la personne a demandé moins d'animations ----------
+	reduced() {
+		return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+	}
+
+	anim(el, frames, options) {
+		if (!el || !el.animate || this.reduced()) return Promise.resolve();
+		const a = el.animate(frames, options);
+		this.running.push(a);
+		return a.finished.catch(() => {});
+	}
+
+	stop() {
+		this.running.splice(0).forEach((a) => a.cancel());
+	}
+
+	// Sortie en douceur vers un autre écran.
+	leave(route) {
+		this.leaving = true;
+		this.anim(this.$el[0], [{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: "ease-in", fill: "forwards" }).then(() => frappe.set_route(route));
+	}
+
+	hide() {
+		this.active = false;
+		this.token++;
+		// Déjà estompé par leave() : on retire l'assistant sans le refaire clignoter. Sinon (retour du navigateur) : fondu.
+		const fade = this.leaving ? Promise.resolve() : this.anim(this.$el[0], [{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: "ease-in", fill: "forwards" });
+		this.leaving = false;
+		fade.then(() => {
+			if (this.active) return;
+			this.stop();
+			this.$el.detach();
+			this.shell = false;
+			document.body.classList.remove("cx-onb-open");
+		});
+	}
+
 	show(step) {
 		this.requested = step;
-		this.$el.appendTo(document.body);
+		this.active = true;
+		this.leaving = false;
+		this.stop();
+		const attaching = !this.$el.parent().length;
+		if (attaching) {
+			this.shell = false;
+			this.$el.html(`<div class="cx-onb-loading">${__("Chargement…")}</div>`).appendTo(document.body);
+			this.anim(this.$el[0], [{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: "ease-out" });
+		}
 		document.body.classList.add("cx-onb-open");
-		this.$el.html(`<div class="cx-onb-loading">${__("Chargement…")}</div>`);
 		Promise.all([this.call("get_onboarding"), this.choices ? this.choices : this.call("list_choices")]).then(([state, choices]) => {
+			if (!this.active) return;
 			this.choices = choices;
 			this.state = state.data;
 			const keys = this.state.steps.map((s) => s.key).concat(["recap"]);
@@ -48,8 +110,20 @@ cortex.OnboardingPage = class OnboardingPage {
 			if (!this.state.can_finish) locked.add("recap");
 			const wanted = this.requested && keys.includes(this.requested) && !locked.has(this.requested) ? this.requested : null;
 			const current = this.state.steps.find((s) => s.current);
+			const previous = this.shell ? this.shownStep : null;
 			this.step = wanted || (current ? current.key : "recap");
-			this.render();
+			if (!this.shell) {
+				this.buildShell();
+				this.updateChrome();
+				this.renderStep();
+				this.shownStep = this.step;
+				// Première apparition : la carte monte doucement.
+				this.anim(this.$el.find(".cx-onb-card")[0], [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 340, easing: "cubic-bezier(.2,.7,.2,1)" });
+				this.anim(this.$el.find(".cx-onb-steps")[0], [{ opacity: 0 }, { opacity: 1 }], { duration: 340, easing: "ease-out" });
+			} else {
+				this.updateChrome();
+				this.swap(previous);
+			}
 		});
 	}
 
@@ -80,29 +154,80 @@ cortex.OnboardingPage = class OnboardingPage {
 	}
 
 	// ---------- cadre ----------
-	render() {
+	// La coque (barre du haut, liste des étapes, carte) est construite une fois; ensuite on met à jour en place pour que
+	// les couleurs, la barre de progression et la hauteur de la carte s'animent au lieu de sauter.
+	buildShell() {
 		const s = this.state;
-		const p = s.progress;
 		const stepsHtml = s.steps
-			.map((st, i) => {
-				const status = st.done ? "done" : st.skipped ? "skipped" : st.locked ? "locked" : "todo";
-				const tag = st.required ? __("Obligatoire") : st.done ? __("Terminée") : st.skipped ? __("Passée") : __("Facultatif");
-				return `<li><button type="button" class="cx-onb-step ${status}${st.key === this.step ? " on" : ""}" data-key="${st.key}"${st.locked ? " disabled" : ""}><i>${st.done ? "✓" : i + 1}</i><span><b>${this.esc(__(st.title))}</b><small>${tag}</small></span></button></li>`;
-			})
+			.map((st) => `<li><button type="button" class="cx-onb-step" data-key="${st.key}"><i></i><span><b>${this.esc(__(st.title))}</b><small></small></span></button></li>`)
 			.join("");
-		const recapOn = this.step === "recap";
 		this.$el.html(`
 			<header class="cx-onb-head"><div class="cx-onb-head-in">
 				<div class="cx-onb-brand"><img class="cx-onb-mark" src="${frappe.boot.app_logo_url || "/assets/cortex_rental/images/cortex-logo.svg"}" alt="Cortex" width="34" height="34"><div><b>${__("Configuration de votre espace")}</b><small>${this.esc(s.company_info.company_name)}</small></div></div>
-				<div class="cx-onb-prog"><span>${__("{0} sur {1} étapes · obligatoires {2}/{3}", [p.done, p.total, p.required_done, p.required_total])}</span><div class="cx-onb-bar"><i style="width:${Math.round((p.done / p.total) * 100)}%"></i></div></div>
-				<button type="button" class="btn btn-default btn-sm" data-act="later">${s.status === "Completed" ? __("Fermer") : __("Continuer plus tard")}</button>
+				<div class="cx-onb-prog"><span data-role="prog"></span><div class="cx-onb-bar"><i></i></div></div>
+				<button type="button" class="btn btn-default btn-sm" data-act="later"></button>
 			</div></header>
 			<div class="cx-onb-main">
-				<nav class="cx-onb-steps" aria-label="${__("Étapes")}"><ol>${stepsHtml}<li><button type="button" class="cx-onb-step ${s.can_finish ? "todo" : "locked"}${recapOn ? " on" : ""}" data-key="recap"${s.can_finish ? "" : " disabled"}><i>★</i><span><b>${__("Récapitulatif")}</b><small>${s.status === "Completed" ? __("Terminée") : __("Dernière étape")}</small></span></button></li></ol></nav>
-				<section class="cx-onb-card"><p class="cx-onb-err" role="alert" hidden></p><div class="cx-onb-content"></div><footer class="cx-onb-foot"></footer></section>
+				<nav class="cx-onb-steps" aria-label="${__("Étapes")}"><ol>${stepsHtml}<li><button type="button" class="cx-onb-step" data-key="recap"><i>★</i><span><b>${__("Récapitulatif")}</b><small></small></span></button></li></ol></nav>
+				<section class="cx-onb-card"><div class="cx-onb-body"><p class="cx-onb-err" role="alert" hidden></p><div class="cx-onb-content"></div><footer class="cx-onb-foot"></footer></div></section>
 			</div>`);
-		this.$el.on("click", "[data-key]", (e) => this.go(e.currentTarget.dataset.key));
-		this.$el.find("[data-act=later]").on("click", () => frappe.set_route("cortex-rental"));
+		this.shell = true;
+	}
+
+	updateChrome() {
+		const s = this.state;
+		const p = s.progress;
+		this.$el.find("[data-role=prog]").text(__("{0} sur {1} étapes · obligatoires {2}/{3}", [p.done, p.total, p.required_done, p.required_total]));
+		this.$el.find(".cx-onb-bar i").css("width", `${Math.round((p.done / p.total) * 100)}%`);
+		this.$el.find("[data-act=later]").text(s.status === "Completed" ? __("Fermer") : __("Continuer plus tard"));
+		const paint = ($b, cls, disabled, mark, tag) => {
+			$b.attr("class", `cx-onb-step ${cls}`).prop("disabled", disabled);
+			if (mark != null) $b.find("i").text(mark);
+			$b.find("small").text(tag);
+		};
+		s.steps.forEach((st, i) => {
+			const status = st.done ? "done" : st.skipped ? "skipped" : st.locked ? "locked" : "todo";
+			const tag = st.required ? __("Obligatoire") : st.done ? __("Terminée") : st.skipped ? __("Passée") : __("Facultatif");
+			paint(this.$el.find(`.cx-onb-step[data-key=${st.key}]`), `${status}${st.key === this.step ? " on" : ""}`, !!st.locked, st.done ? "✓" : i + 1, tag);
+		});
+		paint(this.$el.find(".cx-onb-step[data-key=recap]"), `${s.can_finish ? "todo" : "locked"}${this.step === "recap" ? " on" : ""}`, !s.can_finish, null, s.status === "Completed" ? __("Terminée") : __("Dernière étape"));
+	}
+
+	// Change d'étape en douceur : le contenu s'efface et glisse, la carte s'ajuste à sa nouvelle hauteur, puis le nouveau contenu arrive.
+	async swap(previous) {
+		const token = ++this.token;
+		this.stop();
+		const keys = this.state.steps.map((s) => s.key).concat(["recap"]);
+		const same = previous === this.step;
+		const dir = keys.indexOf(this.step) >= keys.indexOf(previous) ? 1 : -1;
+		const card = this.$el.find(".cx-onb-card")[0];
+		const body = this.$el.find(".cx-onb-body")[0];
+		if (same) {
+			this.renderStep();
+			return;
+		}
+		const before = card.getBoundingClientRect().height;
+		await this.anim(body, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateX(${-dir * 12}px)` }], { duration: 150, easing: "ease-in", fill: "forwards" });
+		if (token !== this.token || !this.active) return;
+		this.$el.find(".cx-onb-err").prop("hidden", true);
+		this.renderStep();
+		this.shownStep = this.step;
+		const root = this.$el[0];
+		if (root.scrollTo && root.scrollTop > 0) root.scrollTo({ top: 0, behavior: this.reduced() ? "auto" : "smooth" });
+		const after = card.getBoundingClientRect().height;
+		card.classList.add("animating");
+		const ease = "cubic-bezier(.2,.7,.2,1)";
+		const grow = Math.abs(after - before) > 1 ? this.anim(card, [{ height: `${before}px` }, { height: `${after}px` }], { duration: 300, easing: ease }) : Promise.resolve();
+		const enter = this.anim(body, [{ opacity: 0, transform: `translateX(${dir * 16}px)` }, { opacity: 1, transform: "none" }], { duration: 320, easing: ease, fill: "both" });
+		await Promise.all([grow, enter]);
+		if (token !== this.token) return;
+		this.stop();
+		card.classList.remove("animating");
+	}
+
+	// Rafraîchit sans changer d'étape (ex. une invitation vient d'être envoyée).
+	render() {
+		this.updateChrome();
 		this.renderStep();
 	}
 
@@ -341,11 +466,11 @@ cortex.OnboardingPage = class OnboardingPage {
 			{
 				label: s.status === "Completed" ? __("Aller au tableau de bord") : __("Terminer la configuration"),
 				primary: true,
-				run: () => (s.status === "Completed" ? frappe.set_route("cortex-rental") : this.call("finish_onboarding", {}, "POST").then((r) => {
+				run: () => (s.status === "Completed" ? this.leave("cortex-rental") : this.call("finish_onboarding", {}, "POST").then((r) => {
 					if (this.apply(r)) {
 						frappe.show_alert({ message: __("Votre espace est prêt."), indicator: "green" });
 						if (frappe.boot.cortex_home) frappe.boot.cortex_home.setup_pending = false;
-						frappe.set_route("cortex-rental");
+						this.leave("cortex-rental");
 					}
 				})),
 			},
