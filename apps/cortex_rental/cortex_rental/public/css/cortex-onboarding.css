@@ -14,13 +14,19 @@
 	color: #6b6a66;
 }
 .cx-onb-head {
+	border-bottom: 1px solid #e7e6e3;
+	background: #fff;
+}
+/* Même largeur et mêmes marges que le corps de l'assistant : la barre du haut est centrée comme le reste. */
+.cx-onb-head-in {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 12px 32px;
+	width: 100%;
+	max-width: 1120px;
+	margin: 0 auto;
 	padding: 16px 32px;
-	border-bottom: 1px solid #e7e6e3;
-	background: #fff;
 }
 .cx-onb-brand {
 	display: flex;
@@ -36,14 +42,11 @@
 	font-size: 12.5px;
 }
 .cx-onb-mark {
-	display: grid;
-	place-items: center;
+	display: block;
+	flex: 0 0 34px;
 	width: 34px;
 	height: 34px;
-	border-radius: 10px;
-	background: #066336;
-	color: #fff;
-	font-weight: 700;
+	object-fit: contain;
 }
 .cx-onb-prog {
 	display: grid;
@@ -382,7 +385,7 @@
 	.cx-onb-card {
 		padding: 20px 16px;
 	}
-	.cx-onb-head {
+	.cx-onb-head-in {
 		padding: 12px 16px;
 	}
 }
@@ -493,4 +496,12 @@ body.cx-onb-open .modal {
 body.cx-onb-open #alert-container,
 body.cx-onb-open .desk-alert {
 	z-index: 1300;
+}
+
+.cx-onb-head-in > .btn {
+	margin-left: auto;
+}
+
+.cx-onb-invite .btn {
+	margin-top: 14px;
 }

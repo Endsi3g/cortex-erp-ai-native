@@ -92,11 +92,11 @@ cortex.OnboardingPage = class OnboardingPage {
 			.join("");
 		const recapOn = this.step === "recap";
 		this.$el.html(`
-			<header class="cx-onb-head">
-				<div class="cx-onb-brand"><span class="cx-onb-mark">C</span><div><b>${__("Configuration de votre espace")}</b><small>${this.esc(s.company_info.company_name)}</small></div></div>
+			<header class="cx-onb-head"><div class="cx-onb-head-in">
+				<div class="cx-onb-brand"><img class="cx-onb-mark" src="${frappe.boot.app_logo_url || "/assets/cortex_rental/images/cortex-logo.svg"}" alt="Cortex" width="34" height="34"><div><b>${__("Configuration de votre espace")}</b><small>${this.esc(s.company_info.company_name)}</small></div></div>
 				<div class="cx-onb-prog"><span>${__("{0} sur {1} étapes · obligatoires {2}/{3}", [p.done, p.total, p.required_done, p.required_total])}</span><div class="cx-onb-bar"><i style="width:${Math.round((p.done / p.total) * 100)}%"></i></div></div>
 				<button type="button" class="btn btn-default btn-sm" data-act="later">${s.status === "Completed" ? __("Fermer") : __("Continuer plus tard")}</button>
-			</header>
+			</div></header>
 			<div class="cx-onb-main">
 				<nav class="cx-onb-steps" aria-label="${__("Étapes")}"><ol>${stepsHtml}<li><button type="button" class="cx-onb-step ${s.can_finish ? "todo" : "locked"}${recapOn ? " on" : ""}" data-key="recap"${s.can_finish ? "" : " disabled"}><i>★</i><span><b>${__("Récapitulatif")}</b><small>${s.status === "Completed" ? __("Terminée") : __("Dernière étape")}</small></span></button></li></ol></nav>
 				<section class="cx-onb-card"><p class="cx-onb-err" role="alert" hidden></p><div class="cx-onb-content"></div><footer class="cx-onb-foot"></footer></section>
