@@ -129,9 +129,11 @@ class TestWorkspacesFollowTheAccountingLayout(unittest.TestCase):
                 self.assertIn(needed, types, f"{name} lacks a {needed} block")
             self.assertGreaterEqual(types.count("number_card"), 4, name)
 
-    def test_hub_starts_with_onboarding(self):
-        hub = self._workspaces()["Cortex Rental"]
-        self.assertEqual(json.loads(hub["content"])[0]["type"], "onboarding")
+    def test_workspaces_no_longer_embed_the_native_onboarding_block(self):
+        # L'assistant plein écran (page cortex-setup) et la carte d'accueil remplacent le guide natif.
+        for name, ws in self._workspaces().items():
+            types = [b["type"] for b in json.loads(ws["content"])]
+            self.assertNotIn("onboarding", types, name)
 
     def test_referenced_cards_and_charts_exist(self):
         cards, charts = set(_docs("number_card")), set(_docs("dashboard_chart")) | FROM_ERPNEXT
@@ -146,14 +148,6 @@ class TestWorkspacesFollowTheAccountingLayout(unittest.TestCase):
         self.assertEqual(titles["Cortex Operations"], "Opérations")
         self.assertEqual(titles["Cortex Warehouse"], "Entrepôt")
         self.assertEqual(titles["Cortex Admin"], "Administration")
-
-    def test_onboarding_steps_exist_and_are_ordered(self):
-        onboarding = _docs("module_onboarding")["Cortex Rental"]
-        steps = _docs("onboarding_step")
-        names = [row["step"] for row in onboarding["steps"]]
-        self.assertGreaterEqual(len(names), 5)
-        for name in names:
-            self.assertIn(name, steps)
 
 
 class TestAccessibilityAndAvailabilityGrid(unittest.TestCase):
@@ -266,11 +260,6 @@ class TestLandingAndWorkspaceDesign(unittest.TestCase):
         self.assertEqual(cards["Locations en cours"], "")
         self.assertEqual(cards["Départs du jour"], "")
         self.assertNotEqual(cards["Approbations en attente"], "")
-
-    def test_onboarding_steps_explain_themselves(self):
-        for path in glob.glob(os.path.join(MODULE_DIR, "onboarding_step", "*", "*.json")):
-            with open(path, encoding="utf-8") as handle:
-                self.assertTrue(json.load(handle).get("description"), path)
 
 
 class TestFrenchTranslations(unittest.TestCase):

@@ -205,9 +205,10 @@ class TestApprovalPolicyAndExport(unittest.TestCase):
         self.assertIn('"is_private": 0', src)
         self.assertIn("cortex.company.logo_changed", src)
 
-    def test_the_logo_is_a_step_of_the_onboarding(self):
-        data = json.loads(read("cortex_rental", "module_onboarding", "cortex_rental", "cortex_rental.json"))
-        self.assertIn("Ajouter le logo de votre entreprise", [s["step"] for s in data["steps"]])
+    def test_the_logo_is_required_by_the_onboarding_company_step(self):
+        src = read("services", "onboarding.py")
+        self.assertIn("company_logo", src.split("def save_company_profile")[1].split("def save_owner_profile")[0])
+        self.assertIn("set_company_logo", read("cortex_rental", "page", "cortex_setup", "cortex_setup.js"))
 
 
 class TestLinkedDossier(unittest.TestCase):

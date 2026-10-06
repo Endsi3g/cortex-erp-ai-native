@@ -20,3 +20,4 @@ cortex_rental.patches.backfill_journal_entries
 cortex_rental.patches.set_ai_pricing_defaults
 cortex_rental.patches.set_ai_economy_defaults
 cortex_rental.patches.disable_sole_approver_default
+cortex_rental.patches.remove_native_onboarding

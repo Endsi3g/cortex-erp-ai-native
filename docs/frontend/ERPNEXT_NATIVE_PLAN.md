@@ -41,7 +41,7 @@ L'historique Git garde tout le code retiré. Les API Python (`api/v1/*`, service
 | Audit | **Rapport** *Journal d'audit* (lecture seule) |
 | États financiers | Rapports natifs ERPNext (*Profit and Loss Statement*, *General Ledger*…) dans le workspace *Finance* |
 | Règles, équipe, import | **Formulaires/listes natifs** *Rental Pricing Rule*, *User* (profils Cortex), *Data Import* ; bloc d'intégration pour guider |
-| Mise en route entreprise | **Module Onboarding** natif (étapes réelles) + page *Configuration* |
+| Mise en route entreprise | Page Desk *Configuration* (`cortex-setup`, assistant plein écran, étapes obligatoires/facultatives) + carte sur l'accueil |
 
 ## 4. Workspaces (structure type *Accounting*)
 

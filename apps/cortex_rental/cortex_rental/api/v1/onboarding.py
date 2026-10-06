@@ -32,23 +32,46 @@ if frappe:
     def save_company_profile(
         country: str = "",
         default_currency: str = "",
-        tax_id: str = "",
+        address_line1: str = "",
+        city: str = "",
+        state: str = "",
+        pincode: str = "",
         phone_no: str = "",
+        email: str = "",
         website: str = "",
-        time_zone: str = "",
-        language: str = "",
+        tax_id: str = "",
     ):
         require_human_staff_role()
         data = {
             "country": country,
             "default_currency": default_currency,
-            "tax_id": tax_id,
+            "address_line1": address_line1,
+            "city": city,
+            "state": state,
+            "pincode": pincode,
             "phone_no": phone_no,
+            "email": email,
             "website": website,
-            "time_zone": time_zone,
-            "language": language,
+            "tax_id": tax_id,
         }
         return guarded(lambda: {"state": onboarding.save_company_profile(get_company_context(), data)})
+
+    @frappe.whitelist(methods=["POST"])
+    def save_owner_profile(first_name: str = "", last_name: str = "", mobile_no: str = "", time_zone: str = ""):
+        require_human_staff_role()
+        data = {"first_name": first_name, "last_name": last_name, "mobile_no": mobile_no, "time_zone": time_zone}
+        return guarded(lambda: {"state": onboarding.save_owner_profile(get_company_context(), data)})
+
+    @frappe.whitelist(methods=["POST"])
+    def save_pricing(tps_number: str = "", tvq_number: str = "", deposit_percent: str = "30"):
+        require_human_staff_role()
+        data = {"tps_number": tps_number, "tvq_number": tvq_number, "deposit_percent": deposit_percent}
+        return guarded(lambda: {"state": onboarding.save_pricing(get_company_context(), data)})
+
+    @frappe.whitelist(methods=["POST"])
+    def skip_step(step: str = ""):
+        require_human_staff_role()
+        return guarded(lambda: {"state": onboarding.skip_step(get_company_context(), step)})
 
     @frappe.whitelist(methods=["POST"])
     def invite_team_member(email: str = "", full_name: str = "", preset: str = ""):

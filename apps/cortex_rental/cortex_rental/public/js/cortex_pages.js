@@ -13,6 +13,7 @@
 		"cortex-ai": "L'assistant consulte vos données et prépare des propositions. Vous décidez : rien n'est confirmé sans votre approbation.",
 		"cortex-home": "L'assistant consulte vos données et prépare des propositions. Vous décidez : rien n'est confirmé sans votre approbation.",
 		"cortex-admin": "Équipe et rôles, règles tarifaires, réglages de l'assistant et journal d'audit de votre société.",
+		"cortex-setup": "Les informations de votre entreprise et les premiers réglages, étape par étape.",
 		"cortex-account/profil": "Votre identité dans Cortex : photo, nom, téléphone, et ce qui vous attend aujourd'hui.",
 		"cortex-account/statistiques": "Ce que vous avez fait, avec des chiffres tirés de vos dossiers. Chaque chiffre ouvre la liste qui le compose.",
 		"cortex-account/approbations": "Les demandes que vous avez faites et les décisions que vous avez prises, avec le motif.",
