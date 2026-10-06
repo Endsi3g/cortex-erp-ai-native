@@ -1028,3 +1028,21 @@ body.cx-nav-on .page-container .page-body.container,
 body.cx-nav-on .page-container .page-head .container {
 	padding-inline: 24px;
 }
+
+
+/* Barre latérale : les entrées ne se compressent jamais (elles défilent), un groupe ouvert reste lisible en entier,
+   et un fondu en bas signale qu'il reste des entrées plus bas. */
+#cx-nav .cx-nav-scroll > * {
+	flex-shrink: 0;
+}
+#cx-nav .cx-nav-scroll {
+	padding-bottom: 28px;
+	scrollbar-gutter: stable;
+}
+#cx-nav .cx-nav-scroll.cx-more {
+	-webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+	mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+}
+#cx-nav .cx-nav-scroll > .cx-group.cx-group-bottom {
+	padding-top: 16px;
+}

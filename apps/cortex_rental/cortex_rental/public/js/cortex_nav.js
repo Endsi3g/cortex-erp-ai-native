@@ -189,12 +189,37 @@
 					title.setAttribute("aria-expanded", String(!closed));
 					this.groups[group.title] = !closed;
 					store(GROUP_STORE, JSON.stringify(this.groups));
+					// Un groupe qui vient de s'ouvrir doit être entièrement visible : on fait défiler la barre jusqu'à lui.
+					// Pendant l'ouverture (le groupe grandit en ~0,4 s), on suit sa hauteur pour qu'il reste visible en entier.
+					if (!closed) {
+						let ticks = 0;
+						const follow = window.setInterval(() => {
+							const box = document.querySelector("#cx-nav .cx-nav-scroll");
+							if (!box || ++ticks > 22) {
+								window.clearInterval(follow);
+								if (box) box.classList.toggle("cx-more", box.scrollTop + box.clientHeight < box.scrollHeight - 2);
+								return;
+							}
+							if (group.bottom) box.scrollTop = box.scrollHeight;
+							else {
+								const target = [...box.querySelectorAll(".cx-group-title")].find((t) => t.getAttribute("aria-expanded") === "true" && t.textContent.includes(__(group.title)));
+								if (target) target.scrollIntoView({ block: "nearest" });
+							}
+						}, 40);
+					}
 				});
 				items.forEach((item) => inner.appendChild(this.item(item)));
 				body.appendChild(inner);
 				section.append(title, body);
 				scroll.appendChild(section);
 			});
+			// Indique qu'il reste des entrées sous le bord visible (fondu en bas), sans bande ni ombre.
+			const refreshMore = () => scroll.classList.toggle("cx-more", scroll.scrollTop + scroll.clientHeight < scroll.scrollHeight - 2);
+			scroll.addEventListener("scroll", refreshMore, { passive: true });
+			window.addEventListener("resize", refreshMore);
+			// Replier ou déplier la barre change la hauteur du contenu : on recalcule le fondu.
+			new MutationObserver(() => window.setTimeout(refreshMore, 120)).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+			window.setTimeout(refreshMore, 400);
 			nav.appendChild(scroll);
 			nav.appendChild(this.account());
 
