@@ -10,7 +10,7 @@ except ImportError:
 from cortex_rental.services.ai.budget import BudgetExceeded
 from cortex_rental.services.ai.gateway import AIGateway
 from cortex_rental.services.ai.providers import AIConfigurationError, AIProviderError
-from cortex_rental.services.onyx_chat_client import OnyxChatClient, OnyxChatResult, OnyxConfigurationError
+from cortex_rental.services.onyx_chat_client import OnyxChatClient, OnyxChatResult
 
 
 class GatewayChatClient(OnyxChatClient):
@@ -77,32 +77,53 @@ class GatewayChatClient(OnyxChatClient):
         tool_calls: List[str] = []
         blocks: List[Dict[str, Any]] = []
 
-        if any(w in lowered for w in ["devis", "location", "soumission", "catalogue", "article", "louer", "caméra", "objectif", "optique"]):
+        if any(
+            w in lowered
+            for w in [
+                "devis",
+                "location",
+                "soumission",
+                "catalogue",
+                "article",
+                "louer",
+                "caméra",
+                "objectif",
+                "optique",
+            ]
+        ):
             res = tools.search_rental_items(query="")
             items = res.get("items", [])
             tool_calls.append("search_rental_items")
 
-            fact_items = [
-                f"{it['item_name']} ({it['item_code']}) — {float(it.get('daily_rate') or 0):.2f} $ / jour ({it.get('total_quantity', 1)} unité(s) au parc)"
-                for it in items[:6]
-            ] if items else ["Aucun équipement trouvé dans le catalogue pour cette société."]
+            fact_items = (
+                [
+                    f"{it['item_name']} ({it['item_code']}) — {float(it.get('daily_rate') or 0):.2f} $ / jour ({it.get('total_quantity', 1)} unité(s) au parc)"
+                    for it in items[:6]
+                ]
+                if items
+                else ["Aucun équipement trouvé dans le catalogue pour cette société."]
+            )
 
-            blocks.append({
-                "type": "verified_fact",
-                "title": "Catalogue & Tarifs de Location",
-                "items": fact_items,
-                "source_ids": [it["item_code"] for it in items[:6]],
-                "checked_at": now,
-            })
+            blocks.append(
+                {
+                    "type": "verified_fact",
+                    "title": "Catalogue & Tarifs de Location",
+                    "items": fact_items,
+                    "source_ids": [it["item_code"] for it in items[:6]],
+                    "checked_at": now,
+                }
+            )
 
-            blocks.append({
-                "type": "proposal",
-                "title": "Préparer une soumission",
-                "summary": "Créer un brouillon de soumission pour ces équipements dans Cortex.",
-                "impact": ["Aucune réservation ne bloque l'inventaire avant confirmation"],
-                "action": "create_quote_draft",
-                "requires_approval": False,
-            })
+            blocks.append(
+                {
+                    "type": "proposal",
+                    "title": "Préparer une soumission",
+                    "summary": "Créer un brouillon de soumission pour ces équipements dans Cortex.",
+                    "impact": ["Aucune réservation ne bloque l'inventaire avant confirmation"],
+                    "action": "create_quote_draft",
+                    "requires_approval": False,
+                }
+            )
 
             text = (
                 "Voici les équipements disponibles dans votre catalogue de location. "
@@ -114,24 +135,32 @@ class GatewayChatClient(OnyxChatClient):
             items = res.get("items", [])
             tool_calls.append("check_inventory_availability")
 
-            fact_items = [
-                f"{it['item_name']} : {it.get('total_quantity', 1)} unité(s) opérationnelle(s) au parc — Disponible(s)"
-                for it in items[:5]
-            ] if items else ["Inventaire en cours d'initialisation."]
+            fact_items = (
+                [
+                    f"{it['item_name']} : {it.get('total_quantity', 1)} unité(s) opérationnelle(s) au parc — Disponible(s)"
+                    for it in items[:5]
+                ]
+                if items
+                else ["Inventaire en cours d'initialisation."]
+            )
 
-            blocks.append({
-                "type": "verified_fact",
-                "title": "Disponibilité Immédiate du Parc",
-                "items": fact_items,
-                "source_ids": [it["item_code"] for it in items[:5]],
-                "checked_at": now,
-            })
+            blocks.append(
+                {
+                    "type": "verified_fact",
+                    "title": "Disponibilité Immédiate du Parc",
+                    "items": fact_items,
+                    "source_ids": [it["item_code"] for it in items[:5]],
+                    "checked_at": now,
+                }
+            )
 
-            blocks.append({
-                "type": "assistant_text",
-                "text": "Le serveur de disponibilité ne signale aucun conflit bloquant pour les créneaux actuels.",
-                "source_ids": [],
-            })
+            blocks.append(
+                {
+                    "type": "assistant_text",
+                    "text": "Le serveur de disponibilité ne signale aucun conflit bloquant pour les créneaux actuels.",
+                    "source_ids": [],
+                }
+            )
 
             text = (
                 "La disponibilité de votre parc a été vérifiée auprès du serveur. "
@@ -153,36 +182,42 @@ class GatewayChatClient(OnyxChatClient):
                 fact_items = ["Aucune demande d'approbation en attente actuellement pour votre société."]
                 text = "Toutes les opérations d'agent sont à jour. Aucune approbation n'est requise pour le moment."
 
-            blocks.append({
-                "type": "verified_fact",
-                "title": "Demandes d'Approbation en Attente",
-                "items": fact_items,
-                "source_ids": [p["name"] for p in pending],
-                "checked_at": now,
-            })
+            blocks.append(
+                {
+                    "type": "verified_fact",
+                    "title": "Demandes d'Approbation en Attente",
+                    "items": fact_items,
+                    "source_ids": [p["name"] for p in pending],
+                    "checked_at": now,
+                }
+            )
 
         else:
             res = tools.search_rental_items(query=message[:30])
             items = res.get("items", [])
             if items:
                 tool_calls.append("search_rental_items")
-                blocks.append({
-                    "type": "verified_fact",
-                    "title": f"Équipements trouvés pour « {message[:30]} »",
-                    "items": [
-                        f"{it['item_name']} ({it['item_code']}) — {float(it.get('daily_rate') or 0):.2f} $ / jour"
-                        for it in items[:4]
-                    ],
-                    "source_ids": [it["item_code"] for it in items[:4]],
-                    "checked_at": now,
-                })
+                blocks.append(
+                    {
+                        "type": "verified_fact",
+                        "title": f"Équipements trouvés pour « {message[:30]} »",
+                        "items": [
+                            f"{it['item_name']} ({it['item_code']}) — {float(it.get('daily_rate') or 0):.2f} $ / jour"
+                            for it in items[:4]
+                        ],
+                        "source_ids": [it["item_code"] for it in items[:4]],
+                        "checked_at": now,
+                    }
+                )
                 text = f"J'ai trouvé {len(items)} article(s) correspondant à votre recherche dans le catalogue Cortex."
             else:
-                blocks.append({
-                    "type": "assistant_text",
-                    "text": "Assistant Cortex prêt : vous pouvez me demander des disponibilités, préparer un devis ou superviser les approbations.",
-                    "source_ids": [],
-                })
+                blocks.append(
+                    {
+                        "type": "assistant_text",
+                        "text": "Assistant Cortex prêt : vous pouvez me demander des disponibilités, préparer un devis ou superviser les approbations.",
+                        "source_ids": [],
+                    }
+                )
                 text = "Comment puis-je vous aider aujourd'hui ? Vous pouvez utiliser les boutons d'action rapide ci-dessous ou poser directement votre question."
 
         return OnyxChatResult(

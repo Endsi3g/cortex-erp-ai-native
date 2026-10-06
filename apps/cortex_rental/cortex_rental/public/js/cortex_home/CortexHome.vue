@@ -52,16 +52,15 @@ const firstName = computed(() => {
 	try { return frappe.user.first_name() || ""; } catch (e) { return ""; }
 });
 const displayName = computed(() => {
+	// Prénom de la personne connectée, jamais un nom inventé : sans prénom connu, on salue sans nom.
 	try {
-		const fn = frappe.user.first_name();
-		if (fn && fn !== "Administrator" && fn !== "Dev") return fn;
-		const full = frappe.user.full_name();
-		if (full && full !== "Administrator" && full !== "Dev") return full;
-		if (frappe.boot?.user?.first_name && frappe.boot.user.first_name !== "Administrator") {
-			return frappe.boot.user.first_name;
+		const full = (frappe.session && frappe.session.user_fullname) || "";
+		const first = (frappe.user.first_name && frappe.user.first_name()) || "";
+		for (const candidate of [first, full.split(" ")[0]]) {
+			if (candidate && !["Administrator", "Guest", "Dev"].includes(candidate)) return candidate;
 		}
 	} catch (e) {}
-	return "Kael";
+	return "";
 });
 
 const greeting = computed(() => {
