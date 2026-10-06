@@ -164,8 +164,10 @@ cortex.OnboardingPage = class OnboardingPage {
 		this.$el.html(`
 			<header class="cx-onb-head"><div class="cx-onb-head-in">
 				<div class="cx-onb-brand"><img class="cx-onb-mark" src="${frappe.boot.app_logo_url || "/assets/cortex_rental/images/cortex-logo.svg"}" alt="Cortex" width="34" height="34"><div><b>${__("Configuration de votre espace")}</b><small>${this.esc(s.company_info.company_name)}</small></div></div>
-				<div class="cx-onb-prog"><span data-role="prog"></span><div class="cx-onb-bar"><i></i></div></div>
-				<button type="button" class="btn btn-default btn-sm" data-act="later"></button>
+				<div class="cx-onb-head-end">
+					<div class="cx-onb-prog"><span data-role="prog"></span><div class="cx-onb-bar"><i></i></div></div>
+					<button type="button" class="btn btn-default btn-sm" data-act="later"></button>
+				</div>
 			</div></header>
 			<div class="cx-onb-main">
 				<nav class="cx-onb-steps" aria-label="${__("Étapes")}"><ol>${stepsHtml}<li><button type="button" class="cx-onb-step" data-key="recap"><i>★</i><span><b>${__("Récapitulatif")}</b><small></small></span></button></li></ol></nav>

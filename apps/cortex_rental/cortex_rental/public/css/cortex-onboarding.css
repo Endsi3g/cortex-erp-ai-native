@@ -17,16 +17,29 @@
 	border-bottom: 1px solid #e7e6e3;
 	background: #fff;
 }
-/* Même largeur et mêmes marges que le corps de l'assistant : la barre du haut est centrée comme le reste. */
+/* Même grille que le corps de l'assistant : la marque s'aligne sur les cercles des étapes (bordure 1 px + marge 12 px)
+   et la progression sur le contenu de la carte (bordure 1 px + marge 32 px). */
 .cx-onb-head-in {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
+	display: grid;
+	grid-template-columns: 280px minmax(0, 760px);
 	gap: 12px 32px;
+	align-items: center;
 	width: 100%;
 	max-width: 1120px;
 	margin: 0 auto;
 	padding: 16px 32px;
+}
+.cx-onb-head-in .cx-onb-brand {
+	padding-left: 13px;
+}
+.cx-onb-head-end {
+	display: flex;
+	align-items: center;
+	gap: 16px 32px;
+	min-width: 0;
+}
+.cx-onb-head-end .cx-onb-prog {
+	padding-left: 33px;
 }
 .cx-onb-brand {
 	display: flex;
@@ -196,6 +209,7 @@
 }
 .cx-onb-field {
 	display: grid;
+	align-content: start;
 	gap: 5px;
 	margin: 0;
 }
@@ -396,7 +410,15 @@
 		padding: 20px 16px;
 	}
 	.cx-onb-head-in {
+		grid-template-columns: minmax(0, 1fr);
 		padding: 12px 16px;
+	}
+	.cx-onb-head-in .cx-onb-brand,
+	.cx-onb-head-end .cx-onb-prog {
+		padding-left: 0;
+	}
+	.cx-onb-head-end {
+		flex-wrap: wrap;
 	}
 }
 @media (max-width: 640px) {
@@ -508,7 +530,7 @@ body.cx-onb-open .desk-alert {
 	z-index: 1300;
 }
 
-.cx-onb-head-in > .btn {
+.cx-onb-head-end > .btn {
 	margin-left: auto;
 }
 
@@ -569,5 +591,18 @@ body.cx-onb-open .desk-alert {
 	.cx-guide-video {
 		animation: none !important;
 		transition: none !important;
+	}
+}
+
+.cx-onb-head-in .cx-onb-brand {
+	gap: 10px;
+}
+.cx-onb-head-in .cx-onb-brand b {
+	font-size: 14px;
+	white-space: nowrap;
+}
+@media (max-width: 900px) {
+	.cx-onb-head-in .cx-onb-brand b {
+		white-space: normal;
 	}
 }
