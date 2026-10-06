@@ -187,12 +187,82 @@ function select(row, day, c) {
 function openRental(name) {
 	frappe.set_route("Form", "Cortex Rental Transaction", name);
 }
-function newRental() {
+// Détail d'un emprunt sans quitter la grille : client, factures, approbation et historique (dossier relié du serveur).
+const expanded = ref(null);
+const dossiers = ref({});
+async function toggleBlock(b) {
+	expanded.value = expanded.value === b.transaction ? null : b.transaction;
+	if (!expanded.value || dossiers.value[b.transaction]) return;
+	dossiers.value = { ...dossiers.value, [b.transaction]: "loading" };
+	try {
+		const r = await frappe.call({
+			method: "cortex_rental.api.v1.dossier.get",
+			type: "GET",
+			args: { doctype: "Cortex Rental Transaction", name: b.transaction },
+			silent: true,
+		});
+		dossiers.value = { ...dossiers.value, [b.transaction]: r.message };
+	} catch (e) {
+		dossiers.value = { ...dossiers.value, [b.transaction]: { error: true } };
+	}
+}
+function dossierOf(b) {
+	const d = dossiers.value[b.transaction];
+	return d && d !== "loading" && !d.error ? d : null;
+}
+const INVOICE_STATUS = { Issued: "Émise", "Partially Paid": "Payée en partie", Paid: "Payée", Cancelled: "Annulée" };
+const APPROVAL_STATUS = { Pending: "En attente", Approved: "Approuvée", Rejected: "Refusée" };
+
+// Nouveau devis avec cet équipement à cette date : le serveur calcule les prix et retient le matériel s'il y en a.
+function newQuote() {
 	const s = selected.value;
-	frappe.new_doc("Cortex Rental Transaction", {
-		starts_at: `${s.day.ymd} 09:00:00`,
-		ends_at: `${addDays(s.day.ymd, 1)} 09:00:00`,
+	if (!s) return;
+	const day = s.day.ymd;
+	const free = Math.max(s.cell.free, 0);
+	const dialog = new frappe.ui.Dialog({
+		title: __("Nouveau devis"),
+		fields: [
+			{
+				fieldtype: "HTML",
+				fieldname: "what",
+				options: `<p><b>${frappe.utils.escape_html(s.row.item.item_name)}</b><br><span class="text-muted">${free} ${__("libre(s) sur")} ${s.cell.fleet} ${__("le")} ${day}${free ? "" : " · " + __("complet : le devis sera créé sans retenue du matériel")}</span></p>`,
+			},
+			{ fieldname: "customer", fieldtype: "Link", options: "Customer", label: __("Client"), reqd: 1 },
+			{ fieldname: "qty", fieldtype: "Int", label: __("Quantité"), default: 1, reqd: 1 },
+			{ fieldname: "starts", fieldtype: "Date", label: __("Début (09 h)"), default: day, reqd: 1 },
+			{ fieldname: "ends", fieldtype: "Date", label: __("Fin (09 h)"), default: addDays(day, 1), reqd: 1 },
+			{ fieldname: "project", fieldtype: "Data", label: __("Projet (facultatif)") },
+		],
+		primary_action_label: __("Créer le devis"),
+		primary_action: async (v) => {
+			if (v.ends <= v.starts) return frappe.msgprint(__("La fin doit être après le début."));
+			if (!(v.qty >= 1)) return frappe.msgprint(__("Indiquez une quantité d'au moins 1."));
+			dialog.disable_primary_action && dialog.disable_primary_action();
+			try {
+				const r = await frappe.call({
+					method: "cortex_rental.api.v1.rentals.create_quote_draft",
+					type: "POST",
+					args: {
+						customer_id: v.customer,
+						starts_at: `${v.starts} 09:00:00`,
+						ends_at: `${v.ends} 09:00:00`,
+						project_name: v.project || "",
+						items: JSON.stringify([{ item_code: s.row.item.item_code, quantity: v.qty }]),
+					},
+				});
+				const name = (r.message || {}).entity_id;
+				if (!name) return;
+				const hold = await frappe.db.get_value("Cortex Rental Transaction", name, "hold_status");
+				const held = hold && hold.message && hold.message.hold_status === "Active";
+				frappe.show_alert({ message: held ? __("Devis {0} créé : le matériel est retenu.", [name]) : __("Devis {0} créé sans retenue (disponibilité insuffisante).", [name]), indicator: held ? "green" : "orange" }, 7);
+				dialog.hide();
+				frappe.set_route("Form", "Cortex Rental Transaction", name);
+			} finally {
+				dialog.enable_primary_action && dialog.enable_primary_action();
+			}
+		},
 	});
+	dialog.show();
 }
 
 let timer = null;
@@ -334,19 +404,39 @@ defineExpose({ load, setCategory });
 			</div>
 			<p>
 				{{ Math.max(selected.cell.free, 0) }} libre{{ selected.cell.free > 1 ? "s" : "" }} sur {{ selected.cell.fleet }} ·
-				{{ selected.cell.booked }} bloqué{{ selected.cell.booked > 1 ? "s" : "" }}
+				{{ selected.cell.booked }} bloqué{{ selected.cell.booked > 1 ? "s" : "" }}<span v-if="selected.cell.held"> · {{ selected.cell.held }} retenu{{ selected.cell.held > 1 ? "s" : "" }} par un devis</span>
 			</p>
+			<button type="button" class="cx-btn cx-btn-primary cx-detail-cta" @click="newQuote">Créer un devis avec cet équipement ce jour-là</button>
+			<p v-if="selected.cell.free <= 0" class="cx-avail-muted">Complet : un devis serait créé sans retenue du matériel.</p>
+			<h4 class="cx-detail-sub">Locations ce jour-là</h4>
 			<ul v-if="selected.cell.blocks.length" class="cx-avail-blocks">
-				<li v-for="b in selected.cell.blocks" :key="b.transaction + b.starts_at">
-					<a href="#" @click.prevent="openRental(b.transaction)">{{ b.transaction }}</a>
-					— {{ b.rental_state === "Quote" ? (b.hold_until ? "Devis (retient le matériel jusqu'au " + b.hold_until.slice(0, 16) + ")" : "Devis (sans retenue)") : STATE_LABELS[b.rental_state] || b.rental_state }}, {{ b.customer }}, {{ b.qty }} unité{{
-						b.qty > 1 ? "s" : ""
-					}}
-					({{ b.starts_at.slice(0, 16) }} → {{ b.ends_at.slice(0, 16) }})
+				<li v-for="b in selected.cell.blocks" :key="b.transaction + b.starts_at" :class="{ open: expanded === b.transaction }">
+					<button type="button" class="cx-block-btn" :aria-expanded="expanded === b.transaction" @click="toggleBlock(b)">
+						<span class="cx-block-main">
+							<b>{{ b.customer }}</b>
+							<small>{{ b.transaction }} · {{ b.qty }} unité{{ b.qty > 1 ? "s" : "" }} · {{ b.starts_at.slice(5, 16) }} → {{ b.ends_at.slice(5, 16) }}</small>
+						</span>
+						<span class="cx-tl-state" :class="`cx-tl-${b.rental_state === 'Quote' ? 'hold' : 'book'}`">{{ b.rental_state === "Quote" ? (holding(b) ? "Devis · retenue" : "Devis") : STATE_LABELS[b.rental_state] || b.rental_state }}</span>
+					</button>
+					<div v-if="expanded === b.transaction" class="cx-block-detail">
+						<p v-if="dossiers[b.transaction] === 'loading'" class="cx-avail-muted">Chargement…</p>
+						<p v-else-if="!dossierOf(b)" class="cx-avail-muted">Le détail n'est pas disponible pour votre rôle.</p>
+						<template v-else>
+							<dl>
+								<div v-if="dossierOf(b).customer"><dt>Client</dt><dd><a :href="'/app/customer/' + encodeURIComponent(dossierOf(b).customer.id)">{{ dossierOf(b).customer.name }}</a></dd></div>
+								<div v-if="(dossierOf(b).invoices || []).length"><dt>Factures</dt><dd><span v-for="i in dossierOf(b).invoices" :key="i.id"><a :href="'/app/cortex-rental-invoice/' + encodeURIComponent(i.id)">{{ i.id }}</a> {{ INVOICE_STATUS[i.status] || i.status }}<template v-if="i.balance"> · solde {{ i.balance.toFixed(2) }} $</template><br /></span></dd></div>
+								<div v-if="(dossierOf(b).approvals || []).length"><dt>Approbation</dt><dd><a :href="'/app/approval-request/' + encodeURIComponent(dossierOf(b).approvals[0].id)">{{ APPROVAL_STATUS[dossierOf(b).approvals[0].status] || dossierOf(b).approvals[0].status }}</a><template v-if="dossierOf(b).approvals[0].decided_by"> · {{ dossierOf(b).approvals[0].decided_by }}</template></dd></div>
+								<div v-if="dossierOf(b).created_by"><dt>Créé par</dt><dd>{{ dossierOf(b).created_by }}</dd></div>
+							</dl>
+							<ul v-if="(dossierOf(b).timeline || []).length" class="cx-block-history">
+								<li v-for="(e, n) in dossierOf(b).timeline.slice(0, 4)" :key="n"><b>{{ e.actor }}</b> · {{ e.text }} <small>{{ e.at }}</small></li>
+							</ul>
+						</template>
+						<button type="button" class="cx-btn" @click="openRental(b.transaction)">Ouvrir la location</button>
+					</div>
 				</li>
 			</ul>
-			<p v-else class="cx-avail-muted">Aucune location sur cette journée.</p>
-			<button type="button" class="cx-btn cx-btn-primary" @click="newRental">Nouvelle location ce jour-là</button>
+			<p v-else class="cx-avail-muted">Aucune location sur cette journée : l'équipement est libre.</p>
 		</aside>
 	</section>
 </template>
@@ -721,29 +811,107 @@ thead .cx-sticky {
 	}
 }
 .cx-avail-detail {
-	margin-top: 16px;
-	padding: 14px 16px;
+	position: fixed;
+	top: 96px;
+	right: 20px;
+	bottom: 20px;
+	z-index: 20;
+	width: min(400px, calc(100vw - 32px));
+	overflow-y: auto;
+	padding: 16px 18px;
 	border: 1px solid var(--line);
-	border-radius: 12px;
+	border-radius: 14px;
 	background: #fff;
+	box-shadow: 0 16px 44px rgba(0, 0, 0, 0.14);
 	animation: cx-rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .cx-avail-detail-head {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 10px;
+	gap: 6px 10px;
 }
 .cx-avail-detail-head .cx-btn {
 	margin-left: auto;
 }
+.cx-detail-cta {
+	width: 100%;
+	margin: 4px 0 8px;
+}
+.cx-detail-sub {
+	margin: 18px 0 8px;
+	font-size: 12px;
+	font-weight: 650;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
 .cx-avail-blocks {
-	margin: 8px 0 12px;
-	padding-left: 18px;
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
 	font-size: 13px;
 }
-.cx-avail-blocks a {
+.cx-avail-blocks li {
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow: hidden;
+}
+.cx-block-btn {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	width: 100%;
+	padding: 10px 12px;
+	border: 0;
+	background: transparent;
+	text-align: left;
+	cursor: pointer;
+}
+.cx-block-btn:hover {
+	background: #f7f7f5;
+}
+.cx-block-main {
+	display: grid;
+	min-width: 0;
+}
+.cx-block-main small {
+	color: var(--muted);
+	font-size: 12px;
+}
+.cx-block-detail {
+	display: grid;
+	gap: 10px;
+	padding: 4px 12px 12px;
+	border-top: 1px solid var(--line);
+}
+.cx-block-detail dl {
+	display: grid;
+	gap: 8px;
+	margin: 8px 0 0;
+}
+.cx-block-detail dt {
+	color: var(--muted);
+	font-size: 11px;
 	font-weight: 600;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+.cx-block-detail dd {
+	margin: 0;
+}
+.cx-block-history {
+	display: grid;
+	gap: 4px;
+	margin: 0;
+	padding-left: 16px;
+	font-size: 12.5px;
+}
+.cx-block-history small {
+	color: var(--muted);
 }
 .cx-avail-error {
 	padding: 12px 14px;
@@ -767,6 +935,14 @@ thead .cx-sticky {
 	animation: cx-shimmer 1.4s linear infinite;
 }
 @media (max-width: 640px) {
+	.cx-avail-detail {
+		top: auto;
+		right: 8px;
+		bottom: 8px;
+		left: 8px;
+		width: auto;
+		max-height: 72vh;
+	}
 	.cx-avail-scroll {
 		max-height: none;
 	}

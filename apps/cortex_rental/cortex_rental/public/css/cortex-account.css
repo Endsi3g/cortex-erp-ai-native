@@ -583,14 +583,6 @@ li.current .cx-dev-ico {
 	object-fit: contain;
 	border: 1px solid var(--cx-nav-line, #e7e6e3);
 }
-.cx-sub {
-	margin: 18px 0 8px;
-	font-size: 12px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: #6b6a66;
-}
 .cx-roles {
 	display: grid;
 	gap: 8px;

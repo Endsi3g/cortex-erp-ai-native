@@ -228,3 +228,16 @@ class TestLinkedDossier(unittest.TestCase):
         hooks = read("hooks.py")
         self.assertIn("cortex_dossier.js", hooks)
         self.assertIn("cortex-dossier.css", hooks)
+
+
+class TestAvailabilityCellActions(unittest.TestCase):
+    def test_a_cell_offers_a_prefilled_quote_and_the_existing_loans(self):
+        vue = read("public", "js", "cortex_availability", "CortexAvailability.vue")
+        self.assertIn("Créer un devis avec cet équipement ce jour-là", vue)
+        self.assertIn("cortex_rental.api.v1.rentals.create_quote_draft", vue)
+        self.assertIn("item_code: s.row.item.item_code", vue)
+        self.assertIn("cortex_rental.api.v1.dossier.get", vue)
+
+    def test_account_styles_never_reuse_a_navigation_class_name(self):
+        css = read("public", "css", "cortex-account.css")
+        self.assertNotIn("\\n.cx-sub {", css)
