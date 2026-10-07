@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, provide, watch } from "vue";
 import CopilotConversation from "../cortex_copilot/CopilotConversation.vue";
 import { sendMessage, getMessages, listSessions, resolveDeskContext, apiCall } from "../cortex_copilot/chatClient.js";
+import { createVoiceInput, checkVoiceSupport, queryMicrophonePermission, VOICE_PRIVACY_NOTE } from "../cortex_shared/cortexVoice.js";
 
 // Les trois cartes ouvrent un questionnaire guidé dans la conversation (interface déterministe, sans modèle d'IA).
 const ACTION_CARDS = [
@@ -49,7 +50,12 @@ const showHistory = ref(false);
 const showSettings = ref(false);
 const showStatus = ref(false);
 const confirmClear = ref(false);
-const isListening = ref(false);
+const voiceState = ref("idle"); // idle | starting | listening : lu du navigateur, jamais supposé
+const voiceInterim = ref("");
+const voiceNotice = ref(""); // raison honnête d'un échec ou d'une indisponibilité de la saisie vocale
+const voiceSupport = ref(checkVoiceSupport());
+const micPermission = ref("unknown");
+const isListening = computed(() => voiceState.value === "listening");
 const inputRef = ref(null);
 const searchRef = ref(null);
 const endRef = ref(null);
@@ -58,7 +64,7 @@ const aiStatus = ref(null); // { mode: "ai" | "demo", provider, model } — lu c
 const bannerOn = ref(true);
 const selectedTier = ref("");
 let nextId = 1;
-let speechRec = null;
+let voice = null;
 
 const inConversation = computed(() => messages.value.length > 0 || sending.value);
 const isDemo = computed(() => !aiStatus.value || aiStatus.value.mode === "demo");
@@ -152,41 +158,54 @@ function push(msg) {
 	messages.value.push({ id: nextId++, ...msg });
 }
 
-function toggleVoice() {
-	const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-	if (!SpeechRec) {
-		frappe.show_alert({ message: "La saisie vocale n'est pas disponible dans ce navigateur.", indicator: "orange" }, 5);
-		return;
+// Saisie vocale : reconnaissance du navigateur. Les échecs (permission, microphone, réseau, navigateur) sont expliqués.
+function voiceController() {
+	if (!voice) {
+		voice = createVoiceInput({
+			onState: (state) => {
+				voiceState.value = state;
+			},
+			onInterim: (value) => {
+				voiceInterim.value = value;
+			},
+			onTranscript: (value) => {
+				text.value = text.value ? `${text.value} ${value}` : value;
+				nextTick(resize);
+			},
+			onError: ({ code, message }) => {
+				voiceNotice.value = message;
+				if (code === "not-allowed" || code === "permission-denied") micPermission.value = "denied";
+			},
+		});
 	}
-	if (isListening.value) {
-		speechRec && speechRec.stop();
-		isListening.value = false;
-		return;
-	}
-	try {
-		speechRec = new SpeechRec();
-		speechRec.lang = "fr-CA";
-		speechRec.continuous = false;
-		speechRec.interimResults = false;
-		speechRec.onstart = () => {
-			isListening.value = true;
-		};
-		speechRec.onresult = (evt) => {
-			const transcript = evt.results[0][0].transcript;
-			text.value = text.value ? `${text.value} ${transcript}` : transcript;
-			nextTick(resize);
-		};
-		speechRec.onerror = () => {
-			isListening.value = false;
-		};
-		speechRec.onend = () => {
-			isListening.value = false;
-		};
-		speechRec.start();
-	} catch (e) {
-		isListening.value = false;
-	}
+	return voice;
 }
+
+function toggleVoice() {
+	voiceNotice.value = "";
+	if (voiceState.value !== "idle") {
+		voiceController().stop();
+		return;
+	}
+	voiceSupport.value = checkVoiceSupport();
+	if (!voiceSupport.value.ok) {
+		voiceNotice.value = voiceSupport.value.message;
+		return;
+	}
+	if (micPermission.value === "denied") {
+		// Chrome ne redemande pas : on le dit, puis on laisse le navigateur trancher (la personne a pu changer le réglage).
+		voiceNotice.value = "";
+	}
+	voiceController().start();
+}
+
+const voiceTitle = computed(() => {
+	if (!voiceSupport.value.ok) return `Saisie vocale indisponible : ${voiceSupport.value.message}`;
+	if (voiceState.value === "listening") return "Arrêter l'écoute";
+	if (voiceState.value === "starting") return "Autorisez le microphone si le navigateur le demande…";
+	if (micPermission.value === "denied") return "Microphone refusé : cliquez pour voir comment l'autoriser";
+	return `Saisie vocale. ${VOICE_PRIVACY_NOTE}`;
+});
 
 // Une carte lance son questionnaire dans la conversation ; rien n'est envoyé au modèle.
 function startFlow(flow) {
@@ -389,6 +408,9 @@ onMounted(() => {
 	refresh();
 	loadStatus();
 	publishState();
+	queryMicrophonePermission().then((state) => {
+		micPermission.value = state;
+	});
 	window.addEventListener("cortex-home:reset", newConversation);
 	document.addEventListener("click", onOutside);
 	document.addEventListener("keydown", onEscape);
@@ -396,6 +418,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+	if (voice) voice.abort();
 	window.removeEventListener("cortex-home:reset", newConversation);
 	document.removeEventListener("click", onOutside);
 	document.removeEventListener("keydown", onEscape);
@@ -478,6 +501,15 @@ defineExpose({ refresh });
 					@keydown="onKeydown"
 				></textarea>
 
+				<div id="cortex-voice-notice" class="ch-voice-notice" :class="{ 'is-error': voiceNotice }" role="status" aria-live="polite">
+					<template v-if="voiceNotice">
+						<span>{{ voiceNotice }}</span>
+						<button type="button" class="ch-voice-dismiss" aria-label="Fermer ce message" @click="voiceNotice = ''">×</button>
+					</template>
+					<span v-else-if="voiceState === 'starting'">En attente du microphone…</span>
+					<span v-else-if="voiceState === 'listening'">{{ voiceInterim || "J'écoute… parlez maintenant." }}</span>
+				</div>
+
 				<div class="ch-toolbar">
 					<!-- État réel du moteur, lu côté serveur : « Démonstration », ou le niveau Cortex choisi (jamais supposé) -->
 					<div class="ch-status-wrap">
@@ -526,7 +558,7 @@ defineExpose({ refresh });
 
 					<div class="ch-toolbar-spacer"></div>
 
-					<button type="button" class="ch-tool-btn ch-tool-mic" :class="{ 'is-listening': isListening }" :title="isListening ? 'Arrêter l\'écoute' : 'Activer la saisie vocale'" aria-label="Saisie vocale" :aria-pressed="isListening" @click="toggleVoice">
+					<button type="button" class="ch-tool-btn ch-tool-mic" :class="{ 'is-listening': isListening, 'is-starting': voiceState === 'starting', 'is-unavailable': !voiceSupport.ok || micPermission === 'denied' }" :title="voiceTitle" :aria-label="voiceTitle" :aria-pressed="isListening" :aria-disabled="!voiceSupport.ok" aria-describedby="cortex-voice-notice" @click="toggleVoice">
 						<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /></svg>
 					</button>
 
@@ -828,6 +860,42 @@ defineExpose({ refresh });
 .ch-tool-mic:hover:not(:disabled) {
 	background: #f1f5f9;
 	color: #0f172a;
+}
+
+.ch-tool-mic.is-unavailable {
+	color: #94a3b8;
+}
+
+.ch-tool-mic.is-starting {
+	opacity: 0.6;
+}
+
+.ch-voice-notice {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 0;
+	padding: 0 14px;
+	font-size: 12.5px;
+	color: #475569;
+}
+
+.ch-voice-notice:not(:empty) {
+	padding: 6px 14px 0;
+}
+
+.ch-voice-notice.is-error {
+	color: #b45309;
+}
+
+.ch-voice-dismiss {
+	margin-left: auto;
+	border: none;
+	background: transparent;
+	color: inherit;
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
 }
 
 .ch-tool-mic.is-listening {
@@ -1629,6 +1697,10 @@ defineExpose({ refresh });
 	.ch-fade-enter-active,
 	.ch-fade-leave-active {
 		transition: none;
+	}
+
+	.ch-tool-mic.is-listening {
+		animation: none;
 	}
 }
 

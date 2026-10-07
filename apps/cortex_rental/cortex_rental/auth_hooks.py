@@ -5,8 +5,10 @@ try:
 except ImportError:
     frappe = None
 
-# Pour l'instant l'arrivée se fait sur l'espace Cortex Rental; l'Accueil IA (`cortex-home`) reste ouvert à la demande.
-HOME_ROUTE = "cortex-rental"
+# Première page après la connexion : l'Assistant IA (décision de Kael, 2026-10-07). Les personnes dont aucun rôle ne
+# donne accès à cette Page retombent sur l'espace Cortex Rental plutôt que sur une erreur de droits.
+HOME_ROUTE = "cortex-home"
+FALLBACK_HOME_ROUTE = "cortex-rental"
 SIGNUP_TEMPLATE = "cortex_rental/templates/includes/cortex_signup.html"
 
 
@@ -46,6 +48,17 @@ def _company_identity() -> dict:
     return identity
 
 
+def home_route_for(user: str) -> str:
+    """Route d'arrivée de la personne : l'Assistant IA si l'un de ses rôles ouvre la Page, sinon l'espace Cortex Rental."""
+    try:
+        allowed = set(frappe.get_all("Has Role", filters={"parenttype": "Page", "parent": HOME_ROUTE}, pluck="role"))
+        if allowed and allowed.intersection(frappe.get_roles(user)):
+            return HOME_ROUTE
+    except Exception:
+        pass
+    return FALLBACK_HOME_ROUTE
+
+
 def boot_session(bootinfo) -> None:
     """Read-only: tell the Desk where people land after sign-in and whether the owner's setup is unfinished.
 
@@ -54,7 +67,7 @@ def boot_session(bootinfo) -> None:
     """
     if not frappe or frappe.session.user == "Guest":
         return
-    home = {"route": HOME_ROUTE, "setup_pending": False}
+    home = {"route": home_route_for(frappe.session.user), "setup_pending": False}
     if frappe.session.user != "Administrator":
         try:
             from cortex_rental.services import onboarding

@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## v0.8.0 — 2026-10-07
+
+Phases 1 et 2 du plan de livraison de Kael (`docs/frontend/CORTEX_UI_HANDOFF_V2.md`). **Codé et testé hors bench ; non essayé sur un Desk Frappe ni dans un navigateur.**
+
+### Corrigé
+- **Saisie vocale impossible** : l'en-tête `Permissions-Policy` interdisait le micro à toute la page (`microphone=()`); il l'autorise maintenant à Cortex seulement (`microphone=(self)`).
+- **« Cette location n'est pas disponible pour la société active »** à tort pour une personne autorisée sur plusieurs sociétés : l'action par location utilise désormais la société du dossier si la personne y est autorisée (`get_company_context_for_document`); une société hors de ses droits reste refusée.
+- **Grille de disponibilité** : les unités en quarantaine, en réparation, manquantes ou retirées ne comptent plus comme libres (comme la vérification qui fait foi).
+
+### Ajouté
+- **Saisie vocale honnête** (`cortexVoice.js`) : indisponibilité dite avant le clic, erreurs expliquées en français (permission, microphone, réseau, service, aucune voix), texte provisoire, reprise en `fr-FR`, zone d'état accessible.
+- **État réel du parc** dans Disponibilité (unités par état, matériel sorti) et **statistiques de la société** (Administration › Société et rôles, `account.company_stats`, chaque bloc selon les droits).
+- **Chargement par page** : barre fine et contenu estompé, respect de « moins d'animations ».
+- Arrivée sur l'Assistant IA (repli sur Cortex Rental sans droit d'accès), commande de repli de la barre latérale en bas du rail, barre repliée sur l'Assistant IA sans préférence enregistrée, libellé « Nom du projet ».
+- Tests : résolution de société, en-têtes, saisie vocale (Node), état du parc, statistiques, contrat de la phase 2.
+
+### Documentation
+- Le handoff décrivait comme codés des éléments absents du code (arrivée sur l'Assistant IA, repli de la barre, `X-Company-ID`, explications du dictaphone); corrigé et réellement implémenté.
+
 ## v0.7.0 — 2026-10-07
 
 Assistant IA refondu, interface pleine largeur, préparation à la production. Remplace les notes de v0.6.0 sur les actions « directes » de l'assistant : l'assistant ne crée plus rien de lui-même.

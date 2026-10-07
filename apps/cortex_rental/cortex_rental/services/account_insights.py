@@ -690,6 +690,105 @@ def team_roster(company: str, me: str, show_emails: bool) -> List[Dict[str, Any]
     return out
 
 
+# ---------------------------------------------------------------------------------------------- société
+
+OPEN_RENTAL_STATES = ("Reservation", "Contract", "Checked Out", "Partially Returned")
+
+
+def company_stats(company: str, user: str) -> Dict[str, Any]:
+    """Chiffres de la société (équipe, parc, clients, locations, facturation) lus dans les dossiers réels.
+
+    Chaque bloc n'est rempli que si la personne a le droit de lire les dossiers correspondants : `None` veut dire
+    « hors de vos droits », jamais « zéro ». Aucune estimation.
+    """
+    from cortex_rental.services import team_activity
+
+    since = add_days(now_datetime(), -30)
+    out: Dict[str, Any] = {
+        "period_days": 30,
+        "team": None,
+        "equipment": None,
+        "customers": None,
+        "rentals": None,
+        "billing": None,
+    }
+
+    members = team_activity.company_members(company)
+    if user not in members:
+        members.append(user)
+    out["team"] = {"active": frappe.db.count("User", {"name": ["in", members], "enabled": 1})}
+
+    profile = "Cortex Rental Item Profile"
+    if frappe.has_permission(profile, "read"):
+        equipment: Dict[str, Any] = {"items": frappe.db.count(profile, {"company": company}), "units": None}
+        try:
+            if frappe.db.table_exists("Serial No") and frappe.db.has_column("Serial No", "cortex_status"):
+                rows = frappe.db.sql(
+                    """
+                    SELECT COALESCE(cortex_status, 'Active') AS unit_state, COUNT(*) AS count
+                    FROM `tabSerial No` WHERE company = %(company)s GROUP BY unit_state
+                    """,
+                    {"company": company},
+                    as_dict=True,
+                )
+                equipment["units"] = {r.unit_state: int(r.count) for r in rows}
+        except Exception:
+            equipment["units"] = None
+        out["equipment"] = equipment
+
+    if frappe.has_permission("Customer", "read"):
+        out["customers"] = {"active": frappe.db.count("Customer", {"cortex_company": company, "disabled": 0})}
+
+    tx = "Cortex Rental Transaction"
+    if frappe.has_permission(tx, "read"):
+        by_state = {
+            r.rental_state: int(r.count)
+            for r in frappe.db.sql(
+                "SELECT rental_state, COUNT(*) AS count FROM `tabCortex Rental Transaction` "
+                "WHERE company = %(company)s GROUP BY rental_state",
+                {"company": company},
+                as_dict=True,
+            )
+        }
+        out["rentals"] = {
+            "by_state": by_state,
+            "open": sum(by_state.get(state, 0) for state in OPEN_RENTAL_STATES),
+            "quotes": by_state.get("Quote", 0),
+            "created": frappe.db.count(tx, {"company": company, "creation": [">=", since]}),
+            "late_returns": frappe.db.count(
+                tx, {"company": company, "rental_state": "Checked Out", "ends_at": ["<", now_datetime()]}
+            ),
+        }
+
+    invoice = "Cortex Rental Invoice"
+    if frappe.has_permission(invoice, "read"):
+        issued = frappe.get_all(
+            invoice,
+            filters={"company": company, "status": ["!=", "Cancelled"], "creation": [">=", since]},
+            fields=["sum(total) as total"],
+        )[0]
+        owing = frappe.get_all(
+            invoice,
+            filters={"company": company, "status": ["in", ["Issued", "Partially Paid"]]},
+            fields=["sum(balance) as balance", "count(name) as count"],
+        )[0]
+        billing: Dict[str, Any] = {
+            "invoiced": round(flt(issued.total), 2),
+            "outstanding": round(flt(owing.balance), 2),
+            "outstanding_count": int(owing.count or 0),
+            "collected": None,
+        }
+        if frappe.has_permission("Cortex Rental Payment", "read"):
+            paid = frappe.get_all(
+                "Cortex Rental Payment",
+                filters={"company": company, "creation": [">=", since]},
+                fields=["sum(signed_amount) as total"],
+            )[0]
+            billing["collected"] = round(flt(paid.total), 2)
+        out["billing"] = billing
+    return out
+
+
 # ---------------------------------------------------------------------------------------------- à faire
 def todo(user: str, company: str) -> List[Dict[str, Any]]:
     """Ce qui attend la personne maintenant, chaque ligne avec son lien d'action (aucun chiffre inventé)."""

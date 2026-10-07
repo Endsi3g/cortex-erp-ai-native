@@ -136,3 +136,10 @@ if frappe:
             "team": account_insights.team_roster(company, user, administration.can_manage_team(user)),
             "can_manage_team": bool(administration.can_manage_team(user)),
         }
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def company_stats():
+        """Chiffres de la société de la personne connectée ; un bloc hors de ses droits est renvoyé à `null`."""
+        user, company = _me()
+        return account_insights.company_stats(company, user)

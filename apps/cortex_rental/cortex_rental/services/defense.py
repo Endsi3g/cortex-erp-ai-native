@@ -171,7 +171,9 @@ def security_headers(response=None, request=None) -> None:
     headers.setdefault("X-Content-Type-Options", "nosniff")
     headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     headers.setdefault("X-Frame-Options", "SAMEORIGIN")
-    headers.setdefault("Permissions-Policy", "camera=(self), microphone=(), geolocation=(), payment=(self)")
+    # Le micro est permis à la page Cortex elle-même (saisie vocale de l'assistant), jamais à un contenu tiers intégré.
+    # `microphone=()` bloquait la reconnaissance vocale pour tout le monde, quel que soit le réglage du navigateur.
+    headers.setdefault("Permissions-Policy", "camera=(self), microphone=(self), geolocation=(), payment=(self)")
     secure = bool(request is not None and (request.is_secure or request.headers.get("X-Forwarded-Proto") == "https"))
     if secure and not (frappe and frappe.conf.get("developer_mode")):
         headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")

@@ -614,6 +614,30 @@ cortex.AccountPage = class AccountPage {
 			"",
 			`<div class="cx-co-head">${d.company_logo ? `<img src="${this.esc(d.company_logo)}" alt="" class="cx-co-logo">` : ""}<div><h2>${this.esc(d.company_title || d.company || "—")}</h2><p class="cx-co-role"><b>${this.esc(__(d.role.label))}</b> <span>${this.esc(__(d.role.help))}</span></p></div></div><div class="cx-cta-row cx-co-cta" hidden></div>`
 		);
+		const stats = this.card(__("Votre société en chiffres"), __("Lus dans vos dossiers. Une tuile absente veut dire que votre rôle ne donne pas accès à ces données."), `<div class="cx-co-stats"><p class="cx-acct-muted">${__("Chargement…")}</p></div>`);
+		this.call("company_stats").then((c) => {
+			const tile = (label, value, href, note) => `<a class="cx-hero-num" href="${this.esc(href || "#")}"><b>${value}</b><span>${label}</span>${note ? `<small>${note}</small>` : ""}</a>`;
+			const tiles = [];
+			if (c.team) tiles.push(tile(__("Personnes actives"), this.n(c.team.active), "/app/cortex-admin"));
+			if (c.customers) tiles.push(tile(__("Clients actifs"), this.n(c.customers.active), "/app/customer"));
+			if (c.equipment) {
+				const u = c.equipment.units;
+				const out = u ? Object.entries(u).filter(([k]) => k !== "Active" && u[k]).map(([k, n]) => `${n} ${__(({ Quarantine: "en quarantaine", "Under Repair": "en réparation", Missing: "manquant", Decommissioned: "retiré" })[k] || k)}`).join(" · ") : "";
+				tiles.push(tile(__("Équipements au catalogue"), this.n(c.equipment.items), "/app/cortex-rental-item-profile", u ? `${this.n(u.Active || 0)} ${__("unités actives")}${out ? " · " + out : ""}` : ""));
+			}
+			if (c.rentals) {
+				tiles.push(tile(__("Locations en cours"), this.n(c.rentals.open), "/app/cortex-rental-transaction?rental_state=%5B%22in%22%2C%5B%22Reservation%22%2C%22Contract%22%2C%22Checked%20Out%22%5D%5D"));
+				tiles.push(tile(__("Devis ouverts"), this.n(c.rentals.quotes), "/app/cortex-rental-transaction?rental_state=Quote"));
+				tiles.push(tile(__("Créés en {0} jours", [c.period_days]), this.n(c.rentals.created), "/app/cortex-rental-transaction"));
+				tiles.push(tile(__("Retours en retard"), this.n(c.rentals.late_returns), "/app/cortex-rental-transaction?rental_state=Checked%20Out", c.rentals.late_returns ? __("à relancer") : ""));
+			}
+			if (c.billing) {
+				tiles.push(tile(__("Facturé en {0} jours", [c.period_days]), this.money(c.billing.invoiced), "/app/cortex-rental-invoice"));
+				if (c.billing.collected !== null) tiles.push(tile(__("Encaissé en {0} jours", [c.period_days]), this.money(c.billing.collected), "/app/cortex-rental-payment"));
+				tiles.push(tile(__("Solde dû"), this.money(c.billing.outstanding), "/app/cortex-rental-invoice?status=%5B%22in%22%2C%5B%22Issued%22%2C%22Partially%20Paid%22%5D%5D", `${this.n(c.billing.outstanding_count)} ${__("factures")}`));
+			}
+			stats.find(".cx-co-stats").html(tiles.length ? `<div class="cx-hero-nums">${tiles.join("")}</div>` : `<p class="cx-acct-muted">${__("Votre rôle ne donne accès à aucune statistique de la société.")}</p>`);
+		}).catch(() => stats.find(".cx-co-stats").html(`<p class="cx-acct-muted">${__("Les statistiques sont indisponibles pour le moment. Réessayez dans un instant.")}</p>`));
 		const ai = this.card(__("Assistant IA ce mois-ci"), __("Consommation de votre société."), `<div class="cx-acct-ai"><p class="cx-acct-muted">${__("Chargement…")}</p></div>`);
 		const rights = this.card(__("Mes droits"), __("Ce que votre compte peut faire, écran par écran. Ils découlent de votre rôle : un administrateur peut les ajuster dans « Équipe et règles »."), `<div class="cx-acct-muted">${__("Chargement…")}</div>`);
 		const team = this.card(__("Mon équipe"), __("Les personnes actives de votre société et leur rôle."), `<div class="cx-acct-muted">${__("Chargement…")}</div>`);
@@ -636,6 +660,6 @@ cortex.AccountPage = class AccountPage {
 			const note = u.economy ? __("Plafond atteint : l'assistant utilise un modèle plus économique.") : u.blocked ? __("Plafond dépassé : l'assistant est en pause jusqu'au mois prochain.") : u.warning ? __("Vous approchez du plafond mensuel.") : "";
 			$box.html(`<div class="cx-acct-bar" role="img" aria-label="${pct} %"><i style="width:${pct}%"></i></div><p><strong>${label}</strong> · ${u.calls} ${__("appels")}${u.cost_cap ? ` · ${u.percent} %` : ""}</p>${note ? `<p class="cx-acct-note">${note}</p>` : ""}`);
 		});
-		this.$body.append(head, ai, rights, team);
+		this.$body.append(head, stats, ai, rights, team);
 	}
 };

@@ -51,6 +51,7 @@ app_include_js = [
     "cortex_copilot.bundle.js",
     "/assets/cortex_rental/js/cortex_desk.js",
     "/assets/cortex_rental/js/cortex_nav.js",
+    "/assets/cortex_rental/js/cortex_loading.js",
     "/assets/cortex_rental/js/cortex_pages.js",
     "/assets/cortex_rental/js/cortex_policy.js",
     "/assets/cortex_rental/js/cortex_dossier.js",

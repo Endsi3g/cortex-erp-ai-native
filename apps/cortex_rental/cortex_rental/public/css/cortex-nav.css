@@ -106,6 +106,17 @@ body.cx-nav-on [data-page-route="Workspaces"] .layout-main-section-wrapper {
 	background: var(--cx-nav-hover);
 	color: var(--cortex-text, #09090b);
 }
+/* Commande de repli : en bas du rail, au-dessus du profil. */
+.cx-nav-foot {
+	flex: 0 0 auto;
+	display: flex;
+	justify-content: flex-end;
+	padding: 4px 10px;
+}
+body.cx-nav-collapsed .cx-nav-foot {
+	justify-content: center;
+	padding-inline: 0;
+}
 
 .cx-nav-scroll {
 	display: flex;
@@ -604,7 +615,8 @@ body.cx-nav-collapsed .cx-badge {
 	body.cx-nav-collapsed .cx-sub {
 		display: grid;
 	}
-	.cx-nav-toggle {
+	.cx-nav-toggle,
+	.cx-nav-foot {
 		display: none;
 	}
 	.cx-nav-burger {

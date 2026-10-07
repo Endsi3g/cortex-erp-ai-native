@@ -131,6 +131,7 @@
 			this.badges = {};
 			this.groups = JSON.parse(store(GROUP_STORE) || "{}");
 			this.build();
+			this.autoCollapse();
 			this.buildPresence();
 			this.bind();
 			this.refreshActive();
@@ -142,14 +143,14 @@
 		build() {
 			document.body.classList.add("cx-nav-on");
 			const saved = store(STORE);
-			document.body.classList.toggle("cx-nav-collapsed", saved === null ? SHORT.matches : saved === "1");
+			if (saved !== null) document.body.classList.toggle("cx-nav-collapsed", saved === "1");
 
 			const nav = el("nav", { id: "cx-nav", "aria-label": __("Navigation principale") });
 			const head = el("div", { class: "cx-nav-head" });
 			const brand = el("a", { class: "cx-brand", href: "/app/cortex-rental", "aria-label": "Cortex" }, `<img src="${frappe.boot.app_logo_url || "/assets/cortex_rental/images/cortex-logo.svg"}" alt="" width="26" height="26"><span class="cx-label">Cortex</span>`);
 			const toggle = el("button", { type: "button", class: "cx-nav-toggle", "aria-label": __("Réduire ou agrandir le menu"), title: __("Réduire ou agrandir le menu") }, PANEL);
 			toggle.addEventListener("click", () => this.toggleCollapsed());
-			head.append(brand, toggle);
+			head.appendChild(brand);
 			nav.appendChild(head);
 
 			const scroll = el("div", { class: "cx-nav-scroll" });
@@ -221,6 +222,10 @@
 			new MutationObserver(() => window.setTimeout(refreshMore, 120)).observe(document.body, { attributes: true, attributeFilter: ["class"] });
 			window.setTimeout(refreshMore, 400);
 			nav.appendChild(scroll);
+			// La commande de repli vit en bas du rail, juste au-dessus du profil (ouvert ou replié).
+			const foot = el("div", { class: "cx-nav-foot" });
+			foot.appendChild(toggle);
+			nav.appendChild(foot);
 			nav.appendChild(this.account());
 
 			const backdrop = el("div", { id: "cx-nav-backdrop" });
@@ -283,12 +288,12 @@
 		identity() {
 			const home = (frappe.boot && frappe.boot.cortex_home) || {};
 			if (!home.company) return null;
-			const card = el("a", { class: "cx-company", href: "/app/cortex-rental", title: home.company });
+			const card = el("a", { class: "cx-company", href: "/app/cortex-account/societe", title: `${home.company} — ${__("Statistiques et équipe")}` });
 			const mark = home.company_logo
 				? `<img src="${frappe.utils.escape_html(home.company_logo)}" alt="" width="28" height="28">`
 				: `<span class="cx-company-initials" style="background:${tint(home.company)}">${frappe.utils.escape_html(initials(home.company))}</span>`;
 			card.innerHTML = `${mark}<span class="cx-label cx-company-text"><strong>${frappe.utils.escape_html(home.company)}</strong><small>${__("Votre société")}</small></span>`;
-			card.addEventListener("click", (e) => this.go(e, "/app/cortex-rental"));
+			card.addEventListener("click", (e) => this.go(e, "/app/cortex-account/societe"));
 			return card;
 		}
 
@@ -360,11 +365,10 @@
 				cortex.previousRoute = cortex.currentRoute;
 				cortex.currentRoute = window.location.pathname;
 				this.refreshActive();
+				this.autoCollapse();
 				this.closeDrawer();
 			});
-			SHORT.addEventListener("change", () => {
-				if (store(STORE) === null) document.body.classList.toggle("cx-nav-collapsed", SHORT.matches);
-			});
+			SHORT.addEventListener("change", () => this.autoCollapse());
 			document.addEventListener("keydown", (e) => {
 				if (e.key === "Escape") {
 					this.toggleActivity(false);
@@ -427,6 +431,14 @@
 				const section = current.wrap.closest(".cx-group");
 				if (section && section.classList.contains("closed")) section.classList.remove("closed");
 			}
+		}
+
+		// Sans préférence enregistrée par la personne : barre repliée sur l'Assistant IA (page de conversation) et sur
+		// petit écran, ouverte ailleurs. Une préférence explicite (bouton de repli) gagne toujours.
+		autoCollapse() {
+			if (store(STORE) !== null) return;
+			const onAssistant = (this.parts()[0] || "") === "cortex-home";
+			document.body.classList.toggle("cx-nav-collapsed", onAssistant || SHORT.matches);
 		}
 
 		// --- menu

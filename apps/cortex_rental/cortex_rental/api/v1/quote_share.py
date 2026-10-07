@@ -13,7 +13,11 @@ except ImportError:
     frappe = None
 
 from cortex_rental.services import defense
-from cortex_rental.permissions.agent_scopes import get_company_context, require_human_staff_role
+from cortex_rental.permissions.agent_scopes import (
+    get_company_context,
+    get_company_context_for_document,
+    require_human_staff_role,
+)
 from cortex_rental.services import quote_share
 
 WEBHOOK_MAX_BYTES = 1024 * 1024
@@ -31,7 +35,7 @@ if frappe:
         valid_days: int = quote_share.DEFAULT_DAYS,
     ):
         require_human_staff_role()
-        company = get_company_context()
+        company = get_company_context_for_document("Cortex Rental Transaction", rental_id)
         tx = frappe.get_doc("Cortex Rental Transaction", rental_id)
         if tx.company != company:
             frappe.throw("Cette location n'est pas disponible pour la société active.", frappe.PermissionError)
@@ -51,7 +55,7 @@ if frappe:
     @defense.safe_input
     def list_shares(rental_id: str):
         require_human_staff_role()
-        company = get_company_context()
+        company = get_company_context_for_document("Cortex Rental Transaction", rental_id)
         if frappe.db.get_value("Cortex Rental Transaction", rental_id, "company") != company:
             frappe.throw("Cette location n'est pas disponible pour la société active.", frappe.PermissionError)
         rows = frappe.get_list(

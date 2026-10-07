@@ -142,6 +142,18 @@ function shortDate(value) {
 	return d.toLocaleDateString("fr-CA", { day: "numeric", month: "short" }).replace(".", "");
 }
 
+// État réel des unités (Serial No · cortex_status) tel que renvoyé par le serveur ; jamais déduit ici.
+const UNIT_STATE_LABELS = { Active: "actif", Quarantine: "en quarantaine", "Under Repair": "en réparation", Missing: "manquant", Decommissioned: "retiré" };
+const UNIT_STATE_TONE = { Active: "ok", Quarantine: "warn", "Under Repair": "warn", Missing: "bad", Decommissioned: "muted" };
+function unitChips(item) {
+	const states = item.unit_states;
+	if (!states) return [];
+	return Object.entries(states)
+		.filter(([, n]) => n > 0)
+		.sort(([a], [b]) => Object.keys(UNIT_STATE_LABELS).indexOf(a) - Object.keys(UNIT_STATE_LABELS).indexOf(b))
+		.map(([state, n]) => ({ state, n, label: `${n} ${UNIT_STATE_LABELS[state] || state}${n > 1 && !UNIT_STATE_LABELS[state] ? "s" : ""}`, tone: UNIT_STATE_TONE[state] || "muted" }));
+}
+
 const STATUS_TEXT = { ok: "libre", partial: "partiellement réservé", full: "complet", none: "aucun parc" };
 
 function cellLabel(row, day, c) {
@@ -361,7 +373,11 @@ defineExpose({ load, setCategory });
 					<tr v-for="row in groupRows" :key="row.item.item_code">
 						<th scope="row" class="cx-sticky">
 							<span class="cx-name" :title="row.item.item_code">{{ row.item.item_name }}</span>
-							<span class="cx-code">parc {{ row.item.fleet_quantity }}</span>
+							<span class="cx-code">parc réservable {{ row.item.fleet_quantity }}</span>
+							<span v-if="row.item.unit_states || row.item.out_now" class="cx-units" aria-label="État du parc">
+								<span v-for="chip in unitChips(row.item)" :key="chip.state" class="cx-unit" :class="`cx-unit-${chip.tone}`">{{ chip.label }}</span>
+								<span v-if="row.item.out_now" class="cx-unit cx-unit-out">{{ row.item.out_now }} sorti{{ row.item.out_now > 1 ? "s" : "" }}</span>
+							</span>
 						</th>
 						<td v-for="(c, i) in row.cells" :key="days[i].ymd" :class="{ 'cx-weekend': days[i].weekend }">
 							<button
@@ -700,6 +716,26 @@ thead .cx-sticky {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
+.cx-units {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 3px;
+}
+.cx-unit {
+	padding: 1px 6px;
+	border-radius: 999px;
+	font-size: 10.5px;
+	line-height: 1.5;
+	font-weight: 500;
+	border: 1px solid var(--cx-line, #e5e7eb);
+	color: #475569;
+	background: #f8fafc;
+}
+.cx-unit-ok { color: #166534; background: #f0fdf4; border-color: #bbf7d0; }
+.cx-unit-warn { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+.cx-unit-bad { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+.cx-unit-out { color: #1e40af; background: #eff6ff; border-color: #bfdbfe; }
 .cx-code {
 	display: inline-block;
 	margin-left: 8px;

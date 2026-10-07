@@ -11,7 +11,7 @@ from cortex_rental.permissions.agent_scopes import (
     require_human_staff_role,
     get_company_context,
 )
-from cortex_rental.services.availability import AvailabilityService
+from cortex_rental.services.availability import UNAVAILABLE_SERIAL_STATUSES, AvailabilityService
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.agent_telemetry import log_tool_call
 
@@ -183,6 +183,7 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     item_codes = [p.item_code for p in profiles]
 
     fleet_by_item: Dict[str, float] = {}
+    unit_states: Dict[str, Dict[str, int]] = {}
     serialized_codes = [p.item_code for p in profiles if p.is_serialized]
     has_serial_table = False
     try:
@@ -191,30 +192,37 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     except Exception:
         has_serial_table = False
 
+    for p in profiles:
+        fleet_by_item[p.item_code] = float(p.total_quantity or 0)
+
     if serialized_codes and frappe and has_serial_table:
         try:
+            # État réel de chaque unité (`cortex_status`) : la grille compte comme parc seulement les unités
+            # réservables, comme la vérification qui fait foi (`AvailabilityService`), et montre le reste à part.
+            has_status = bool(frappe.db.has_column("Serial No", "cortex_status"))
+            status_expr = "COALESCE(cortex_status, 'Active')" if has_status else "'Active'"
             counts = frappe.db.sql(
-                """
-                SELECT item_code, COUNT(*) AS count
+                f"""
+                SELECT item_code, {status_expr} AS unit_state, COUNT(*) AS count
                 FROM `tabSerial No`
                 WHERE company = %(company)s AND item_code IN %(item_codes)s
-                GROUP BY item_code
+                GROUP BY item_code, unit_state
                 """,
                 {"company": company, "item_codes": tuple(serialized_codes)},
                 as_dict=True,
             )
-            count_map = {row.item_code: float(row.count) for row in counts}
-            for p in profiles:
-                if p.is_serialized:
-                    fleet_by_item[p.item_code] = count_map.get(p.item_code, 0.0)
-                else:
-                    fleet_by_item[p.item_code] = float(p.total_quantity or 0)
+            for row in counts:
+                unit_states.setdefault(row.item_code, {})[row.unit_state or "Active"] = int(row.count)
+            for code in serialized_codes:
+                states = unit_states.get(code, {})
+                fleet_by_item[code] = float(
+                    sum(count for state, count in states.items() if state not in UNAVAILABLE_SERIAL_STATUSES)
+                )
         except Exception:
+            # Lecture impossible : on retombe sur la quantité du profil, sans rien inventer sur l'état des unités.
+            unit_states = {}
             for p in profiles:
                 fleet_by_item[p.item_code] = float(p.total_quantity or 0)
-    else:
-        for p in profiles:
-            fleet_by_item[p.item_code] = float(p.total_quantity or 0)
 
     blocks_by_item: Dict[str, List[Dict[str, Any]]] = {code: [] for code in item_codes}
     has_trx_table = False
@@ -261,6 +269,25 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
                 }
             )
 
+    # Matériel actuellement sorti (état « Sorti »), quelle que soit la période affichée : un retour en retard compte.
+    out_now: Dict[str, float] = {}
+    if item_codes and frappe and has_trx_table:
+        try:
+            for row in frappe.db.sql(
+                """
+                SELECT ti.item_code, SUM(ti.qty) AS qty
+                FROM `tabCortex Rental Transaction Item` ti
+                JOIN `tabCortex Rental Transaction` t ON t.name = ti.parent
+                WHERE t.company = %(company)s AND ti.item_code IN %(item_codes)s AND t.rental_state = 'Checked Out'
+                GROUP BY ti.item_code
+                """,
+                {"company": company, "item_codes": item_codes},
+                as_dict=True,
+            ):
+                out_now[row.item_code] = float(row.qty or 0)
+        except Exception:
+            out_now = {}
+
     items_response = []
     for p in profiles:
         code = p.item_code
@@ -281,6 +308,9 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
                 "category": p.category,
                 "is_serialized": bool(p.is_serialized),
                 "fleet_quantity": fleet_by_item.get(code, 0),
+                # None = état des unités inconnu (article non sérialisé ou lecture impossible) : jamais deviné.
+                "unit_states": unit_states.get(code) if p.is_serialized and code in unit_states else None,
+                "out_now": out_now.get(code, 0),
                 "blocks": item_blocks,
                 "has_conflict": blocking_qty > fleet_by_item.get(code, 0),
             }
