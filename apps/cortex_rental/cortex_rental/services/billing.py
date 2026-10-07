@@ -346,7 +346,21 @@ def record_payment(
         }
     )
     doc.insert(ignore_permissions=ignore_permissions)
+    _sync_share_payment(invoice)
     return doc
+
+
+def _sync_share_payment(invoice: str) -> None:
+    """Quand l'acompte d'un devis partagé est entièrement payé (par chèque ou autrement), la page du client le sait."""
+    try:
+        if frappe.db.get_value(INVOICE, invoice, "status") != "Paid":
+            return
+        for name in frappe.get_all(
+            "Cortex Quote Share", filters={"deposit_invoice": invoice, "payment_status": ["!=", "Paid"]}, pluck="name"
+        ):
+            frappe.db.set_value("Cortex Quote Share", name, "payment_status", "Paid")
+    except Exception:
+        frappe.log_error(title="Cortex share payment sync failed")
 
 
 def validate_payment(doc) -> None:

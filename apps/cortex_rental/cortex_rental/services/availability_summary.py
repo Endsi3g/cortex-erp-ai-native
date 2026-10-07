@@ -67,3 +67,49 @@ def summarize(items: List[Dict[str, Any]], starts_at: Any, ends_at: Any, now: da
             }
         )
     return rows
+
+
+def day_statuses(items: List[Dict[str, Any]], first_day: Any, days: int, now: datetime) -> List[Dict[str, Any]]:
+    """Pur : un statut par jour et par équipement, sans aucune quantité ni nom de client (affichage public).
+
+    ok = libre; partial = en partie réservé ou retenu; full = complet; none = aucun parc réservable.
+    Même règle que la grille interne (réservations, contrats et sorties bloquent; un devis retient tant que sa retenue
+    est valide)."""
+    first = _day_start(first_day)
+    if days < 1 or days > MAX_DAYS:
+        raise ValueError(f"La période doit compter de 1 à {MAX_DAYS} jours.")
+    now_text = now.strftime(FMT)
+    rows = []
+    for item in items:
+        fleet = float(item.get("fleet_quantity") or 0)
+        statuses = []
+        for offset in range(days):
+            start = (first + timedelta(days=offset)).strftime(FMT)
+            end = (first + timedelta(days=offset + 1)).strftime(FMT)
+            overlapping = [
+                b for b in item.get("blocks") or [] if str(b["starts_at"]) < end and str(b["ends_at"]) > start
+            ]
+            booked = sum(float(b.get("qty") or 0) for b in overlapping if b.get("rental_state") in BLOCKING)
+            held = sum(
+                float(b.get("qty") or 0)
+                for b in overlapping
+                if b.get("rental_state") == "Quote" and b.get("hold_until") and str(b["hold_until"]) > now_text
+            )
+            free = fleet - booked - held
+            if fleet <= 0:
+                statuses.append("none")
+            elif free <= 0:
+                statuses.append("full")
+            elif booked + held > 0:
+                statuses.append("partial")
+            else:
+                statuses.append("ok")
+        rows.append(
+            {
+                "item_code": item.get("item_code"),
+                "item_name": item.get("item_name"),
+                "category": item.get("category"),
+                "days": statuses,
+            }
+        )
+    return rows

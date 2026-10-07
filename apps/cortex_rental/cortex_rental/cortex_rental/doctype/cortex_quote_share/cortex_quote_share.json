@@ -46,7 +46,8 @@
     "sb_tech",
     "rental_version",
     "token_hash",
-    "snapshot_json"
+    "snapshot_json",
+    "payment_method_choice"
   ],
   "fields": [
     {
@@ -261,6 +262,13 @@
       "label": "Instantané du devis",
       "read_only": 1,
       "hidden": 1
+    },
+    {
+      "fieldname": "payment_method_choice",
+      "fieldtype": "Select",
+      "label": "Mode de paiement choisi",
+      "options": "\nOnline\nCheque",
+      "read_only": 1
     }
   ],
   "permissions": [

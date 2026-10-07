@@ -126,6 +126,13 @@ if frappe:
 
     @frappe.whitelist(allow_guest=True, methods=["POST"])
     @defense.safe_input
+    @rate_limit(limit=20, seconds=60 * 60)
+    def choose_cheque(token: str = ""):
+        """Client : annonce un paiement par chèque pour l'acompte (facture créée, équipe prévenue, rien n'est marqué payé)."""
+        return quote_share.choose_cheque(token)
+
+    @frappe.whitelist(allow_guest=True, methods=["POST"])
+    @defense.safe_input
     @rate_limit(limit=600, seconds=60)
     def stripe_webhook():
         """Stripe : confirmation signée d'un paiement. La signature est vérifiée avec le secret de la société concernée."""

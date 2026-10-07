@@ -54,7 +54,13 @@
     "acct_revenue",
     "acct_late_fees",
     "acct_damages",
-    "allow_sole_approver_self_approval"
+    "allow_sole_approver_self_approval",
+    "sb_portal",
+    "portal_requests_enabled",
+    "portal_slug",
+    "cb_portal",
+    "accept_cheque",
+    "cheque_payable_to"
   ],
   "fields": [
     {
@@ -306,6 +312,41 @@
       "label": "Le seul approbateur peut décider de ses propres demandes",
       "default": "0",
       "description": "Désactivé par défaut. À activer seulement après avoir lu ce que cela change : ouvrez « Mon compte › Société et rôles » ou la liste des approbations (bouton « Comprendre et décider »)."
+    },
+    {
+      "fieldname": "sb_portal",
+      "fieldtype": "Section Break",
+      "label": "Portail client et chèques"
+    },
+    {
+      "fieldname": "portal_requests_enabled",
+      "fieldtype": "Check",
+      "label": "Portail de demandes activé",
+      "default": "0",
+      "description": "Les visiteurs peuvent envoyer une demande et voir les disponibilités à l'adresse /demande/<identifiant>."
+    },
+    {
+      "fieldname": "portal_slug",
+      "fieldtype": "Data",
+      "label": "Identifiant du portail",
+      "description": "3 à 40 caractères : minuscules, chiffres et tirets (ex. studio-mont-royal). Unique."
+    },
+    {
+      "fieldname": "cb_portal",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "accept_cheque",
+      "fieldtype": "Check",
+      "label": "Paiement par chèque accepté",
+      "default": "0",
+      "description": "Le client peut annoncer un chèque pour l'acompte; vous enregistrez le paiement à sa réception."
+    },
+    {
+      "fieldname": "cheque_payable_to",
+      "fieldtype": "Data",
+      "label": "Chèque à l'ordre de",
+      "description": "Affiché au client avec la référence de la facture."
     }
   ],
   "permissions": [

@@ -24,6 +24,8 @@ app_color = "#047857"
 # own styling and isn't part of the Desk chrome these files target.
 website_route_rules = [
     {"from_route": "/devis/<token>", "to_route": "devis"},
+    {"from_route": "/demande/<slug>", "to_route": "demande"},
+    {"from_route": "/suivi/<token>", "to_route": "suivi"},
 ]
 
 app_include_css = [

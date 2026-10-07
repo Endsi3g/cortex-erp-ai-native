@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>{{ title }}</title>
+<style>
+:root{--bg:#fbfbfa;--text:#141414;--muted:#6a6a65;--line:#ececea;--brand:#066336;--brand-ink:#fff;--soft:#f1f1ef;--ok:#0b6b3a;--warn:#8a4b00;--bad:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#101211;--text:#f1f1ef;--muted:#a1a19b;--line:#242726;--brand:#3fbf80;--brand-ink:#06150e;--soft:#191c1b;--ok:#5fd39b;--warn:#ffcf8a;--bad:#ff9b8f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 "Plus Jakarta Sans",Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:16px 16px 48px}
+.top{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.top img{width:28px;height:28px;object-fit:contain;border-radius:6px}.top b{font-weight:600}
+h1{font-size:20px;margin:16px 0 4px}h2{font-size:15px;margin:22px 0 8px}
+p{margin:0 0 8px}.muted{color:var(--muted);font-size:13.5px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
+input,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text)}
+input[type=checkbox]{width:auto}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+button{font:inherit;font-weight:600;border-radius:10px;padding:0 16px;height:44px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer}
+button.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+button:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.cal{overflow-x:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px}
+.cal table{border-collapse:collapse;width:100%;font-size:12.5px}
+.cal th,.cal td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.cal th:first-child,.cal td:first-child{text-align:left;position:sticky;left:0;background:var(--bg)}
+.st-ok{color:var(--ok)}.st-partial{color:var(--warn)}.st-full{color:var(--bad)}.st-none{color:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:12.5px;color:var(--muted)}
+.err{color:var(--bad);font-size:13.5px;margin:8px 0 0}
+.done{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.chk{display:flex;gap:8px;align-items:flex-start;color:var(--text);font-size:13.5px}
+@media (prefers-reduced-motion:no-preference){button{transition:opacity .15s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+{% if state == "closed" %}
+	<h1>Ce portail n'est pas disponible</h1>
+	<p class="muted">Le lien est peut-être incorrect, ou l'entreprise n'accepte pas de demandes en ligne pour le moment.</p>
+{% else %}
+	<div class="top">{% if info.logo %}<img src="{{ info.logo | e }}" alt="">{% endif %}<b>{{ info.name }}</b></div>
+	<h1>Demander une location</h1>
+	<p class="muted">Dites-nous quand et quoi. Une demande ne réserve rien : l'équipe vérifie la disponibilité et vous répond avec un devis.</p>
+
+	<form id="req" novalidate autocomplete="on">
+		<div class="hp" aria-hidden="true"><label for="website">Ne pas remplir</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+		<div class="row2">
+			<div><label for="starts">Début</label><input id="starts" type="date" required></div>
+			<div><label for="ends">Fin</label><input id="ends" type="date" required></div>
+		</div>
+		<p style="margin-top:10px"><button type="button" id="load">Voir le matériel disponible</button></p>
+		<p class="muted" id="cal-note" role="status"></p>
+		<div class="legend" id="legend" hidden><span class="st-ok">● Libre</span><span class="st-partial">◐ Limité</span><span class="st-full">✕ Complet</span><span class="st-none">— Non offert</span></div>
+		<div class="cal" id="cal" hidden></div>
+
+		<h2>Vos coordonnées</h2>
+		<div class="row2">
+			<div><label for="name">Nom</label><input id="name" autocomplete="name" maxlength="80" required></div>
+			<div><label for="email">Courriel</label><input id="email" type="email" autocomplete="email" maxlength="254" required></div>
+		</div>
+		<div class="row2">
+			<div><label for="phone">Téléphone (facultatif)</label><input id="phone" type="tel" autocomplete="tel" maxlength="25"></div>
+			<div><label for="organisation">Entreprise (facultatif)</label><input id="organisation" autocomplete="organization" maxlength="120"></div>
+		</div>
+		<label for="project">Projet (facultatif)</label><input id="project" maxlength="120">
+		<label for="message">Votre besoin</label><textarea id="message" rows="4" maxlength="1500" placeholder="Ex. : tournage de 2 jours, 2 caméras, éclairage…"></textarea>
+		<label class="chk" style="margin-top:12px"><input type="checkbox" id="consent"><span>J'accepte d'être contacté au sujet de cette demande. Mes renseignements ne servent qu'à y répondre.</span></label>
+		<p class="err" id="err" role="alert" hidden></p>
+		<p style="margin-top:14px"><button type="submit" class="primary" id="send">Envoyer la demande</button></p>
+	</form>
+
+	<div class="done" id="done" hidden role="status">
+		<h2 style="margin-top:0">Demande reçue</h2>
+		<p>Merci ! L'équipe vous répondra par courriel. Conservez ce lien pour suivre l'avancement :</p>
+		<p><a id="track-link" href="#"></a></p>
+		<p class="muted">Ce lien est personnel : toute personne qui l'a peut voir l'état de votre demande.</p>
+	</div>
+
+<script>
+(function(){
+var SLUG={{ slug | tojson }};
+var chosen={};
+var $=function(id){return document.getElementById(id);};
+var today=new Date().toISOString().slice(0,10);
+$("starts").min=today;$("ends").min=today;
+function api(method,type,params){
+  var url="/api/method/cortex_rental.api.v1.client_portal."+method;
+  var opts={headers:{"Accept":"application/json"}};
+  if(type==="GET"){url+="?"+new URLSearchParams(params).toString();}
+  else{opts.method="POST";opts.headers["Content-Type"]="application/json";opts.body=JSON.stringify(params);}
+  return fetch(url,opts).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});});
+}
+function message(res,fallback){
+  try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)return JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
+  return fallback;
+}
+var SYM={ok:"●",partial:"◐",full:"✕",none:"—"},TXT={ok:"libre",partial:"limité",full:"complet",none:"non offert"};
+function render(data){
+  var cal=$("cal");cal.textContent="";
+  var table=document.createElement("table"),head=table.createTHead().insertRow();
+  var th=document.createElement("th");th.textContent="Matériel";head.appendChild(th);
+  data.days.forEach(function(d){var h=document.createElement("th");h.textContent=d.slice(8)+"/"+d.slice(5,7);h.scope="col";head.appendChild(h);});
+  var body=table.createTBody();
+  data.items.forEach(function(item){
+    var tr=body.insertRow(),first=tr.insertCell(),box=document.createElement("input");
+    box.type="checkbox";box.id="it-"+item.item_code;box.checked=!!chosen[item.item_code];
+    box.addEventListener("change",function(){if(box.checked)chosen[item.item_code]=item.item_name;else delete chosen[item.item_code];});
+    var lab=document.createElement("label");lab.htmlFor=box.id;lab.style.display="inline";lab.style.color="inherit";lab.style.marginLeft="6px";lab.textContent=item.item_name;
+    first.appendChild(box);first.appendChild(lab);
+    item.days.forEach(function(s,i){var td=tr.insertCell();td.className="st-"+s;td.textContent=SYM[s];td.setAttribute("aria-label",item.item_name+", "+data.days[i]+" : "+TXT[s]);});
+  });
+  cal.appendChild(table);cal.hidden=false;$("legend").hidden=false;
+  $("cal-note").textContent=data.items.length?data.note:"Aucun matériel n'est présenté pour le moment : décrivez votre besoin ci-dessous.";
+}
+$("load").addEventListener("click",function(){
+  var s=$("starts").value,e=$("ends").value;$("err").hidden=true;
+  if(!s||!e){$("cal-note").textContent="Choisissez d'abord le début et la fin.";return;}
+  this.disabled=true;var b=this;$("cal-note").textContent="Chargement…";
+  api("portal_calendar","GET",{slug:SLUG,starts:s,ends:e}).then(function(res){
+    b.disabled=false;
+    if(res.ok&&res.j.message){render(res.j.message);return;}
+    $("cal-note").textContent=message(res,"Le calendrier est indisponible pour le moment.");
+  }).catch(function(){b.disabled=false;$("cal-note").textContent="Connexion impossible. Réessayez.";});
+});
+$("req").addEventListener("submit",function(ev){
+  ev.preventDefault();var err=$("err");err.hidden=true;var btn=$("send");btn.disabled=true;
+  var items=Object.keys(chosen).map(function(code){return {item_code:code,quantity:1};});
+  api("submit_portal_request","POST",{slug:SLUG,name:$("name").value,email:$("email").value,phone:$("phone").value,organisation:$("organisation").value,project:$("project").value,starts:$("starts").value,ends:$("ends").value,items:JSON.stringify(items),message:$("message").value,consent:$("consent").checked?"1":"",website:$("website").value})
+  .then(function(res){
+    btn.disabled=false;
+    if(res.ok&&res.j.message&&res.j.message.tracking_url){
+      var a=$("track-link");a.href=res.j.message.tracking_url;a.textContent=res.j.message.tracking_url;
+      $("req").hidden=true;$("done").hidden=false;$("done").scrollIntoView({block:"start"});return;
+    }
+    err.textContent=message(res,"La demande n'a pas pu être envoyée. Réessayez dans un instant.");err.hidden=false;
+  }).catch(function(){btn.disabled=false;err.textContent="Connexion impossible. Réessayez.";err.hidden=false;});
+});
+})();
+</script>
+{% endif %}
+</div>
+</body>
+</html>

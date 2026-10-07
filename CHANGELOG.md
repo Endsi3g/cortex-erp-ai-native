@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## v0.12.0 — 2026-10-07
+
+Phase 6 du plan de livraison. **Codé et testé hors bench ; non essayé dans un navigateur.**
+
+### Ajouté
+- **Portail de demandes** (`/demande/<identifiant>`, sans compte) : demande de location, calendrier public du matériel (libre / limité / complet, sans quantité ni client), suivi par lien personnel (`/suivi/<jeton>`). Une demande ne réserve rien. Activé par société, protégé (limite par IP, champ piège, consentement, plafond quotidien).
+- **Paiement par chèque** : annonce par le client sur la page du devis, facture d'acompte créée, équipe prévenue, rapprochement quand l'entreprise enregistre le chèque. Rien n'est marqué payé par le client.
+- Listes « Chèques annoncés » et « Demandes du portail » dans Finance.
+- **ADR-009** : portail, chèque et parcours de signature (défini, non livré; validation juridique requise).
+
+### Corrigé
+- Le gabarit de suivi aurait affiché la méthode `dict.items` au lieu du matériel (bogue trouvé par le test de rendu).
+
 ## v0.11.0 — 2026-10-07
 
 Phase 5 du plan de livraison (partielle). **Codé et testé hors bench ; non essayé sur un Desk Frappe.**

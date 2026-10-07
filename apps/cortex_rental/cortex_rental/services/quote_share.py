@@ -347,7 +347,13 @@ def company_options(company: str) -> Dict[str, Any]:
         frappe.db.get_value(
             "Cortex Finance Settings",
             company,
-            ["auto_reserve_on_accept", "online_payment_enabled", "payment_instructions"],
+            [
+                "auto_reserve_on_accept",
+                "online_payment_enabled",
+                "payment_instructions",
+                "accept_cheque",
+                "cheque_payable_to",
+            ],
             as_dict=True,
         )
         or {}
@@ -365,6 +371,8 @@ def company_options(company: str) -> Dict[str, Any]:
         "auto_reserve": bool(row.get("auto_reserve_on_accept")),
         "online_payment": bool(row.get("online_payment_enabled") and secret and webhook),
         "instructions": row.get("payment_instructions") or "",
+        "accept_cheque": bool(row.get("accept_cheque")),
+        "cheque_payable_to": row.get("cheque_payable_to") or "",
         "secret_key": secret,
         "webhook_secret": webhook,
     }
@@ -469,11 +477,18 @@ def payment_view(doc, snapshot: Dict[str, Any]) -> Dict[str, Any]:
     )
     paid = bool(invoice and invoice.status == "Paid") or doc.payment_status == "Paid"
     amount = float(invoice.balance) if invoice and not paid else float(snapshot.get("deposit_total") or 0)
+    chosen_cheque = doc.get("payment_method_choice") == "Cheque" and not paid
     return {
         "amount": amount,
         "online": options["online_payment"] and amount > 0 and not paid,
+        "cheque": {
+            "accepted": bool(options["accept_cheque"] and amount > 0 and not paid and not chosen_cheque),
+            "chosen": chosen_cheque,
+            "payable_to": options["cheque_payable_to"],
+            "reference": doc.deposit_invoice or "",
+        },
         "paid": paid,
-        "pending": doc.payment_status == "Pending" and not paid,
+        "pending": doc.payment_status == "Pending" and not paid and not chosen_cheque,
         "instructions": options["instructions"],
         "needed": bool(snapshot.get("deposit_total")),
     }
@@ -511,6 +526,36 @@ def start_payment(token: str) -> Dict[str, Any]:
         {"deposit_invoice": invoice.name, "payment_status": "Pending", "payment_session_id": session.get("id", "")},
     )
     return {"url": session.get("url")}
+
+
+def choose_cheque(token: str) -> Dict[str, Any]:
+    """Le client annonce un paiement par chèque : la facture d'acompte est créée (référence à inscrire au chèque) et
+    l'équipe est prévenue. Rien n'est marqué payé : l'entreprise enregistre le paiement à la réception du chèque
+    (mode « Chèque », sur la facture), ce qui règle aussi l'acompte de cette page."""
+    from cortex_rental.services import billing
+
+    doc = _find(token, for_update=True)
+    if not doc or doc.status != "Accepted":
+        frappe.throw("Acceptez d'abord le devis pour payer l'acompte.", frappe.ValidationError)
+    options = company_options(doc.company)
+    if not options["accept_cheque"]:
+        frappe.throw("Le paiement par chèque n'est pas offert par cette entreprise.", frappe.ValidationError)
+    tx = frappe.get_doc("Cortex Rental Transaction", doc.rental_transaction)
+    invoice = billing.create_deposit_invoice(tx)
+    if not invoice or float(invoice.balance or 0) <= 0:
+        frappe.throw("Aucun acompte n'est à payer pour ce devis.", frappe.ValidationError)
+    frappe.db.set_value(
+        SHARE,
+        doc.name,
+        {"deposit_invoice": invoice.name, "payment_status": "Pending", "payment_method_choice": "Cheque"},
+    )
+    who = doc.responder_name or doc.customer_name or "Le client"
+    _tell(doc, who, f"annonce un chèque de {float(invoice.balance):.2f} $ pour l'acompte (facture {invoice.name})")
+    return {
+        "payable_to": options["cheque_payable_to"],
+        "amount": float(invoice.balance),
+        "reference": invoice.name,
+    }
 
 
 def handle_payment_event(payload: bytes, signature: str) -> Dict[str, Any]:

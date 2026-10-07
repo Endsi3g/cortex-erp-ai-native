@@ -152,8 +152,8 @@ class TestFinanceScreens(unittest.TestCase):
         ws = json.loads((MODULE / "workspace" / "cortex_finance" / "cortex_finance.json").read_text(encoding="utf-8"))
         content = json.loads(ws["content"])
         quick = [b["data"]["quick_list_name"] for b in content if b["type"] == "quick_list"]
-        self.assertEqual(quick, ["Factures à encaisser", "Factures récentes"])
-        self.assertEqual({q["label"] for q in ws["quick_lists"]}, set(quick))
+        self.assertEqual(quick[:2], ["Factures à encaisser", "Factures récentes"])
+        self.assertTrue({"Factures à encaisser", "Factures récentes"} <= {q["label"] for q in ws["quick_lists"]})
         shortcuts = {b["data"]["shortcut_name"] for b in content if b["type"] == "shortcut"}
         self.assertTrue({"Factures", "Paiements", "Réglages financiers", "Créances par client"} <= shortcuts)
 

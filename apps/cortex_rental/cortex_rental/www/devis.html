@@ -121,9 +121,26 @@ textarea{min-height:76px;resize:vertical}
 			<div class="row"><p><strong>Acompte {{ fmt(view.payment.amount) }}</strong><br>À régler pour confirmer votre place.</p>
 			{% if view.payment.online %}<button class="primary" type="button" id="pay">Payer par carte</button>{% endif %}</div>
 			<p class="err" id="pay-err" role="alert" hidden></p>
+			{% if view.payment.cheque.accepted %}<div class="row" style="margin-top:10px"><p>Vous préférez payer par chèque ?</p><button type="button" id="cheque">Payer par chèque</button></div>{% endif %}
+			{% if view.payment.cheque.chosen %}<p class="alt" id="cheque-info"><b>Paiement par chèque annoncé</b>{{ "\n" }}Chèque de {{ fmt(view.payment.amount) }}{% if view.payment.cheque.payable_to %} à l'ordre de {{ view.payment.cheque.payable_to | e }}{% endif %}.{% if view.payment.cheque.reference %}{{ "\n" }}Inscrivez la référence {{ view.payment.cheque.reference | e }} au dos du chèque.{% endif %}{{ "\n" }}Votre place est confirmée à la réception du chèque.</p>{% endif %}
 			{% if view.payment.instructions %}<p class="alt"><b>Autre façon de payer</b>{{ "\n" }}{{ view.payment.instructions | e }}</p>{% endif %}
 		{% endif %}
 	</section>
+	{% if view.payment.cheque.accepted %}
+	<script>
+	document.getElementById("cheque").addEventListener("click",function(){
+		var b=this,err=document.getElementById("pay-err");b.disabled=true;err.hidden=true;
+		fetch("/api/method/cortex_rental.api.v1.quote_share.choose_cheque",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({token:{{ view_token | tojson }}})})
+		.then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+		.then(function(res){
+			if(res.ok&&res.j.message){window.location.reload();return;}
+			var t="L'annonce du chèque n'a pas pu être enregistrée. Réessayez dans un instant.";
+			try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)t=JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
+			err.textContent=t;err.hidden=false;b.disabled=false;
+		}).catch(function(){err.textContent="Connexion impossible. Réessayez.";err.hidden=false;b.disabled=false;});
+	});
+	</script>
+	{% endif %}
 	{% if view.payment.online %}
 	<script>
 	document.getElementById("pay").addEventListener("click",function(){
