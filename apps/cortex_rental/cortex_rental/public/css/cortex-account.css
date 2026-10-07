@@ -1190,3 +1190,32 @@ li.current .cx-dev-ico {
 	max-height: 56px;
 	object-fit: contain;
 }
+
+/* Activité récente d'un collègue : texte à gauche, date à droite, sans retour à la ligne forcé. */
+.cx-recent {
+	margin: 0 0 4px;
+	padding: 0;
+	list-style: none;
+}
+.cx-recent li {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 8px 0;
+	border-top: 1px solid var(--cx-nav-line, #e7e6e3);
+}
+.cx-recent li:first-child {
+	border-top: 0;
+}
+.cx-recent li span:last-child {
+	flex: none;
+	white-space: nowrap;
+}
+a.cx-person,
+a.cx-person:hover {
+	color: inherit;
+	text-decoration: none;
+}
+a.cx-person:hover b {
+	text-decoration: underline;
+}

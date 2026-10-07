@@ -229,6 +229,28 @@ html[data-theme="dark"] {
 	--cortex-danger-50: ${PALETTE.redTint}; --cortex-danger-100: #3b1b1e; --cortex-danger-700: ${PALETTE.redText}; --cortex-danger-800: ${PALETTE.redText}; --cortex-danger-900: ${PALETTE.redText};
 	--cortex-info-50: ${PALETTE.blueTint}; --cortex-info-100: #172b47; --cortex-info-800: ${PALETTE.blueText}; --cortex-info-900: ${PALETTE.blueText};
 }
+/* Surfaces blanches codées en dur dans cortex-theme.css (non transformé) : sans ceci, texte clair sur fond blanc. */
+html[data-theme="dark"] .cx-btn:not(.cx-btn-primary):not(.cx-btn-danger),
+html[data-theme="dark"] .cx-btn-secondary,
+html[data-theme="dark"] .cx-stepper-group,
+html[data-theme="dark"] .cx-stepper-val,
+html[data-theme="dark"] .cx-table-wrap,
+html[data-theme="dark"] .cx-chip,
+html[data-theme="dark"] .cx-drawer-panel {
+	background: ${PALETTE.surface};
+}
+html[data-theme="dark"] .cx-btn-danger {
+	background: ${PALETTE.redTint};
+	color: ${PALETTE.redText} !important;
+}
+html[data-theme="dark"] .cx-table tr:hover td {
+	background: ${PALETTE.hover};
+}
+/* Avatars à initiales : fond pastel posé en ligne par le script, donc texte foncé (sinon invisible en sombre). */
+html[data-theme="dark"] .cx-avatar-initials,
+html[data-theme="dark"] .cx-company-initials {
+	color: ${PALETTE.inverseText} !important;
+}
 html[data-theme="dark"] .text-muted,
 html[data-theme="dark"] .grid-heading-row .static-area,
 html[data-theme="dark"] .breadcrumb .disabled > a,

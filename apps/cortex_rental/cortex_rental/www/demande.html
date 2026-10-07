@@ -49,21 +49,42 @@ button:disabled{opacity:.55;cursor:default}
 .live{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
 .chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12.5px;background:var(--soft)}
 .hint{margin-top:6px}
-/* Demande reçue */
-.done h1{display:flex;align-items:center;gap:10px}
-.tick{width:30px;height:30px;border-radius:50%;background:var(--brand);color:var(--brand-ink);display:inline-grid;place-items:center;font-size:17px;flex:none}
-.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
-@media (max-width:640px){.grid2{grid-template-columns:1fr}}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13.5px}.kv dt{color:var(--muted)}.kv dd{margin:0;overflow-wrap:anywhere}
-.items{list-style:none;margin:0;padding:0}.items li{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}.items li:last-child{border:0}
-.items img{width:36px;height:36px;border-radius:8px;object-fit:cover;background:var(--soft)}.items .q{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
-.tl{list-style:none;margin:0;padding:0}.tl li{position:relative;padding:0 0 14px 28px;font-size:13.5px}
-.tl li::before{content:"";position:absolute;left:6px;top:4px;width:10px;height:10px;border-radius:50%;border:2px solid var(--line);background:var(--card)}
-.tl li::after{content:"";position:absolute;left:10px;top:16px;bottom:-2px;width:2px;background:var(--line)}.tl li:last-child::after{display:none}
-.tl li.on::before{background:var(--brand);border-color:var(--brand)}.tl li b{display:block;font-size:14px}
-.linkbox{display:flex;gap:8px}.linkbox input{font-size:13px}
-.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-details{border-top:1px solid var(--line);padding:8px 0}details summary{cursor:pointer;font-weight:600;font-size:14px}details p{margin:6px 0 0}
+/* Demande reçue : une idée par carte, beaucoup d'air, une seule colonne. */
+.done h1{display:flex;align-items:center;gap:12px;font-size:26px;margin:28px 0 8px}
+.tick{width:34px;height:34px;border-radius:50%;background:var(--brand);color:var(--brand-ink);display:inline-grid;place-items:center;font-size:18px;flex:none}
+.done-sub{margin:0 0 6px;font-size:15px}
+.refpill{display:inline-block;margin-top:4px;padding:3px 12px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.done .card{margin:0 0 20px;padding:24px;border-radius:16px}
+.done h2{font-size:16px;margin:0 0 6px}.done .lead{margin:0 0 18px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:12px 24px;margin:18px 0 0;font-size:14.5px}.kv dt{color:var(--muted)}.kv dd{margin:0;overflow-wrap:anywhere}
+.sep{height:1px;background:var(--line);margin:22px 0 18px}
+.items{list-style:none;margin:0;padding:0}.items li{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14.5px}.items li:last-child{border:0;padding-bottom:0}
+.items img{width:48px;height:48px;border-radius:10px;object-fit:cover;background:var(--soft);flex:none}.items .ph{width:48px;height:48px;border-radius:10px;background:var(--soft);color:var(--muted);display:grid;place-items:center;font-weight:650;font-size:17px;flex:none}.items .q{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{margin:18px 0 0;padding:12px 14px;border-radius:12px;background:var(--soft);color:var(--muted);font-size:13.5px}
+.tl{list-style:none;margin:18px 0 0;padding:0}.tl li{position:relative;padding:0 0 22px 34px;font-size:14px;color:var(--muted)}.tl li:last-child{padding-bottom:0}
+.tl li::before{content:"";position:absolute;left:5px;top:3px;width:12px;height:12px;border-radius:50%;border:2px solid var(--line);background:var(--card)}
+.tl li::after{content:"";position:absolute;left:10px;top:20px;bottom:-1px;width:2px;background:var(--line)}.tl li:last-child::after{display:none}
+.tl li.on::before{background:var(--brand);border-color:var(--brand)}.tl li b{display:block;font-size:15px;color:var(--text);margin-bottom:2px}
+.linkbox{display:flex;gap:10px;margin-top:4px}.linkbox input{font-size:13.5px;min-width:0;text-overflow:ellipsis}
+.ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ib{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:18px}
+.acts button{display:flex;align-items:center;justify-content:flex-start;gap:10px;height:46px;padding:0 14px;font-weight:550;font-size:14px;text-align:left}
+.faq{padding:8px 24px}
+.faq h2{margin:12px 0 2px}
+.faq details{border:0;border-top:1px solid var(--line);padding:0}.faq details:first-of-type{border-top:0}
+.faq summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0;cursor:pointer;font-weight:600;font-size:15px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"";width:9px;height:9px;margin-right:4px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);flex:none}
+.faq details[open] summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+.faq details p{margin:0;padding:0 32px 20px 0;font-size:14.5px;line-height:1.55}
+@media (max-width:560px){
+.done .card{padding:20px 18px}.faq{padding:4px 18px}
+.kv{grid-template-columns:1fr;gap:2px 0}.kv dt{font-size:12.5px;margin-top:10px}.kv dt:first-child{margin-top:0}
+.ib .lbl{display:none}.linkbox .ib{width:48px;padding:0;flex:none}
+.acts{grid-template-columns:1fr 1fr}.acts button:last-child:nth-child(odd){grid-column:1/-1}.acts button{padding:0 12px;font-size:13.5px;height:auto;min-height:46px;line-height:1.2}
+}
+@media print{.faq,.acts{display:none}}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:13.5px;opacity:0;pointer-events:none}
 .toast.show{opacity:1}
 .cx-foot{margin:28px 0 0;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:12px}
@@ -71,6 +92,7 @@ details{border-top:1px solid var(--line);padding:8px 0}details summary{cursor:po
 [hidden]{display:none!important}
 @media print{.noprint,.cx-foot{display:none!important}body{background:#fff;color:#000}}
 @media (prefers-reduced-motion:no-preference){button,.toast{transition:opacity .15s}}
+.cx-foot a{display:inline-flex;align-items:center;gap:8px;color:inherit;text-decoration:none}.cx-foot a:hover span,.cx-foot a:focus-visible span{text-decoration:underline}
 </style>
 {% if info.accent %}<style>@media (prefers-color-scheme:light){:root{--brand:{{ info.accent }};--brand-ink:{{ info.accent_ink }}}}</style>{% endif %}
 </head>
@@ -126,40 +148,45 @@ details{border-top:1px solid var(--line);padding:8px 0}details summary{cursor:po
 
 	<section class="done" id="done" hidden aria-live="polite">
 		<h1><span class="tick" aria-hidden="true">✓</span>Demande reçue</h1>
-		<p class="muted" id="done-sub"></p>
-		<div class="grid2">
-			<div class="card" style="margin:0">
-				<h2>Récapitulatif</h2>
-				<dl class="kv" id="recap"></dl>
-				<h2 style="margin-top:12px">Matériel demandé</h2>
-				<ul class="items" id="recap-items"></ul>
-				<p class="muted" id="recap-msg" style="margin-top:8px"></p>
-			</div>
-			<div class="card" style="margin:0">
-				<h2>Prochaines étapes</h2>
-				<ol class="tl">
-					<li class="on"><b>Demande reçue</b>Elle est maintenant chez l'équipe.</li>
-					<li><b>Examen</b>L'équipe vérifie la disponibilité du matériel.</li>
-					<li><b>Devis</b>Vous recevez un devis à accepter par courriel.</li>
-					<li><b>Réservation</b>Le matériel est réservé quand vous acceptez et que l'équipe confirme.</li>
-				</ol>
-			</div>
+		<p class="muted done-sub" id="done-sub"></p>
+		<span class="refpill" id="done-ref"></span>
+
+		<div class="card" style="margin-top:24px">
+			<h2>Récapitulatif</h2>
+			<dl class="kv" id="recap"></dl>
+			<div class="sep"></div>
+			<h2>Matériel demandé</h2>
+			<ul class="items" id="recap-items"></ul>
+			<p class="note" id="recap-msg" hidden></p>
 		</div>
+
+		<div class="card">
+			<h2>Prochaines étapes</h2>
+			<ol class="tl">
+				<li class="on"><b>Demande reçue</b>Elle est maintenant chez l'équipe.</li>
+				<li><b>Examen</b>L'équipe vérifie la disponibilité du matériel.</li>
+				<li><b>Devis</b>Vous recevez un devis à accepter par courriel.</li>
+				<li><b>Réservation</b>Le matériel est réservé quand vous acceptez et que l'équipe confirme.</li>
+			</ol>
+		</div>
+
 		<div class="card">
 			<h2>Votre lien de suivi</h2>
-			<p class="muted">Gardez-le : il vous permet de voir l'état de votre demande et la réponse de l'équipe, sans compte.</p>
-			<div class="linkbox"><input id="track-link" readonly aria-label="Lien de suivi"><button type="button" id="copy" class="primary sm">Copier le lien</button></div>
+			<p class="muted lead">Gardez-le : il vous permet de voir l'état de votre demande et la réponse de l'équipe, sans compte.</p>
+			<div class="linkbox"><input id="track-link" readonly aria-label="Lien de suivi"><button type="button" id="copy" class="primary ib" aria-label="Copier le lien" title="Copier le lien"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg><span class="lbl">Copier le lien</span></button></div>
 			<div class="acts noprint">
-				<button type="button" class="sm" id="open-track">Ouvrir le suivi</button>
-				<button type="button" class="sm" id="mail">M'envoyer le lien par courriel</button>
-				<button type="button" class="sm" id="ics">Ajouter au calendrier</button>
-				<button type="button" class="sm" id="print">Imprimer / PDF</button>
-				<button type="button" class="sm" id="again">Faire une autre demande</button>
+				<button type="button" id="open-track"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>Ouvrir le suivi</button>
+				<button type="button" id="mail"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>M'envoyer le lien</button>
+				<button type="button" id="ics"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Ajouter au calendrier</button>
+				<button type="button" id="print"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="9" rx="2"/><path d="M7 14h10v7H7z"/></svg>Imprimer / PDF</button>
+				<button type="button" id="again"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nouvelle demande</button>
 			</div>
 		</div>
-		<div class="card">
+
+		<div class="card faq">
+			<h2>Questions fréquentes</h2>
 			<details open><summary>Que se passe-t-il ensuite ?</summary><p class="muted">L'équipe examine votre demande et vous répond par courriel, en général avec un devis. Rien n'est réservé ni facturé avant que vous acceptiez ce devis.</p></details>
-			<details><summary>Puis-je modifier ma demande ?</summary><p class="muted">Oui : répondez au courriel de l'équipe, ou faites une nouvelle demande avec « Faire une autre demande ». L'équipe garde la plus récente.</p></details>
+			<details><summary>Puis-je modifier ma demande ?</summary><p class="muted">Oui : répondez au courriel de l'équipe, ou faites une nouvelle demande avec « Nouvelle demande ». L'équipe garde la plus récente.</p></details>
 			<details><summary>Mon lien est-il privé ?</summary><p class="muted">Le lien est personnel : toute personne qui l'a peut voir l'état de votre demande, mais pas vos coordonnées.</p></details>
 		</div>
 	</section>
@@ -245,15 +272,16 @@ function downloadIcs(){
 function showDone(info){
   last=info;
   $("ask").hidden=true;$("done").hidden=false;
-  $("done-sub").textContent="Merci "+info.name.split(" ")[0]+" ! Référence "+info.ref+" · reçue à "+new Date().toLocaleTimeString("fr-CA",{hour:"2-digit",minute:"2-digit"})+".";
+  $("done-sub").textContent="Merci "+info.name.split(" ")[0]+" ! Votre demande est arrivée à "+new Date().toLocaleTimeString("fr-CA",{hour:"2-digit",minute:"2-digit"})+".";
+  $("done-ref").textContent=info.ref?"Référence "+info.ref:"";$("done-ref").hidden=!info.ref;
   var rc=$("recap");rc.textContent="";
   var n=days(info.starts,info.ends);
   [["Période",fmt(info.starts)+" au "+fmt(info.ends)+" ("+n+(n>1?" jours":" jour")+")"],["Au nom de",info.name+(info.organisation?" — "+info.organisation:"")],["Courriel",info.email],["Téléphone",info.phone],["Projet",info.project]].forEach(function(kv){
     if(!kv[1])return;rc.appendChild(el("dt",null,kv[0]));rc.appendChild(el("dd",null,kv[1]));});
   var list=$("recap-items");list.textContent="";
   if(!info.items.length){list.appendChild(el("li","muted","Aucun équipement choisi : votre description sera lue par l'équipe."));}
-  info.items.forEach(function(i){var li=el("li");if(i.image){var im=el("img");im.src=i.image;im.alt="";li.appendChild(im);}li.appendChild(el("span",null,i.item_name));li.appendChild(el("span","q","× "+i.quantity));list.appendChild(li);});
-  $("recap-msg").textContent=info.message?"Votre message : « "+info.message+" »":"";
+  info.items.forEach(function(i){var li=el("li");if(i.image){var im=el("img");im.src=i.image;im.alt="";li.appendChild(im);}else{var ph=el("span","ph",(i.item_name||"?").charAt(0).toUpperCase());ph.setAttribute("aria-hidden","true");li.appendChild(ph);}li.appendChild(el("span",null,i.item_name));li.appendChild(el("span","q","× "+i.quantity));list.appendChild(li);});
+  $("recap-msg").textContent=info.message?"Votre message : « "+info.message+" »":"";$("recap-msg").hidden=!info.message;
   $("track-link").value=info.url;
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -286,7 +314,7 @@ $("req").addEventListener("submit",function(ev){
 })();
 </script>
 {% endif %}
-<footer class="cx-foot noprint"><img src="/assets/cortex_rental/images/cortex-logo.svg" alt="" onerror="this.remove()"><span>Propulsé par Cortex</span></footer>
+<footer class="cx-foot noprint">{% if cortex_site %}<a href="{{ cortex_site | e }}" target="_blank" rel="noopener" aria-label="Propulsé par Cortex : découvrir Cortex">{% endif %}<picture><source media="(prefers-color-scheme: dark)" srcset="/assets/cortex_rental/images/cortex-logo-reversed.svg"><img src="/assets/cortex_rental/images/cortex-logo.svg" alt="" onerror="this.remove()"></picture><span>Propulsé par Cortex</span>{% if cortex_site %}</a>{% endif %}</footer>
 </div>
 </body>
 </html>

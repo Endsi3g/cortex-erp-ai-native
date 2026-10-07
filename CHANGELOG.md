@@ -3,6 +3,24 @@
 ## Unreleased
 
 
+## v0.15.1 — 2026-10-07
+
+Phase 9.6 et 9.7. **Vu à l'écran dans Chromium (API simulée) ; testé hors bench ; non essayé sur un Desk Frappe.**
+
+### Corrigé
+- **Mode sombre** : lignes de tableaux blanches à texte clair (Mon compte › Société : droits, équipe) : **vu et corrigé**. Boutons, compteurs, puces et tiroir à fond blanc codé en dur : ajoutés à la couche sombre, **non vus à l'écran**.
+- **Mon compte** : plafond d'IA au format canadien-français, activité récente d'un collègue lisible, noms de l'équipe sans bleu de lien par défaut.
+- Barre latérale : pastille et carte de société en mode réduit sur mobile ; avatars à initiales lisibles en sombre.
+
+### Ajouté / modifié
+- **Pied « Propulsé par Cortex »** cliquable vers le site de Cortex quand `cortex_site_url` est réglé dans la configuration du site (https seulement) ; logo clair en mode sombre.
+- **« Demande reçue »** épurée : une colonne, plus d'espace, **Copier le lien** en icône sur petit écran, actions avec icônes, FAQ à chevrons, pastille de lettre sans photo.
+- **Factures imprimées** (A4/Lettre) : logo de la société.
+
+### Pas encore vérifié
+- Formulaires du Desk (paiement avec le client en tête, réglages de taxes) : à ouvrir sur un bench.
+- L'adresse du site Web de Cortex n'est pas dans le dépôt : à régler (`set-config cortex_site_url`).
+
 ## v0.15.0 — 2026-10-07
 
 Phase 9 (demandes de Kael du 2026-10-07), première partie. **Vu à l'écran dans Chromium pour le portail, le suivi et le devis ; testé hors bench.**

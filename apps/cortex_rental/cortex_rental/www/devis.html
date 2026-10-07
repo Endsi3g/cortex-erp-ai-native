@@ -71,6 +71,7 @@ details.terms .tt{white-space:pre-line;font-size:13px;color:var(--muted);max-hei
 [hidden]{display:none!important}
 @media (min-width:640px){.wrap{padding-top:32px}h1{font-size:21px}}
 @media print{body{background:#fff;color:#000}.bar,.pay,form,.noprint{display:none!important}.wrap{padding:0}}
+.cx-foot a{display:inline-flex;align-items:center;gap:8px;color:inherit;text-decoration:none}.cx-foot a:hover span,.cx-foot a:focus-visible span{text-decoration:underline}
 </style>
 {% if quote.brand and quote.brand.accent %}<style>@media (prefers-color-scheme:light){:root{--brand:{{ quote.brand.accent }};--brand-ink:{{ quote.brand.accent_ink }}}}</style>{% endif %}
 </head>
@@ -247,7 +248,7 @@ details.terms .tt{white-space:pre-line;font-size:13px;color:var(--muted);max-hei
 	<p class="foot noprint"><a href="#" onclick="window.print();return false">Enregistrer en PDF</a></p>
 	{% endif %}
 {% endif %}
-<footer class="cx-foot noprint"><img src="/assets/cortex_rental/images/cortex-logo.svg" alt=""><span>Propulsé par Cortex</span></footer>
+<footer class="cx-foot noprint">{% if cortex_site %}<a href="{{ cortex_site | e }}" target="_blank" rel="noopener" aria-label="Propulsé par Cortex : découvrir Cortex">{% endif %}<picture><source media="(prefers-color-scheme: dark)" srcset="/assets/cortex_rental/images/cortex-logo-reversed.svg"><img src="/assets/cortex_rental/images/cortex-logo.svg" alt="" onerror="this.remove()"></picture><span>Propulsé par Cortex</span>{% if cortex_site %}</a>{% endif %}</footer>
 </main>
 </body>
 </html>

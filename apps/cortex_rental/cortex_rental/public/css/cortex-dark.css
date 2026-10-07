@@ -32,6 +32,28 @@ html[data-theme="dark"] {
 	--cortex-danger-50: #2d1517; --cortex-danger-100: #3b1b1e; --cortex-danger-700: #fca5a5; --cortex-danger-800: #fca5a5; --cortex-danger-900: #fca5a5;
 	--cortex-info-50: #14233a; --cortex-info-100: #172b47; --cortex-info-800: #93c5fd; --cortex-info-900: #93c5fd;
 }
+/* Surfaces blanches codées en dur dans cortex-theme.css (non transformé) : sans ceci, texte clair sur fond blanc. */
+html[data-theme="dark"] .cx-btn:not(.cx-btn-primary):not(.cx-btn-danger),
+html[data-theme="dark"] .cx-btn-secondary,
+html[data-theme="dark"] .cx-stepper-group,
+html[data-theme="dark"] .cx-stepper-val,
+html[data-theme="dark"] .cx-table-wrap,
+html[data-theme="dark"] .cx-chip,
+html[data-theme="dark"] .cx-drawer-panel {
+	background: #18181b;
+}
+html[data-theme="dark"] .cx-btn-danger {
+	background: #2d1517;
+	color: #fca5a5 !important;
+}
+html[data-theme="dark"] .cx-table tr:hover td {
+	background: #27272a;
+}
+/* Avatars à initiales : fond pastel posé en ligne par le script, donc texte foncé (sinon invisible en sombre). */
+html[data-theme="dark"] .cx-avatar-initials,
+html[data-theme="dark"] .cx-company-initials {
+	color: #09090b !important;
+}
 html[data-theme="dark"] .text-muted,
 html[data-theme="dark"] .grid-heading-row .static-area,
 html[data-theme="dark"] .breadcrumb .disabled > a,
@@ -470,6 +492,9 @@ html[data-theme="dark"] .cx-appr-summary span {
 html[data-theme="dark"] .cx-logo-preview {
 	border: 1px dashed #52525b;
 	background: #1f1f23;
+}
+html[data-theme="dark"] .cx-recent li {
+	border-top: 1px solid #52525b;
 }
 
 /* ---- css/cortex-onboarding.css ---- */

@@ -214,6 +214,25 @@ class TestBrand(unittest.TestCase):
         self.assertEqual(brand.branding(None)["accent"], brand.DEFAULT_ACCENT)  # société sans réglage : couleur Cortex
 
 
+class TestCortexSiteLink(unittest.TestCase):
+    def test_site_url_accepts_only_clean_https_addresses(self):
+        self.assertEqual(
+            brand.site_url(" https://cortex.example/rejoindre?x=1 "), "https://cortex.example/rejoindre?x=1"
+        )
+        self.assertEqual(brand.site_url("https://cortex.example:8443"), "https://cortex.example:8443")
+        for bad in (
+            "",
+            None,
+            "http://cortex.example",
+            "javascript:alert(1)",
+            "//cortex.example",
+            'https://x.example/"onmouseover="a',
+            "https://x.example/ a",
+            "https://" + "a" * 300,
+        ):
+            self.assertEqual(brand.site_url(bad), "", bad)
+
+
 class TestPublicPages(unittest.TestCase):
     def render(self, name, **ctx):
         try:
@@ -228,6 +247,25 @@ class TestPublicPages(unittest.TestCase):
             html = (ROOT / "www" / page).read_text(encoding="utf-8")
             self.assertIn("Propulsé par Cortex", html, page)
             self.assertIn("cortex-logo.svg", html, page)
+
+    def test_footer_links_to_the_cortex_site_only_when_one_is_configured(self):
+        for page, ctx in (
+            ("demande.html", {"state": "ok", "info": {"name": "S"}, "slug": "s", "title": "t"}),
+            ("suivi.html", {"view": {"state": "unknown"}, "state": "unknown", "title": "t"}),
+        ):
+            linked = self.render(page, cortex_site="https://cortex.example/", **ctx)
+            self.assertIn('<a href="https://cortex.example/" target="_blank" rel="noopener"', linked, page)
+            plain = self.render(page, cortex_site="", **ctx)
+            self.assertNotIn('target="_blank" rel="noopener" aria-label="Propulsé par Cortex', plain, page)
+            self.assertIn("Propulsé par Cortex", plain, page)  # le texte reste, sans lien inventé
+            self.assertIn("cortex-logo-reversed.svg", plain, page)  # logo lisible en mode sombre
+
+    def test_received_screen_is_airy_with_an_icon_only_copy_button_on_narrow_screens(self):
+        html = (ROOT / "www" / "demande.html").read_text(encoding="utf-8")
+        self.assertIn('id="copy" class="primary ib" aria-label="Copier le lien"', html)
+        self.assertIn(".ib .lbl{display:none}", html)  # petit écran : icône seule, le nom accessible reste
+        self.assertIn('class="card faq"', html)
+        self.assertNotIn("grid2", html)  # une seule colonne : une idée par carte
 
     def test_request_page_shows_logo_banner_tagline_and_the_branded_color(self):
         info = {

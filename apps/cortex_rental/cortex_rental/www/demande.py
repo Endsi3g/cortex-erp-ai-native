@@ -3,7 +3,7 @@
 import frappe
 from frappe.rate_limiter import rate_limit
 
-from cortex_rental.services import client_portal
+from cortex_rental.services import brand, client_portal
 
 no_cache = True
 sitemap = 0
@@ -22,5 +22,6 @@ def get_context(context):
     context.slug = slug if info else ""
     context.info = info or {}
     context.state = "ok" if info else "closed"
+    context.cortex_site = brand.cortex_site_url()
     context.title = f"Demande de location — {info['name']}" if info else "Demande de location"
     return context

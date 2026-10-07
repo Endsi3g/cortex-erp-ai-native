@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 ACCENT_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 DEFAULT_ACCENT = "#066336"
+SITE_URL_RE = re.compile(r"^https://[A-Za-z0-9][A-Za-z0-9.-]*(:\d{1,5})?(/[^\s\"'<>\\]*)?$")
 
 
 def public_file(url: Optional[str]) -> str:
@@ -56,3 +57,20 @@ def branding(row: Optional[Dict[str, Any]], company: Optional[Dict[str, Any]] = 
         "accent": color,
         "accent_ink": readable_text_on(color),
     }
+
+
+def site_url(value: Optional[str]) -> str:
+    """Pur : l'adresse du site Web de Cortex pour le pied de page (https seulement), sinon une chaîne vide."""
+    text = str(value or "").strip()
+    return text if len(text) <= 200 and SITE_URL_RE.match(text) else ""
+
+
+def cortex_site_url() -> str:
+    """Adresse du site Web de Cortex (là où l'on peut rejoindre Cortex), réglée par l'exploitant de l'instance.
+
+    Clé `cortex_site_url` du fichier de configuration du site (`bench --site <site> set-config cortex_site_url https://…`) :
+    elle ne dépend pas d'une société cliente. Sans valeur valide, le pied de page reste du texte (aucune adresse inventée).
+    """
+    import frappe
+
+    return site_url(frappe.conf.get("cortex_site_url"))

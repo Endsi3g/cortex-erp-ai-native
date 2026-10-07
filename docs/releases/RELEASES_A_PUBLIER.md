@@ -12,7 +12,9 @@ git tag -a v0.10.0 2d9de3d -m "v0.10.0 — Phase 4"
 git tag -a v0.11.0 4bb4c4b -m "v0.11.0 — Phase 5"
 git tag -a v0.12.0 9b5826c -m "v0.12.0 — Phase 6"
 git tag -a v0.13.0 85a09c8 -m "v0.13.0 — Phase 7"   # 85a09c8 = a38e207 + correction du test de secrets (suite verte)
-git tag -a v0.14.0 <tête de la branche> -m "v0.14.0 — Phase 8"
+git tag -a v0.14.0 <commit « Phase 8 » de la branche> -m "v0.14.0 — Phase 8"
+git tag -a v0.15.0 d9a9026 -m "v0.15.0 — Phase 9 (première partie)"   # local : à vérifier avec `git log` si le SHA a changé
+git tag -a v0.15.1 <tête de la branche> -m "v0.15.1 — Phase 9.6 et 9.7"
 git push origin --tags
 ```
 

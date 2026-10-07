@@ -3,7 +3,7 @@
 import frappe
 from frappe.rate_limiter import rate_limit
 
-from cortex_rental.services import quote_share
+from cortex_rental.services import brand, quote_share
 
 no_cache = True
 sitemap = 0
@@ -20,6 +20,7 @@ def get_context(context):
     token = (frappe.form_dict.get("token") or "")[:100]
     view = _view(token)
     context.view = view
+    context.cortex_site = brand.cortex_site_url()
     context.token = token if view.get("state") == "ok" else ""
     # Le jeton sert aussi à payer l'acompte après l'acceptation (la page ne l'affiche jamais en clair).
     context.view_token = token if view.get("state") in ("ok", "accepted") else ""

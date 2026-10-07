@@ -629,7 +629,7 @@ cortex.AccountPage = class AccountPage {
 			const photo = p.photo ? `<img src="${this.esc(p.photo)}" alt="" width="64" height="64" style="border-radius:50%;object-fit:cover">` : `<span class="cx-avatar cx-avatar-initials" style="width:64px;height:64px;display:grid;place-items:center;border-radius:50%;background:#eef3ef">${this.esc((p.name || "?").split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase())}</span>`;
 			const line = (label, value) => (value ? `<div><dt>${label}</dt><dd>${value}</dd></div>` : "");
 			const presence = p.online ? `<span class="indicator-pill green">${__("En ligne")}</span>` : `<span class="text-muted">${p.last_active ? __("Vu {0}", [this.when(p.last_active)]) : __("Jamais connecté")}</span>`;
-			const recent = p.recent.length ? `<ul class="cx-todo">${p.recent.map((r) => `<li>${this.esc(r.text)} <span class="cx-acct-muted">· ${this.when(r.at)}</span></li>`).join("")}</ul>` : `<p class="cx-acct-muted">${__("Aucune action enregistrée.")}</p>`;
+			const recent = p.recent.length ? `<ul class="cx-recent">${p.recent.map((r) => `<li><span>${this.esc(r.text)}</span><span class="cx-acct-muted">${this.when(r.at)}</span></li>`).join("")}</ul>` : `<p class="cx-acct-muted">${__("Aucune action enregistrée.")}</p>`;
 			const contact = [p.email ? `<a class="btn btn-default btn-sm" href="mailto:${this.esc(p.email)}">${__("Écrire un courriel")}</a>` : "", p.phone ? `<a class="btn btn-default btn-sm" href="tel:${this.esc(p.phone)}">${__("Appeler")}</a>` : ""].join(" ");
 			dialog.$body.html(
 				`<div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">${photo}<div><b>${this.esc(__(p.role.label))}</b><div>${presence}</div>${p.enabled ? "" : `<div class="text-muted">${__("Compte désactivé")}</div>`}</div></div>
@@ -736,7 +736,7 @@ cortex.AccountPage = class AccountPage {
 			const $box = ai.find(".cx-acct-ai");
 			if (!u.visible) return $box.html(`<p class="cx-acct-muted">${__("Votre rôle ne donne pas accès à la consommation de l'IA.")}</p>`);
 			const pct = u.cost_cap || u.token_cap ? Math.min(100, u.percent) : 0;
-			const label = u.cost_cap ? `${u.cost.toFixed(2)} $ / ${u.cost_cap.toFixed(0)} $` : `${u.tokens.toLocaleString("fr-CA")} ${__("jetons")}`;
+			const label = u.cost_cap ? `${this.money(u.cost)} / ${this.money(u.cost_cap)}` : `${u.tokens.toLocaleString("fr-CA")} ${__("jetons")}`;
 			const note = u.economy ? __("Plafond atteint : l'assistant utilise un modèle plus économique.") : u.blocked ? __("Plafond dépassé : l'assistant est en pause jusqu'au mois prochain.") : u.warning ? __("Vous approchez du plafond mensuel.") : "";
 			$box.html(`<div class="cx-acct-bar" role="img" aria-label="${pct} %"><i style="width:${pct}%"></i></div><p><strong>${label}</strong> · ${u.calls} ${__("appels")}${u.cost_cap ? ` · ${u.percent} %` : ""}</p>${note ? `<p class="cx-acct-note">${note}</p>` : ""}`);
 		});
