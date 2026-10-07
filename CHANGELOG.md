@@ -5,7 +5,7 @@
 
 ## v0.15.1 — 2026-10-07
 
-Phase 9.6 et 9.7. **Vu à l'écran dans Chromium (API simulée) ; testé hors bench ; non essayé sur un Desk Frappe.**
+Phase 9.6 et 9.7. **Vu uniquement dans un banc d'essai hors Desk (faux `frappe`, ma propre feuille de style de page) ; testé hors bench ; non essayé sur un Desk Frappe.** Kael signale (2026-10-07) que la barre latérale et le mode sombre ne correspondent pas, dans l'application réelle, à ce qui était demandé : voir le Handoff, « Phase 9.6 et 9.7 ».
 
 ### Corrigé
 - **Mode sombre** : lignes de tableaux blanches à texte clair (Mon compte › Société : droits, équipe) : **vu et corrigé**. Boutons, compteurs, puces et tiroir à fond blanc codé en dur : ajoutés à la couche sombre, **non vus à l'écran**.
