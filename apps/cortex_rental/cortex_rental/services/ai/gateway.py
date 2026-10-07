@@ -31,7 +31,52 @@ Règles :
 - Les montants sont en dollars canadiens, taxes TPS/TVQ précisées quand elles sont données par l'outil.
 - N'invente jamais de numéro de location, de facture ou de client.
 Société : {company}. Date du jour : {today}. Écran actuel : {page}.
-"""
+{rules}"""
+
+
+def company_rules(company: str) -> str:
+    """Les règles de la société que l'assistant doit connaître (taxes, acompte, retenue, approbation), lues dans ses
+    réglages. Lecture seule : l'assistant ne les modifie pas et ne remplace pas les outils pour un prix ou un statut.
+    Vide si rien n'est lisible (jamais de règle inventée)."""
+    if not frappe or not company:
+        return ""
+    try:
+        row = frappe.db.get_value(
+            "Cortex Finance Settings",
+            company,
+            [
+                "apply_taxes",
+                "tps_rate",
+                "tvq_rate",
+                "deposit_percent",
+                "quote_hold_enabled",
+                "quote_hold_hours",
+                "allow_sole_approver_self_approval",
+            ],
+            as_dict=True,
+        )
+    except Exception:
+        return ""
+    if not row:
+        return ""
+    lines = ["Règles de la société (réglages, à citer telles quelles; les prix et les statuts viennent des outils) :"]
+    if row.get("apply_taxes"):
+        lines.append(f"- Taxes : TPS {row['tps_rate']} %, TVQ {row['tvq_rate']} %.")
+    else:
+        lines.append("- Les taxes ne sont pas appliquées par cette société.")
+    lines.append(f"- Acompte : {row['deposit_percent']} % à la réservation.")
+    if row.get("quote_hold_enabled"):
+        lines.append(f"- Un devis retient le matériel {row['quote_hold_hours']} h; la retenue n'est pas une garantie.")
+    lines.append(
+        "- Un contrat est toujours approuvé par une personne; "
+        + (
+            "le seul approbateur de la société peut décider de sa propre demande."
+            if row.get("allow_sole_approver_self_approval")
+            else "personne ne décide de sa propre demande."
+        )
+    )
+    return "\n".join(lines) + "\n"
+
 
 # Libellés lisibles des outils consultés (affichés après coup : seulement ce qui a vraiment été appelé).
 TOOL_LABELS = {
@@ -219,7 +264,10 @@ class AIGateway:
         exposed_names = {t.name for t in exposed}
         declarations = [t.declaration() for t in exposed]
         system = SYSTEM_PROMPT.format(
-            company=company, today=frappe.utils.today() if frappe else "", page=page or "tableau de bord"
+            company=company,
+            today=frappe.utils.today() if frappe else "",
+            page=page or "tableau de bord",
+            rules=company_rules(company),
         )
         messages: List[Any] = [
             provider.history_message(h["role"], h["text"]) for h in (history or [])[-10:] if h.get("text")
@@ -263,7 +311,12 @@ class AIGateway:
                         if proposal:
                             result_blocks.append(proposal)
                     outputs.append({"name": call.name, "id": call.id, "result": output})
-                messages.append(self.provider().tool_results_message(outputs))
+                tool_message = self.provider().tool_results_message(outputs)
+                # Certains fournisseurs (OpenAI) veulent un message par résultat d'outil.
+                if isinstance(tool_message, list):
+                    messages.extend(tool_message)
+                else:
+                    messages.append(tool_message)
                 continue
             text = result.text or (STEPS_EXHAUSTED if result.tool_calls else "")
             break

@@ -36,6 +36,7 @@
     "sb_tiers",
     "default_tier",
     "anthropic_api_key",
+    "openai_api_key",
     "tier_rapide_enabled",
     "cb_tier_equilibre",
     "tier_equilibre_enabled",
@@ -47,6 +48,11 @@
     "tier_avance_model",
     "tier_avance_price_input",
     "tier_avance_price_output",
+    "cb_tier_luna",
+    "tier_luna_enabled",
+    "tier_luna_model",
+    "tier_luna_price_input",
+    "tier_luna_price_output",
     "sb_economy",
     "economy_model",
     "economy_cap_percent",
@@ -259,13 +265,13 @@
       "fieldname": "tier_equilibre_price_input",
       "fieldtype": "Float",
       "label": "Équilibré : prix entrée ($ / M jetons)",
-      "default": "3"
+      "default": "2"
     },
     {
       "fieldname": "tier_equilibre_price_output",
       "fieldtype": "Float",
       "label": "Équilibré : prix sortie ($ / M jetons)",
-      "default": "15"
+      "default": "10"
     },
     {
       "fieldname": "cb_tier_avance",
@@ -287,13 +293,48 @@
       "fieldname": "tier_avance_price_input",
       "fieldtype": "Float",
       "label": "Avancé : prix entrée ($ / M jetons)",
-      "default": "15"
+      "default": "4"
     },
     {
       "fieldname": "tier_avance_price_output",
       "fieldtype": "Float",
       "label": "Avancé : prix sortie ($ / M jetons)",
-      "default": "75"
+      "default": "20"
+    },
+    {
+      "fieldname": "openai_api_key",
+      "fieldtype": "Password",
+      "label": "Clé API OpenAI (GPT)",
+      "description": "Requise pour le niveau Luna. Elle ne quitte jamais le serveur."
+    },
+    {
+      "fieldname": "cb_tier_luna",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "tier_luna_enabled",
+      "fieldtype": "Check",
+      "label": "Cortex Luna activé",
+      "default": "0",
+      "description": "Désactivé par défaut : saisissez la clé OpenAI puis activez."
+    },
+    {
+      "fieldname": "tier_luna_model",
+      "fieldtype": "Data",
+      "label": "Cortex Luna : modèle",
+      "default": "gpt-6-luna"
+    },
+    {
+      "fieldname": "tier_luna_price_input",
+      "fieldtype": "Float",
+      "label": "Luna : prix entrée ($ / M jetons)",
+      "default": "0.1"
+    },
+    {
+      "fieldname": "tier_luna_price_output",
+      "fieldtype": "Float",
+      "label": "Luna : prix sortie ($ / M jetons)",
+      "default": "0.5"
     }
   ],
   "permissions": [

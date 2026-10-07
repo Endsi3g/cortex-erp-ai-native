@@ -69,6 +69,7 @@ let voice = null;
 const inConversation = computed(() => messages.value.length > 0 || sending.value);
 const isDemo = computed(() => !aiStatus.value || aiStatus.value.mode === "demo");
 const tiers = computed(() => (aiStatus.value && aiStatus.value.tiers) || []);
+const upcoming = computed(() => (aiStatus.value && aiStatus.value.upcoming) || []);
 const currentTier = computed(() => tiers.value.find((t) => t.key === selectedTier.value && t.available) || null);
 const costLabel = (tier) => (!tier.cost_index || tier.cost_index <= 1 ? "Coût de base" : `Coût ≈ ×${String(tier.cost_index).replace(".", ",")}`);
 const canConfigureAi = computed(() => {
@@ -543,6 +544,15 @@ defineExpose({ refresh });
 													<span class="ch-tier-desc">{{ tier.description }}</span>
 												</span>
 												<span class="ch-tier-cost">{{ tier.available ? costLabel(tier) : "Non configuré" }}</span>
+											</button>
+										</li>
+										<li v-for="soon in upcoming" :key="soon.label">
+											<button type="button" class="ch-tier off" disabled aria-disabled="true">
+												<span class="ch-tier-main">
+													<span class="ch-tier-name">{{ soon.label }}</span>
+													<span class="ch-tier-desc">{{ soon.note }}</span>
+												</span>
+												<span class="ch-tier-cost">À venir</span>
 											</button>
 										</li>
 									</ul>

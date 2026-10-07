@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## v0.10.0 — 2026-10-07
+
+Phase 4 du plan de livraison. **Codé et testé hors bench ; aucun fournisseur essayé avec une vraie clé.**
+
+### Corrigé
+- **Prix des niveaux IA** : Sonnet 5.5 = 2 $ / 10 $ et Opus 5.5 = 4 $ / 20 $ par million de jetons (page tarifaire d'Anthropic, 2026-10-07). Les anciens défauts surestimaient le coût dans le budget IA. Patch `correct_ai_tier_prices` (ne touche pas aux valeurs saisies à la main).
+
+### Ajouté
+- **Cortex Luna** (OpenAI `gpt-6-luna`) : fournisseur `OpenAIProvider`, clé OpenAI chiffrée côté serveur, désactivé par défaut.
+- **Gemini 4 « à venir »** dans le sélecteur (aucune API publique), jamais sélectionnable.
+- **Règles de la société** (taxes, acompte, retenue, approbation) dans le prompt système de l'assistant.
+- Tests : prix vérifiés, niveaux, fournisseur OpenAI (format), règles de la société.
+
+### À savoir
+- Gemini 3.8 Flash passe à 1,50 $ / 7,50 $ le 1er janvier 2027 : mettre les prix à jour dans les réglages.
+
 ## v0.9.0 — 2026-10-07
 
 Phase 3 du plan de livraison (partielle). **Codé et testé hors bench ; non essayé sur un Desk Frappe.**

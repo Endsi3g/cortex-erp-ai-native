@@ -213,8 +213,25 @@ if frappe:
             ]
             default = ai_settings.default_tier(values) if values.get("enabled") else ""
             if values.get("enabled") and default:
-                return {"data": {"mode": "ai", "provider": "cortex", "tiers": offered, "default_tier": default}}
-            return {"data": {"mode": "demo", "provider": "demo", "model": "demo", "tiers": offered, "default_tier": ""}}
+                return {
+                    "data": {
+                        "mode": "ai",
+                        "provider": "cortex",
+                        "tiers": offered,
+                        "default_tier": default,
+                        "upcoming": ai_settings.UPCOMING_MODELS,
+                    }
+                }
+            return {
+                "data": {
+                    "mode": "demo",
+                    "provider": "demo",
+                    "model": "demo",
+                    "tiers": offered,
+                    "default_tier": "",
+                    "upcoming": ai_settings.UPCOMING_MODELS,
+                }
+            }
         if provider == "onyx":
             return {"data": {"mode": "ai", "provider": "onyx", "model": "onyx", "tiers": [], "default_tier": ""}}
         return {"data": {"mode": "demo", "provider": "demo", "model": "demo", "tiers": [], "default_tier": ""}}
