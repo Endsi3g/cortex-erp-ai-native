@@ -70,7 +70,7 @@ body.cx-nav-on [data-page-route="Workspaces"] .layout-main-section-wrapper {
 	flex: 0 0 auto;
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: flex-start;
 	height: var(--navbar-height, 48px);
 	padding: 0 10px 0 16px;
 }
@@ -105,6 +105,13 @@ body.cx-nav-on [data-page-route="Workspaces"] .layout-main-section-wrapper {
 .cx-nav-toggle:hover {
 	background: var(--cx-nav-hover);
 	color: var(--cortex-text, #09090b);
+}
+.cx-nav-footer {
+	flex: 0 0 auto;
+	display: flex;
+	justify-content: flex-start;
+	padding: 6px 12px;
+	border-top: 1px solid var(--cx-nav-line);
 }
 
 .cx-nav-scroll {
@@ -313,11 +320,13 @@ body.cx-nav-on [data-page-route="Workspaces"] .layout-main-section-wrapper {
 
 /* ---- Barre repliée : seulement les icônes ---- */
 body.cx-nav-collapsed .cx-nav-head {
-	flex-direction: column;
 	justify-content: center;
-	gap: 4px;
-	height: auto;
-	padding: 10px 0 6px;
+	height: var(--navbar-height, 48px);
+	padding: 0;
+}
+body.cx-nav-collapsed .cx-nav-footer {
+	justify-content: center;
+	padding: 6px 0;
 }
 body.cx-nav-collapsed #cx-nav .cx-label {
 	display: none;

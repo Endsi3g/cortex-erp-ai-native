@@ -156,6 +156,8 @@ def provision():
     from cortex_rental.services import tenant_provisioning as tp
 
     frappe.set_user("Administrator")
+    tp.ensure_default_warehouse_types()
+    tp.ensure_default_catalog_prerequisites()
     if not frappe.db.exists("Company", COMPANY):
         tp.create_company(COMPANY)
         log(f"Société créée : {COMPANY}")

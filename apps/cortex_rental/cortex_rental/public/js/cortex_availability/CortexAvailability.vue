@@ -275,14 +275,13 @@ function goCategory(value) {
 	frappe.set_route("cortex-availability", value);
 }
 function setCategory(value) {
-	const next = value || CATEGORY_ORDER[0] || "";
+	const next = value || "";
 	if (next === category.value && items.value.length) return;
 	category.value = next;
 	load();
 }
 
 onMounted(() => {
-	if (!category.value) category.value = CATEGORY_ORDER[0] || "";
 	load();
 });
 defineExpose({ load, setCategory });

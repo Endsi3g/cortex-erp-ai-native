@@ -5,8 +5,8 @@ try:
 except ImportError:
     frappe = None
 
-# Pour l'instant l'arrivée se fait sur l'espace Cortex Rental; l'Accueil IA (`cortex-home`) reste ouvert à la demande.
-HOME_ROUTE = "cortex-rental"
+# L'Accueil IA est le point d'entrée après connexion; le Tableau de bord reste accessible dans la navigation.
+HOME_ROUTE = "cortex-home"
 SIGNUP_TEMPLATE = "cortex_rental/templates/includes/cortex_signup.html"
 
 

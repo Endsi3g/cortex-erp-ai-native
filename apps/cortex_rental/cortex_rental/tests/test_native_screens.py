@@ -249,7 +249,7 @@ class TestLandingAndWorkspaceDesign(unittest.TestCase):
     def test_people_land_on_the_cortex_rental_workspace(self):
         from cortex_rental import auth_hooks
 
-        self.assertEqual(auth_hooks.HOME_ROUTE, "cortex-rental")
+        self.assertEqual(auth_hooks.HOME_ROUTE, "cortex-home")
 
     def test_number_cards_are_black_except_the_ones_that_need_attention(self):
         cards = {}

@@ -62,12 +62,38 @@ def safe_roles(roles: Iterable[str]) -> List[str]:
     return list(dict.fromkeys(wanted))
 
 
+def ensure_default_warehouse_types() -> None:
+    if not frappe.db.exists("DocType", "Warehouse Type"):
+        return
+    for wt in ("Transit", "Stores", "Finished Goods", "Work In Progress", "Reserved"):
+        if not frappe.db.exists("Warehouse Type", wt):
+            frappe.get_doc({"doctype": "Warehouse Type", "name": wt}).insert(ignore_permissions=True)
+
+
+def ensure_default_catalog_prerequisites() -> None:
+    if frappe.db.exists("DocType", "Item Group") and not frappe.db.exists("Item Group", "All Item Groups"):
+        frappe.get_doc({
+            "doctype": "Item Group",
+            "item_group_name": "All Item Groups",
+            "is_group": 1,
+        }).insert(ignore_permissions=True)
+    if frappe.db.exists("DocType", "UOM"):
+        for uom in ("Unit", "Nos", "Box", "Set", "Hour", "Day"):
+            if not frappe.db.exists("UOM", uom):
+                frappe.get_doc({
+                    "doctype": "UOM",
+                    "uom_name": uom,
+                }).insert(ignore_permissions=True)
+
+
 def create_company(company_name: str, country: str = DEFAULT_COUNTRY, currency: str = DEFAULT_CURRENCY) -> str:
     if frappe.db.exists("Company", company_name):
         frappe.throw(
             f"Une entreprise nommée « {company_name} » existe déjà : modifiez le nom de la demande avant d'approuver.",
             frappe.DuplicateEntryError,
         )
+    ensure_default_warehouse_types()
+    ensure_default_catalog_prerequisites()
     taken = frappe.get_all("Company", pluck="abbr")
     company = frappe.get_doc(
         {

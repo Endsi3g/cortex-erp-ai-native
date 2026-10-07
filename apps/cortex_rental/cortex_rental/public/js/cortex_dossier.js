@@ -11,7 +11,12 @@ cortex.dossier = function (frm) {
 	const money = (v) => format_currency(v || 0, frappe.defaults.get_default("currency") || "CAD");
 	const when = (v) => cortex.shortDateTime(`${v}:00`);
 	frappe
-		.call({ method: "cortex_rental.api.v1.dossier.get", args: { doctype: frm.doctype, name: frm.doc.name }, type: "GET" })
+		.call({
+			method: "cortex_rental.api.v1.dossier.get",
+			args: { doctype: frm.doctype, name: frm.doc.name },
+			type: "GET",
+			headers: frm.doc.company ? { "X-Company-ID": frm.doc.company } : {},
+		})
 		.then((r) => {
 			const d = r.message;
 			if (!d || frm.doc.name !== d.name) return;

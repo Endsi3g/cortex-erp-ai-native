@@ -158,33 +158,56 @@ function toggleVoice() {
 		frappe.show_alert({ message: "La saisie vocale n'est pas disponible dans ce navigateur.", indicator: "orange" }, 5);
 		return;
 	}
+	if (window.isSecureContext === false) {
+		frappe.show_alert({ message: "La saisie vocale exige une connexion sécurisée (HTTPS).", indicator: "orange" }, 6);
+		return;
+	}
 	if (isListening.value) {
-		speechRec && speechRec.stop();
+		try {
+			speechRec && speechRec.stop();
+		} catch (e) {
+			// La reconnaissance peut déjà s'être arrêtée entre le clic et l'appel.
+		}
 		isListening.value = false;
 		return;
 	}
 	try {
-		speechRec = new SpeechRec();
-		speechRec.lang = "fr-CA";
-		speechRec.continuous = false;
-		speechRec.interimResults = false;
-		speechRec.onstart = () => {
+		const recognition = new SpeechRec();
+		speechRec = recognition;
+		recognition.lang = "fr-CA";
+		recognition.continuous = false;
+		recognition.interimResults = false;
+		recognition.onstart = () => {
 			isListening.value = true;
 		};
-		speechRec.onresult = (evt) => {
-			const transcript = evt.results[0][0].transcript;
+		recognition.onresult = (evt) => {
+			const transcript = evt.results && evt.results[0] && evt.results[0][0] && evt.results[0][0].transcript;
+			if (!transcript) return;
 			text.value = text.value ? `${text.value} ${transcript}` : transcript;
 			nextTick(resize);
 		};
-		speechRec.onerror = () => {
+		recognition.onerror = (evt) => {
 			isListening.value = false;
+			const messages = {
+				"not-allowed": "Autorisez l'accès au microphone dans les réglages de votre navigateur, puis réessayez.",
+				"service-not-allowed": "Le service de saisie vocale est refusé par le navigateur.",
+				"audio-capture": "Aucun microphone n'est accessible. Vérifiez sa connexion et ses permissions.",
+				network: "Le service de saisie vocale ne répond pas. Vérifiez votre connexion Internet.",
+				"no-speech": "Aucune parole détectée. Réessayez près du microphone.",
+			};
+			if (evt.error !== "aborted") {
+				frappe.show_alert({ message: messages[evt.error] || "La saisie vocale a échoué. Vérifiez les permissions du microphone et réessayez.", indicator: "orange" }, 6);
+			}
 		};
-		speechRec.onend = () => {
+		recognition.onend = () => {
 			isListening.value = false;
+			if (speechRec === recognition) speechRec = null;
 		};
-		speechRec.start();
+		recognition.start();
 	} catch (e) {
 		isListening.value = false;
+		speechRec = null;
+		frappe.show_alert({ message: "Impossible de démarrer la saisie vocale. Vérifiez les permissions du microphone et réessayez.", indicator: "orange" }, 6);
 	}
 }
 
@@ -526,7 +549,7 @@ defineExpose({ refresh });
 
 					<div class="ch-toolbar-spacer"></div>
 
-					<button type="button" class="ch-tool-btn ch-tool-mic" :class="{ 'is-listening': isListening }" :title="isListening ? 'Arrêter l\'écoute' : 'Activer la saisie vocale'" aria-label="Saisie vocale" :aria-pressed="isListening" @click="toggleVoice">
+					<button type="button" class="ch-tool-btn ch-tool-mic" :class="{ 'is-listening': isListening }" :title="isListening ? 'Arrêter l\'écoute' : 'Activer la saisie vocale'" :aria-label="isListening ? 'Arrêter la saisie vocale' : 'Activer la saisie vocale'" :aria-pressed="isListening" @click="toggleVoice">
 						<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /></svg>
 					</button>
 

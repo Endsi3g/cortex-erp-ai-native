@@ -41,7 +41,7 @@
     {
       "fieldname": "project_name",
       "fieldtype": "Data",
-      "label": "Project Name",
+      "label": "Nom du projet",
       "in_list_view": 1
     },
     {

@@ -41,7 +41,10 @@
 	function renderWorkspaceExtras() {
 		const home = frappe.boot && frappe.boot.cortex_home;
 		const route = frappe.get_route();
-		if (route[0] !== "Workspaces" || route[1] !== "Cortex Rental") return;
+		if (route[0] !== "Workspaces" || route[1] !== "Cortex Rental") {
+			document.querySelectorAll(".cx-guide-video").forEach((n) => n.remove());
+			return;
+		}
 		const host = document.querySelector(".layout-main-section");
 		if (!host) return;
 		document.querySelectorAll(".cx-setup-card, .cx-guide-video").forEach((n) => n.remove());

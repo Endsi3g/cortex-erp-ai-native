@@ -65,7 +65,7 @@ const cortex_rental_transaction = {
 		}[to_state];
 		const run = (reason) =>
 			cortex
-				.call("rentals.change_state", { name: frm.doc.name, to_state, reason: reason || "", version: frm.doc.version }, { type: "POST" })
+				.call_for_company("rentals.change_state", { name: frm.doc.name, to_state, reason: reason || "", version: frm.doc.version }, frm.doc.company, { type: "POST" })
 				.then((r) => {
 					if (r && r.mutation_performed) frappe.show_alert({ message: __("Dossier mis à jour."), indicator: "green" });
 					return frm.reload_doc();
@@ -106,14 +106,14 @@ const cortex_rental_transaction = {
 			primary_action_label: __("Créer le lien"),
 			primary_action: (values) => {
 				cortex
-					.call("quote_share.create_share", {
+					.call_for_company("quote_share.create_share", {
 						rental_id: frm.doc.name,
 						channel: values.channel,
 						recipient_email: values.recipient_email || "",
 						recipient_name: values.recipient_name || "",
 						message: values.message || "",
 						valid_days: values.valid_days || 14,
-					})
+					}, frm.doc.company)
 					.then((r) => {
 						if (!r) return;
 						const url = frappe.utils.escape_html(r.url);
@@ -154,7 +154,7 @@ const cortex_rental_transaction = {
 	},
 
 	hold_action(frm, method, done) {
-		cortex.call(`rentals.${method}`, { name: frm.doc.name }, { type: "POST" }).then((r) => {
+		cortex.call_for_company(`rentals.${method}`, { name: frm.doc.name }, frm.doc.company, { type: "POST" }).then((r) => {
 			if (method === "renew_hold") {
 				const ok = r && r.status === "Active";
 				frappe.show_alert({ message: ok ? __("Matériel retenu jusqu'au {0}.", [cortex.shortDateTime(r.until)]) : __("Disponibilité insuffisante : aucune retenue."), indicator: ok ? "green" : "red" }, 7);
@@ -167,7 +167,7 @@ const cortex_rental_transaction = {
 
 	show_shares(frm) {
 		if (!["Quote", "Reservation"].includes(frm.doc.rental_state)) return;
-		cortex.call("quote_share.list_shares", { rental_id: frm.doc.name }, { type: "GET", freeze: false }).then((r) => {
+		cortex.call_for_company("quote_share.list_shares", { rental_id: frm.doc.name }, frm.doc.company, { type: "GET", freeze: false }).then((r) => {
 			const shares = (r && r.shares) || [];
 			const latest = shares[0];
 			if (!latest) return;
@@ -188,7 +188,7 @@ const cortex_rental_transaction = {
 				if (pay) frm.dashboard.add_comment(__("Portail : {0}.", [pay]), latest.payment_status === "Paid" ? "green" : "blue", true);
 			}
 			if (latest.effective_status === "Active") {
-				frm.add_custom_button(__("Révoquer le lien"), () => cortex.call("quote_share.revoke_share", { name: latest.name }).then(() => frm.reload_doc()), __("Actions"));
+				frm.add_custom_button(__("Révoquer le lien"), () => cortex.call_for_company("quote_share.revoke_share", { name: latest.name }, frm.doc.company).then(() => frm.reload_doc()), __("Actions"));
 			}
 		});
 	},
@@ -203,7 +203,7 @@ const cortex_rental_transaction = {
 	reserve(frm) {
 		frappe.confirm(__("Réserver le matériel pour cette location ? La disponibilité est revérifiée par le serveur."), () => {
 			cortex
-				.call("rentals.request_reservation", { name: frm.doc.name, version: frm.doc.version })
+				.call_for_company("rentals.request_reservation", { name: frm.doc.name, version: frm.doc.version }, frm.doc.company)
 				.then((r) => {
 					if (r && r.mutation_performed) frappe.show_alert({ message: __("Matériel réservé."), indicator: "green" });
 					return this.report(frm, r);
@@ -216,7 +216,7 @@ const cortex_rental_transaction = {
 			__("Soumettre le contrat à l'approbation ? Une personne autorisée doit l'approuver avant la sortie."),
 			() => {
 				cortex
-					.call("rentals.request_contract", { name: frm.doc.name, version: frm.doc.version })
+					.call_for_company("rentals.request_contract", { name: frm.doc.name, version: frm.doc.version }, frm.doc.company)
 					.then((r) => {
 						if (r && r.approval_request_id) {
 							frappe.show_alert(
@@ -279,7 +279,7 @@ const cortex_rental_transaction = {
 			],
 			primary_action_label: __("Terminer la sortie"),
 			primary_action: () => {
-				cortex.call("checkout.complete_checkout", { rental_id: frm.doc.name }).then(() => {
+				cortex.call_for_company("checkout.complete_checkout", { rental_id: frm.doc.name }, frm.doc.company).then(() => {
 					dialog.hide();
 					frappe.show_alert({ message: __("Sortie terminée."), indicator: "green" });
 					frm.reload_doc();
@@ -290,7 +290,7 @@ const cortex_rental_transaction = {
 			const serial = (dialog.get_value("serial") || "").trim();
 			if (!serial) return;
 			dialog.set_value("serial", "");
-			cortex.call("checkout.record_checkout_scan", { rental_id: frm.doc.name, serial_number: serial }).then(() =>
+			cortex.call_for_company("checkout.record_checkout_scan", { rental_id: frm.doc.name, serial_number: serial }, frm.doc.company).then(() =>
 				frm.reload_doc().then(() => render(dialog))
 			);
 		};
@@ -385,9 +385,10 @@ const cortex_rental_transaction = {
 					damage_severity: row.condition === "Damaged" ? "Functional" : "None",
 				}));
 				cortex
-					.call(
+					.call_for_company(
 						"checkin.submit_checkin",
 						{ transaction_id: frm.doc.name, items: JSON.stringify(items), finalize_mode: values.finalize_mode, notes: values.notes || "" },
+						frm.doc.company,
 						{ headers: { "Idempotency-Key": frappe.utils.get_random(24) } }
 					)
 					.then(() => {

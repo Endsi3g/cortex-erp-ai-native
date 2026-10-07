@@ -38,6 +38,15 @@ cortex.call = function (method, args, opts) {
 		.then((r) => r.message);
 };
 
+// Une action sur une fiche passe le tenant de la fiche; le serveur valide toujours ce choix
+// contre les sociétés autorisées à la personne (permissions/agent_scopes.py).
+cortex.call_for_company = function (method, args, company, opts) {
+	const options = Object.assign({}, opts || {});
+	options.headers = Object.assign({}, options.headers || {});
+	if (company) options.headers["X-Company-ID"] = company;
+	return cortex.call(method, args, options);
+};
+
 // Date et heure courtes (« 24 sept., 09:00 ») pour que les colonnes des listes ne soient plus tronquées.
 cortex.shortDateTime = function (value) {
 	if (!value) return "";

@@ -142,14 +142,15 @@
 		build() {
 			document.body.classList.add("cx-nav-on");
 			const saved = store(STORE);
-			document.body.classList.toggle("cx-nav-collapsed", saved === null ? SHORT.matches : saved === "1");
+			const assistantHome = this.pathParts()[0] === "cortex-home";
+			document.body.classList.toggle("cx-nav-collapsed", saved === null ? SHORT.matches || assistantHome : saved === "1");
 
 			const nav = el("nav", { id: "cx-nav", "aria-label": __("Navigation principale") });
 			const head = el("div", { class: "cx-nav-head" });
-			const brand = el("a", { class: "cx-brand", href: "/app/cortex-rental", "aria-label": "Cortex" }, `<img src="${frappe.boot.app_logo_url || "/assets/cortex_rental/images/cortex-logo.svg"}" alt="" width="26" height="26"><span class="cx-label">Cortex</span>`);
+			const brand = el("a", { class: "cx-brand", href: "/app/cortex-home", "aria-label": "Cortex" }, `<img src="${frappe.boot.app_logo_url || "/assets/cortex_rental/images/cortex-logo.svg"}" alt="" width="26" height="26"><span class="cx-label">Cortex</span>`);
 			const toggle = el("button", { type: "button", class: "cx-nav-toggle", "aria-label": __("Réduire ou agrandir le menu"), title: __("Réduire ou agrandir le menu") }, PANEL);
 			toggle.addEventListener("click", () => this.toggleCollapsed());
-			head.append(brand, toggle);
+			head.appendChild(brand);
 			nav.appendChild(head);
 
 			const scroll = el("div", { class: "cx-nav-scroll" });
@@ -221,7 +222,9 @@
 			new MutationObserver(() => window.setTimeout(refreshMore, 120)).observe(document.body, { attributes: true, attributeFilter: ["class"] });
 			window.setTimeout(refreshMore, 400);
 			nav.appendChild(scroll);
-			nav.appendChild(this.account());
+			const footer = el("div", { class: "cx-nav-footer" });
+			footer.appendChild(toggle);
+			nav.append(footer, this.account());
 
 			const backdrop = el("div", { id: "cx-nav-backdrop" });
 			backdrop.addEventListener("click", () => this.closeDrawer());
@@ -408,6 +411,9 @@
 		refreshActive() {
 			const active = this.currentOwner();
 			const parts = this.parts();
+			if (parts[0] === "cortex-home" && store(STORE) === null) {
+				document.body.classList.add("cx-nav-collapsed");
+			}
 			Object.entries(this.nodes).forEach(([id, node]) => {
 				if (!node.link) return;
 				const on = id === active;
