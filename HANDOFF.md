@@ -1,5 +1,7 @@
 # Handoff — Cortex ERP AI-Native
 
+> **Document historique (2026-08-31), conservé pour mémoire.** L'état réel du projet — écrans, assistant IA, déploiement, limites connues — est dans [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md) (document canonique), [`docs/ops/DEPLOIEMENT.md`](docs/ops/DEPLOIEMENT.md) et [`CHANGELOG.md`](CHANGELOG.md). Ce qui suit décrit l'époque des premiers essais de bench (Docker, tour de développement) ; les commandes et les blocages décrits ne s'appliquent plus tels quels. Depuis v0.7.0 : interface 100 % native ERPNext, bench de développement fonctionnel, passerelle IA interne, mise en production documentée.
+
 > **Mise à jour 2026-09-23 :** pour la direction UX, les écrans AI-native, les seuils de confiance, les règles de validation et le contrat d’intégration Onyx/Ollama, le document canonique est [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md). Les sections frontend historiques ci-dessous peuvent être obsolètes; vérifier chaque état dans le code avant de s’y fier.
 
 **Date** : 2026-08-31

@@ -1,33 +1,22 @@
-# Politique de Securite — Cortex ERP
+# Politique de sécurité — Cortex ERP
 
-La securite des donnees transactionnelles et l'etancheite multi-tenant de nos clients sont au coeur de la conception de Cortex ERP.
+Cortex est construit sur Frappe / ERPNext v15 (application `cortex_rental`, base MariaDB). La sécurité des données transactionnelles et l'étanchéité entre sociétés sont au cœur de sa conception.
 
----
+## Principes et garde-fous
 
-## Modele de Menace & Invariants de Securite
+1. **Isolation entre sociétés** : aucune personne ni aucun agent ne peut lire ou modifier les données d'une autre société. Chaque API vérifie la société de la personne connectée ; des tests de charge, de concurrence et d'abus le vérifient (`docs/audit/STRESS_TEST_2026-10-06.md`).
+2. **Droits et supervision humaine** : les actions à impact financier (confirmation d'un contrat, paiement, versement de consignation) passent par une demande d'approbation décidée par une personne autorisée. Un agent ne peut jamais approuver ; une personne ne décide pas de sa propre demande (auto-approbation du seul approbateur désactivée par défaut, activable avec avertissement et audit).
+3. **Assistant IA** : ses outils lisent et proposent sous les droits de la personne connectée ; il n'écrit, n'approuve ni ne confirme rien. Les clés des fournisseurs de modèles sont chiffrées côté serveur et n'atteignent jamais le navigateur. Le budget mensuel par société limite l'usage.
+4. **Audit immuable** : les évènements d'audit et les messages de conversation ne se modifient ni ne se suppriment (retirer une conversation de son historique la masque seulement).
+5. **Défense en profondeur** : validation des entrées, frein de débit par utilisateur, vérification du contenu réel des images, limites de longueur, erreurs sûres, en-têtes de sécurité, verrouillage de compte, appels sans compte limités à une liste fermée et protégés par adresse ou par signature (`apps/cortex_rental/cortex_rental/services/defense.py`).
+6. **Avant la mise en production** : `bench --site <site> execute cortex_rental.ops.predeploy.run` doit réussir (mode développeur éteint, mot de passe `Administrator` changé, comptes de démonstration désactivés, correctifs appliqués). Les outils de `dev_tools/` ne sont jamais exécutés en production. Voir [`docs/ops/DEPLOIEMENT.md`](docs/ops/DEPLOIEMENT.md).
 
-1. **Isolation Multi-Tenant Absolue** :
-   - Aucun utilisateur, operateur ou agent IA ne doit pouvoir acceder, lire ou muter les enregistrements d'une autre entreprise (`company_id`).
-   - Tout modele de donnees herite du trait `BelongsToCompany` et valide la presence du `company_id` des la creation.
+## Signaler une vulnérabilité
 
-2. **Garde-fous IA & Controle des Agents** :
-   - Les agents Onyx et façades MCP ne disposent d'aucun acces SQL direct a la base PostgreSQL.
-   - Les actions a impact financier (confirmation de contrat, facturation, versement de consignation) sont verrouillees par des Policies et une porte d'approbation humaine (`approval_requests`).
+Si vous découvrez une faille de sécurité dans Cortex :
 
-3. **Immutabilite de l'Audit** :
-   - Les evenements enregistres dans `audit_events` sont en ecriture seule (*append-only*). Toute tentative de mise a jour ou de suppression leve une exception `ImmutableRecordException`.
+1. **Ne créez pas d'issue publique sur GitHub.**
+2. Envoyez un rapport détaillé par courriel à **security@cortexerp.com**.
+3. Incluez la description, les étapes pour reproduire la faille et l'impact potentiel (isolation entre sociétés, audit, approbations, données de clients).
 
----
-
-## Signalement d'une Vulnerabilite
-
-Si vous decouvrez une faille de securite dans Cortex ERP :
-
-1. **Ne creez pas d'issue publique sur GitHub.**
-2. Envoyez un rapport detaille par courriel a : **security@cortexerp.com**.
-3. Incluez :
-   - La description de la vulnerabilite.
-   - Les etapes pour reproduire la faille.
-   - L'impact potentiel sur le cloisonnement multi-tenant ou l'audit.
-
-Notre equipe s'engage a accuser reception sous **24 heures ouvrees** et a publier un correctif dans les plus brefs delais.
+Nous accusons réception sous 24 heures ouvrables et publions un correctif dans les meilleurs délais.

@@ -1,6 +1,31 @@
-# Changelog — Cortex Security & Correctness Remediation
+# Changelog — Cortex
 
 ## Unreleased
+
+## v0.7.0 — 2026-10-07
+
+Assistant IA refondu, interface pleine largeur, préparation à la production. Remplace les notes de v0.6.0 sur les actions « directes » de l'assistant : l'assistant ne crée plus rien de lui-même.
+
+### Assistant IA
+- **Trois questionnaires guidés** dans la conversation : *Nouvelle location* (client avec création, dates, équipement avec disponibilité du serveur, récapitulatif au prix du serveur, « Créer le devis » en brouillon), *Grille de disponibilité* (7 j, 30 j ou dates + catégorie, mini-grille, « Créer un devis avec ceci ») et *Demandes d'approbation* (examiner, approuver, refuser avec motif, retirer sa demande, selon les droits). Les propositions de l'assistant ouvrent le même questionnaire.
+- **Mode démonstration honnête** (`services/ai/demo.py`) : sans clé de modèle, quatre demandes comprises (disponibilité, retards, approbations, catalogue) avec de vraies données, périodes écrites comprises (« du 20 au 22 octobre »), aucun prix ni confiance inventés. Pastille « Démonstration » / niveau Cortex lue côté serveur (`chat.status`).
+- **Modèles Cortex** : *Rapide* (Gemini), *Équilibré* (Claude Sonnet 5.5), *Avancé* (Claude Opus 5.5) ; identifiants, prix et interrupteurs dans *Cortex AI Settings* ; clé Anthropic chiffrée ; fournisseur Anthropic (`AnthropicProvider`) ; choix du niveau validé par le serveur (clé de niveau, jamais un identifiant) ; budget au coût réel du niveau ; indice de coût calculé. **À vérifier** : prix par défaut d'Équilibré et d'Avancé ; fournisseur Anthropic non essayé avec une vraie clé.
+- **Chat** : saisie collée au bas de l'écran sans ombre, fil défilant dans son cadre, réponses en texte normal (plus de cartes vertes), boutons d'action fantômes, attente « Cortex réfléchit… » en texte shimmer, texte révélé mot à mot (animation, pas un flux ; `prefers-reduced-motion` respecté), outils consultés affichés. Un type de bloc inconnu n'est plus jamais une erreur technique.
+- **Historique** en tiroir (recherche, groupes, ouvrir, retirer ; les messages restent au journal, `state = Hidden`), réglages (bannière, effacer mon historique, lien « Budget et modèle IA »), fil d'Ariane « Assistant IA › Conversation », pièces jointes retirées tant qu'elles ne sont pas traitées, cartes accessibles au clavier.
+- Nouvelles API : `chat.status`, `chat.delete_session`, `chat.clear_history`, `availability.get_period_summary`, `customers.create_customer`. Corrige : réponses vides (enveloppe `data`), salutation figée « Kael », `preview_pricing` en erreur 500 avec des articles en texte JSON, recherche de catalogue de l'assistant qui pouvait déborder sur une autre société.
+
+### Mise en page
+- **Pleine largeur** sur toutes les pages (la limite de 1290 px de Frappe est levée) ; l'assistant garde une colonne de lecture d'environ 900 px.
+- **Barre latérale** : Société → séparateur → Nouvelle location (ouverte et repliée), Administration ancrée au bas ; un groupe qui s'ouvre reste visible en entier, les entrées ne se compressent plus, fondu en bas quand il reste des entrées.
+
+### Données de démonstration et vérification
+- `dev_tools/jeu_de_demo.py` (`run`, `reinitialiser`) : devis, réservations et trois demandes d'approbation de trois personnes ; retire l'article de test `SIM-STRESS-1` ; refuse hors site de développement.
+- Tests ajoutés (assistant, niveaux, fournisseur Anthropic, présentation du chat) ; accessibilité vérifiée avec axe sur l'accueil, la conversation et les trois questionnaires, ordinateur et téléphone.
+
+### Documentation
+- README (racine et application) et index `docs/README.md` réécrits ; `HANDOFF.md` et `PROJECT.md` marqués historiques ; `SECURITY.md` mis à jour ; handoff V2 complété.
+
+## Avant v0.7.0 : tout ce qui suit v0.5.0 (regroupé)
 
 - **Préparation à la production** : stress test complet (fuzz de 112 endpoints, concurrence, isolation entre sociétés, charge sur gunicorn, 91 jours simulés), code défensif (`services/defense.py`, `safe_input`, frein de débit, vrais octets des images, 429 au verrouillage, en-têtes de sécurité), santé réelle (`health.ready`), contrôle pré-déploiement (`ops/predeploy.py`), guide de déploiement et fichiers `infra/production/`, sauvegarde et restauration vérifiées. Corrige : recherche de clients du compositeur de devis en erreur si le champ d'assurance n'existe pas; période de location inversée facturée 1 jour; 23 causes d'erreur 500 sur des entrées invalides.
 - **Onboarding : transitions fluides** entre les étapes (fondu et glissement dans le sens de la navigation, hauteur de la carte animée, progression et étapes mises à jour en place, entrée et sortie en fondu, respect de « moins d'animations »). Correctif : l'assistant restait par-dessus l'écran après « Continuer plus tard » ou la fin (Frappe n'appelle pas `on_page_hide`). Enregistrement de l'entreprise ~20× plus rapide.

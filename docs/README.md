@@ -1,12 +1,24 @@
-# Cortex — ERP AI-Native de Location d'Équipement (Documentation)
+# Cortex — Documentation
 
-Bienvenue dans la documentation d'ingénierie et d'architecture de **Cortex**, l'ERP de location d'équipement conçu selon le paradigme **AI-Native First**.
+Documentation d'ingénierie et d'exploitation de **Cortex**, l'ERP de location d'équipement natif ERPNext (Frappe v15, application `cortex_rental`) assisté par IA. Le code et le [contrat de l'interface](frontend/CORTEX_UI_HANDOFF_V2.md) font foi : en cas de désaccord avec un document plus ancien, le plus récent l'emporte.
 
-Le projet repose sur le socle **Frappe Framework / ERPNext (v15+)**, l'application métier propriétaire `cortex_rental`, la base de données relationnelle **MariaDB 10.11+**, la plateforme d'agents **Onyx**, orchestrés via une passerelle privée **Python FastMCP**, un **Routeur Multi-Modèles (Gemini 3.7 Flash & Claude 3.7 Sonnet)** et une interface opérateur Desk + **Frappe UI (Vue 3)**.
+## Par où commencer
 
----
+| Je veux… | Lire |
+|---|---|
+| Savoir ce qui est réellement construit (écrans, assistant IA, limites) | [`frontend/CORTEX_UI_HANDOFF_V2.md`](frontend/CORTEX_UI_HANDOFF_V2.md) — **document canonique** |
+| Installer, mettre à jour, mettre en production, sauvegarder | [`ops/DEPLOIEMENT.md`](ops/DEPLOIEMENT.md), [`ops/COURRIEL_SES.md`](ops/COURRIEL_SES.md) |
+| Comprendre une décision | [`adr/`](adr/) (système de référence, disponibilité, migration Frappe, facturation, passerelle IA, portail de devis, retenue par devis) |
+| Connaître les coûts de l'IA, du courriel et des paiements | [`architecture/COUTS_API.md`](architecture/COUTS_API.md), [`architecture/AI_ENGINE_DECISION.md`](architecture/AI_ENGINE_DECISION.md) |
+| Voir ce qui a été testé | [`audit/STRESS_TEST_2026-10-06.md`](audit/STRESS_TEST_2026-10-06.md), [`audit/AUDIT_SIMULATION_90_JOURS.md`](audit/AUDIT_SIMULATION_90_JOURS.md) |
+| Voir les écrans | [`review/REVUE_ECRANS_2026-10-06.md`](review/REVUE_ECRANS_2026-10-06.md) et les captures de [`review/captures/`](review/captures/) |
+| Voir l'historique | [`../CHANGELOG.md`](../CHANGELOG.md), [releases GitHub](https://github.com/Endsi3g/cortex-erp-ai-native/releases) |
 
-## 📚 Sommaire de la Documentation
+## Documents d'architecture et de processus
+
+Les documents numérotés ci-dessous décrivent l'architecture initiale (agents Onyx, façade FastMCP, routage de modèles). Depuis, l'interface est **100 % native ERPNext** (Vite, Frappe UI et l'application autonome ont été retirés) et l'assistant IA passe par une **passerelle interne** (`services/ai/`, ADR-006) avec les niveaux Cortex Rapide, Équilibré et Avancé. Les passages qui parlent de Vite, de Frappe UI ou de « Gemini 3.7 / Claude 3.7 » sont **historiques**.
+
+### Sommaire (historique)
 
 La documentation technique est structurée en 6 piliers :
 
