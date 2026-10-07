@@ -14,7 +14,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 "Plus Jakart
 .top{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line)}
 .top img{width:28px;height:28px;object-fit:contain;border-radius:6px}.top b{font-weight:600}
 h1{font-size:20px;margin:16px 0 4px}h2{font-size:15px;margin:22px 0 8px}
-p{margin:0 0 8px}.muted{color:var(--muted);font-size:13.5px}
+p{margin:0 0 8px}.muted{color:var(--muted);font-size:13.5px}a{color:var(--brand)}
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
 input,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text)}
 input[type=checkbox]{width:auto}
@@ -34,6 +34,7 @@ button:disabled{opacity:.55;cursor:default}
 .done{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .chk{display:flex;gap:8px;align-items:flex-start;color:var(--text);font-size:13.5px}
+.hint{margin-top:6px}@media (min-width:640px){.hint{display:none!important}}
 @media (prefers-reduced-motion:no-preference){button{transition:opacity .15s}}
 </style>
 </head>
@@ -55,8 +56,9 @@ button:disabled{opacity:.55;cursor:default}
 		</div>
 		<p style="margin-top:10px"><button type="button" id="load">Voir le matériel disponible</button></p>
 		<p class="muted" id="cal-note" role="status"></p>
-		<div class="legend" id="legend" hidden><span class="st-ok">● Libre</span><span class="st-partial">◐ Limité</span><span class="st-full">✕ Complet</span><span class="st-none">— Non offert</span></div>
+		<div class="legend" id="legend" hidden><span class="st-ok">● Libre</span><span class="st-partial">▲ Limité</span><span class="st-full">✕ Complet</span><span class="st-none">— Non offert</span></div>
 		<div class="cal" id="cal" hidden></div>
+		<p class="muted hint" id="hint" hidden>Faites défiler le tableau vers la droite pour voir toutes les dates.</p>
 
 		<h2>Vos coordonnées</h2>
 		<div class="row2">
@@ -99,7 +101,7 @@ function message(res,fallback){
   try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)return JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
   return fallback;
 }
-var SYM={ok:"●",partial:"◐",full:"✕",none:"—"},TXT={ok:"libre",partial:"limité",full:"complet",none:"non offert"};
+var SYM={ok:"●",partial:"▲",full:"✕",none:"—"},TXT={ok:"libre",partial:"limité",full:"complet",none:"non offert"};
 function render(data){
   var cal=$("cal");cal.textContent="";
   var table=document.createElement("table"),head=table.createTHead().insertRow();
@@ -114,7 +116,7 @@ function render(data){
     first.appendChild(box);first.appendChild(lab);
     item.days.forEach(function(s,i){var td=tr.insertCell();td.className="st-"+s;td.textContent=SYM[s];td.setAttribute("aria-label",item.item_name+", "+data.days[i]+" : "+TXT[s]);});
   });
-  cal.appendChild(table);cal.hidden=false;$("legend").hidden=false;
+  cal.appendChild(table);cal.hidden=false;$("legend").hidden=false;$("hint").hidden=!data.items.length;
   $("cal-note").textContent=data.items.length?data.note:"Aucun matériel n'est présenté pour le moment : décrivez votre besoin ci-dessous.";
 }
 $("load").addEventListener("click",function(){
