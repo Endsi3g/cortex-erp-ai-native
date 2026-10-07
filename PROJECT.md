@@ -1,3 +1,5 @@
+> **OBSOLÈTE.** Ce document décrit l'ancienne application Vue/Vite/Tailwind (`public/frontend`), **retirée le 2026-09-30** : Cortex est maintenant 100 % natif ERPNext (espaces, listes, formulaires, rapports) avec un accueil IA et une grille de disponibilité en Vue 3 compilés par le bundler de Frappe. Voir [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md) (canonique) et [`docs/frontend/ERPNEXT_NATIVE_PLAN.md`](docs/frontend/ERPNEXT_NATIVE_PLAN.md). L'historique Git conserve l'ancien projet.
+
 # Project: Cortex ERP AI-Native UI/UX Implementation
 
 ## Architecture
