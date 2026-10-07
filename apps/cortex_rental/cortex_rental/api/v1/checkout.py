@@ -7,6 +7,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import (
     get_company_context,
     require_human_staff_role,
@@ -35,6 +36,7 @@ def _array(value):
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def record_checkout_scan():
         require_human_staff_role()
         company = get_company_context()
@@ -85,6 +87,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def complete_checkout():
         require_human_staff_role()
         company = get_company_context()

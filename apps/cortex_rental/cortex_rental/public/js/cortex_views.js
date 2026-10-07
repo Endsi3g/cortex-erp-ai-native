@@ -42,7 +42,9 @@ cortex.call = function (method, args, opts) {
 cortex.shortDateTime = function (value) {
 	if (!value) return "";
 	const m = moment(frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(value) : value);
-	return m.isValid() ? m.locale("fr").format("D MMM, HH:mm") : value;
+	if (!m.isValid()) return value;
+	// Intl donne les mois en français (« 3 août ») sans dépendre des locales de moment.
+	return new Intl.DateTimeFormat("fr-CA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).format(m.toDate()).replace(" à ", ", ");
 };
 
 // Renomme le bouton principal d'une liste (« Ajouter Location » devient « Nouvelle location »).

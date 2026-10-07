@@ -6,6 +6,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.api.v1._shared import envelope, page_args, to_float
 from cortex_rental.permissions.agent_scopes import get_company_context, require_agent_scope, require_human_staff_role
 from cortex_rental.services.audit import AuditService
@@ -139,7 +140,9 @@ def list_customers_handler(company: str, search: str, page: int, page_size: int)
 
 
 def create_customer_draft_handler(payload: Dict[str, Any], company: str, actor_id: str) -> Dict[str, Any]:
-    name = payload.get("customer_name") or payload.get("name")
+    name = " ".join(str(payload.get("customer_name") or payload.get("name") or "").split())[:140]
+    if not name:
+        raise ValueError("Le nom du client est obligatoire.")
     email = payload.get("email")
     phone = payload.get("phone")
 
@@ -174,6 +177,7 @@ def create_customer_draft_handler(payload: Dict[str, Any], company: str, actor_i
 if frappe:
 
     @frappe.whitelist(methods=["GET", "POST"])
+    @defense.safe_input
     @log_tool_call("search_customers", scope="agent:customers:read")
     def search_customers(query: str = ""):
         require_agent_scope("agent:customers:read")
@@ -182,6 +186,7 @@ if frappe:
         return {"data": data, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_customers(search: str = None, page: int = 1, page_size: int = 20):
         require_human_staff_role()
         if not frappe.has_permission("Customer", "read"):
@@ -189,7 +194,17 @@ if frappe:
         page, page_size = page_args(page, page_size)
         return envelope(list_customers_handler(get_company_context(), search, page, page_size))
 
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def summary(customer: str):
+        """Vue 360° d'un client : devis ouverts, locations en cours, solde dû, dernière location."""
+        require_human_staff_role()
+        from cortex_rental.services import customer_360
+
+        return customer_360.summary(customer, get_company_context())
+
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("create_customer_draft", scope="agent:customers:draft")
     def create_customer_draft():
         require_agent_scope("agent:customers:draft")
@@ -205,3 +220,41 @@ if frappe:
             ),
         )
         return {"data": result, "meta": {"company": company}}
+
+
+if frappe:
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    @defense.limit_user("create_customer", 60)
+    def create_customer(customer_name: str = ""):
+        """Crée un client de la société active (équipe humaine seulement) depuis l'assistant ou le compositeur."""
+        require_human_staff_role()
+        company = get_company_context()
+        name = " ".join((customer_name or "").split())[:140]
+        if len(name) < 2:
+            raise ValueError("Le nom du client doit avoir au moins 2 caractères.")
+        if not frappe.has_permission("Customer", "create"):
+            frappe.throw("Votre rôle ne permet pas de créer un client.", frappe.PermissionError)
+        if frappe.db.exists("Customer", {"cortex_company": company, "customer_name": name}):
+            raise ValueError("Un client portant ce nom existe déjà.")
+        doc = frappe.get_doc(
+            {
+                "doctype": "Customer",
+                "customer_name": name,
+                "customer_type": "Company",
+                "customer_group": "Commercial",
+                "territory": "All Territories",
+                "cortex_company": company,
+                "disabled": 0,
+            }
+        )
+        doc.insert()
+        AuditService.record_mutation(
+            company=company,
+            action="cortex.customer.created",
+            entity_type="Customer",
+            entity_id=doc.name,
+            after_state={"customer_name": name},
+        )
+        return {"data": {"id": doc.name, "name": doc.customer_name}}

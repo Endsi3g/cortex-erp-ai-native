@@ -17,3 +17,8 @@ cortex_rental.patches.sync_system_defaults
 cortex_rental.patches.create_finance_settings
 cortex_rental.patches.set_cortex_help_menu
 cortex_rental.patches.backfill_journal_entries
+cortex_rental.patches.set_ai_pricing_defaults
+cortex_rental.patches.set_ai_economy_defaults
+cortex_rental.patches.disable_sole_approver_default
+cortex_rental.patches.remove_native_onboarding
+cortex_rental.patches.harden_login_policy

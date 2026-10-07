@@ -15,30 +15,23 @@ def execute(filters=None):
     rows = frappe.get_list(
         "Cortex AI Usage",
         filters=conditions,
-        fields=[
-            "date_format(creation, '%%Y-%%m') as month",
-            "model",
-            "user",
-            "count(name) as calls",
-            "sum(input_tokens) as input_tokens",
-            "sum(output_tokens) as output_tokens",
-            "sum(cost) as cost",
-        ],
-        group_by="date_format(creation, '%%Y-%%m'), model, user",
-        order_by="month desc, cost desc",
-        limit_page_length=1000,
+        fields=["creation", "model", "user", "input_tokens", "output_tokens", "cost"],
+        order_by="creation desc",
+        limit_page_length=50000,
     )
+    grouped = {}
+    for r in rows:
+        key = (str(r.creation)[:7], r.model, r.user)
+        row = grouped.setdefault(key, {"calls": 0, "input_tokens": 0, "output_tokens": 0, "cost": 0.0})
+        row["calls"] += 1
+        row["input_tokens"] += int(r.input_tokens or 0)
+        row["output_tokens"] += int(r.output_tokens or 0)
+        row["cost"] += flt(r.cost)
     data = [
-        {
-            "month": r.month,
-            "model": r.model,
-            "user": r.user,
-            "calls": int(r.calls or 0),
-            "input_tokens": int(r.input_tokens or 0),
-            "output_tokens": int(r.output_tokens or 0),
-            "cost": flt(r.cost, 4),
-        }
-        for r in rows
+        {"month": month, "model": model, "user": user, **values, "cost": flt(values["cost"], 4)}
+        for (month, model, user), values in sorted(
+            grouped.items(), key=lambda kv: (kv[0][0], kv[1]["cost"]), reverse=True
+        )
     ]
     return _columns(), data
 

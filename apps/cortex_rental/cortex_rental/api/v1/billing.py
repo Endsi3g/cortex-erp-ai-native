@@ -5,6 +5,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import get_company_context, require_human_staff_role
 from cortex_rental.services import billing
 from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
@@ -12,6 +13,7 @@ from cortex_rental.services.idempotency import get_idempotency_key_header, with_
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def record_payment(
         invoice: str,
         amount: float,

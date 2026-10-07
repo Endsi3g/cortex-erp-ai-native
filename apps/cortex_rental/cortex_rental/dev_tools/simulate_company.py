@@ -167,6 +167,9 @@ def provision():
         "Cortex Finance Settings",
         COMPANY,
         {
+            # La simulation antidate ses devis : une retenue de 72 h réelle bloquerait tout le reste. On l'éteint ici ;
+            # la retenue est éprouvée à part (charge_et_concurrence.race_quote_holds).
+            "quote_hold_enabled": 0,
             "late_fee_enabled": 1,
             "late_fee_grace_minutes": 60,
             "late_fee_percent": 100,

@@ -17,6 +17,7 @@ comptables.
 | Fournisseur | Interface `LLMProvider`; `GeminiProvider` (API REST `generateContent`, appel de fonctions, signatures de réflexion conservées entre les tours). Le préfixe de l'identifiant choisit le fournisseur; un autre fournisseur = une classe de plus. |
 | Clé | Champ `Password` chiffré des réglages, sinon `gemini_api_key` de la configuration du site. Envoyée en en-tête par le serveur, jamais au navigateur, jamais dans l'URL. |
 | Outils | `search_rental_items`, `check_inventory_availability`, `search_customers`, `list_rentals`, `list_pending_approvals`, `finance_summary`, `create_quote_draft` (proposition, ne crée rien). Chacun s'exécute **avec les droits de la personne connectée** et dans sa société; la liste par agent reste `services/tool_policy.py`. Aucun outil n'écrit, ne confirme ni n'approuve. |
+| Au plafond | **Passage automatique** au modèle économique (`gemini-3.1-flash-lite` par défaut, ses propres prix) et avis à la personne dans la réponse; refus à 150 % du budget (réglable). |
 | Budget | `Cortex AI Usage` (un enregistrement par appel : jetons, coût, société, personne); plafond mensuel en dollars et/ou en jetons, par défaut et par société (`Cortex AI Budget`). **0 = aucun plafond** (valeur livrée : le plafond reste à déterminer). Avertissement à 80 % dans la réponse, refus à 100 %. |
 | Coût | Calculé avec les prix par million de jetons saisis dans les réglages (0 par défaut : sans prix, seuls les jetons sont comptés). |
 | Moteur | Clé de site `cortex_chat_provider` : `gateway` (défaut), `onyx` (ancien moteur, conservé une version) ou `mock` (développement). |
@@ -36,9 +37,9 @@ Vérifié sur la simulation de 91 jours : 542 écritures, 0 déséquilibrée, cl
 
 ## Conséquences et limites
 
-- Le **nom exact du modèle** `gemini-3.8-flash` est une hypothèse du propriétaire : à confirmer chez Google. Sans clé API, l'assistant répond
+- Le modèle `gemini-3.8-flash` est **confirmé** sur la documentation de Google (2026-10-05) ; son tarif (0,75 $ / 3,75 $ par M de jetons) est annoncé jusqu'au 31 déc. 2026. Sans clé API, l'assistant répond
   par un message de configuration; les appels réels au fournisseur n'ont pas été exécutés ici (tests avec un fournisseur simulé).
-- Le **plafond de coût** et les **prix** sont à saisir; tant qu'ils sont à 0, aucun refus n'est appliqué.
+- Prix et plafond par défaut : voir `docs/architecture/COUTS_API.md` (60 $ par société et par mois, avertissement à 80 %); modifiables par société.
 - Le grand livre d'ERPNext n'est toujours pas alimenté : le journal Cortex sert de source au comptable (export de rapport). Un
   plan comptable propre à chaque comptable se règle dans les réglages financiers.
 - Hors périmètre : dépôt de garantie distinct, notes de crédit, relances automatiques, recherche documentaire.

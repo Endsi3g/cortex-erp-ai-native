@@ -72,17 +72,27 @@ function overlapping(item, ymd) {
 	return (item.blocks || []).filter((b) => b.starts_at < dayEnd && b.ends_at > dayStart);
 }
 
+// Un devis retient du matériel tant que sa retenue est valide (calculée par le serveur : hold_until).
+function holding(b) {
+	return b.rental_state === "Quote" && b.hold_until && b.hold_until > nowString();
+}
+function nowString() {
+	const d = new Date();
+	return `${dateString(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+}
+
 function cell(item, ymd) {
 	const blocks = overlapping(item, ymd);
 	const blocking = blocks.filter((b) => BLOCKING.includes(b.rental_state));
+	const held = blocks.filter(holding).reduce((sum, b) => sum + Number(b.qty || 0), 0);
 	const booked = blocking.reduce((sum, b) => sum + Number(b.qty || 0), 0);
 	const fleet = Number(item.fleet_quantity || 0);
-	const free = fleet - booked;
+	const free = fleet - booked - held;
 	let status = "ok";
 	if (fleet <= 0) status = "none";
 	else if (free <= 0) status = "full";
-	else if (booked > 0) status = "partial";
-	return { blocks, free, booked, fleet, status, quotes: blocks.length - blocking.length };
+	else if (booked + held > 0) status = "partial";
+	return { blocks, free, booked, held, fleet, status, quotes: 0 };
 }
 
 const rows = computed(() => {
@@ -100,10 +110,42 @@ const grouped = computed(() => {
 	return [...map.entries()];
 });
 
+// Part du parc déjà bloquée (0 à 100) : sert au remplissage discret de la cellule.
+function fillPct(c) {
+	if (c.fleet <= 0) return 0;
+	return Math.max(0, Math.min(100, Math.round((c.booked / c.fleet) * 100)));
+}
+function holdPct(c) {
+	if (c.fleet <= 0) return 0;
+	return Math.max(0, Math.min(100, Math.round(((c.booked + c.held) / c.fleet) * 100)));
+}
+
+// Locations et retenues de la période affichée (une ligne par dossier), pour remplir la page de choses utiles.
+const timeline = computed(() => {
+	const map = new Map();
+	rows.value.forEach((row) =>
+		(row.item.blocks || []).forEach((b) => {
+			const entry = map.get(b.transaction) || { ...b, items: [], qty: 0 };
+			entry.items.push(row.item.item_name);
+			entry.qty += Number(b.qty || 0);
+			map.set(b.transaction, entry);
+		})
+	);
+	return [...map.values()]
+		.filter((e) => e.rental_state !== "Quote" || holding(e))
+		.sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))
+		.slice(0, 14);
+});
+const heldCount = computed(() => timeline.value.filter((e) => e.rental_state === "Quote").length);
+function shortDate(value) {
+	const d = new Date(String(value).replace(" ", "T"));
+	return d.toLocaleDateString("fr-CA", { day: "numeric", month: "short" }).replace(".", "");
+}
+
 const STATUS_TEXT = { ok: "libre", partial: "partiellement réservé", full: "complet", none: "aucun parc" };
 
 function cellLabel(row, day, c) {
-	return `${row.item.item_name}, ${day.weekday} ${day.day} ${day.month} : ${Math.max(c.free, 0)} sur ${c.fleet} disponible${c.free > 1 ? "s" : ""}, ${STATUS_TEXT[c.status]}`;
+	return `${row.item.item_name}, ${day.weekday} ${day.day} ${day.month} : ${Math.max(c.free, 0)} sur ${c.fleet} disponible${c.free > 1 ? "s" : ""}, ${STATUS_TEXT[c.status]}${c.held ? `, dont ${c.held} retenu${c.held > 1 ? "s" : ""} par un devis` : ""}`;
 }
 
 async function load() {
@@ -145,12 +187,82 @@ function select(row, day, c) {
 function openRental(name) {
 	frappe.set_route("Form", "Cortex Rental Transaction", name);
 }
-function newRental() {
+// Détail d'un emprunt sans quitter la grille : client, factures, approbation et historique (dossier relié du serveur).
+const expanded = ref(null);
+const dossiers = ref({});
+async function toggleBlock(b) {
+	expanded.value = expanded.value === b.transaction ? null : b.transaction;
+	if (!expanded.value || dossiers.value[b.transaction]) return;
+	dossiers.value = { ...dossiers.value, [b.transaction]: "loading" };
+	try {
+		const r = await frappe.call({
+			method: "cortex_rental.api.v1.dossier.get",
+			type: "GET",
+			args: { doctype: "Cortex Rental Transaction", name: b.transaction },
+			silent: true,
+		});
+		dossiers.value = { ...dossiers.value, [b.transaction]: r.message };
+	} catch (e) {
+		dossiers.value = { ...dossiers.value, [b.transaction]: { error: true } };
+	}
+}
+function dossierOf(b) {
+	const d = dossiers.value[b.transaction];
+	return d && d !== "loading" && !d.error ? d : null;
+}
+const INVOICE_STATUS = { Issued: "Émise", "Partially Paid": "Payée en partie", Paid: "Payée", Cancelled: "Annulée" };
+const APPROVAL_STATUS = { Pending: "En attente", Approved: "Approuvée", Rejected: "Refusée" };
+
+// Nouveau devis avec cet équipement à cette date : le serveur calcule les prix et retient le matériel s'il y en a.
+function newQuote() {
 	const s = selected.value;
-	frappe.new_doc("Cortex Rental Transaction", {
-		starts_at: `${s.day.ymd} 09:00:00`,
-		ends_at: `${addDays(s.day.ymd, 1)} 09:00:00`,
+	if (!s) return;
+	const day = s.day.ymd;
+	const free = Math.max(s.cell.free, 0);
+	const dialog = new frappe.ui.Dialog({
+		title: __("Nouveau devis"),
+		fields: [
+			{
+				fieldtype: "HTML",
+				fieldname: "what",
+				options: `<p><b>${frappe.utils.escape_html(s.row.item.item_name)}</b><br><span class="text-muted">${free} ${__("libre(s) sur")} ${s.cell.fleet} ${__("le")} ${day}${free ? "" : " · " + __("complet : le devis sera créé sans retenue du matériel")}</span></p>`,
+			},
+			{ fieldname: "customer", fieldtype: "Link", options: "Customer", label: __("Client"), reqd: 1 },
+			{ fieldname: "qty", fieldtype: "Int", label: __("Quantité"), default: 1, reqd: 1 },
+			{ fieldname: "starts", fieldtype: "Date", label: __("Début (09 h)"), default: day, reqd: 1 },
+			{ fieldname: "ends", fieldtype: "Date", label: __("Fin (09 h)"), default: addDays(day, 1), reqd: 1 },
+			{ fieldname: "project", fieldtype: "Data", label: __("Projet (facultatif)") },
+		],
+		primary_action_label: __("Créer le devis"),
+		primary_action: async (v) => {
+			if (v.ends <= v.starts) return frappe.msgprint(__("La fin doit être après le début."));
+			if (!(v.qty >= 1)) return frappe.msgprint(__("Indiquez une quantité d'au moins 1."));
+			dialog.disable_primary_action && dialog.disable_primary_action();
+			try {
+				const r = await frappe.call({
+					method: "cortex_rental.api.v1.rentals.create_quote_draft",
+					type: "POST",
+					args: {
+						customer_id: v.customer,
+						starts_at: `${v.starts} 09:00:00`,
+						ends_at: `${v.ends} 09:00:00`,
+						project_name: v.project || "",
+						items: JSON.stringify([{ item_code: s.row.item.item_code, quantity: v.qty }]),
+					},
+				});
+				const name = (r.message || {}).entity_id;
+				if (!name) return;
+				const hold = await frappe.db.get_value("Cortex Rental Transaction", name, "hold_status");
+				const held = hold && hold.message && hold.message.hold_status === "Active";
+				frappe.show_alert({ message: held ? __("Devis {0} créé : le matériel est retenu.", [name]) : __("Devis {0} créé sans retenue (disponibilité insuffisante).", [name]), indicator: held ? "green" : "orange" }, 7);
+				dialog.hide();
+				frappe.set_route("Form", "Cortex Rental Transaction", name);
+			} finally {
+				dialog.enable_primary_action && dialog.enable_primary_action();
+			}
+		},
 	});
+	dialog.show();
 }
 
 let timer = null;
@@ -181,15 +293,7 @@ defineExpose({ load, setCategory });
 		<header class="cx-avail-head">
 			<div>
 				<h1 id="cx-avail-title" class="cx-avail-title">Disponibilité<span v-if="category"> · {{ __(category) }}</span></h1>
-				<p class="cx-avail-sub">
-					Unités libres de chaque équipement, jour par jour. Indicatif : le serveur revérifie au moment de réserver.
-				</p>
-			</div>
-			<div class="cx-avail-nav" role="group" aria-label="Période">
-				<button type="button" class="cx-btn" aria-label="Période précédente" @click="shift(-1)">‹</button>
-				<button type="button" class="cx-btn" @click="today">Aujourd'hui</button>
-				<button type="button" class="cx-btn" aria-label="Période suivante" @click="shift(1)">›</button>
-				<span class="cx-avail-period" aria-live="polite">{{ periodLabel }}</span>
+				<p class="cx-avail-sub">Unités libres de chaque équipement, jour par jour. Indicatif : le serveur revérifie au moment de réserver.</p>
 			</div>
 		</header>
 
@@ -206,25 +310,23 @@ defineExpose({ load, setCategory });
 			>
 		</nav>
 
-		<div class="cx-avail-filters">
-			<label class="cx-field">
-				<span>Recherche</span>
-				<input v-model="search" type="search" placeholder="Nom ou code de l'équipement" @input="onSearch" />
-			</label>
-			<label class="cx-field">
-				<span>Période affichée</span>
-				<select v-model.number="span" @change="load">
-					<option v-for="s in SPANS" :key="s.days" :value="s.days">{{ s.label }}</option>
-				</select>
-			</label>
+		<div class="cx-avail-bar">
+			<div class="cx-avail-nav" role="group" aria-label="Période">
+				<button type="button" class="cx-btn cx-icon" aria-label="Période précédente" @click="shift(-1)">‹</button>
+				<button type="button" class="cx-btn" @click="today">Aujourd'hui</button>
+				<button type="button" class="cx-btn cx-icon" aria-label="Période suivante" @click="shift(1)">›</button>
+				<span class="cx-avail-period" aria-live="polite">{{ periodLabel }}</span>
+			</div>
+			<input v-model="search" class="cx-search" type="search" aria-label="Rechercher un équipement" placeholder="Rechercher un équipement" @input="onSearch" />
+			<select v-model.number="span" class="cx-span" aria-label="Période affichée" @change="load">
+				<option v-for="s in SPANS" :key="s.days" :value="s.days">{{ s.label }}</option>
+			</select>
+			<ul class="cx-avail-legend" aria-label="Légende">
+				<li><span class="cx-dot cx-dot-partial"></span> En partie réservé</li>
+				<li><span class="cx-dot cx-dot-full"></span> Complet</li>
+				<li><span class="cx-dot cx-dot-hold"></span> Retenu par un devis</li>
+			</ul>
 		</div>
-
-		<ul class="cx-avail-legend" aria-label="Légende">
-			<li><span class="cx-dot cx-dot-ok"></span> Tout libre</li>
-			<li><span class="cx-dot cx-dot-partial"></span> Partiellement réservé</li>
-			<li><span class="cx-dot cx-dot-full"></span> Complet</li>
-			<li><span class="cx-dot cx-dot-quote"></span> Devis en cours (ne bloque pas le matériel)</li>
-		</ul>
 
 		<p v-if="error" class="cx-avail-error" role="alert">{{ error }}</p>
 
@@ -266,6 +368,7 @@ defineExpose({ load, setCategory });
 								type="button"
 								class="cx-cell"
 								:class="[`cx-cell-${c.status}`, { 'cx-cell-quote': c.quotes > 0 }]"
+								:style="{ '--pct': fillPct(c) + '%', '--tot': holdPct(c) + '%' }"
 								:aria-label="cellLabel(row, days[i], c)"
 								:aria-pressed="selected && selected.row === row && selected.day === days[i]"
 								@click="select(row, days[i], c)"
@@ -278,6 +381,21 @@ defineExpose({ load, setCategory });
 			</table>
 		</div>
 
+		<section v-if="!loading && !error && timeline.length" class="cx-avail-timeline" aria-label="Locations et retenues de la période">
+			<header>
+				<h2>Sur la période</h2>
+				<p>{{ timeline.length }} dossier{{ timeline.length > 1 ? "s" : "" }}<span v-if="heldCount"> · {{ heldCount }} devis qui retiennent du matériel</span></p>
+			</header>
+			<ul>
+				<li v-for="e in timeline" :key="e.transaction">
+					<a href="#" @click.prevent="openRental(e.transaction)">{{ e.transaction }}</a>
+					<span class="cx-tl-state" :class="`cx-tl-${e.rental_state === 'Quote' ? 'hold' : 'book'}`">{{ e.rental_state === "Quote" ? "Devis · retenue" : STATE_LABELS[e.rental_state] || e.rental_state }}</span>
+					<span class="cx-tl-main"><strong>{{ e.customer }}</strong> · {{ e.items.slice(0, 2).join(", ") }}<span v-if="e.items.length > 2"> +{{ e.items.length - 2 }}</span></span>
+					<span class="cx-tl-when">{{ shortDate(e.starts_at) }} → {{ shortDate(e.ends_at) }}<span v-if="e.rental_state === 'Quote'"> · jusqu'au {{ shortDate(e.hold_until) }}</span></span>
+				</li>
+			</ul>
+		</section>
+
 		<aside v-if="selected" class="cx-avail-detail" aria-live="polite">
 			<div class="cx-avail-detail-head">
 				<strong>{{ selected.row.item.item_name }}</strong>
@@ -286,19 +404,39 @@ defineExpose({ load, setCategory });
 			</div>
 			<p>
 				{{ Math.max(selected.cell.free, 0) }} libre{{ selected.cell.free > 1 ? "s" : "" }} sur {{ selected.cell.fleet }} ·
-				{{ selected.cell.booked }} bloqué{{ selected.cell.booked > 1 ? "s" : "" }}
+				{{ selected.cell.booked }} bloqué{{ selected.cell.booked > 1 ? "s" : "" }}<span v-if="selected.cell.held"> · {{ selected.cell.held }} retenu{{ selected.cell.held > 1 ? "s" : "" }} par un devis</span>
 			</p>
+			<button type="button" class="cx-btn cx-btn-primary cx-detail-cta" @click="newQuote">Créer un devis avec cet équipement ce jour-là</button>
+			<p v-if="selected.cell.free <= 0" class="cx-avail-muted">Complet : un devis serait créé sans retenue du matériel.</p>
+			<h4 class="cx-detail-sub">Locations ce jour-là</h4>
 			<ul v-if="selected.cell.blocks.length" class="cx-avail-blocks">
-				<li v-for="b in selected.cell.blocks" :key="b.transaction + b.starts_at">
-					<a href="#" @click.prevent="openRental(b.transaction)">{{ b.transaction }}</a>
-					— {{ STATE_LABELS[b.rental_state] || b.rental_state }}, {{ b.customer }}, {{ b.qty }} unité{{
-						b.qty > 1 ? "s" : ""
-					}}
-					({{ b.starts_at.slice(0, 16) }} → {{ b.ends_at.slice(0, 16) }})
+				<li v-for="b in selected.cell.blocks" :key="b.transaction + b.starts_at" :class="{ open: expanded === b.transaction }">
+					<button type="button" class="cx-block-btn" :aria-expanded="expanded === b.transaction" @click="toggleBlock(b)">
+						<span class="cx-block-main">
+							<b>{{ b.customer }}</b>
+							<small>{{ b.transaction }} · {{ b.qty }} unité{{ b.qty > 1 ? "s" : "" }} · {{ b.starts_at.slice(5, 16) }} → {{ b.ends_at.slice(5, 16) }}</small>
+						</span>
+						<span class="cx-tl-state" :class="`cx-tl-${b.rental_state === 'Quote' ? 'hold' : 'book'}`">{{ b.rental_state === "Quote" ? (holding(b) ? "Devis · retenue" : "Devis") : STATE_LABELS[b.rental_state] || b.rental_state }}</span>
+					</button>
+					<div v-if="expanded === b.transaction" class="cx-block-detail">
+						<p v-if="dossiers[b.transaction] === 'loading'" class="cx-avail-muted">Chargement…</p>
+						<p v-else-if="!dossierOf(b)" class="cx-avail-muted">Le détail n'est pas disponible pour votre rôle.</p>
+						<template v-else>
+							<dl>
+								<div v-if="dossierOf(b).customer"><dt>Client</dt><dd><a :href="'/app/customer/' + encodeURIComponent(dossierOf(b).customer.id)">{{ dossierOf(b).customer.name }}</a></dd></div>
+								<div v-if="(dossierOf(b).invoices || []).length"><dt>Factures</dt><dd><span v-for="i in dossierOf(b).invoices" :key="i.id"><a :href="'/app/cortex-rental-invoice/' + encodeURIComponent(i.id)">{{ i.id }}</a> {{ INVOICE_STATUS[i.status] || i.status }}<template v-if="i.balance"> · solde {{ i.balance.toFixed(2) }} $</template><br /></span></dd></div>
+								<div v-if="(dossierOf(b).approvals || []).length"><dt>Approbation</dt><dd><a :href="'/app/approval-request/' + encodeURIComponent(dossierOf(b).approvals[0].id)">{{ APPROVAL_STATUS[dossierOf(b).approvals[0].status] || dossierOf(b).approvals[0].status }}</a><template v-if="dossierOf(b).approvals[0].decided_by"> · {{ dossierOf(b).approvals[0].decided_by }}</template></dd></div>
+								<div v-if="dossierOf(b).created_by"><dt>Créé par</dt><dd>{{ dossierOf(b).created_by }}</dd></div>
+							</dl>
+							<ul v-if="(dossierOf(b).timeline || []).length" class="cx-block-history">
+								<li v-for="(e, n) in dossierOf(b).timeline.slice(0, 4)" :key="n"><b>{{ e.actor }}</b> · {{ e.text }} <small>{{ e.at }}</small></li>
+							</ul>
+						</template>
+						<button type="button" class="cx-btn" @click="openRental(b.transaction)">Ouvrir la location</button>
+					</div>
 				</li>
 			</ul>
-			<p v-else class="cx-avail-muted">Aucune location sur cette journée.</p>
-			<button type="button" class="cx-btn cx-btn-primary" @click="newRental">Nouvelle location ce jour-là</button>
+			<p v-else class="cx-avail-muted">Aucune location sur cette journée : l'équipement est libre.</p>
 		</aside>
 	</section>
 </template>
@@ -353,6 +491,39 @@ defineExpose({ load, setCategory });
 	justify-content: space-between;
 	gap: 12px;
 	align-items: flex-end;
+}
+.cx-avail-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px 12px;
+	margin: 14px 0 12px;
+}
+.cx-search {
+	height: 34px;
+	width: 240px;
+	max-width: 100%;
+	padding: 0 12px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: #fff;
+	font: inherit;
+	font-size: 13px;
+}
+.cx-span {
+	height: 34px;
+	padding: 0 8px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: #fff;
+	font: inherit;
+	font-size: 13px;
+}
+.cx-icon {
+	width: 34px;
+	padding: 0;
+	font-size: 18px;
+	line-height: 1;
 }
 .cx-avail-title {
 	margin: 0;
@@ -430,9 +601,9 @@ defineExpose({ load, setCategory });
 .cx-avail-legend {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px 16px;
+	gap: 4px 14px;
 	list-style: none;
-	margin: 8px 0 12px;
+	margin: 0 0 0 auto;
 	padding: 0;
 	font-size: 12px;
 	color: var(--muted);
@@ -449,8 +620,11 @@ defineExpose({ load, setCategory });
 .cx-dot-partial { background: #e4e4e7; border: 1px solid #a1a1aa; }
 .cx-dot-full { background: var(--full-bg); border: 1px solid var(--full); }
 .cx-dot-quote { border: 1px dashed var(--muted); }
+.cx-dot-hold { background: repeating-linear-gradient(135deg, rgba(180, 83, 9, 0.35) 0 3px, transparent 3px 6px); border: 1px solid #b45309; }
 .cx-avail-scroll {
-	overflow-x: auto;
+	overflow: auto;
+	max-height: calc(100vh - 230px);
+	min-height: 420px;
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	background: #fff;
@@ -464,23 +638,28 @@ defineExpose({ load, setCategory });
 }
 .cx-avail-table th,
 .cx-avail-table td {
-	padding: 1px 2px;
-	border-bottom: 1px solid #f0f0f1;
+	padding: 3px 3px;
+	border-bottom: 1px solid #f1f1f2;
 	text-align: center;
 	font-weight: 500;
 }
 .cx-avail-table thead th {
-	background: #f4f4f5;
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	min-width: 52px;
+	background: #fafafa;
 	color: var(--muted);
 	font-size: 12px;
 	white-space: nowrap;
+	padding: 8px 3px;
 }
-.cx-avail-table .cx-today {
-	background: #09090b;
-	color: #fff;
+.cx-avail-table thead .cx-today {
+	box-shadow: inset 0 -2px 0 var(--ok);
+	color: var(--ok);
 }
 .cx-avail-table .cx-today .cx-dn {
-	color: #fff;
+	color: var(--ok);
 }
 .cx-avail-table .cx-weekend:not(.cx-today) {
 	background: #fafafa;
@@ -499,20 +678,21 @@ defineExpose({ load, setCategory });
 	position: sticky;
 	left: 0;
 	z-index: 1;
-	min-width: 200px;
-	max-width: 260px;
-	padding: 2px 12px !important;
+	min-width: 220px;
+	max-width: 300px;
+	padding: 4px 14px !important;
 	text-align: left !important;
 	display: table-cell;
 	background: #fff;
 	border-right: 1px solid var(--line);
 }
 thead .cx-sticky {
-	background: #f4f4f5;
+	background: #fafafa;
+	z-index: 3;
 }
 .cx-name {
 	display: inline-block;
-	max-width: 210px;
+	max-width: 230px;
 	vertical-align: bottom;
 	font-size: 13px;
 	font-weight: 500;
@@ -527,7 +707,7 @@ thead .cx-sticky {
 	color: var(--muted);
 }
 .cx-group th {
-	background: #f4f4f5;
+	background: #fafafa;
 	text-align: left;
 	font-size: 11px;
 	letter-spacing: 0.04em;
@@ -537,14 +717,16 @@ thead .cx-sticky {
 }
 .cx-cell {
 	width: 100%;
-	min-width: 34px;
-	height: 26px;
-	border-radius: 6px;
+	min-width: 46px;
+	height: 46px;
+	border-radius: 8px;
 	border: 1px solid transparent;
-	background: transparent;
-	color: #27272a;
+	background:
+		linear-gradient(to top, rgba(63, 63, 70, 0.16) var(--pct, 0%), transparent var(--pct, 0%)),
+		repeating-linear-gradient(135deg, rgba(180, 83, 9, 0.2) 0 4px, transparent 4px 8px) bottom / 100% var(--tot, 0%) no-repeat;
+	color: #3f3f46;
 	font: inherit;
-	font-size: 13px;
+	font-size: 14px;
 	font-weight: 500;
 	font-variant-numeric: tabular-nums;
 	cursor: pointer;
@@ -558,36 +740,178 @@ thead .cx-sticky {
 	outline: 2px solid var(--ok);
 	outline-offset: 2px;
 }
-.cx-cell-ok { background: transparent; }
-.cx-cell-partial { background: #ececee; }
+.cx-cell-ok { color: #71717a; }
+.cx-cell-partial { color: #27272a; }
 .cx-cell-full { background: var(--full-bg); color: var(--full); font-weight: 650; }
 .cx-cell-none { color: #a1a1aa; }
 .cx-cell-quote { border: 1px dashed var(--muted); }
 .cx-cell[aria-pressed="true"] { box-shadow: 0 0 0 2px #09090b; }
-.cx-avail-detail {
-	margin-top: 16px;
-	padding: 14px 16px;
+.cx-avail-timeline {
+	margin-top: 18px;
+	padding: 14px 16px 6px;
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	background: #fff;
+}
+.cx-avail-timeline h2 {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 650;
+}
+.cx-avail-timeline header p {
+	margin: 2px 0 8px;
+	color: var(--muted);
+	font-size: 12.5px;
+}
+.cx-avail-timeline ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.cx-avail-timeline li {
+	display: grid;
+	grid-template-columns: 150px 130px 1fr auto;
+	gap: 4px 14px;
+	align-items: center;
+	padding: 9px 0;
+	border-top: 1px solid #f1f1f2;
+	font-size: 13px;
+}
+.cx-tl-state {
+	justify-self: start;
+	padding: 2px 9px;
+	border-radius: 999px;
+	font-size: 12px;
+}
+.cx-tl-book {
+	background: #eef3ef;
+	color: #3f6a52;
+}
+.cx-tl-hold {
+	background: #fdf0e0;
+	color: #8a4b00;
+}
+.cx-tl-main {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.cx-tl-when {
+	color: var(--muted);
+	white-space: nowrap;
+}
+@media (max-width: 760px) {
+	.cx-avail-timeline li {
+		grid-template-columns: 1fr auto;
+	}
+	.cx-tl-main {
+		grid-column: 1 / -1;
+		white-space: normal;
+	}
+}
+.cx-avail-detail {
+	position: fixed;
+	top: 96px;
+	right: 20px;
+	bottom: 20px;
+	z-index: 20;
+	width: min(400px, calc(100vw - 32px));
+	overflow-y: auto;
+	padding: 16px 18px;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: #fff;
+	box-shadow: 0 16px 44px rgba(0, 0, 0, 0.14);
 	animation: cx-rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .cx-avail-detail-head {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 10px;
+	gap: 6px 10px;
 }
 .cx-avail-detail-head .cx-btn {
 	margin-left: auto;
 }
+.cx-detail-cta {
+	width: 100%;
+	margin: 4px 0 8px;
+}
+.cx-detail-sub {
+	margin: 18px 0 8px;
+	font-size: 12px;
+	font-weight: 650;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
 .cx-avail-blocks {
-	margin: 8px 0 12px;
-	padding-left: 18px;
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
 	font-size: 13px;
 }
-.cx-avail-blocks a {
+.cx-avail-blocks li {
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow: hidden;
+}
+.cx-block-btn {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	width: 100%;
+	padding: 10px 12px;
+	border: 0;
+	background: transparent;
+	text-align: left;
+	cursor: pointer;
+}
+.cx-block-btn:hover {
+	background: #f7f7f5;
+}
+.cx-block-main {
+	display: grid;
+	min-width: 0;
+}
+.cx-block-main small {
+	color: var(--muted);
+	font-size: 12px;
+}
+.cx-block-detail {
+	display: grid;
+	gap: 10px;
+	padding: 4px 12px 12px;
+	border-top: 1px solid var(--line);
+}
+.cx-block-detail dl {
+	display: grid;
+	gap: 8px;
+	margin: 8px 0 0;
+}
+.cx-block-detail dt {
+	color: var(--muted);
+	font-size: 11px;
 	font-weight: 600;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+.cx-block-detail dd {
+	margin: 0;
+}
+.cx-block-history {
+	display: grid;
+	gap: 4px;
+	margin: 0;
+	padding-left: 16px;
+	font-size: 12.5px;
+}
+.cx-block-history small {
+	color: var(--muted);
 }
 .cx-avail-error {
 	padding: 12px 14px;
@@ -611,8 +935,41 @@ thead .cx-sticky {
 	animation: cx-shimmer 1.4s linear infinite;
 }
 @media (max-width: 640px) {
+	.cx-avail-detail {
+		top: auto;
+		right: 8px;
+		bottom: 8px;
+		left: 8px;
+		width: auto;
+		max-height: 72vh;
+	}
+	.cx-avail-scroll {
+		max-height: none;
+	}
+	.cx-avail-legend {
+		margin-left: 0;
+	}
+	.cx-search {
+		width: 100%;
+	}
+	.cx-cell {
+		min-width: 40px;
+		height: 36px;
+	}
 	.cx-sticky {
-		min-width: 130px;
+		min-width: 104px;
+		max-width: 112px;
+		padding: 4px 8px !important;
+	}
+	.cx-name {
+		display: block;
+		max-width: none;
+		white-space: normal;
+		font-size: 12.5px;
+		line-height: 1.25;
+	}
+	.cx-code {
+		margin-left: 0;
 	}
 	.cx-avail-period {
 		margin-left: 0;

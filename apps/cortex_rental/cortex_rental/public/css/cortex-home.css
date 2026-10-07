@@ -15,12 +15,6 @@ body[data-route="cortex-home"] .page-content {
 	background: #ffffff !important;
 }
 
-body[data-route="cortex-home"] .navbar .breadcrumb,
-body[data-route="cortex-home"] #navbar-breadcrumbs,
-body[data-route="cortex-home"] .navbar-breadcrumbs {
-	display: none !important;
-}
-
 .cortex-home-mount {
 	min-height: calc(100vh - var(--navbar-height, 56px) - 40px);
 	background: #ffffff;

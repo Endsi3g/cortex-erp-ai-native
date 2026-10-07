@@ -11,7 +11,10 @@
     "team_done",
     "catalog_done",
     "policies_done",
-    "completed_on"
+    "completed_on",
+    "owner_done",
+    "first_rental_done",
+    "skipped_steps"
   ],
   "fields": [
     {
@@ -63,9 +66,25 @@
       "fieldtype": "Datetime",
       "label": "Terminé le",
       "read_only": 1
+    },
+    {
+      "fieldname": "owner_done",
+      "fieldtype": "Check",
+      "label": "Étape propriétaire terminée"
+    },
+    {
+      "fieldname": "first_rental_done",
+      "fieldtype": "Check",
+      "label": "Première location terminée"
+    },
+    {
+      "fieldname": "skipped_steps",
+      "fieldtype": "Small Text",
+      "label": "Étapes passées",
+      "description": "Liste JSON des étapes facultatives passées pour l'instant."
     }
   ],
-  "modified": "2026-09-29 12:00:00.000000",
+  "modified": "2026-10-06 15:00:00.000000",
   "module": "Cortex Rental",
   "name": "Cortex Onboarding",
   "owner": "Administrator",

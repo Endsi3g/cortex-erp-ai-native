@@ -7,46 +7,43 @@ const CONFIDENCE_LABEL = { high: "confiance élevée", medium: "confiance moyenn
 </script>
 
 <template>
-	<div class="cp-block cp-block-extracted">
-		<div class="cp-block-head">
-			<span class="cp-extracted-icon" aria-hidden="true">▤</span>
-			<span class="cx-title-card">{{ block.title }}</span>
-		</div>
-		<dl class="cp-field-list">
+	<section class="cp-extracted" :aria-label="block.title">
+		<h3 class="cp-extracted-title">{{ block.title }}</h3>
+		<dl>
 			<template v-for="(field, i) in block.fields" :key="i">
-				<dt class="cx-text-label">{{ field.label }}</dt>
-				<dd class="cx-text-body">
+				<dt>{{ field.label }}</dt>
+				<dd>
 					{{ field.value }}
-					<span class="cx-text-meta">({{ CONFIDENCE_LABEL[field.confidence] || field.confidence }})</span>
+					<span>({{ CONFIDENCE_LABEL[field.confidence] || field.confidence }})</span>
 				</dd>
 			</template>
 		</dl>
-	</div>
+	</section>
 </template>
 
 <style scoped>
-.cp-block-extracted {
-	background: var(--cortex-violet-50);
-	border: 1px solid var(--cortex-violet-100);
-	border-radius: var(--radius-md);
-	padding: var(--space-3);
+.cp-extracted-title {
+	margin: 0 0 6px;
+	font-size: 14px;
+	font-weight: 650;
+	color: #0f172a;
 }
-.cp-block-head {
-	display: flex;
-	align-items: center;
-	gap: var(--space-2);
-	margin-bottom: var(--space-2);
-}
-.cp-extracted-icon {
-	color: var(--cortex-violet-600);
-}
-.cp-field-list {
-	margin: 0;
+dl {
 	display: grid;
 	grid-template-columns: max-content 1fr;
-	gap: 4px var(--space-3);
-}
-.cp-field-list dd {
+	gap: 4px 14px;
 	margin: 0;
+	font-size: 14px;
+}
+dt {
+	color: #64748b;
+}
+dd {
+	margin: 0;
+	color: #1e293b;
+}
+dd span {
+	font-size: 12px;
+	color: #64748b;
 }
 </style>

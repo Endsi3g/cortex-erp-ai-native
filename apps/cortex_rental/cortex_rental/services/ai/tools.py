@@ -57,21 +57,16 @@ DATETIME = {"type": "string", "description": "Date et heure au format AAAA-MM-JJ
 def search_rental_items(query: str):
     company = _company()
     like = f"%{query.strip()}%"
-    filters = {"company": company} if company else {}
+    if not company:
+        return {"items": []}
+    # Toujours limité à la société de la personne : jamais de repli vers le catalogue d'une autre société.
     rows = frappe.get_list(
         "Cortex Rental Item Profile",
-        filters=filters,
+        filters={"company": company},
         or_filters=[["item_name", "like", like], ["item_code", "like", like]],
         fields=["item_code", "item_name", "category", "daily_rate", "total_quantity", "is_serialized"],
         limit_page_length=15,
     )
-    if not rows and company:
-        rows = frappe.get_list(
-            "Cortex Rental Item Profile",
-            or_filters=[["item_name", "like", like], ["item_code", "like", like]],
-            fields=["item_code", "item_name", "category", "daily_rate", "total_quantity", "is_serialized"],
-            limit_page_length=15,
-        )
     return {"items": [dict(r) for r in rows]}
 
 
@@ -123,7 +118,7 @@ def list_rentals(state: str = "", limit: int = 10):
         filters=filters,
         fields=["name", "customer", "rental_state", "starts_at", "ends_at", "grand_total"],
         order_by="modified desc",
-        limit_page_length=max(1, min(int(limit or 10), 25)),
+        limit_page_length=max(1, min(_as_int(limit, 10), 25)),
     )
     return {"rentals": [{**dict(r), "starts_at": str(r.starts_at), "ends_at": str(r.ends_at)} for r in rows]}
 
@@ -139,7 +134,7 @@ def list_pending_approvals(limit: int = 10):
         filters={"company": _company(), "status": "Pending"},
         fields=["name", "action", "entity_id", "requested_by_id", "creation"],
         order_by="creation desc",
-        limit_page_length=max(1, min(int(limit or 10), 25)),
+        limit_page_length=max(1, min(_as_int(limit, 10), 25)),
     )
     return {"pending": [{**dict(r), "creation": str(r.creation)} for r in rows]}
 
@@ -182,6 +177,38 @@ def finance_summary():
         "factures_ouvertes": int(open_invoices.count or 0),
         "factures_en_retard": int(overdue.count or 0),
     }
+
+
+@tool(
+    "customer_summary",
+    "Résume un client : devis ouverts, locations en cours, retours en retard, solde dû et dernière location.",
+    {"customer": {"type": "string", "description": "Identifiant exact du client (utiliser search_customers)"}},
+    ["customer"],
+)
+def customer_summary(customer: str):
+    from cortex_rental.services import customer_360
+
+    return customer_360.summary(customer, _company())
+
+
+@tool(
+    "late_returns",
+    "Liste les retours en retard : locations sorties dont la date de fin est passée.",
+    {"limit": {"type": "integer"}},
+)
+def late_returns(limit: int = 10):
+    rows = frappe.get_list(
+        "Cortex Rental Transaction",
+        filters={
+            "company": _company(),
+            "rental_state": ["in", ["Checked Out", "Partially Returned"]],
+            "ends_at": ["<", frappe.utils.now_datetime()],
+        },
+        fields=["name", "customer", "ends_at", "grand_total"],
+        order_by="ends_at asc",
+        limit_page_length=max(1, min(_as_int(limit, 10), 25)),
+    )
+    return {"late": [{**dict(r), "ends_at": str(r.ends_at)} for r in rows]}
 
 
 @tool(
@@ -259,3 +286,11 @@ def execute(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as exc:  # noqa: BLE001 - toute erreur (droits, validation) est renvoyée au modèle, jamais masquée en succès
         message = getattr(exc, "message", None) or str(exc)
         return {"error": str(message)[:300]}
+
+
+def _as_int(value, default: int) -> int:
+    """Les arguments des outils viennent du modèle : un nombre mal formé ne doit jamais faire échouer l'outil."""
+    try:
+        return int(float(str(value).strip()))
+    except (TypeError, ValueError, OverflowError):
+        return default

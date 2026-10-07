@@ -12,7 +12,8 @@ try:
 except ImportError:
     frappe = None
 
-from cortex_rental.api.v1._shared import MAX_RAW_TEXT, envelope, page_args, parse_json
+from cortex_rental.services import defense
+from cortex_rental.api.v1._shared import MAX_RAW_TEXT, envelope, page_args, parse_json, to_int
 from cortex_rental.permissions.agent_scopes import get_company_context, require_human_staff_role
 
 INBOUND = "Cortex Inbound Request"
@@ -318,6 +319,7 @@ def audit_handler(
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_inbound_requests(status: str = None, page: int = 1, page_size: int = 20):
         require_human_staff_role()
         if not frappe.has_permission(INBOUND, "read"):
@@ -326,6 +328,7 @@ if frappe:
         return envelope(list_inbound_handler(get_company_context(), status, page, page_size))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_inbound_request(id: str):
         require_human_staff_role()
         if not frappe.has_permission(INBOUND, "read"):
@@ -333,6 +336,7 @@ if frappe:
         return envelope(get_inbound_handler(get_company_context(), id))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_ai_drafts(status: str = None, page: int = 1, page_size: int = 20):
         require_human_staff_role()
         if not frappe.has_permission(EXTRACTION, "read"):
@@ -341,12 +345,14 @@ if frappe:
         return envelope(list_drafts_handler(get_company_context(), status, page, page_size))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_agent_activity(limit: int = 20):
         if not set(frappe.get_roles(frappe.session.user)) & TELEMETRY_ROLES:
             frappe.throw("La télémétrie des agents est réservée aux administrateurs.", frappe.PermissionError)
-        return envelope(activity_handler(get_company_context(), min(100, max(1, int(limit)))))
+        return envelope(activity_handler(get_company_context(), to_int(limit, 20, 1, 100)))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_audit_events(
         entity_type: str = None, entity_id: str = None, actor_id: str = None, page: int = 1, page_size: int = 20
     ):

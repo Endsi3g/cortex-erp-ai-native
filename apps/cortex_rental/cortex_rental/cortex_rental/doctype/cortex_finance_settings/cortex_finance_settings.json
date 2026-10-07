@@ -3,7 +3,7 @@
   "creation": "2026-09-30 23:00:00.000000",
   "doctype": "DocType",
   "engine": "InnoDB",
-  "modified": "2026-10-01 01:00:00.000000",
+  "modified": "2026-10-06 12:00:00.000000",
   "modified_by": "Administrator",
   "module": "Cortex Rental",
   "name": "Cortex Finance Settings",
@@ -32,6 +32,19 @@
     "cb_late",
     "late_fee_percent",
     "late_fee_cap_days",
+    "sb_quotes",
+    "quote_hold_enabled",
+    "quote_hold_hours",
+    "auto_reserve_on_accept",
+    "sb_online_payment",
+    "online_payment_enabled",
+    "stripe_secret_key",
+    "stripe_webhook_secret",
+    "cb_online_payment",
+    "payment_instructions",
+    "sb_damage",
+    "damage_billing_enabled",
+    "missing_billing_percent",
     "sb_accounts",
     "acct_receivable",
     "acct_cash",
@@ -39,7 +52,9 @@
     "acct_tps",
     "acct_tvq",
     "acct_revenue",
-    "acct_late_fees"
+    "acct_late_fees",
+    "acct_damages",
+    "allow_sole_approver_self_approval"
   ],
   "fields": [
     {
@@ -155,6 +170,83 @@
       "depends_on": "late_fee_enabled"
     },
     {
+      "fieldname": "sb_quotes",
+      "fieldtype": "Section Break",
+      "label": "Devis partagés avec les clients"
+    },
+    {
+      "fieldname": "quote_hold_enabled",
+      "fieldtype": "Check",
+      "label": "Un devis retient le matériel dans la disponibilité",
+      "default": "1",
+      "description": "Dès qu'un devis est créé, les unités demandées sont retenues (visibles dans la grille) pour qu'un autre devis ou une autre réservation ne les prenne pas. La retenue expire seule."
+    },
+    {
+      "fieldname": "quote_hold_hours",
+      "fieldtype": "Int",
+      "label": "Durée de la retenue (heures)",
+      "default": "72"
+    },
+    {
+      "fieldname": "auto_reserve_on_accept",
+      "fieldtype": "Check",
+      "label": "Réserver automatiquement quand le client accepte",
+      "default": "0",
+      "description": "Si la disponibilité est confirmée par le serveur au moment de l'acceptation, le matériel est réservé sans intervention (au nom de la personne qui a envoyé le devis). Sinon, l'équipe est avertie et réserve à la main. Désactivé par défaut."
+    },
+    {
+      "fieldname": "sb_online_payment",
+      "fieldtype": "Section Break",
+      "label": "Paiement de l'acompte en ligne"
+    },
+    {
+      "fieldname": "online_payment_enabled",
+      "fieldtype": "Check",
+      "label": "Permettre de payer l'acompte dans le portail",
+      "default": "0",
+      "description": "Nécessite un compte Stripe de la société (clés ci-dessous). Sans clés, le portail affiche seulement les instructions de paiement."
+    },
+    {
+      "fieldname": "stripe_secret_key",
+      "fieldtype": "Password",
+      "label": "Clé secrète Stripe",
+      "description": "Stockée chiffrée, jamais envoyée au navigateur."
+    },
+    {
+      "fieldname": "stripe_webhook_secret",
+      "fieldtype": "Password",
+      "label": "Secret du webhook Stripe",
+      "description": "Adresse du webhook à saisir dans Stripe : /api/method/cortex_rental.api.v1.quote_share.stripe_webhook (événement checkout.session.completed)."
+    },
+    {
+      "fieldname": "cb_online_payment",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "payment_instructions",
+      "fieldtype": "Small Text",
+      "label": "Instructions de paiement manuel",
+      "description": "Affichées au client après l'acceptation (ex. virement Interac, chèque). Facultatif."
+    },
+    {
+      "fieldname": "sb_damage",
+      "fieldtype": "Section Break",
+      "label": "Dommages et pertes"
+    },
+    {
+      "fieldname": "damage_billing_enabled",
+      "fieldtype": "Check",
+      "label": "Facturer les dommages et les pertes à la clôture",
+      "default": "0",
+      "description": "Désactivé par défaut : chaque société décide. Matériel abîmé : coût de réparation estimé au retour. Matériel manquant : valeur de remplacement du catalogue × le pourcentage ci-contre."
+    },
+    {
+      "fieldname": "missing_billing_percent",
+      "fieldtype": "Float",
+      "label": "Matériel manquant : % de la valeur de remplacement",
+      "default": "100"
+    },
+    {
       "fieldname": "sb_accounts",
       "fieldtype": "Section Break",
       "label": "Plan de comptes (pour les écritures comptables)",
@@ -201,6 +293,19 @@
       "fieldtype": "Data",
       "label": "Frais de retard",
       "default": "4100 - Frais de retard"
+    },
+    {
+      "fieldname": "acct_damages",
+      "fieldtype": "Data",
+      "label": "Compte : dommages et pertes facturés",
+      "default": "4200 - Dommages et pertes facturés"
+    },
+    {
+      "fieldname": "allow_sole_approver_self_approval",
+      "fieldtype": "Check",
+      "label": "Le seul approbateur peut décider de ses propres demandes",
+      "default": "0",
+      "description": "Désactivé par défaut. À activer seulement après avoir lu ce que cela change : ouvrez « Mon compte › Société et rôles » ou la liste des approbations (bouton « Comprendre et décider »)."
     }
   ],
   "permissions": [

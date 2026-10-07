@@ -1,67 +1,88 @@
 <script setup>
-import { ref, computed, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, provide, watch } from "vue";
 import CopilotConversation from "../cortex_copilot/CopilotConversation.vue";
-import { sendMessage, getMessages, listSessions, resolveDeskContext } from "../cortex_copilot/chatClient.js";
+import { sendMessage, getMessages, listSessions, resolveDeskContext, apiCall } from "../cortex_copilot/chatClient.js";
 
+// Les trois cartes ouvrent un questionnaire guidé dans la conversation (interface déterministe, sans modèle d'IA).
 const ACTION_CARDS = [
 	{
 		id: "quote",
 		title: "Nouvelle location",
-		desc: "Créer un devis ou contrat de location d'équipement",
+		desc: "Créer un devis : client, dates, équipement, prix",
 		route: ["Form", "Cortex Rental Transaction", "new"],
-		gradient: "purple",
-		prompt: "Je souhaite préparer un nouveau devis de location. Affiche-moi les caméras et équipements disponibles au catalogue.",
+		linkLabel: "Ouvrir le formulaire ERPNext",
+		flow: "quote",
 	},
 	{
 		id: "availability",
 		title: "Grille de disponibilité",
-		desc: "Consulter les créneaux et conflits d'inventaire",
+		desc: "Voir ce qui est libre sur une période",
 		route: ["cortex-availability"],
-		gradient: "blue",
-		prompt: "Vérifie la disponibilité actuelle du parc d'équipements et signale les éventuels créneaux réservés.",
+		linkLabel: "Ouvrir la grille complète",
+		flow: "availability",
 	},
 	{
 		id: "approvals",
 		title: "Demandes d'approbation",
-		desc: "Valider ou réviser les décisions d'agent en attente",
+		desc: "Examiner et décider les demandes en attente",
 		route: ["List", "Approval Request"],
-		gradient: "emerald",
-		prompt: "Quelles sont les demandes d'approbation actuellement en attente de décision humaine pour notre société ?",
+		linkLabel: "Ouvrir la liste des approbations",
+		flow: "approvals",
 	},
 ];
 
+// Les questionnaires, les propositions et l'état « IA réelle / Démonstration » sont propres à cette page.
+provide("cortexFlows", true);
+
+const BANNER_KEY = "cortex_home_demo_banner";
+const TIER_KEY = "cortex_home_tier";
 const messages = ref([]);
 const sending = ref(false);
 const chatSessionId = ref(null);
 const text = ref("");
 const sessions = ref([]);
 const sessionsError = ref("");
+const sessionsLoaded = ref(false);
+const search = ref("");
+const confirmDelete = ref("");
 const showHistory = ref(false);
-const showModelMenu = ref(false);
+const showSettings = ref(false);
+const showStatus = ref(false);
+const confirmClear = ref(false);
 const isListening = ref(false);
 const inputRef = ref(null);
+const searchRef = ref(null);
 const endRef = ref(null);
-const fileInputRef = ref(null);
-const attachments = ref([]);
+const threadRef = ref(null);
+const aiStatus = ref(null); // { mode: "ai" | "demo", provider, model } — lu côté serveur, jamais deviné ici
+const bannerOn = ref(true);
+const selectedTier = ref("");
 let nextId = 1;
 let speechRec = null;
 
 const inConversation = computed(() => messages.value.length > 0 || sending.value);
-
-const firstName = computed(() => {
-	try { return frappe.user.first_name() || ""; } catch (e) { return ""; }
-});
-const displayName = computed(() => {
+const isDemo = computed(() => !aiStatus.value || aiStatus.value.mode === "demo");
+const tiers = computed(() => (aiStatus.value && aiStatus.value.tiers) || []);
+const currentTier = computed(() => tiers.value.find((t) => t.key === selectedTier.value && t.available) || null);
+const costLabel = (tier) => (!tier.cost_index || tier.cost_index <= 1 ? "Coût de base" : `Coût ≈ ×${String(tier.cost_index).replace(".", ",")}`);
+const canConfigureAi = computed(() => {
 	try {
-		const fn = frappe.user.first_name();
-		if (fn && fn !== "Administrator" && fn !== "Dev") return fn;
-		const full = frappe.user.full_name();
-		if (full && full !== "Administrator" && full !== "Dev") return full;
-		if (frappe.boot?.user?.first_name && frappe.boot.user.first_name !== "Administrator") {
-			return frappe.boot.user.first_name;
+		return ["System Manager", "Cortex System Manager"].some((role) => frappe.user.has_role(role));
+	} catch (e) {
+		return false;
+	}
+});
+
+const displayName = computed(() => {
+	// Prénom de la personne connectée, jamais un nom inventé : sans prénom connu, on salue sans nom.
+	try {
+		const full = (frappe.session && frappe.session.user_fullname) || "";
+		const first = (frappe.user.first_name && frappe.user.first_name()) || "";
+		for (const candidate of [first, full.split(" ")[0]]) {
+			if (candidate && !["Administrator", "Guest", "Dev"].includes(candidate)) return candidate;
 		}
 	} catch (e) {}
-	return "Kael";
+	return "";
 });
 
 const greeting = computed(() => {
@@ -70,9 +91,47 @@ const greeting = computed(() => {
 	return displayName.value ? `${moment}, ${displayName.value}.` : `${moment}.`;
 });
 
-const canSend = computed(() => (text.value.trim().length > 0 || attachments.value.length > 0) && !sending.value);
+const canSend = computed(() => text.value.trim().length > 0 && !sending.value);
 
-function go(route) { frappe.set_route(route); }
+// ── Historique : groupes « Aujourd'hui », « Cette semaine », « Plus ancien », filtrés par la recherche ──
+const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+function sessionDate(session) {
+	const raw = session.last_message_at || session.started_at || "";
+	const parsed = new Date(String(raw).replace(" ", "T"));
+	return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+function sessionLabel(session) {
+	if (session.title) return session.title;
+	const when = sessionDate(session);
+	return when ? "Conversation du " + when.toLocaleDateString("fr-CA", { day: "numeric", month: "long" }) : "Conversation";
+}
+function sessionWhen(session) {
+	const when = sessionDate(session);
+	if (!when) return "";
+	const time = when.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" });
+	return startOfDay(when) === startOfDay(new Date()) ? time : when.toLocaleDateString("fr-CA", { day: "numeric", month: "short" }) + " · " + time;
+}
+const groupedSessions = computed(() => {
+	const q = search.value.trim().toLowerCase();
+	const today = startOfDay(new Date());
+	const week = today - 6 * 86400000;
+	const groups = [
+		{ label: "Aujourd'hui", rows: [] },
+		{ label: "Cette semaine", rows: [] },
+		{ label: "Plus ancien", rows: [] },
+	];
+	for (const session of sessions.value) {
+		if (q && !sessionLabel(session).toLowerCase().includes(q)) continue;
+		const when = sessionDate(session);
+		const day = when ? startOfDay(when) : 0;
+		(day >= today ? groups[0] : day >= week ? groups[1] : groups[2]).rows.push(session);
+	}
+	return groups.filter((g) => g.rows.length);
+});
+
+function go(route) {
+	frappe.set_route(route);
+}
 
 function resize() {
 	const el = inputRef.value;
@@ -81,43 +140,22 @@ function resize() {
 	el.style.height = Math.min(el.scrollHeight, 200) + "px";
 }
 
-function scrollToEnd() {
+// La conversation défile dans son propre cadre : la saisie reste collée au bas de l'écran.
+function scrollToEnd(instant = false) {
 	nextTick(() => {
-		if (endRef.value) endRef.value.scrollIntoView({ behavior: "smooth", block: "end" });
+		const el = threadRef.value;
+		if (el) el.scrollTo({ top: el.scrollHeight, behavior: instant === true ? "auto" : "smooth" });
 	});
 }
 
-function push(msg) { messages.value.push({ id: nextId++, ...msg }); }
-
-function triggerFileInput() {
-	if (fileInputRef.value) {
-		fileInputRef.value.click();
-	}
-}
-
-function onFilesSelected(e) {
-	const files = Array.from(e.target.files || []);
-	for (const file of files) {
-		const isImg = file.type.startsWith("image/");
-		const preview = isImg ? URL.createObjectURL(file) : null;
-		attachments.value.push({
-			name: file.name,
-			preview,
-			isImage: isImg,
-		});
-	}
-	e.target.value = "";
-	nextTick(resize);
-}
-
-function removeAttachment(idx) {
-	attachments.value.splice(idx, 1);
+function push(msg) {
+	messages.value.push({ id: nextId++, ...msg });
 }
 
 function toggleVoice() {
 	const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 	if (!SpeechRec) {
-		frappe.show_alert({ message: "La saisie vocale n'est pas supportée dans ce navigateur.", indicator: "orange" }, 5);
+		frappe.show_alert({ message: "La saisie vocale n'est pas disponible dans ce navigateur.", indicator: "orange" }, 5);
 		return;
 	}
 	if (isListening.value) {
@@ -130,35 +168,42 @@ function toggleVoice() {
 		speechRec.lang = "fr-CA";
 		speechRec.continuous = false;
 		speechRec.interimResults = false;
-		speechRec.onstart = () => { isListening.value = true; };
+		speechRec.onstart = () => {
+			isListening.value = true;
+		};
 		speechRec.onresult = (evt) => {
 			const transcript = evt.results[0][0].transcript;
 			text.value = text.value ? `${text.value} ${transcript}` : transcript;
 			nextTick(resize);
 		};
-		speechRec.onerror = () => { isListening.value = false; };
-		speechRec.onend = () => { isListening.value = false; };
+		speechRec.onerror = () => {
+			isListening.value = false;
+		};
+		speechRec.onend = () => {
+			isListening.value = false;
+		};
 		speechRec.start();
 	} catch (e) {
 		isListening.value = false;
 	}
 }
 
-function triggerQuickAction(card) {
-	if (card.prompt) {
-		submit(card.prompt);
-	}
+// Une carte lance son questionnaire dans la conversation ; rien n'est envoyé au modèle.
+function startFlow(flow) {
+	closePanels();
+	push({ role: "assistant", flow });
+	scrollToEnd();
+}
+
+function onFlow(flow) {
+	startFlow(flow);
 }
 
 async function submit(value) {
-	let message = (value !== undefined ? value : text.value).trim();
-	if (attachments.value.length > 0 && !message) {
-		message = "Analyse des documents joints : " + attachments.value.map(a => a.name).join(", ");
-	}
+	const message = (typeof value === "string" ? value : text.value).trim();
 	if (!message || sending.value) return;
 
 	text.value = "";
-	attachments.value = [];
 	nextTick(resize);
 
 	push({ role: "user", text: message });
@@ -166,13 +211,15 @@ async function submit(value) {
 	scrollToEnd();
 
 	try {
-		const response = await sendMessage(message, resolveDeskContext(), chatSessionId.value);
+		const response = await sendMessage(message, resolveDeskContext(), chatSessionId.value, selectedTier.value);
 		chatSessionId.value = response.chat_session_id || chatSessionId.value;
-		push({ role: "assistant", blocks: response.blocks || [] });
+		push({ role: "assistant", blocks: response.blocks || [], fresh: true });
+		refresh();
 	} catch (err) {
 		push({
 			role: "assistant",
 			blocks: [{ type: "error", title: "Cortex ne peut pas répondre", safe_message: err.message, retry_allowed: true }],
+			fresh: true,
 		});
 	} finally {
 		sending.value = false;
@@ -201,6 +248,7 @@ async function openSession(name) {
 		const rows = response.data || [];
 		messages.value = rows.map((row) => ({ id: nextId++, role: row.role, text: row.text, blocks: row.blocks || [] }));
 		chatSessionId.value = name;
+		showHistory.value = false;
 		scrollToEnd();
 	} catch (err) {
 		frappe.show_alert({ message: err.message, indicator: "red" }, 6);
@@ -209,47 +257,148 @@ async function openSession(name) {
 	}
 }
 
+// Retour à l'écran d'accueil de l'assistant : l'historique du serveur n'est jamais touché.
 function newConversation() {
 	messages.value = [];
 	chatSessionId.value = null;
-	attachments.value = [];
 	text.value = "";
+	closePanels();
 	nextTick(() => inputRef.value && inputRef.value.focus());
 }
 
+function closePanels() {
+	showHistory.value = false;
+	showSettings.value = false;
+	showStatus.value = false;
+	confirmClear.value = false;
+	confirmDelete.value = "";
+}
+
 function toggleHistory() {
-	showHistory.value = !showHistory.value;
-	if (showHistory.value && !sessions.value.length) {
+	const open = !showHistory.value;
+	closePanels();
+	showHistory.value = open;
+	if (open) {
 		refresh();
+		nextTick(() => searchRef.value && searchRef.value.focus());
 	}
 }
 
-function openSettings() {
-	frappe.set_route(["List", "Cortex Setting"]);
+function toggleSettings() {
+	const open = !showSettings.value;
+	closePanels();
+	showSettings.value = open;
 }
 
-function sessionLabel(session) {
-	const when = session.last_message_at || session.started_at;
-	if (!when) return "Conversation";
+function toggleStatus() {
+	const open = !showStatus.value;
+	closePanels();
+	showStatus.value = open;
+}
+
+function setBanner(value) {
+	bannerOn.value = value;
 	try {
-		return "Conversation du " + frappe.datetime.str_to_user(when.slice(0, 16));
-	} catch (e) { return "Conversation"; }
+		localStorage.setItem(BANNER_KEY, value ? "1" : "0");
+	} catch (e) {}
+}
+
+async function removeSession(name) {
+	try {
+		await apiCall("cortex_rental.api.v1.chat.delete_session", { name }, "POST");
+		if (chatSessionId.value === name) newConversation();
+		confirmDelete.value = "";
+		showHistory.value = true;
+		await refresh();
+	} catch (err) {
+		frappe.show_alert({ message: err.message, indicator: "red" }, 6);
+	}
+}
+
+async function clearHistory() {
+	try {
+		const result = await apiCall("cortex_rental.api.v1.chat.clear_history", {}, "POST");
+		newConversation();
+		await refresh();
+		frappe.show_alert({ message: `${result.deleted || 0} conversation(s) retirée(s) de votre historique.`, indicator: "green" }, 5);
+	} catch (err) {
+		frappe.show_alert({ message: err.message, indicator: "red" }, 6);
+	}
 }
 
 async function refresh() {
 	try {
 		const response = await listSessions();
-		sessions.value = (response.data || []).slice(0, 5);
+		sessions.value = response.data || [];
 		sessionsError.value = "";
 	} catch (err) {
 		sessions.value = [];
 		sessionsError.value = err.message;
+	} finally {
+		sessionsLoaded.value = true;
 	}
 }
 
-onMounted(() => {
-	refresh();
+async function loadStatus() {
+	try {
+		aiStatus.value = await apiCall("cortex_rental.api.v1.chat.status", {});
+	} catch (e) {
+		aiStatus.value = null; // inconnu : on affiche « Démonstration » plutôt que de promettre une IA
+	}
+	// Niveau choisi : le dernier utilisé s'il est toujours offert, sinon celui par défaut des réglages.
+	let stored = "";
+	try {
+		stored = localStorage.getItem(TIER_KEY) || "";
+	} catch (e) {}
+	const offered = tiers.value.filter((t) => t.available).map((t) => t.key);
+	selectedTier.value = offered.includes(stored) ? stored : (aiStatus.value && aiStatus.value.default_tier) || "";
+}
+
+function chooseTier(tier) {
+	if (!tier.available) return;
+	selectedTier.value = tier.key;
+	try {
+		localStorage.setItem(TIER_KEY, tier.key);
+	} catch (e) {}
+	closePanels();
 	nextTick(() => inputRef.value && inputRef.value.focus());
+}
+
+// Fil d'Ariane de la barre du haut (cortex_pages.js) : « Assistant IA › Conversation », « Assistant IA » ramène à l'accueil.
+function publishState() {
+	window.cortex_home_state = { inChat: inConversation.value };
+	window.dispatchEvent(new CustomEvent("cortex-home:state"));
+}
+watch(inConversation, publishState);
+
+const INSIDE = [".ch-pop", ".ch-top-btn", ".ch-status-wrap", ".ch-drawer"];
+function onOutside(event) {
+	// composedPath() garde le chemin même si le bouton cliqué vient d'être retiré de la page par Vue (ex. « Supprimer »).
+	const path = event.composedPath ? event.composedPath() : [];
+	const inside = path.some((node) => node.matches && INSIDE.some((selector) => node.matches(selector)));
+	if (!inside) closePanels();
+}
+function onEscape(event) {
+	if (event.key === "Escape") closePanels();
+}
+
+onMounted(() => {
+	try {
+		bannerOn.value = localStorage.getItem(BANNER_KEY) !== "0";
+	} catch (e) {}
+	refresh();
+	loadStatus();
+	publishState();
+	window.addEventListener("cortex-home:reset", newConversation);
+	document.addEventListener("click", onOutside);
+	document.addEventListener("keydown", onEscape);
+	nextTick(() => inputRef.value && inputRef.value.focus());
+});
+
+onBeforeUnmount(() => {
+	window.removeEventListener("cortex-home:reset", newConversation);
+	document.removeEventListener("click", onOutside);
+	document.removeEventListener("keydown", onEscape);
 });
 
 defineExpose({ refresh });
@@ -257,103 +406,65 @@ defineExpose({ refresh });
 
 <template>
 	<div class="cortex-home cortex-app" :class="{ 'is-chat': inConversation }">
-		<!-- ═══ BOUTONS ACTION EN HAUT À DROITE ═══ -->
-		<header class="ch-top-actions" aria-label="Navigation rapide">
-			<button
-				type="button"
-				class="ch-top-btn"
-				title="Nouvelle conversation"
-				aria-label="Nouvelle conversation"
-				@click="newConversation"
-			>
-				<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M12 20h9"/>
-					<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-				</svg>
+		<!-- ═══ ACTIONS EN HAUT À DROITE ═══ -->
+		<header class="ch-top-actions" aria-label="Actions de l'assistant">
+			<button type="button" class="ch-top-btn" title="Nouvelle conversation" aria-label="Nouvelle conversation" @click="newConversation">
+				<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
 			</button>
-			<button
-				type="button"
-				class="ch-top-btn"
-				:class="{ 'is-active': showHistory }"
-				title="Historique des conversations"
-				aria-label="Historique des conversations"
-				@click="toggleHistory"
-			>
-				<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<circle cx="12" cy="12" r="10"/>
-					<polyline points="12 6 12 12 16 14"/>
-				</svg>
+			<button type="button" class="ch-top-btn" :class="{ 'is-active': showHistory }" title="Historique des conversations" aria-label="Historique des conversations" :aria-expanded="showHistory" @click="toggleHistory">
+				<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
 			</button>
-			<button
-				type="button"
-				class="ch-top-btn"
-				title="Paramètres Cortex"
-				aria-label="Paramètres Cortex"
-				@click="openSettings"
-			>
-				<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<circle cx="12" cy="12" r="3"/>
-					<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-				</svg>
-			</button>
+			<div class="ch-pop-wrap">
+				<button type="button" class="ch-top-btn" :class="{ 'is-active': showSettings }" title="Réglages de l'assistant" aria-label="Réglages de l'assistant" :aria-expanded="showSettings" @click="toggleSettings">
+					<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+				</button>
+				<Transition name="ch-fade">
+					<div v-if="showSettings" class="ch-pop ch-settings" role="dialog" aria-label="Réglages de l'assistant">
+						<h2 class="ch-pop-title">Réglages de l'assistant</h2>
+						<label class="ch-switch-row">
+							<span>
+								<strong>Bannière « Démonstration »</strong>
+								<small>Affichée en haut de l'assistant tant qu'aucun modèle d'IA n'est configuré.</small>
+							</span>
+							<input type="checkbox" role="switch" :checked="bannerOn" @change="setBanner($event.target.checked)" />
+						</label>
+						<div class="ch-pop-row">
+							<span>
+								<strong>Mon historique</strong>
+								<small>Retire vos conversations de la liste. Leurs messages restent au journal de la société (non modifiable) ; les devis et les demandes ne sont pas touchés.</small>
+							</span>
+							<button v-if="!confirmClear" type="button" class="ch-pop-btn danger" @click="confirmClear = true">Effacer…</button>
+							<span v-else class="ch-confirm">
+								<button type="button" class="ch-pop-btn danger fill" @click="clearHistory(); confirmClear = false">Oui, effacer</button>
+								<button type="button" class="ch-pop-btn" @click="confirmClear = false">Annuler</button>
+							</span>
+						</div>
+						<button v-if="canConfigureAi" type="button" class="ch-pop-link" @click="go(['Form', 'Cortex AI Settings']); closePanels()">Budget et modèle IA →</button>
+					</div>
+				</Transition>
+			</div>
 		</header>
 
 		<section class="ch-stage">
-			<!-- ═══ HERO (espacement accru, titre moins bold, nom d'utilisateur réel) ═══ -->
+			<p v-if="isDemo && bannerOn && aiStatus && !inConversation" class="ch-demo-banner" role="status">
+				<span><strong>Mode démonstration.</strong> Aucun modèle d'IA n'est configuré : les réponses sont assemblées à partir de vos données réelles, sans rédaction par une IA. Les questionnaires guidés fonctionnent normalement.</span>
+				<button type="button" class="ch-demo-hide" @click="setBanner(false)">Masquer</button>
+			</p>
+
 			<Transition name="ch-fade" mode="out-in">
 				<header v-if="!inConversation" key="hero" class="ch-hero">
 					<h1 class="ch-title">{{ greeting }}</h1>
 					<p class="ch-subtitle">Comment puis-je vous aider aujourd'hui&nbsp;?</p>
 				</header>
 
-				<!-- ═══ MODE CONVERSATION THREAD ═══ -->
-				<div v-else key="chat" class="ch-thread">
-					<div class="ch-thread-bar">
-						<button type="button" class="ch-link" @click="newConversation">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-								<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-							</svg>
-							Nouvelle conversation
-						</button>
-					</div>
-					<CopilotConversation :messages="messages" :sending="sending" @continue="submit" @retry="retry" />
+				<div v-else key="chat" ref="threadRef" class="ch-thread">
+					<CopilotConversation :messages="messages" :sending="sending" :scroll="false" @continue="submit" @retry="retry" @flow="onFlow" @progress="scrollToEnd(true)" />
 					<div ref="endRef"></div>
 				</div>
 			</Transition>
 
-			<!-- ═══ COMPOSER RÉPLIQUE PIXEL-PERFECT ═══ -->
+			<!-- ═══ SAISIE ═══ -->
 			<form class="ch-composer" @submit.prevent="submit()">
-				<!-- Fichiers joints en haut -->
-				<div v-if="attachments.length > 0" class="ch-attachments-row">
-					<div v-for="(att, idx) in attachments" :key="idx" class="ch-attachment-chip">
-						<img v-if="att.preview" :src="att.preview" class="ch-att-thumb" alt="Aperçu" />
-						<div v-else class="ch-att-fallback">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-								<polyline points="14 2 14 8 20 8"/>
-							</svg>
-						</div>
-						<span class="ch-att-name">{{ att.name }}</span>
-						<button type="button" class="ch-att-remove" aria-label="Supprimer" @click.stop="removeAttachment(idx)">
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-								<line x1="18" y1="6" x2="6" y2="18"/>
-								<line x1="6" y1="6" x2="18" y2="18"/>
-							</svg>
-						</button>
-					</div>
-				</div>
-
-				<!-- Hidden file input triggered by + button -->
-				<input
-					ref="fileInputRef"
-					type="file"
-					multiple
-					accept="image/*,.pdf,.doc,.docx"
-					class="ch-sr"
-					@change="onFilesSelected"
-				/>
-
-				<!-- Zone de saisie principale -->
 				<label class="ch-sr" for="cortex-home-input">Message pour Cortex</label>
 				<textarea
 					id="cortex-home-input"
@@ -367,264 +478,158 @@ defineExpose({ refresh });
 					@keydown="onKeydown"
 				></textarea>
 
-				<!-- Rangée du bas : [+] [Cortex 3.0 ▾] [spacer] [🎤] [ ↑ ] -->
 				<div class="ch-toolbar">
-					<!-- Bouton + (ajouter fichiers ou pièces jointes) -->
-					<button
-						type="button"
-						class="ch-tool-btn ch-tool-plus"
-						title="Joindre des fichiers ou images"
-						aria-label="Joindre des fichiers"
-						@click="triggerFileInput"
-					>
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<line x1="12" y1="5" x2="12" y2="19"/>
-							<line x1="5" y1="12" x2="19" y2="12"/>
-						</svg>
-					</button>
-
-					<!-- Sélecteur modèle Kana 3.0 / Cortex 3.0 avec chevron -->
-					<div class="ch-model-pill-wrap">
+					<!-- État réel du moteur, lu côté serveur : « Démonstration », ou le niveau Cortex choisi (jamais supposé) -->
+					<div class="ch-status-wrap">
 						<button
 							type="button"
-							class="ch-model-pill"
-							title="Moteur IA : Cortex Copilot 3.0"
-							@click="showModelMenu = !showModelMenu"
+							class="ch-status"
+							:class="isDemo ? 'is-demo' : 'is-ai'"
+							:aria-expanded="showStatus"
+							aria-haspopup="true"
+							:title="isDemo ? 'Démonstration : aucun modèle d\'IA configuré' : 'Choisir le modèle Cortex'"
+							@click="toggleStatus"
 						>
-							<span>Cortex 3.0</span>
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-								<polyline points="6 9 12 15 18 9"/>
-							</svg>
+							<span class="ch-status-dot" aria-hidden="true"></span>
+							<span>{{ !aiStatus ? "Vérification…" : isDemo ? "Démonstration" : currentTier ? currentTier.label : "IA réelle" }}</span>
+							<svg v-if="!isDemo && tiers.length" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
 						</button>
-						<div v-if="showModelMenu" class="ch-model-dropdown">
-							<div class="ch-model-item is-active">
-								<strong>Cortex Copilot 3.0</strong>
-								<span>Passerelle IA & Outils Frappe</span>
+						<Transition name="ch-fade">
+							<div v-if="showStatus" class="ch-pop ch-status-pop" :class="{ down: !inConversation }" role="dialog" aria-label="Modèle de l'assistant">
+								<template v-if="isDemo">
+									<strong>Démonstration</strong>
+									<p>Aucun modèle d'IA n'est configuré pour cette société. Les réponses sont assemblées à partir de vos données réelles (catalogue, disponibilité, approbations) ; rien n'est rédigé par une IA.</p>
+									<p>Les questionnaires guidés et les formulaires fonctionnent normalement. Les modèles Cortex apparaîtront ici dès qu'un administrateur aura saisi une clé.</p>
+								</template>
+								<template v-else-if="tiers.length">
+									<strong class="ch-tier-head">Modèle Cortex</strong>
+									<ul class="ch-tiers" aria-label="Modèles Cortex">
+										<li v-for="tier in tiers" :key="tier.key">
+											<button type="button" class="ch-tier" :class="{ on: tier.key === selectedTier, off: !tier.available }" role="menuitemradio" :aria-checked="tier.key === selectedTier" :disabled="!tier.available" @click="chooseTier(tier)">
+												<span class="ch-tier-main">
+													<span class="ch-tier-name">{{ tier.label }}</span>
+													<span class="ch-tier-desc">{{ tier.description }}</span>
+												</span>
+												<span class="ch-tier-cost">{{ tier.available ? costLabel(tier) : "Non configuré" }}</span>
+											</button>
+										</li>
+									</ul>
+									<p class="ch-tier-note">Un modèle plus puissant consomme le budget mensuel de votre société plus vite. Rien n'est jamais approuvé sans vous.</p>
+								</template>
+								<template v-else>
+									<strong>IA réelle</strong>
+									<p>Les réponses sont rédigées par le modèle configuré, à partir de vos données et avec vos droits. Rien n'est approuvé sans vous.</p>
+								</template>
 							</div>
-							<div class="ch-model-footer">
-								Connecté aux outils métier réels
-							</div>
-						</div>
+						</Transition>
 					</div>
 
 					<div class="ch-toolbar-spacer"></div>
 
-					<!-- Icône microphone (saisie vocale Web Speech API) -->
-					<button
-						type="button"
-						class="ch-tool-btn ch-tool-mic"
-						:class="{ 'is-listening': isListening }"
-						:title="isListening ? 'Arrêter l\'écoute' : 'Activer la saisie vocale'"
-						aria-label="Saisie vocale"
-						@click="toggleVoice"
-					>
-						<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-							<path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-							<line x1="12" y1="19" x2="12" y2="22"/>
-						</svg>
+					<button type="button" class="ch-tool-btn ch-tool-mic" :class="{ 'is-listening': isListening }" :title="isListening ? 'Arrêter l\'écoute' : 'Activer la saisie vocale'" aria-label="Saisie vocale" :aria-pressed="isListening" @click="toggleVoice">
+						<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /></svg>
 					</button>
 
-					<!-- Bouton envoyer — carré arrondi noir avec flèche blanche -->
-					<button
-						type="submit"
-						class="ch-send"
-						:disabled="!canSend"
-						aria-label="Envoyer"
-					>
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-							<line x1="12" y1="19" x2="12" y2="5"/>
-							<polyline points="5 12 12 5 19 12"/>
-						</svg>
+					<button type="submit" class="ch-send" :disabled="!canSend" aria-label="Envoyer">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg>
 					</button>
 				</div>
 			</form>
 
-			<!-- ═══ ZONE SOUS LE COMPOSER ═══ -->
+			<!-- ═══ CARTES : questionnaires guidés ═══ -->
 			<Transition name="ch-fade">
 				<div v-if="!inConversation" class="ch-below">
-
-					<!-- Séparateur "Génération rapide" avec pill au milieu -->
 					<div class="ch-divider">
 						<div class="ch-divider-line"></div>
-						<div class="ch-divider-badge">Génération rapide</div>
+						<div class="ch-divider-badge">Questionnaires guidés</div>
 					</div>
 
-					<!-- Grille 3 colonnes de cartes illustrées — 100% fonctionnelles end-to-end -->
-					<div class="ch-cards-grid" role="list" aria-label="Actions de génération rapide">
-						<!-- CARTE 1 : Violette — Générer un devis / location (Code window style) -->
-						<div
-							role="listitem"
-							class="ch-card ch-card-purple"
-							@click="triggerQuickAction(ACTION_CARDS[0])"
-						>
-							<div class="ch-card-header">
-								<div class="ch-mock-window ch-window-code">
-									<div class="ch-window-dots">
-										<span class="ch-dot ch-dot-red"></span>
-										<span class="ch-dot ch-dot-yellow"></span>
-										<span class="ch-dot ch-dot-green"></span>
-									</div>
-									<div class="ch-code-lines">
-										<div class="ch-code-row">
-											<span class="ch-bar ch-bar-purple" style="width: 28px;"></span>
-											<span class="ch-bar ch-bar-gray" style="width: 50px;"></span>
-										</div>
-										<div class="ch-code-row">
-											<span class="ch-bar ch-bar-purple" style="width: 20px;"></span>
-											<span class="ch-bar ch-bar-dark" style="width: 36px;"></span>
-										</div>
-										<div class="ch-code-row ch-indent">
-											<span class="ch-bar ch-bar-purple" style="width: 32px;"></span>
-											<span class="ch-bar ch-bar-gray" style="width: 22px;"></span>
-										</div>
-										<div class="ch-code-row ch-indent">
-											<span class="ch-bar ch-bar-purple" style="width: 16px;"></span>
-										</div>
-										<div class="ch-code-row">
-											<span class="ch-bar ch-bar-dark" style="width: 30px;"></span>
-										</div>
-									</div>
-								</div>
-							</div>
-							<div class="ch-card-body">
-								<div class="ch-card-title-row">
-									<h2 class="ch-card-title">{{ ACTION_CARDS[0].title }}</h2>
-									<button
-										type="button"
-										class="ch-card-link-btn"
-										title="Ouvrir le formulaire ERPNext"
-										aria-label="Ouvrir le formulaire"
-										@click.stop="go(ACTION_CARDS[0].route)"
-									>
-										<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-											<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-											<polyline points="15 3 21 3 21 9"/>
-											<line x1="10" y1="14" x2="21" y2="3"/>
-										</svg>
-									</button>
-								</div>
-								<p class="ch-card-desc">{{ ACTION_CARDS[0].desc }}</p>
-							</div>
-						</div>
-
-						<!-- CARTE 2 : Bleue — Disponibilité (Browser / Analytics table style) -->
-						<div
-							role="listitem"
-							class="ch-card ch-card-blue"
-							@click="triggerQuickAction(ACTION_CARDS[1])"
-						>
-							<div class="ch-card-header">
-								<div class="ch-mock-window ch-window-browser">
-									<div class="ch-window-dots">
-										<span class="ch-dot ch-dot-red"></span>
-										<span class="ch-dot ch-dot-yellow"></span>
-										<span class="ch-dot ch-dot-green"></span>
-									</div>
-									<div class="ch-browser-content">
-										<div class="ch-bar ch-bar-dark ch-bar-thick" style="width: 38px;"></div>
-										<div class="ch-dash-chips">
-											<span class="ch-mini-pill"></span>
-											<span class="ch-mini-pill"></span>
-											<span class="ch-mini-pill"></span>
-										</div>
-										<div class="ch-sub-line"></div>
-										<div class="ch-bar ch-bar-slate" style="width: 82%;"></div>
-										<div class="ch-bar ch-bar-gray" style="width: 65%;"></div>
-										<div class="ch-bar ch-bar-gray" style="width: 75%;"></div>
-									</div>
-								</div>
-							</div>
-							<div class="ch-card-body">
-								<div class="ch-card-title-row">
-									<h2 class="ch-card-title">{{ ACTION_CARDS[1].title }}</h2>
-									<button
-										type="button"
-										class="ch-card-link-btn"
-										title="Ouvrir la matrice de disponibilité"
-										aria-label="Ouvrir la disponibilité"
-										@click.stop="go(ACTION_CARDS[1].route)"
-									>
-										<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-											<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-											<polyline points="15 3 21 3 21 9"/>
-											<line x1="10" y1="14" x2="21" y2="3"/>
-										</svg>
-									</button>
-								</div>
-								<p class="ch-card-desc">{{ ACTION_CARDS[1].desc }}</p>
-							</div>
-						</div>
-
-						<!-- CARTE 3 : Verte émeraude — Approbations (Notification card dialog style) -->
-						<div
-							role="listitem"
-							class="ch-card ch-card-emerald"
-							@click="triggerQuickAction(ACTION_CARDS[2])"
-						>
-							<div class="ch-card-header">
-								<div class="ch-mock-window ch-window-dialog">
-									<div class="ch-dialog-top">
-										<div class="ch-avatar-wrap">
-											<span class="ch-avatar-circle"></span>
-											<span class="ch-status-dot"></span>
-										</div>
-										<span class="ch-close-x">✕</span>
-									</div>
-									<div class="ch-dialog-content">
-										<div class="ch-bar ch-bar-slate" style="width: 68%;"></div>
-										<div class="ch-bar ch-bar-gray" style="width: 88%;"></div>
-										<div class="ch-bar ch-bar-gray" style="width: 48%;"></div>
-									</div>
-								</div>
-							</div>
-							<div class="ch-card-body">
-								<div class="ch-card-title-row">
-									<h2 class="ch-card-title">{{ ACTION_CARDS[2].title }}</h2>
-									<button
-										type="button"
-										class="ch-card-link-btn"
-										title="Ouvrir les approbations"
-										aria-label="Ouvrir les approbations"
-										@click.stop="go(ACTION_CARDS[2].route)"
-									>
-										<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-											<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-											<polyline points="15 3 21 3 21 9"/>
-											<line x1="10" y1="14" x2="21" y2="3"/>
-										</svg>
-									</button>
-								</div>
-								<p class="ch-card-desc">{{ ACTION_CARDS[2].desc }}</p>
-							</div>
-						</div>
-					</div>
-
-					<!-- Historique des conversations -->
-					<div v-if="showHistory || sessions.length > 0" class="ch-history-section">
-						<div class="ch-history-header">
-							<span class="ch-history-title">Conversations récentes</span>
-							<button type="button" class="ch-history-close" @click="showHistory = false">Masquer</button>
-						</div>
-						<div class="ch-recent-list">
-							<button
-								v-for="session in sessions"
-								:key="session.name"
-								type="button"
-								class="ch-recent-row"
-								@click="openSession(session.name)"
-							>
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-								</svg>
-								<span>{{ sessionLabel(session) }}</span>
+					<ul class="ch-cards-grid" aria-label="Questionnaires guidés">
+						<li v-for="card in ACTION_CARDS" :key="card.id" class="ch-card" :class="`ch-card-${card.id}`">
+							<button type="button" class="ch-card-main" @click="startFlow({ name: card.flow })">
+								<span class="ch-card-header" aria-hidden="true">
+									<span v-if="card.id === 'quote'" class="ch-mock-window ch-window-code">
+										<span class="ch-window-dots"><span class="ch-dot ch-dot-red"></span><span class="ch-dot ch-dot-yellow"></span><span class="ch-dot ch-dot-green"></span></span>
+										<span class="ch-code-lines">
+											<span class="ch-code-row"><span class="ch-bar ch-bar-purple" style="width: 28px"></span><span class="ch-bar ch-bar-gray" style="width: 50px"></span></span>
+											<span class="ch-code-row"><span class="ch-bar ch-bar-purple" style="width: 20px"></span><span class="ch-bar ch-bar-dark" style="width: 36px"></span></span>
+											<span class="ch-code-row ch-indent"><span class="ch-bar ch-bar-purple" style="width: 32px"></span><span class="ch-bar ch-bar-gray" style="width: 22px"></span></span>
+											<span class="ch-code-row ch-indent"><span class="ch-bar ch-bar-purple" style="width: 16px"></span></span>
+											<span class="ch-code-row"><span class="ch-bar ch-bar-dark" style="width: 30px"></span></span>
+										</span>
+									</span>
+									<span v-else-if="card.id === 'availability'" class="ch-mock-window ch-window-browser">
+										<span class="ch-window-dots"><span class="ch-dot ch-dot-red"></span><span class="ch-dot ch-dot-yellow"></span><span class="ch-dot ch-dot-green"></span></span>
+										<span class="ch-browser-content">
+											<span class="ch-bar ch-bar-dark ch-bar-thick" style="width: 38px"></span>
+											<span class="ch-dash-chips"><span class="ch-mini-pill"></span><span class="ch-mini-pill"></span><span class="ch-mini-pill"></span></span>
+											<span class="ch-sub-line"></span>
+											<span class="ch-bar ch-bar-slate" style="width: 82%"></span>
+											<span class="ch-bar ch-bar-gray" style="width: 65%"></span>
+											<span class="ch-bar ch-bar-gray" style="width: 75%"></span>
+										</span>
+									</span>
+									<span v-else class="ch-mock-window ch-window-dialog">
+										<span class="ch-dialog-top">
+											<span class="ch-avatar-wrap"><span class="ch-avatar-circle"></span><span class="ch-status-dot-mini"></span></span>
+											<span class="ch-close-x">✕</span>
+										</span>
+										<span class="ch-dialog-content">
+											<span class="ch-bar ch-bar-slate" style="width: 68%"></span>
+											<span class="ch-bar ch-bar-gray" style="width: 88%"></span>
+											<span class="ch-bar ch-bar-gray" style="width: 48%"></span>
+										</span>
+									</span>
+								</span>
+								<span class="ch-card-body">
+									<span class="ch-card-title">{{ card.title }}</span>
+									<span class="ch-card-desc">{{ card.desc }}</span>
+								</span>
 							</button>
-						</div>
-					</div>
-
+							<button type="button" class="ch-card-link-btn" :title="card.linkLabel" :aria-label="card.linkLabel" @click="go(card.route)">
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+							</button>
+						</li>
+					</ul>
 				</div>
 			</Transition>
 		</section>
+
+		<!-- ═══ HISTORIQUE : tiroir à droite ═══ -->
+		<Transition name="ch-slide">
+			<aside v-if="showHistory" class="ch-drawer" role="dialog" aria-label="Historique des conversations">
+				<header class="ch-drawer-head">
+					<h2>Historique</h2>
+					<button type="button" class="ch-drawer-close" aria-label="Fermer l'historique" @click="showHistory = false">✕</button>
+				</header>
+				<input ref="searchRef" v-model="search" class="ch-drawer-search" type="search" placeholder="Rechercher une conversation…" aria-label="Rechercher une conversation" />
+				<div class="ch-drawer-body">
+					<p v-if="sessionsError" class="ch-drawer-empty">{{ sessionsError }}</p>
+					<p v-else-if="!sessionsLoaded" class="ch-drawer-empty">Chargement…</p>
+					<p v-else-if="!sessions.length" class="ch-drawer-empty">Aucune conversation pour le moment. Les questionnaires guidés ne sont pas conservés ici : seules vos questions à l'assistant le sont.</p>
+					<p v-else-if="!groupedSessions.length" class="ch-drawer-empty">Aucune conversation ne correspond.</p>
+					<section v-for="group in groupedSessions" :key="group.label" class="ch-drawer-group">
+						<h3>{{ group.label }}</h3>
+						<div v-for="session in group.rows" :key="session.name" class="ch-drawer-row" :class="{ current: session.name === chatSessionId }">
+							<template v-if="confirmDelete !== session.name">
+								<button type="button" class="ch-drawer-open" @click="openSession(session.name)">
+									<span class="ch-drawer-label">{{ sessionLabel(session) }}</span>
+									<span class="ch-drawer-when">{{ sessionWhen(session) }}</span>
+								</button>
+								<button type="button" class="ch-drawer-del" aria-label="Retirer cette conversation" title="Retirer de l'historique" @click="confirmDelete = session.name">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
+								</button>
+							</template>
+							<div v-else class="ch-drawer-confirm">
+								<span>Retirer de l'historique ?</span>
+								<button type="button" class="ch-pop-btn danger fill" @click="removeSession(session.name)">Retirer</button>
+								<button type="button" class="ch-pop-btn" @click="confirmDelete = ''">Annuler</button>
+							</div>
+						</div>
+					</section>
+				</div>
+			</aside>
+		</Transition>
 	</div>
 </template>
 
@@ -638,7 +643,7 @@ defineExpose({ refresh });
 	min-height: calc(100vh - 56px);
 	display: flex;
 	justify-content: center;
-	padding: 16px 24px 100px;
+	padding: 64px 24px 100px;
 	box-sizing: border-box;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 	-webkit-font-smoothing: antialiased;
@@ -691,7 +696,7 @@ defineExpose({ refresh });
 ═══════════════════════════════════════ */
 .ch-stage {
 	width: 100%;
-	max-width: 740px;
+	max-width: 900px;
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
@@ -711,7 +716,7 @@ defineExpose({ refresh });
 ═══════════════════════════════════════ */
 .ch-hero {
 	text-align: center;
-	padding-top: clamp(64px, 14vh, 120px);
+	padding-top: clamp(28px, 8vh, 72px);
 	padding-bottom: 12px;
 	user-select: none;
 }
@@ -730,7 +735,7 @@ defineExpose({ refresh });
 	font-size: clamp(22px, 3.2vw, 30px);
 	line-height: 1.25;
 	font-weight: 500;
-	color: #7487a3;
+	color: #5b6b82;
 	letter-spacing: -0.015em;
 }
 
@@ -742,7 +747,7 @@ defineExpose({ refresh });
 	border: 1.5px solid #e5e9f2;
 	border-radius: 22px;
 	padding: 16px 18px 12px 18px;
-	box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+	box-shadow: none;
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
 	display: flex;
 	flex-direction: column;
@@ -751,66 +756,7 @@ defineExpose({ refresh });
 
 .ch-composer:focus-within {
 	border-color: #cbd5e1;
-	box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
-}
-
-.ch-attachments-row {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-	margin-bottom: 12px;
-}
-
-.ch-attachment-chip {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	background: #f1f4f9;
-	border-radius: 8px;
-	padding: 4px 10px 4px 4px;
-	font-size: 13px;
-	color: #334155;
-	font-weight: 500;
-}
-
-.ch-att-thumb {
-	width: 28px;
-	height: 28px;
-	border-radius: 6px;
-	object-fit: cover;
-}
-
-.ch-att-fallback {
-	width: 28px;
-	height: 28px;
-	border-radius: 6px;
-	background: #e2e8f0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: #64748b;
-}
-
-.ch-att-name {
-	max-width: 140px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.ch-att-remove {
-	border: none;
-	background: transparent;
-	color: #94a3b8;
-	cursor: pointer;
-	padding: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.ch-att-remove:hover {
-	color: #ef4444;
+	box-shadow: none;
 }
 
 .ch-input {
@@ -832,7 +778,7 @@ defineExpose({ refresh });
 }
 
 .ch-input::placeholder {
-	color: #94a3b8;
+	color: #64748b;
 	font-weight: 400;
 }
 
@@ -895,74 +841,6 @@ defineExpose({ refresh });
 	50% { opacity: 0.5; }
 }
 
-.ch-model-pill-wrap {
-	position: relative;
-}
-
-.ch-model-pill {
-	height: 36px;
-	padding: 0 12px;
-	border-radius: 10px;
-	border: none;
-	background: transparent;
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	font-size: 14px;
-	font-weight: 600;
-	color: #1e293b;
-	cursor: pointer;
-	user-select: none;
-	transition: background 0.15s;
-}
-
-.ch-model-pill:hover {
-	background: #f1f5f9;
-}
-
-.ch-model-pill svg {
-	color: #64748b;
-}
-
-.ch-model-dropdown {
-	position: absolute;
-	bottom: calc(100% + 8px);
-	left: 0;
-	width: 220px;
-	background: #ffffff;
-	border: 1.5px solid #e2e8f0;
-	border-radius: 12px;
-	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-	padding: 8px;
-	z-index: 20;
-}
-
-.ch-model-item {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	padding: 8px 10px;
-	border-radius: 8px;
-	background: #f8fafc;
-	font-size: 13px;
-	color: #1e293b;
-}
-
-.ch-model-item span {
-	font-size: 11px;
-	color: #64748b;
-}
-
-.ch-model-footer {
-	margin-top: 6px;
-	padding-top: 6px;
-	border-top: 1px solid #f1f5f9;
-	font-size: 11px;
-	color: #10b981;
-	text-align: center;
-	font-weight: 500;
-}
-
 .ch-send {
 	width: 38px;
 	height: 38px;
@@ -976,13 +854,13 @@ defineExpose({ refresh });
 	cursor: pointer;
 	padding: 0;
 	transition: background 0.15s ease, transform 0.12s ease, opacity 0.15s;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+	box-shadow: none;
 }
 
 .ch-send:hover:not(:disabled) {
 	background: #047857;
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(4, 120, 87, 0.3);
+	box-shadow: none;
 }
 
 .ch-send:disabled {
@@ -1034,22 +912,21 @@ defineExpose({ refresh });
    GRILLE 3 CARTES
 ═══════════════════════════════════════ */
 .ch-cards-grid {
+	margin: 0;
+	padding: 0;
+	list-style: none;
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 16px;
 }
 
 .ch-card {
+	position: relative;
 	border-radius: 18px;
 	border: 1.5px solid #edf0f5;
 	background: #ffffff;
 	overflow: hidden;
-	padding: 8px;
-	display: flex;
-	flex-direction: column;
-	cursor: pointer;
-	text-align: left;
-	font: inherit;
+	padding: 0;
 	transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 
@@ -1057,6 +934,26 @@ defineExpose({ refresh });
 	transform: translateY(-3px);
 	box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 	border-color: #e2e8f0;
+}
+
+.ch-card-main {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+	padding: 8px;
+	border: 0;
+	border-radius: 16px;
+	background: transparent;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+}
+
+.ch-card-main:focus-visible {
+	outline: 2px solid #047857;
+	outline-offset: -2px;
 }
 
 .ch-card-header {
@@ -1069,15 +966,15 @@ defineExpose({ refresh });
 	overflow: hidden;
 }
 
-.ch-card-purple .ch-card-header {
+.ch-card-quote .ch-card-header {
 	background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 50%, #7c3aed 100%);
 }
 
-.ch-card-blue .ch-card-header {
+.ch-card-availability .ch-card-header {
 	background: linear-gradient(135deg, #38bdf8 0%, #2563eb 60%, #1d4ed8 100%);
 }
 
-.ch-card-emerald .ch-card-header {
+.ch-card-approvals .ch-card-header {
 	background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
 }
 
@@ -1162,6 +1059,7 @@ defineExpose({ refresh });
 }
 
 .ch-sub-line {
+	display: block;
 	height: 1px;
 	background: #f1f5f9;
 	width: 100%;
@@ -1192,7 +1090,7 @@ defineExpose({ refresh });
 	display: inline-block;
 }
 
-.ch-status-dot {
+.ch-status-dot-mini {
 	width: 4px;
 	height: 4px;
 	border-radius: 50%;
@@ -1202,7 +1100,7 @@ defineExpose({ refresh });
 
 .ch-close-x {
 	font-size: 9px;
-	color: #94a3b8;
+	color: #64748b;
 	font-weight: 700;
 	line-height: 1;
 }
@@ -1220,14 +1118,9 @@ defineExpose({ refresh });
 	gap: 4px;
 }
 
-.ch-card-title-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 6px;
-}
-
 .ch-card-title {
+	display: block;
+	padding-right: 26px;
 	margin: 0;
 	font-size: 14px;
 	font-weight: 600;
@@ -1236,9 +1129,12 @@ defineExpose({ refresh });
 }
 
 .ch-card-link-btn {
+	position: absolute;
+	right: 14px;
+	bottom: 36px;
 	border: none;
 	background: transparent;
-	color: #94a3b8;
+	color: #64748b;
 	cursor: pointer;
 	padding: 2px;
 	border-radius: 4px;
@@ -1254,6 +1150,7 @@ defineExpose({ refresh });
 }
 
 .ch-card-desc {
+	display: block;
 	margin: 0;
 	font-size: 12px;
 	color: #64748b;
@@ -1261,113 +1158,38 @@ defineExpose({ refresh });
 }
 
 /* ═══════════════════════════════════════
-   HISTORIQUE
-═══════════════════════════════════════ */
-.ch-history-section {
-	background: #ffffff;
-	border: 1.5px solid #edf0f5;
-	border-radius: 16px;
-	padding: 14px 16px;
-	margin-top: 4px;
-}
-
-.ch-history-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 10px;
-}
-
-.ch-history-title {
-	font-size: 11px;
-	font-weight: 600;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: #94a3b8;
-}
-
-.ch-history-close {
-	border: none;
-	background: transparent;
-	font-size: 12px;
-	color: #64748b;
-	cursor: pointer;
-	padding: 0;
-}
-
-.ch-history-close:hover {
-	color: #0f172a;
-}
-
-.ch-recent-list {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-}
-
-.ch-recent-row {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	width: 100%;
-	padding: 8px 10px;
-	border: none;
-	border-radius: 8px;
-	background: transparent;
-	font-family: inherit;
-	font-size: 13px;
-	color: #475569;
-	text-align: left;
-	cursor: pointer;
-	transition: background 0.12s, color 0.12s;
-}
-
-.ch-recent-row:hover {
-	background: #f8fafc;
-	color: #0f172a;
-}
-
-/* ═══════════════════════════════════════
    MODE CONVERSATION (THREAD)
 ═══════════════════════════════════════ */
-.ch-thread {
-	display: flex;
-	flex-direction: column;
+/* Conversation : le cadre occupe la hauteur de l'écran, le fil défile à l'intérieur et la saisie reste collée en bas,
+   sans ombre ni fond derrière elle. */
+.cortex-home.is-chat {
+	height: calc(100vh - 48px);
+	height: calc(100dvh - 48px);
+	min-height: 0;
+	padding: 0 24px 16px;
+	overflow: hidden;
+}
+
+.is-chat .ch-stage {
+	height: 100%;
+	min-height: 0;
 	gap: 12px;
 }
 
-.ch-thread-bar {
-	display: flex;
-	align-items: center;
-	padding: 6px 0;
-}
-
-.ch-link {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	height: 32px;
-	padding: 0 12px;
-	border: none;
-	background: #f1f5f9;
-	color: #475569;
-	font-family: inherit;
-	font-size: 13px;
-	font-weight: 500;
-	cursor: pointer;
-	border-radius: 8px;
-	transition: background 0.12s, color 0.12s;
-}
-
-.ch-link:hover {
-	background: #e2e8f0;
-	color: #0f172a;
+.ch-thread {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	padding-top: 64px;
+	scrollbar-gutter: stable;
+	overscroll-behavior: contain;
+	/* Le texte s'efface en douceur sous les boutons du haut, sans bande ni ombre. */
+	-webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 56px);
+	mask-image: linear-gradient(to bottom, transparent 0, #000 56px);
 }
 
 .is-chat .ch-composer {
-	position: sticky;
-	bottom: 20px;
-	z-index: 5;
+	flex: none;
 }
 
 /* ═══════════════════════════════════════
@@ -1384,6 +1206,9 @@ defineExpose({ refresh });
    RESPONSIVE
 ═══════════════════════════════════════ */
 @media (max-width: 680px) {
+	.cortex-home {
+		padding-inline: 12px;
+	}
 	.ch-cards-grid {
 		grid-template-columns: 1fr;
 	}
@@ -1394,5 +1219,507 @@ defineExpose({ refresh });
 		right: 16px;
 		top: 14px;
 	}
+}
+
+/* ═══════════════════════════════════════
+   ÉTAT DU MOTEUR, BANNIÈRE, RÉGLAGES
+═══════════════════════════════════════ */
+.ch-demo-banner {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 14px;
+	margin: 0;
+	padding: 10px 14px;
+	border: 1px solid #f3dfb6;
+	border-radius: 12px;
+	background: #fff8ea;
+	color: #6b4300;
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+.ch-demo-hide {
+	flex: none;
+	border: 0;
+	background: none;
+	color: #8a4b00;
+	font: inherit;
+	font-size: 12.5px;
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.ch-status-wrap {
+	position: relative;
+}
+
+.ch-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	height: 32px;
+	padding: 0 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 999px;
+	background: #fff;
+	font: inherit;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: #334155;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.ch-status:hover {
+	background: #f8fafc;
+}
+
+.ch-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #64748b;
+}
+
+.ch-status.is-ai {
+	border-color: #bfe5cf;
+	background: #f1faf5;
+	color: #066336;
+}
+
+.ch-status.is-ai .ch-status-dot {
+	background: #10b981;
+}
+
+.ch-status.is-demo {
+	border-color: #f3dfb6;
+	background: #fff8ea;
+	color: #8a4b00;
+}
+
+.ch-status.is-demo .ch-status-dot {
+	background: #f59e0b;
+}
+
+.ch-pop-wrap {
+	position: relative;
+}
+
+.ch-pop {
+	position: absolute;
+	z-index: 30;
+	width: 320px;
+	max-width: calc(100vw - 32px);
+	padding: 14px 16px;
+	border: 1px solid #e2e8f0;
+	border-radius: 14px;
+	background: #fff;
+	box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+	font-size: 13px;
+	color: #334155;
+}
+
+.ch-settings {
+	top: calc(100% + 10px);
+	right: 0;
+	display: grid;
+	gap: 14px;
+}
+
+.ch-status-pop {
+	bottom: calc(100% + 10px);
+	left: 0;
+	line-height: 1.5;
+}
+
+.ch-status-pop p {
+	margin: 6px 0 0;
+}
+
+.ch-pop-title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 650;
+	color: #0f172a;
+}
+
+.ch-switch-row,
+.ch-pop-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 14px;
+}
+
+.ch-switch-row small,
+.ch-pop-row small {
+	display: block;
+	margin-top: 2px;
+	font-size: 12px;
+	color: #6b7a90;
+	line-height: 1.4;
+}
+
+.ch-switch-row input {
+	appearance: none;
+	flex: none;
+	position: relative;
+	width: 34px;
+	height: 20px;
+	margin: 2px 0 0;
+	border-radius: 999px;
+	background: #cbd5e1;
+	cursor: pointer;
+	transition: background-color 0.18s ease;
+}
+
+.ch-switch-row input::after {
+	content: "";
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+	transition: transform 0.18s ease;
+}
+
+.ch-switch-row input:checked {
+	background: #047857;
+}
+
+.ch-switch-row input:checked::after {
+	transform: translateX(14px);
+}
+
+.ch-switch-row input:focus-visible {
+	outline: 2px solid #047857;
+	outline-offset: 2px;
+}
+
+.ch-pop-btn {
+	flex: none;
+	height: 30px;
+	padding: 0 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	background: #fff;
+	font: inherit;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: #334155;
+	cursor: pointer;
+}
+
+.ch-pop-btn.danger {
+	color: #b42318;
+	border-color: #f1c9c5;
+}
+
+.ch-pop-btn.danger.fill {
+	background: #b42318;
+	border-color: #b42318;
+	color: #fff;
+}
+
+.ch-confirm {
+	display: inline-flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.ch-pop-link {
+	justify-self: start;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: #066336;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+/* ═══════════════════════════════════════
+   HISTORIQUE : TIROIR À DROITE
+═══════════════════════════════════════ */
+.ch-drawer {
+	position: fixed;
+	top: 48px;
+	right: 0;
+	bottom: 0;
+	z-index: 1040;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	width: 340px;
+	max-width: 100vw;
+	padding: 18px 16px;
+	border-left: 1px solid #e2e8f0;
+	background: #fff;
+	box-shadow: -12px 0 32px rgba(15, 23, 42, 0.08);
+}
+
+.ch-drawer-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.ch-drawer-head h2 {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 650;
+	color: #0f172a;
+}
+
+.ch-drawer-close {
+	width: 30px;
+	height: 30px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: #64748b;
+	cursor: pointer;
+}
+
+.ch-drawer-close:hover {
+	background: #f1f5f9;
+}
+
+.ch-drawer-search {
+	width: 100%;
+	height: 38px;
+	padding: 0 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	font: inherit;
+	font-size: 13.5px;
+}
+
+.ch-drawer-search:focus {
+	border-color: #047857;
+	box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.12);
+	outline: none;
+}
+
+.ch-drawer-body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.ch-drawer-empty {
+	margin: 8px 2px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #6b7a90;
+}
+
+.ch-drawer-group h3 {
+	margin: 14px 4px 6px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #64748b;
+}
+
+.ch-drawer-row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	border-radius: 10px;
+}
+
+.ch-drawer-row:hover,
+.ch-drawer-row.current {
+	background: #f4f6f9;
+}
+
+.ch-drawer-row.current {
+	box-shadow: inset 3px 0 0 #047857;
+}
+
+.ch-drawer-open {
+	flex: 1;
+	min-width: 0;
+	display: grid;
+	gap: 1px;
+	padding: 8px 10px;
+	border: 0;
+	background: transparent;
+	text-align: left;
+	font: inherit;
+	cursor: pointer;
+}
+
+.ch-drawer-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 13.5px;
+	color: #1e293b;
+}
+
+.ch-drawer-when {
+	font-size: 11.5px;
+	color: #64748b;
+}
+
+.ch-drawer-del {
+	flex: none;
+	width: 30px;
+	height: 30px;
+	margin-right: 4px;
+	display: grid;
+	place-items: center;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: #64748b;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.12s ease, color 0.12s ease;
+}
+
+.ch-drawer-row:hover .ch-drawer-del,
+.ch-drawer-del:focus-visible {
+	opacity: 1;
+}
+
+.ch-drawer-del:hover {
+	color: #b42318;
+	background: #fbeaea;
+}
+
+.ch-drawer-confirm {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	font-size: 12.5px;
+}
+
+.ch-slide-enter-active,
+.ch-slide-leave-active {
+	transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.22s ease;
+}
+
+.ch-slide-enter-from,
+.ch-slide-leave-to {
+	transform: translateX(24px);
+	opacity: 0;
+}
+
+@media (hover: none) {
+	.ch-drawer-del {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ch-slide-enter-active,
+	.ch-slide-leave-active,
+	.ch-fade-enter-active,
+	.ch-fade-leave-active {
+		transition: none;
+	}
+}
+
+/* ═══════════════════════════════════════
+   CHOIX DU MODÈLE CORTEX
+═══════════════════════════════════════ */
+.ch-status-pop {
+	width: 360px;
+	max-height: calc(100vh - 140px);
+	overflow-y: auto;
+}
+
+/* Sur l'écran d'accueil la saisie est au milieu de la page : le menu s'ouvre vers le bas. */
+.ch-status-pop.down {
+	top: calc(100% + 10px);
+	bottom: auto;
+}
+
+.ch-tier-head {
+	display: block;
+	margin-bottom: 8px;
+	color: #0f172a;
+}
+
+.ch-tiers {
+	display: grid;
+	gap: 4px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ch-tier {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+	padding: 9px 10px;
+	border: 1px solid transparent;
+	border-radius: 10px;
+	background: transparent;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.ch-tier:hover:not(:disabled) {
+	background: #f8fafc;
+}
+
+.ch-tier.on {
+	border-color: #bfe5cf;
+	background: #f1faf5;
+}
+
+.ch-tier.off {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+.ch-tier-main {
+	display: grid;
+	gap: 2px;
+}
+
+.ch-tier-name {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.ch-tier-desc {
+	font-size: 12px;
+	line-height: 1.4;
+	color: #64748b;
+}
+
+.ch-tier-cost {
+	flex: none;
+	font-size: 11.5px;
+	font-weight: 600;
+	color: #475569;
+	white-space: nowrap;
+}
+
+.ch-tier-note {
+	margin: 8px 2px 0;
+	font-size: 11.5px;
+	line-height: 1.45;
+	color: #64748b;
 }
 </style>

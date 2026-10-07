@@ -22,6 +22,10 @@ app_color = "#047857"
 # desk.html only, never web.html — this app has no public-facing pages
 # beyond the one authenticated www/onyx-assistant.html, which loads its
 # own styling and isn't part of the Desk chrome these files target.
+website_route_rules = [
+    {"from_route": "/devis/<token>", "to_route": "devis"},
+]
+
 app_include_css = [
     "/assets/cortex_rental/css/cortex-tokens.css",
     "/assets/cortex_rental/css/cortex-theme.css",
@@ -30,6 +34,10 @@ app_include_css = [
     "/assets/cortex_rental/css/cortex-motion.css",
     "/assets/cortex_rental/css/cortex-nav.css",
     "/assets/cortex_rental/css/cortex-a11y.css",
+    "/assets/cortex_rental/css/cortex-mobile.css",
+    "/assets/cortex_rental/css/cortex-account.css",
+    "/assets/cortex_rental/css/cortex-dossier.css",
+    "/assets/cortex_rental/css/cortex-onboarding.css",
 ]
 
 # Global floating Cortex Copilot launcher — mounted on every Desk page
@@ -43,13 +51,22 @@ app_include_js = [
     "/assets/cortex_rental/js/cortex_desk.js",
     "/assets/cortex_rental/js/cortex_nav.js",
     "/assets/cortex_rental/js/cortex_pages.js",
+    "/assets/cortex_rental/js/cortex_policy.js",
+    "/assets/cortex_rental/js/cortex_dossier.js",
+    "/assets/cortex_rental/js/cortex_export.js",
     "/assets/cortex_rental/js/cortex_views.js",
     "/assets/cortex_rental/js/cortex_a11y.js",
     "/assets/cortex_rental/js/cortex_i18n.js",
 ]
 
+# Fiche client 360° (devis ouverts, locations en cours, solde dû).
+doctype_js = {"Customer": "public/js/cortex_customer.js"}
+
 # Visitors who are not signed in get French pages (see auth_hooks.french_for_guests).
-before_request = ["cortex_rental.auth_hooks.french_for_guests"]
+before_request = ["cortex_rental.auth_hooks.french_for_guests", "cortex_rental.services.defense.request_brake"]
+
+# En-têtes de sécurité sur chaque réponse (voir services/defense.py).
+after_request = ["cortex_rental.services.defense.security_headers", "cortex_rental.services.defense.normalize_lockout"]
 
 # DocType Events (Audit logging & validation hooks)
 # ------------------------------------------------
@@ -63,6 +80,15 @@ before_request = ["cortex_rental.auth_hooks.french_for_guests"]
 # Order/Serial No override behavior is an open follow-up, not something
 # to invent here.
 doc_events = {}
+
+# Rappels : retenues qui expirent, retours en retard, devis sans réponse, factures échues (services/reminders.py).
+scheduler_events = {
+    "hourly": ["cortex_rental.services.reminders.hourly"],
+    "daily": ["cortex_rental.services.devices.prune"],
+}
+
+# Appareils connectés : on garde l'agent utilisateur à l'ouverture de chaque session (services/devices.py).
+on_session_creation = ["cortex_rental.services.devices.on_login"]
 
 # Permission Query Hooks for Multi-Tenancy
 # ----------------------------------------

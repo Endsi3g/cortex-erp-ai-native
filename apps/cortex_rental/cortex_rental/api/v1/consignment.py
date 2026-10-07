@@ -7,6 +7,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.api.v1._shared import envelope, page_args, parse_json, to_float
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context, require_human_staff_role
 from cortex_rental.services.consignment import ConsignmentService
@@ -277,6 +278,7 @@ def _require_payout_access() -> None:
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("prepare_owner_statement", scope="agent:consignment:read")
     def prepare_owner_statement():
         require_agent_scope("agent:consignment:read")
@@ -292,6 +294,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_owners(search: str = None, page: int = 1, page_size: int = 20):
         require_human_staff_role()
         if not frappe.has_permission("Consignment Owner", "read"):
@@ -300,12 +303,14 @@ if frappe:
         return envelope(list_owners_handler(get_company_context(), search, page, page_size))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_consignment_dashboard(period: str = None):
         require_human_staff_role()
         _require_payout_access()
         return envelope(dashboard_handler(get_company_context(), period))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_owner_statement(owner_id: str, period: str):
         require_human_staff_role()
         _require_payout_access()

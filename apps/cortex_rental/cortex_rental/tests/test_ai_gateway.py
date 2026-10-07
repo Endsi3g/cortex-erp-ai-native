@@ -312,6 +312,80 @@ class TestBudget(unittest.TestCase):
                 budget.check("A", settings)
 
 
+ECON = {
+    **SETTINGS,
+    "default_monthly_budget": 60.0,
+    "economy_model": "gemini-3.1-flash-lite",
+    "economy_cap_percent": 150,
+    "economy_price_input_per_mtok": 0.25,
+    "economy_price_output_per_mtok": 1.5,
+    "price_input_per_mtok": 0.75,
+    "price_output_per_mtok": 3.75,
+}
+
+
+class TestEconomyMode(unittest.TestCase):
+    def usage(self, cost):
+        return mock.patch.object(budget, "month_to_date", return_value={"cost": cost, "tokens": 0, "calls": 1})
+
+    def test_below_the_cap_the_main_model_is_used(self):
+        with self.usage(30.0):
+            current = budget.status("A", ECON)
+        self.assertFalse(current["economy"])
+        self.assertFalse(current["blocked"])
+
+    def test_at_the_cap_we_switch_to_the_economy_model_instead_of_refusing(self):
+        with self.usage(60.0):
+            current = budget.status("A", ECON)
+            budget.check("A", ECON)  # ne refuse pas
+        self.assertTrue(current["economy"])
+        self.assertFalse(current["blocked"])
+
+    def test_far_above_the_cap_we_finally_refuse(self):
+        with self.usage(90.0):
+            self.assertTrue(budget.status("A", ECON)["blocked"])
+            with self.assertRaises(budget.BudgetExceeded):
+                budget.check("A", ECON)
+
+    def test_without_an_economy_model_the_cap_refuses_as_before(self):
+        with self.usage(60.0):
+            current = budget.status("A", {**ECON, "economy_model": ""})
+        self.assertTrue(current["blocked"])
+        self.assertFalse(current["economy"])
+
+    def test_gateway_answers_with_the_economy_model_tells_the_person_and_prices_it_cheaper(self):
+        economy_provider = ScriptedProvider(
+            [ProviderResult(text="Réponse économique", input_tokens=1000, output_tokens=100)],
+            model="gemini-3.1-flash-lite",
+        )
+        recorded = []
+        with (
+            mock.patch.object(tools, "REGISTRY", {}),
+            mock.patch.object(budget, "check"),
+            mock.patch.object(budget, "record", side_effect=lambda *a, **k: recorded.append(k)),
+            mock.patch.object(budget, "status", return_value={**STATUS_OK, "economy": True, "percent": 104.0}),
+            mock.patch.object(gateway, "frappe", None),
+            mock.patch.object(gateway, "build_provider", return_value=economy_provider) as build,
+        ):
+            outcome = gateway.AIGateway(provider=ScriptedProvider([]), settings=dict(ECON)).run(
+                "Bonjour", None, [], "A", "a@test.com"
+            )
+        build.assert_called_once()
+        self.assertEqual(build.call_args.kwargs["model"], "gemini-3.1-flash-lite")
+        self.assertEqual(outcome.model, "gemini-3.1-flash-lite")
+        self.assertEqual(recorded[0]["prices"]["price_input_per_mtok"], 0.25)
+        risk = next(b for b in outcome.blocks if b["type"] == "risk")
+        self.assertIn("plafond", risk["title"].lower())
+        self.assertIn("économique", risk["explanation"])
+
+    def test_the_economy_model_is_cheaper_in_the_shipped_defaults(self):
+        from cortex_rental.services.ai import settings as ai_settings
+
+        d = ai_settings.DEFAULTS
+        self.assertLess(d["economy_price_output_per_mtok"], d["price_output_per_mtok"])
+        self.assertLess(d["economy_price_input_per_mtok"], d["price_input_per_mtok"])
+
+
 class TestPolicyAndDoctypes(unittest.TestCase):
     WRITE_WORDS = ("approve", "confirm", "activate", "delete", "pay", "cancel", "submit", "update")
 

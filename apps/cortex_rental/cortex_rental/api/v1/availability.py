@@ -5,6 +5,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import (
     require_agent_scope,
     require_human_staff_role,
@@ -39,6 +40,7 @@ def check_availability_handler(payload: Dict[str, Any], company: str) -> List[Di
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def check_for_staff():
         require_human_staff_role()
         company = get_company_context()
@@ -65,6 +67,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_alternatives(item_code: str, starts_at: str, ends_at: str):
         require_human_staff_role()
         company = get_company_context()
@@ -115,6 +118,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("check_inventory_availability", scope="agent:availability:read")
     def check_availability():
         require_agent_scope("agent:availability:read")
@@ -224,7 +228,7 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
         rows = frappe.db.sql(
             """
             SELECT t.name AS transaction, t.rental_state, t.customer,
-                   t.starts_at, t.ends_at, ti.item_code, ti.qty
+                   t.starts_at, t.ends_at, ti.item_code, ti.qty, t.hold_status, t.hold_until
             FROM `tabCortex Rental Transaction Item` ti
             JOIN `tabCortex Rental Transaction` t ON t.name = ti.parent
             WHERE t.company = %(company)s
@@ -252,6 +256,8 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
                     "starts_at": str(row.starts_at),
                     "ends_at": str(row.ends_at),
                     "qty": float(row.qty),
+                    # Un devis ne retient le matériel que tant que sa retenue est valide.
+                    "hold_until": str(row.hold_until) if row.hold_status == "Active" and row.hold_until else None,
                 }
             )
 
@@ -286,9 +292,24 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_matrix():
         require_human_staff_role()
         company = get_company_context()
         payload = frappe.local.form_dict
         result = get_matrix_handler(payload=payload, company=company)
         return {"data": result, "meta": {"company": company}}
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def get_period_summary(starts_at: str = "", ends_at: str = "", category: str = ""):
+        """Par équipement : libre au pire jour de la période, pic de réservations et de retenues, statut. Calculé par le serveur."""
+        require_human_staff_role()
+        from cortex_rental.services import availability_summary
+
+        company = get_company_context()
+        matrix = get_matrix_handler(
+            payload={"starts_at": starts_at, "ends_at": ends_at, "category": category or None}, company=company
+        )
+        rows = availability_summary.summarize(matrix.get("items", []), starts_at, ends_at, frappe.utils.now_datetime())
+        return {"data": {"starts_at": starts_at, "ends_at": ends_at, "items": rows}, "meta": {"company": company}}

@@ -23,6 +23,7 @@
 	const GROUPS = [
 		{
 			title: "Opérations",
+			pinned: true,
 			items: [
 				{ id: "home", label: "Tableau de bord", icon: "assets", href: "/app/cortex-rental", owns: ["cortex-rental"], show: ALL },
 				{ id: "rentals", label: "Locations", icon: "sell", href: "/app/cortex-rental-transaction", owns: ["cortex-rental-transaction"], show: can("Cortex Rental Transaction") },
@@ -33,6 +34,7 @@
 		},
 		{
 			title: "Assistant",
+			pinned: true,
 			items: [{ id: "assistant", label: "Assistant IA", icon: "message-1", href: "/app/cortex-home", owns: ["cortex-home", "cortex-ai"], show: ALL }],
 		},
 		{
@@ -52,8 +54,18 @@
 			],
 		},
 		{
+			// Administration regroupe « Mon compte » (sept pages dédiées, /app/cortex-account/<page>) et les réglages de la société.
 			title: "Administration",
+			bottom: true,
 			items: [
+				{ id: "acct-profil", label: "Profil", icon: "customer", href: "/app/cortex-account/profil", owns: ["cortex-account/profil"], show: ALL },
+				{ id: "acct-statistiques", label: "Statistiques", icon: "chart", href: "/app/cortex-account/statistiques", owns: ["cortex-account/statistiques"], show: ALL },
+				{ id: "acct-approbations", label: "Mes approbations", icon: "quality", href: "/app/cortex-account/approbations", owns: ["cortex-account/approbations"], show: ALL },
+				{ id: "acct-activite", label: "Activité", icon: "list", href: "/app/cortex-account/activite", owns: ["cortex-account/activite"], show: ALL },
+				{ id: "acct-securite", label: "Sécurité", icon: "lock", href: "/app/cortex-account/securite", owns: ["cortex-account/securite"], show: ALL },
+				{ id: "acct-notifications", label: "Notifications", icon: "notification", href: "/app/cortex-account/notifications", owns: ["cortex-account/notifications"], show: ALL },
+				{ id: "acct-societe", label: "Société et rôles", icon: "users", href: "/app/cortex-account/societe", owns: ["cortex-account/societe"], show: ALL },
+				{ id: "setup", label: "Configuration", icon: "list-alt", href: "/app/cortex-setup", owns: ["cortex-setup"], show: hasRole("Cortex System Manager", "System Manager") },
 				{ id: "admin", label: "Équipe et règles", icon: "setting-gear", href: "/app/cortex-admin", owns: ["cortex-admin", "rental-pricing-rule", "user", "audit-event", "cortex-ai-settings"], show: workspace("Cortex Admin") },
 				{ id: "website", label: "Site Web", icon: "website", href: "/app/website", owns: ["website"], show: hasRole("System Manager", "Website Manager") },
 				{ id: "settings", label: "Paramètres", icon: "setting", href: "/app/erpnext-settings", owns: ["erpnext-settings", "integrations", "build"], show: hasRole("System Manager") },
@@ -61,7 +73,26 @@
 		},
 	];
 
-	const REPORT_OWNER = { "Disponibilité du parc": "availability", "Prochains départs et retours": "operations", "Activité des clients": "customers" };
+	// Un seul endroit pour savoir où se trouve une page dans la navigation (barre latérale, fil d'Ariane, titres).
+	cortex.NAV = {
+		groups: GROUPS,
+		locate(parts) {
+			const first = parts[0] || "";
+			for (const group of GROUPS) {
+				for (const item of group.items) {
+					if (first === "query-report") {
+						const owner = REPORT_OWNER[parts[1]] || ((item.reports || []).includes(parts[1]) ? item.id : null);
+						if (owner === item.id) return { group, item };
+					} else if ((item.owns || []).includes(first) || (item.owns || []).includes(`${first}/${parts[1] || "profil"}`)) {
+						return { group, item };
+					}
+				}
+			}
+			return null;
+		},
+	};
+
+	const REPORT_OWNER = { "Disponibilité du parc": "availability", "Prochains départs et retours": "operations", "Activité des clients": "customers", "Utilisation du parc": "catalog" };
 	const STORE = "cortex_nav_collapsed";
 	const GROUP_STORE = "cortex_nav_groups";
 	const SHORT = window.matchMedia("(max-width: 1100px)");
@@ -122,7 +153,12 @@
 			nav.appendChild(head);
 
 			const scroll = el("div", { class: "cx-nav-scroll" });
-			if (can("Cortex Rental Transaction")() && frappe.model.can_create("Cortex Rental Transaction")) {
+			const identity = this.identity();
+			if (identity) scroll.appendChild(identity);
+			const canCreate = can("Cortex Rental Transaction")() && frappe.model.can_create("Cortex Rental Transaction");
+			// Société → séparateur → Nouvelle location : deux blocs de nature différente, jamais collés (ouvert ou réduit).
+			if (identity && canCreate) scroll.appendChild(el("div", { class: "cx-nav-sep", role: "separator" }));
+			if (canCreate) {
 				const create = el("a", { class: "cx-new", href: "/app/cortex-rental-transaction/new", title: __("Nouvelle location") }, `<span class="cx-new-plus">${PLUS}</span><span class="cx-label">${__("Nouvelle location")}</span>`);
 				create.addEventListener("click", (e) => this.go(e, create.getAttribute("href")));
 				scroll.appendChild(create);
@@ -137,23 +173,55 @@
 					}
 				});
 				if (!items.length) return;
-				const open = this.groups[group.title] !== false;
-				const section = el("section", { class: "cx-group" + (open ? "" : " closed") });
-				const title = el("button", { type: "button", class: "cx-group-title", "aria-expanded": String(open) }, `<span class="cx-label">${__(group.title)}</span><span class="cx-chev">${CHEVRON}</span>`);
+				// Tous les groupes se replient. Sans préférence enregistrée, seul celui de la page courante est ouvert.
+				// Opérations et Assistant sont toujours ouverts. Les autres s'ouvrent à la demande (et pour la page courante).
+				const here = cortex.NAV.locate(this.pathParts());
+				const stored = this.groups[group.title];
+				const open = group.pinned || (stored === undefined ? !!(here && here.group === group) : stored !== false);
+				const section = el("section", { class: "cx-group" + (open ? "" : " closed") + (group.bottom ? " cx-group-bottom" : "") + (group.pinned ? " pinned" : "") });
+				const title = group.pinned
+					? el("div", { class: "cx-group-title static" }, `<span class="cx-label">${__(group.title)}</span>`)
+					: el("button", { type: "button", class: "cx-group-title", "aria-expanded": String(open) }, `<span class="cx-label">${__(group.title)}</span><span class="cx-chev">${CHEVRON}</span>`);
 				const body = el("div", { class: "cx-group-body" });
 				const inner = el("div", { class: "cx-group-inner" });
-				title.addEventListener("click", () => {
+				if (!group.pinned) title.addEventListener("click", () => {
 					const closed = section.classList.toggle("closed");
 					title.setAttribute("aria-expanded", String(!closed));
 					this.groups[group.title] = !closed;
 					store(GROUP_STORE, JSON.stringify(this.groups));
+					// Un groupe qui vient de s'ouvrir doit être entièrement visible : on fait défiler la barre jusqu'à lui.
+					// Pendant l'ouverture (le groupe grandit en ~0,4 s), on suit sa hauteur pour qu'il reste visible en entier.
+					if (!closed) {
+						let ticks = 0;
+						const follow = window.setInterval(() => {
+							const box = document.querySelector("#cx-nav .cx-nav-scroll");
+							if (!box || ++ticks > 22) {
+								window.clearInterval(follow);
+								if (box) box.classList.toggle("cx-more", box.scrollTop + box.clientHeight < box.scrollHeight - 2);
+								return;
+							}
+							if (group.bottom) box.scrollTop = box.scrollHeight;
+							else {
+								const target = [...box.querySelectorAll(".cx-group-title")].find((t) => t.getAttribute("aria-expanded") === "true" && t.textContent.includes(__(group.title)));
+								if (target) target.scrollIntoView({ block: "nearest" });
+							}
+						}, 40);
+					}
 				});
 				items.forEach((item) => inner.appendChild(this.item(item)));
 				body.appendChild(inner);
 				section.append(title, body);
 				scroll.appendChild(section);
 			});
+			// Indique qu'il reste des entrées sous le bord visible (fondu en bas), sans bande ni ombre.
+			const refreshMore = () => scroll.classList.toggle("cx-more", scroll.scrollTop + scroll.clientHeight < scroll.scrollHeight - 2);
+			scroll.addEventListener("scroll", refreshMore, { passive: true });
+			window.addEventListener("resize", refreshMore);
+			// Replier ou déplier la barre change la hauteur du contenu : on recalcule le fondu.
+			new MutationObserver(() => window.setTimeout(refreshMore, 120)).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+			window.setTimeout(refreshMore, 400);
 			nav.appendChild(scroll);
+			nav.appendChild(this.account());
 
 			const backdrop = el("div", { id: "cx-nav-backdrop" });
 			backdrop.addEventListener("click", () => this.closeDrawer());
@@ -168,6 +236,60 @@
 				navbarBrand.parentNode.insertBefore(burger, navbarBrand);
 				this.nodes.burger = burger;
 			}
+		}
+
+		// Profil en bas de la barre (comme Claude) : avatar, nom, courriel et menu (profil, déconnexion).
+		account() {
+			const me = frappe.session.user;
+			const name = frappe.session.user_fullname || me;
+			const image = frappe.user_info(me).image;
+			const esc = frappe.utils.escape_html;
+			const mark = image
+				? `<img class="cx-avatar" src="${esc(image)}" alt="" width="30" height="30">`
+				: `<span class="cx-avatar cx-avatar-initials" style="background:${tint(me)}">${esc(initials(name))}</span>`;
+			const box = el("div", { class: "cx-account" });
+			const trigger = el("button", { type: "button", class: "cx-account-btn", "aria-haspopup": "menu", "aria-expanded": "false", title: name });
+			trigger.innerHTML = `${mark}<span class="cx-label cx-account-text"><strong>${esc(name)}</strong><small>${esc(me)}</small></span><span class="cx-label cx-account-more">${CHEVRON}</span>`;
+			const menu = el("div", { class: "cx-account-menu", role: "menu", hidden: "" });
+			const entry = (label, run) => {
+				const b = el("button", { type: "button", role: "menuitem", class: "cx-account-item" }, esc(label));
+				b.addEventListener("click", () => {
+					menu.hidden = true;
+					trigger.setAttribute("aria-expanded", "false");
+					run();
+				});
+				return b;
+			};
+			menu.append(
+				entry(__("Mon compte"), () => frappe.set_route("cortex-account", "profil")),
+				entry(__("Aide et support"), () => frappe.new_doc("Cortex Support Request")),
+				entry(__("Se déconnecter"), () => frappe.app.logout())
+			);
+			trigger.addEventListener("click", () => {
+				menu.hidden = !menu.hidden;
+				trigger.setAttribute("aria-expanded", String(!menu.hidden));
+			});
+			document.addEventListener("click", (e) => {
+				if (!menu.hidden && !box.contains(e.target)) {
+					menu.hidden = true;
+					trigger.setAttribute("aria-expanded", "false");
+				}
+			});
+			box.append(menu, trigger);
+			return box;
+		}
+
+		// Société de la personne connectée : logo et nom, sous la marque (lecture seule, fournis par le serveur).
+		identity() {
+			const home = (frappe.boot && frappe.boot.cortex_home) || {};
+			if (!home.company) return null;
+			const card = el("a", { class: "cx-company", href: "/app/cortex-rental", title: home.company });
+			const mark = home.company_logo
+				? `<img src="${frappe.utils.escape_html(home.company_logo)}" alt="" width="28" height="28">`
+				: `<span class="cx-company-initials" style="background:${tint(home.company)}">${frappe.utils.escape_html(initials(home.company))}</span>`;
+			card.innerHTML = `${mark}<span class="cx-label cx-company-text"><strong>${frappe.utils.escape_html(home.company)}</strong><small>${__("Votre société")}</small></span>`;
+			card.addEventListener("click", (e) => this.go(e, "/app/cortex-rental"));
+			return card;
 		}
 
 		item(item) {
@@ -210,13 +332,23 @@
 			const list = document.querySelector("header.navbar .navbar-collapse ul.navbar-nav");
 			if (!list || list.querySelector(".cx-presence-li")) return;
 			const li = el("li", { class: "nav-item cx-presence-li", hidden: "" });
-			li.innerHTML = `<button type="button" class="cx-pill" aria-expanded="false" aria-controls="cx-activity" title="${__("Équipe en ligne")}"><span class="cx-stack"></span><span class="cx-pill-count"></span></button>`;
+			li.innerHTML = `<button type="button" class="cx-pill" aria-expanded="false" aria-controls="cx-activity" aria-describedby="cx-presence-tip" aria-label="${__("Équipe en ligne")}"><span class="cx-stack"></span></button>`;
 			list.insertBefore(li, list.firstChild);
 			const panel = el("div", { id: "cx-activity", class: "cx-activity", role: "dialog", "aria-label": __("Activité de l'équipe"), hidden: "" });
 			document.body.appendChild(panel);
+			// Infobulle : qui est en ligne et ce que chaque personne fait (écran affiché, sinon dernière action).
+			const tip = el("div", { id: "cx-presence-tip", class: "cx-presence-tip", role: "tooltip", hidden: "" });
+			document.body.appendChild(tip);
 			this.nodes.presence = li;
 			this.nodes.activity = panel;
-			li.querySelector(".cx-pill").addEventListener("click", () => this.toggleActivity());
+			this.nodes.tip = tip;
+			const pill = li.querySelector(".cx-pill");
+			pill.addEventListener("click", () => {
+				this.showTip(false);
+				this.toggleActivity();
+			});
+			["mouseenter", "focus"].forEach((ev) => pill.addEventListener(ev, () => this.showTip(true)));
+			["mouseleave", "blur"].forEach((ev) => pill.addEventListener(ev, () => this.showTip(false)));
 			document.addEventListener("click", (e) => {
 				if (!panel.hidden && !panel.contains(e.target) && !li.contains(e.target)) this.toggleActivity(false);
 			});
@@ -254,6 +386,10 @@
 			});
 		}
 
+		pathParts() {
+			return window.location.pathname.replace(/^\/app\/?/, "").split("/").map(decodeURIComponent);
+		}
+
 		// --- état actif
 		parts() {
 			return window.location.pathname.replace(/^\/app\/?/, "").split("/").map(decodeURIComponent);
@@ -264,7 +400,7 @@
 			const first = parts[0] || "";
 			if (first === "query-report") return REPORT_OWNER[parts[1]] || (this.nodes.finance && this.nodes.finance.item.reports.includes(parts[1]) ? "finance" : "rentals");
 			for (const [id, node] of Object.entries(this.nodes)) {
-				if (node.item && node.item.owns && node.item.owns.includes(first)) return id;
+				if (node.item && node.item.owns && (node.item.owns.includes(first) || node.item.owns.includes(`${first}/${parts[1] || "profil"}`))) return id;
 			}
 			return null;
 		}
@@ -329,7 +465,36 @@
 		// --- équipe et activité
 		ping() {
 			if (document.visibilityState === "hidden") return;
-			frappe.xcall("cortex_rental.api.v1.presence.ping", {}, "POST").catch(() => {});
+			frappe.xcall("cortex_rental.api.v1.presence.ping", { where: this.describeRoute() }, "POST").catch(() => {});
+		}
+
+		// L'écran affiché, en français (« Disponibilité », « Locations · CR-TRX-2026-00012 »), pour l'infobulle de l'équipe.
+		describeRoute() {
+			const p = this.pathParts();
+			const first = p[0] || "";
+			if (!first) return __("Accueil");
+			const here = cortex.NAV.locate(p);
+			if (first === "query-report") return `${__("Rapport")} · ${p[1] || ""}`;
+			if (here) {
+				const base = __(here.item.label);
+				if (first === "cortex-account" || p.length < 2 || p[1] === "view") return base;
+				return `${base} · ${p[1].startsWith("new-") ? __("nouvelle fiche") : p[1]}`;
+			}
+			return first.replace(/-/g, " ");
+		}
+
+		showTip(show) {
+			const tip = this.nodes.tip;
+			const pill = this.nodes.presence && this.nodes.presence.querySelector(".cx-pill");
+			if (!tip || !pill) return;
+			if (!show || !tip.firstChild || (this.nodes.activity && !this.nodes.activity.hidden)) {
+				tip.hidden = true;
+				return;
+			}
+			tip.hidden = false;
+			const box = pill.getBoundingClientRect();
+			tip.style.top = `${Math.round(box.bottom + 8)}px`;
+			tip.style.right = `${Math.max(8, Math.round(window.innerWidth - box.right))}px`;
 		}
 
 		refreshTeam() {
@@ -341,7 +506,26 @@
 				});
 		}
 
-		onLiveActivity() {
+		// Devis accepté par un client et pas encore réservé : alerte avec un bouton « Réserver ».
+		offerReservation(data) {
+			if (!data || !data.reserve || !frappe.model.can_write("Cortex Rental Transaction")) return;
+			const name = data.reserve;
+			const actions = {};
+			actions[__("Réserver")] = () =>
+				frappe.xcall("cortex_rental.api.v1.rentals.request_reservation", { name }, "POST").then((r) => {
+					const failed = r && r.errors && r.errors.length;
+					frappe.show_alert(
+						{ message: failed ? r.errors[0].message : __("Matériel réservé pour {0}.", [name]), indicator: failed ? "orange" : "green" },
+						8
+					);
+					if (cur_frm && cur_frm.doc && cur_frm.doc.name === name) cur_frm.reload_doc();
+				});
+			actions[__("Ouvrir")] = () => frappe.set_route("Form", "Cortex Rental Transaction", name);
+			frappe.show_alert({ message: `${frappe.utils.escape_html(data.actor || "")} ${frappe.utils.escape_html(data.text || "")}`, indicator: "orange" }, 20, actions);
+		}
+
+		onLiveActivity(data) {
+			this.offerReservation(data);
 			window.clearTimeout(this.liveTimer);
 			this.liveTimer = window.setTimeout(() => {
 				this.refreshTeam();
@@ -365,12 +549,37 @@
 				return;
 			}
 			li.hidden = false;
-			li.querySelector(".cx-pill-count").textContent = __("{0} en ligne", [data.online_count]);
 			li.classList.toggle("live", data.online_count > 0);
+			const online = data.team.filter((m) => m.online);
+			li.querySelector(".cx-pill").setAttribute("aria-label", online.length === 1 ? __("1 personne en ligne") : __("{0} personnes en ligne", [online.length]));
 			const stack = li.querySelector(".cx-stack");
 			stack.innerHTML = "";
-			data.team.filter((m) => m.online).slice(0, 3).forEach((m) => stack.appendChild(this.avatar(m)));
+			online.slice(0, 4).forEach((m) => stack.appendChild(this.avatar(m)));
+			if (online.length > 4) stack.appendChild(el("span", { class: "cx-more-count" }, `+${online.length - 4}`));
+			this.renderTip(online);
 			this.renderActivity(data);
+		}
+
+		renderTip(online) {
+			const tip = this.nodes.tip;
+			if (!tip) return;
+			tip.innerHTML = "";
+			if (!online.length) return;
+			tip.appendChild(el("h4", {}, online.length === 1 ? __("1 personne en ligne") : __("{0} personnes en ligne", [online.length])));
+			const list = el("ul");
+			online.forEach((m) => {
+				const row = el("li");
+				const text = el("span", { class: "cx-tip-text" });
+				const name = el("b");
+				name.textContent = m.is_me ? `${m.full_name} (${__("vous")})` : m.full_name;
+				const what = el("small");
+				what.textContent = m.doing ? `${__("Sur")} ${m.doing}` : m.last_action ? `${m.last_action} · ${frappe.datetime.prettyDate(m.last_action_at)}` : __("En ligne");
+				text.append(name, what);
+				row.append(this.avatar(m), text);
+				list.appendChild(row);
+			});
+			tip.appendChild(list);
+			tip.appendChild(el("p", {}, __("Cliquez pour l'activité récente de l'équipe.")));
 		}
 
 		renderActivity(data) {

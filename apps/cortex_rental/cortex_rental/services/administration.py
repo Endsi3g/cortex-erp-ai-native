@@ -13,6 +13,7 @@ except ImportError:
     frappe = None
 
 from cortex_rental.services import tenant_provisioning
+from cortex_rental.services import defense
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.signup_rules import SignupError, clean_name
 
@@ -295,6 +296,11 @@ def set_member_enabled(company: str, email: str, enabled: bool) -> Dict[str, Any
         raise SignupError("owner_locked", "Le compte du propriétaire ne se désactive pas ici.")
     was = bool(frappe.db.get_value("User", email, "enabled"))
     frappe.db.set_value("User", email, "enabled", int(enabled))
+    if not enabled:
+        # Une personne désactivée perd tout de suite ses appareils connectés (sinon sa session resterait ouverte).
+        from cortex_rental.services import devices
+
+        devices.revoke_all(email, keep_sid=None, by=frappe.session.user)
     AuditService.record_mutation(
         company=company,
         action="cortex.team.member_enabled" if enabled else "cortex.team.member_disabled",
@@ -304,6 +310,116 @@ def set_member_enabled(company: str, email: str, enabled: bool) -> Dict[str, Any
         after_state={"enabled": bool(enabled)},
     )
     return get_team(company)
+
+
+# ---- logo de la société --------------------------------------------------------------------------
+
+LOGO_EXT = (".png", ".jpg", ".jpeg", ".webp")
+LOGO_MAX_BYTES = 2 * 1024 * 1024
+
+
+def set_company_logo(company: str, file_url: str) -> Dict[str, Any]:
+    """Définit (ou retire) le logo de la société. Propriétaire seulement ; image PNG, JPEG ou WebP de 2 Mo au plus.
+
+    Le logo s'affiche dans la barre latérale, sur les devis envoyés aux clients et à l'accueil : on en fait une copie
+    publique sous un nom unique. Le SVG est refusé (il peut contenir du code)."""
+    import os
+
+    _require_team_admin(company)
+    file_url = (file_url or "").strip()
+    if not file_url:
+        frappe.db.set_value("Company", company, "company_logo", None)
+        AuditService.record_mutation(
+            company=company,
+            action="cortex.company.logo_changed",
+            entity_type="Company",
+            entity_id=company,
+            after_state={"logo": None},
+        )
+        return {"logo": ""}
+    if not file_url.lower().endswith(LOGO_EXT):
+        raise SignupError("invalid_logo", "Choisissez une image PNG, JPEG ou WebP (le SVG n'est pas accepté).")
+    name = frappe.db.get_value("File", {"file_url": file_url, "owner": frappe.session.user}, "name")
+    if not name:
+        raise SignupError("not_yours", "Cette image n'a pas été téléversée par vous.")
+    file_doc = frappe.get_doc("File", name)
+    content = file_doc.get_content()
+    if len(content) > LOGO_MAX_BYTES:
+        raise SignupError("logo_too_big", "Le logo dépasse 2 Mo : choisissez une image plus légère.")
+    # On ne se fie pas à l'extension : les premiers octets doivent être ceux d'un PNG, d'un JPEG ou d'un WebP.
+    if not defense.sniff_image(content):
+        raise SignupError("invalid_logo", "Ce fichier n'est pas une vraie image PNG, JPEG ou WebP.")
+    public = file_url
+    if file_doc.is_private:
+        copy = frappe.get_doc(
+            {
+                "doctype": "File",
+                "file_name": f"logo-{frappe.generate_hash(length=10)}{os.path.splitext(file_url)[1].lower()}",
+                "content": content,
+                "is_private": 0,
+            }
+        ).insert(ignore_permissions=True)
+        file_doc.delete(ignore_permissions=True)
+        public = copy.file_url
+    frappe.db.set_value("Company", company, "company_logo", public)
+    frappe.clear_cache(user=frappe.session.user)  # la barre latérale lit le logo au démarrage de la session
+    AuditService.record_mutation(
+        company=company,
+        action="cortex.company.logo_changed",
+        entity_type="Company",
+        entity_id=company,
+        after_state={"logo": public},
+    )
+    return {"logo": public}
+
+
+# ---- appareils de l'équipe ------------------------------------------------------------------------
+
+
+def team_devices(company: str) -> Dict[str, Any]:
+    """Pour chaque membre, ses sessions actives (appareil, système, adresse IP, dernière activité)."""
+    _require_team_admin(company)
+    from cortex_rental.services import devices
+
+    rows = []
+    for row in frappe.get_all(
+        "User",
+        filters={"name": ["in", _member_emails(company) or [""]], "enabled": 1},
+        fields=["name", "full_name"],
+        order_by="full_name asc",
+    ):
+        sessions = devices.list_for(row.name, frappe.session.sid)["sessions"]
+        rows.append(
+            {
+                "email": row.name,
+                "full_name": row.full_name or row.name,
+                "you": row.name == frappe.session.user,
+                "sessions": sessions,
+            }
+        )
+    return {"members": rows}
+
+
+def sign_out_member(company: str, email: str, device_id: str = "") -> Dict[str, Any]:
+    """Ferme les sessions d'un membre de l'équipe (un seul appareil, ou tous), avec une trace dans le journal d'audit."""
+    _require_team_admin(company)
+    _require_member(company, email)
+    from cortex_rental.services import devices
+
+    me = frappe.session.user
+    if device_id:
+        closed = devices.revoke(email, device_id, frappe.session.sid, by=me)["closed"]
+    else:
+        closed = devices.revoke_all(email, keep_sid=frappe.session.sid if email == me else None, by=me)
+    AuditService.record_mutation(
+        company=company,
+        action="cortex.account.session_revoked",
+        entity_type="User",
+        entity_id=email,
+        before_state=None,
+        after_state={"closed": closed, "scope": "device" if device_id else "all", "by": me},
+    )
+    return {"closed": closed}
 
 
 # ---- imports --------------------------------------------------------------------------------------

@@ -525,7 +525,10 @@ def _increment_returned_qty(transaction, checkin_row) -> None:
             and (not checkin_row.serial_no or item.serial_no == checkin_row.serial_no)
         )
         if matches_row or matches_lookup:
-            current_qty = float(item.returned_qty or 0.0)
+            # Valeur lue en base : une ligne de plusieurs unités sérialisées reçoit un retour par numéro de série, et la
+            # copie en mémoire de la ligne ne voit pas les unités déjà comptées dans la même boucle (la ligne restait
+            # à 1 sur 2 et la location ne passait jamais à « Retourné »).
+            current_qty = float(frappe.db.get_value("Cortex Rental Transaction Item", item.name, "returned_qty") or 0.0)
             added_qty = float(checkin_row.returned_qty or 0.0)
             frappe.db.set_value(
                 "Cortex Rental Transaction Item",
@@ -533,6 +536,7 @@ def _increment_returned_qty(transaction, checkin_row) -> None:
                 "returned_qty",
                 current_qty + added_qty,
             )
+            item.returned_qty = current_qty + added_qty
             return
 
 

@@ -45,12 +45,15 @@ function call(method, args) {
 	});
 }
 
-export function sendMessage(message, context, chatSessionId) {
+export function sendMessage(message, context, chatSessionId, modelTier) {
+	// Le serveur répond { data: { chat_session_id, blocks, … }, meta } : on rend la partie utile (sans elle, la réponse
+	// de l'assistant s'affichait vide).
 	return call("send_message", {
 		message,
 		context: JSON.stringify(context),
 		chat_session_id: chatSessionId || undefined,
-	});
+		model_tier: modelTier || undefined,
+	}).then((response) => response.data || response);
 }
 
 export function getMessages(name) {
@@ -100,4 +103,34 @@ export function resolveDeskContext() {
 	}
 
 	return context;
+}
+
+
+// Appel générique d'un endpoint Cortex (GET ou POST) : rend la partie utile de la réponse ({ data } ou l'objet lui-même)
+// et une erreur en français. À utiliser partout dans l'assistant : un GET appelé en POST échouait sans bruit.
+export function apiCall(method, args, type = "GET") {
+	return new Promise((resolve, reject) => {
+		frappe.call({
+			method,
+			type,
+			args: args || {},
+			silent: true,
+			callback(r) {
+				const message = r.message || {};
+				resolve(message.data !== undefined ? message.data : message);
+			},
+			error(r) {
+				reject(new Error(serverMessage(r) || "Le service est indisponible. Réessayez dans un instant."));
+			},
+		});
+	});
+}
+
+export function money(value) {
+	return new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(Number(value || 0));
+}
+
+// « AAAA-MM-JJTHH:mm » (champ datetime-local) → « AAAA-MM-JJ HH:mm:00 » (format du serveur).
+export function toServerDate(local) {
+	return local ? `${local.replace("T", " ")}:00` : "";
 }

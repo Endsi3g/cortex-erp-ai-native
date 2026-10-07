@@ -1,6 +1,7 @@
 // Facture Cortex : bouton « Enregistrer un paiement » (le serveur valide le montant, la société et les droits).
 frappe.ui.form.on("Cortex Rental Invoice", {
 	refresh(frm) {
+		cortex.dossier(frm);
 		if (frm.is_new() || frm.doc.status === "Cancelled") return;
 		const balance = flt(frm.doc.balance);
 		if (balance > 0 && frappe.model.can_create("Cortex Rental Payment")) {
@@ -23,7 +24,7 @@ frappe.ui.form.on("Cortex Rental Invoice", {
 					__("Enregistrer un paiement"),
 					__("Enregistrer")
 				);
-			}, __("Actions"));
+			}).removeClass("btn-default").addClass("btn-primary");
 		}
 		if (frm.doc.rental_transaction) {
 			frm.add_custom_button(__("Ouvrir la location"), () => frappe.set_route("Form", "Cortex Rental Transaction", frm.doc.rental_transaction), __("Actions"));

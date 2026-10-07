@@ -13,6 +13,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.api.v1._shared import envelope, page_args, split_lines, to_float
 from cortex_rental.permissions.agent_scopes import get_company_context, require_human_staff_role
 
@@ -256,22 +257,26 @@ def list_kits_handler(company: str, category: Optional[str]) -> Dict[str, Any]:
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_equipment(category: str = None, search: str = None, page: int = 1, page_size: int = 20):
         require_human_staff_role()
         page, page_size = page_args(page, page_size)
         return envelope(list_equipment_handler(get_company_context(), category, search, page, page_size))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_equipment(item_code: str):
         require_human_staff_role()
         return envelope(get_equipment_handler(get_company_context(), item_code))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_serial(serial_number: str):
         require_human_staff_role()
         return envelope(get_serial_handler(get_company_context(), serial_number))
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_kits(category: str = None):
         require_human_staff_role()
         return envelope(list_kits_handler(get_company_context(), category))

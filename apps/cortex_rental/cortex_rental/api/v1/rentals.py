@@ -7,6 +7,8 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
+from cortex_rental.api.v1._shared import page_args
 from cortex_rental.permissions.agent_scopes import (
     get_company_context,
     require_human_staff_role,
@@ -40,6 +42,10 @@ def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
         frappe.throw("Les dates de début et de fin de la location sont obligatoires.", frappe.ValidationError)
     calendar_days, billable_days = PricingService.compute_billable_days(starts_at, ends_at, company)
     requests = payload.get("items") or []
+    if isinstance(requests, str):  # un formulaire HTTP envoie la liste en JSON
+        requests = frappe.parse_json(requests) if requests.strip() else []
+    if not isinstance(requests, list) or not all(isinstance(r, dict) for r in requests) or len(requests) > 200:
+        frappe.throw("La liste d'équipements est invalide (200 lignes au plus).", frappe.ValidationError)
     if not requests:
         frappe.throw(
             "Ajoutez au moins un équipement avant de demander un prix.",
@@ -103,19 +109,35 @@ def _customer_in_company(customer: str, company: str) -> None:
         frappe.throw("Ce client n'est pas disponible pour la société active.", frappe.PermissionError)
 
 
-def _serialize(doc) -> Dict[str, Any]:
-    customer = frappe.db.get_value("Customer", doc.customer, ["customer_name", "email_id"], as_dict=True) or {}
+def _serialize_many(rows) -> list:
+    memo: Dict[Any, Any] = {}
+    return [_serialize(frappe.get_doc("Cortex Rental Transaction", row.name), memo) for row in rows]
+
+
+def _serialize(doc, memo: Dict[Any, Any] = None) -> Dict[str, Any]:
+    """`memo` : dictionnaire partagé par les lignes d'une même liste pour ne lire qu'une fois chaque client et chaque
+    catégorie d'équipement (la liste de 20 locations passait de ~175 ms à bien moins, sans changer le résultat)."""
+    memo = memo if memo is not None else {}
+    customer_key = ("customer", doc.customer)
+    if customer_key not in memo:
+        memo[customer_key] = (
+            frappe.db.get_value("Customer", doc.customer, ["customer_name", "email_id"], as_dict=True) or {}
+        )
+    customer = memo[customer_key]
     items = []
     for row in doc.items or []:
-        profile = (
-            frappe.db.get_value(
-                "Cortex Rental Item Profile",
-                {"company": doc.company, "item_code": row.item_code},
-                ["category"],
-                as_dict=True,
+        profile_key = ("profile", doc.company, row.item_code)
+        if profile_key not in memo:
+            memo[profile_key] = (
+                frappe.db.get_value(
+                    "Cortex Rental Item Profile",
+                    {"company": doc.company, "item_code": row.item_code},
+                    ["category"],
+                    as_dict=True,
+                )
+                or {}
             )
-            or {}
-        )
+        profile = memo[profile_key]
         try:
             serials = frappe.parse_json(row.assigned_serials or "[]")
         except Exception:
@@ -131,11 +153,17 @@ def _serialize(doc) -> Dict[str, Any]:
             filters={"transaction_item": row.name},
             fields=["serial_no", "parent"],
         )
-        scanned_checkin = [
-            entry.serial_no
-            for entry in checkin_rows
-            if entry.serial_no and frappe.db.get_value("Cortex Check-In", entry.parent, "status") == "Completed"
-        ]
+        parents = list({entry.parent for entry in checkin_rows if entry.serial_no})
+        completed = (
+            set(
+                frappe.get_all(
+                    "Cortex Check-In", filters={"name": ["in", parents], "status": "Completed"}, pluck="name"
+                )
+            )
+            if parents
+            else set()
+        )
+        scanned_checkin = [entry.serial_no for entry in checkin_rows if entry.serial_no and entry.parent in completed]
         items.append(
             {
                 "id": row.name,
@@ -218,13 +246,16 @@ def _owned_transaction(name: str, company: str):
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def search_rental_customers(query: str = ""):
         require_human_staff_role()
         company = get_company_context()
+        # Le champ d'assurance est un champ personnalisé facultatif : on ne le lit que s'il existe sur ce site.
+        has_insurance = frappe.db.has_column("Customer", "custom_insurance_valid_until")
         rows = frappe.get_all(
             "Customer",
             filters={"cortex_company": company, "disabled": 0},
-            fields=["name", "customer_name", "custom_insurance_valid_until"],
+            fields=["name", "customer_name"] + (["custom_insurance_valid_until"] if has_insurance else []),
             order_by="customer_name asc",
             limit_page_length=100,
         )
@@ -235,7 +266,7 @@ if frappe:
             display_name = row.customer_name or row.name
             if needle and needle not in display_name.casefold() and needle not in row.name.casefold():
                 continue
-            expires = row.custom_insurance_valid_until
+            expires = row.get("custom_insurance_valid_until")
             items.append(
                 {
                     "id": row.name,
@@ -246,6 +277,7 @@ if frappe:
         return {"items": items}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def search_rental_catalog(query: str = ""):
         require_human_staff_role()
         company = get_company_context()
@@ -291,6 +323,7 @@ if frappe:
         return {"items": items}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_rentals(
         page: int = 1,
         page_size: int = 20,
@@ -302,7 +335,7 @@ if frappe:
     ):
         require_human_staff_role()
         company = get_company_context()
-        page, page_size = max(1, int(page)), min(100, max(1, int(page_size)))
+        page, page_size = page_args(page, page_size)
         filters: Dict[str, Any] = {"company": company}
         if state:
             filters["rental_state"] = state
@@ -331,7 +364,7 @@ if frappe:
             "data": {
                 "provenance": "api",
                 "last_synced_at": frappe.utils.now_datetime().isoformat(),
-                "items": [_serialize(frappe.get_doc("Cortex Rental Transaction", row.name)) for row in names],
+                "items": _serialize_many(names),
                 "total_count": total,
                 "page": page,
                 "page_size": page_size,
@@ -340,11 +373,13 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_rental(name: str):
         require_human_staff_role()
         return {"data": _serialize(_owned_transaction(name, get_company_context()))}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def preview_pricing():
         require_human_staff_role()
         result = _pricing(frappe.local.form_dict, get_company_context())
@@ -357,6 +392,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def create_quote_draft():
         require_human_staff_role()
         company = get_company_context()
@@ -417,6 +453,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def request_reservation(name: str, version: int = None):
         require_human_staff_role()
         company = get_company_context()
@@ -445,6 +482,56 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    def renew_hold(name: str):
+        """Reprend la retenue d'un devis (revérifiée sous verrou) : utile quand elle a expiré ou que le devis a changé."""
+        require_human_staff_role()
+        doc = _owned_transaction(name, get_company_context())
+        if doc.rental_state != "Quote":
+            frappe.throw("Seul un devis retient le matériel.", frappe.ValidationError)
+        from cortex_rental.services import holds
+
+        result = holds.evaluate(doc)
+        return {"status": result["status"], "until": str(result["until"] or ""), "note": result["note"]}
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    def release_hold(name: str):
+        """Libère le matériel retenu par un devis (il redevient disponible pour les autres)."""
+        require_human_staff_role()
+        doc = _owned_transaction(name, get_company_context())
+        if doc.rental_state != "Quote":
+            frappe.throw("Seul un devis retient le matériel.", frappe.ValidationError)
+        from cortex_rental.services import holds
+
+        holds.release(name, "Libérée par une personne autorisée")
+        return {"status": "Released"}
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    def change_state(name: str, to_state: str, reason: str = "", version: int = None):
+        """Clôturer, annuler ou ouvrir un litige. Le serveur applique la machine d'états (transitions permises seulement)."""
+        require_human_staff_role()
+        if to_state not in ("Closed", "Cancelled", "Disputed"):
+            frappe.throw("Cette action n'est pas offerte ici.", frappe.ValidationError)
+        company = get_company_context()
+        doc = _owned_transaction(name, company)
+        if version is not None and int(version) != int(doc.version or 1):
+            frappe.throw("La location a changé. Recharge-la avant de continuer.", frappe.ValidationError)
+        reason = " ".join((reason or "").split())[:300]
+        if to_state in ("Cancelled", "Disputed") and len(reason) < 3:
+            frappe.throw("Indiquez un motif.", frappe.ValidationError)
+        doc.transition_to(to_state, reason=reason or "Clôture demandée par une personne autorisée")
+        return {
+            "request_id": frappe.generate_hash(length=16),
+            "entity_id": name,
+            "status": "completed",
+            "approval_required": False,
+            "mutation_performed": True,
+        }
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def request_contract(name: str, version: int = None, override_reason: str = None):
         require_human_staff_role()
         company = get_company_context()
@@ -514,6 +601,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def update_quote_draft():
         require_human_staff_role()
         company = get_company_context()
@@ -596,6 +684,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_rental_audit(rental_id: str):
         require_human_staff_role()
         company = get_company_context()

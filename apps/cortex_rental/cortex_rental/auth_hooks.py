@@ -60,6 +60,9 @@ def boot_session(bootinfo) -> None:
             from cortex_rental.services import onboarding
 
             home["setup_pending"] = bool(onboarding.needs_onboarding(frappe.session.user))
+            home["setup_required_missing"] = bool(
+                home["setup_pending"] and onboarding.has_required_missing(frappe.session.user)
+            )
         except Exception:
             # Never block the Desk because of onboarding bookkeeping.
             frappe.log_error(title="Cortex onboarding boot flag failed")

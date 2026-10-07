@@ -87,6 +87,32 @@ class CortexRentalTransaction(Document):
             self.tax_amount = round(self.subtotal * (tax_rate / 100.0), 2)
         self.grand_total = round(self.subtotal + self.tax_amount, 2)
 
+    # ---- Retenue du matériel par le devis (services/holds.py) -------------------------------------------------------
+    def after_insert(self):
+        self._take_hold(force=True)
+
+    def on_update(self):
+        if self.flags.get("hold_done") or self.is_new():
+            return
+        if self.rental_state != "Quote":
+            return
+        changed = any(self.has_value_changed(f) for f in ("starts_at", "ends_at", "items"))
+        if changed:
+            self._take_hold(force=True)
+
+    def _take_hold(self, force: bool = False):
+        """Un devis retient le matériel dès qu'il existe. Une panne de la retenue ne bloque jamais la création du devis."""
+        if not frappe or self.rental_state != "Quote":
+            return
+        self.flags.hold_done = True
+        try:
+            from cortex_rental.services import holds
+
+            result = holds.evaluate(self)
+            self.hold_status, self.hold_until, self.hold_note = result["status"], result["until"], result["note"]
+        except Exception:
+            frappe.log_error(title="Cortex quote hold failed")
+
     @staticmethod
     def _current_actor_is_agent() -> bool:
         if not frappe:

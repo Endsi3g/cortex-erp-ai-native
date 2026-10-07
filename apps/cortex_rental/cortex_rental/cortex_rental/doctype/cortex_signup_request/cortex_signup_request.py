@@ -23,19 +23,19 @@ class CortexSignupRequest(Document):
         self.full_name = (self.full_name or "").strip()
         self.company_name = (self.company_name or "").strip()
 
-    @frappe.whitelist()
+    @frappe.whitelist(methods=["POST"])
     def approve(self):
         from cortex_rental.services.access_requests import approve_request
 
         return approve_request(self.name)
 
-    @frappe.whitelist()
+    @frappe.whitelist(methods=["POST"])
     def resend_verification(self):
         from cortex_rental.services.access_requests import resend_verification_as_admin
 
         return resend_verification_as_admin(self.name)
 
-    @frappe.whitelist()
+    @frappe.whitelist(methods=["POST"])
     def reject(self, reason: str = ""):
         from cortex_rental.services.access_requests import reject_request
 

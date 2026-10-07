@@ -5,6 +5,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import require_agent_scope, get_company_context
 from cortex_rental.services.audit import AuditService
 from cortex_rental.services.idempotency import get_idempotency_key_header, with_idempotency
@@ -62,6 +63,7 @@ def submit_approval_handler(payload: Dict[str, Any], company: str, actor_id: str
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     @log_tool_call("submit_approval_request", scope="agent:approval:submit")
     def submit_approval():
         require_agent_scope("agent:approval:submit")

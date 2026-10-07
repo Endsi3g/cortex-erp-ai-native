@@ -108,6 +108,8 @@ body.cx-nav-on [data-page-route="Workspaces"] .layout-main-section-wrapper {
 }
 
 .cx-nav-scroll {
+	display: flex;
+	flex-direction: column;
 	flex: 1 1 auto;
 	overflow-y: auto;
 	overflow-x: hidden;
@@ -176,7 +178,7 @@ body.cx-nav-on [data-page-route="Workspaces"] .layout-main-section-wrapper {
 .cx-chev {
 	display: grid;
 	place-items: center;
-	opacity: 0;
+	opacity: 0.55;
 	transform: rotate(90deg);
 	transition: transform 0.2s var(--cx-ease, cubic-bezier(0.2, 0.8, 0.2, 1)), opacity 0.14s ease;
 }
@@ -585,6 +587,15 @@ body.cx-nav-collapsed .cx-badge {
 	body.cx-nav-collapsed .cx-group-title {
 		display: flex;
 	}
+	/* Dans le tiroir du téléphone, les groupes repliés restent repliés (le mode « rail » est réservé à l'ordinateur) */
+	body.cx-nav-collapsed .cx-group.closed .cx-group-body {
+		grid-template-rows: 0fr;
+	}
+	body.cx-nav-collapsed .cx-group + .cx-group {
+		margin-top: 0;
+		padding-top: 0;
+		border-top: 0;
+	}
 	body.cx-nav-collapsed .cx-nav-item,
 	body.cx-nav-collapsed .cx-new {
 		justify-content: flex-start;
@@ -649,4 +660,389 @@ body.cx-nav-collapsed .cx-badge {
 		transition: none !important;
 		animation: none !important;
 	}
+}
+
+
+/* Société : logo et nom sous la marque */
+.cx-company {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 2px 0 10px;
+	padding: 8px;
+	border: 1px solid var(--cx-nav-line, #ecebe6);
+	border-radius: 10px;
+	color: var(--cortex-text, #09090b) !important;
+	text-decoration: none !important;
+	transition: background 0.14s ease;
+}
+.cx-company:hover {
+	background: var(--cx-nav-hover);
+}
+.cx-company img,
+.cx-company-initials {
+	flex: 0 0 28px;
+	width: 28px;
+	height: 28px;
+	border-radius: 7px;
+	object-fit: contain;
+}
+.cx-company-initials {
+	display: grid;
+	place-items: center;
+	font-size: 11px;
+	font-weight: 600;
+	color: #3f3f46;
+}
+.cx-company-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	line-height: 1.25;
+}
+.cx-company-text strong {
+	font-size: 13px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.cx-company-text small {
+	font-size: 11px;
+	color: #6b6a66;
+}
+body.cx-nav-collapsed .cx-company {
+	justify-content: center;
+	padding: 6px 0;
+	border-color: transparent;
+}
+
+/* Administration : séparée du reste, tout en bas, avec un grand espace */
+.cx-group-bottom {
+	margin-top: auto;
+	padding-top: 40px;
+}
+.cx-group-bottom::before {
+	content: "";
+	display: block;
+	height: 1px;
+	margin: 0 6px 10px;
+	background: var(--cx-nav-line, #ecebe6);
+}
+
+
+/* Profil en bas de la barre latérale */
+.cx-account {
+	position: relative;
+	flex: 0 0 auto;
+	padding: 8px 10px 10px;
+	border-top: 1px solid var(--cx-nav-line, #e7e6e3);
+}
+.cx-account-btn {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 6px 8px;
+	border: 0;
+	border-radius: 10px;
+	background: transparent;
+	color: var(--cortex-text, #09090b);
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.14s ease;
+}
+.cx-account-btn:hover,
+.cx-account-btn[aria-expanded="true"] {
+	background: var(--cx-nav-hover);
+}
+.cx-avatar {
+	flex: 0 0 30px;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+.cx-avatar-initials {
+	display: grid;
+	place-items: center;
+	font-size: 12px;
+	font-weight: 600;
+	color: #3f3f46;
+}
+.cx-account-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1 1 auto;
+	line-height: 1.25;
+}
+.cx-account-text strong {
+	font-size: 13px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.cx-account-text small {
+	font-size: 11px;
+	color: #6b6a66;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.cx-account-more {
+	color: #6b6a66;
+	transform: rotate(-90deg);
+}
+.cx-account-menu {
+	position: absolute;
+	left: 10px;
+	right: 10px;
+	bottom: calc(100% - 4px);
+	padding: 6px;
+	border: 1px solid var(--cx-nav-line, #e7e6e3);
+	border-radius: 12px;
+	background: var(--cortex-surface, #fff);
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+	z-index: 5;
+}
+.cx-account-item {
+	display: block;
+	width: 100%;
+	padding: 8px 10px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--cortex-text, #09090b);
+	font-size: 14px;
+	text-align: left;
+	cursor: pointer;
+}
+.cx-account-item:hover {
+	background: var(--cx-nav-hover);
+}
+body.cx-nav-collapsed .cx-account-btn {
+	justify-content: center;
+	padding: 6px 0;
+}
+body.cx-nav-collapsed .cx-account-menu {
+	left: 6px;
+	right: auto;
+	width: 190px;
+}
+@media (max-width: 768px) {
+	body.cx-nav-collapsed .cx-account-btn {
+		justify-content: flex-start;
+		padding: 6px 8px;
+	}
+	body.cx-nav-collapsed #cx-nav .cx-account-text {
+		display: flex;
+	}
+}
+
+
+/* Fil d'Ariane Cortex : « Groupe › Page › Fiche », sans flèche au début */
+body.cx-nav-on #navbar-breadcrumbs li::before {
+	content: none !important;
+}
+body.cx-nav-on #navbar-breadcrumbs li + li::before {
+	content: "›" !important;
+	margin: 0 6px;
+	color: #a3a29d;
+}
+body.cx-nav-on #navbar-breadcrumbs li {
+	display: inline-flex;
+	align-items: center;
+	font-size: 13px;
+}
+body.cx-nav-on #navbar-breadcrumbs .cx-bc-group {
+	color: #8a8984;
+}
+body.cx-nav-on #navbar-breadcrumbs li:last-child a,
+body.cx-nav-on #navbar-breadcrumbs li:last-child span {
+	color: var(--cortex-text, #09090b);
+	font-weight: 500;
+}
+body.cx-nav-on #navbar-breadcrumbs li a::before,
+body.cx-nav-on #navbar-breadcrumbs li a::after {
+	content: none !important;
+}
+body.cx-nav-on #navbar-breadcrumbs li a {
+	padding: 0;
+	margin: 0;
+}
+.page-head .page-actions .primary-action {
+	text-transform: capitalize;
+}
+
+.cx-group-title.static {
+	cursor: default;
+}
+
+/* ---- Équipe en ligne : seulement des avatars avec leur point vert ; le détail est dans l'infobulle ---- */
+.cx-presence-li {
+	display: flex;
+	align-items: center;
+	margin-right: 10px;
+}
+.cx-pill {
+	display: inline-flex;
+	align-items: center;
+	height: 32px;
+	padding: 0 8px 0 12px;
+	gap: 0;
+}
+.cx-pill .cx-stack {
+	display: flex;
+	align-items: center;
+	padding-left: 0;
+}
+.cx-pill .cx-stack .cx-avatar {
+	flex: 0 0 24px;
+	width: 24px;
+	height: 24px;
+	margin-left: -6px;
+}
+.cx-pill .cx-stack .cx-avatar:first-child {
+	margin-left: 0;
+}
+.cx-more-count {
+	margin-left: 6px;
+	color: var(--cortex-text-secondary, #52525b);
+	font-size: 11.5px;
+	font-weight: 600;
+}
+.cx-presence-li.live .cx-avatar.online .cx-presence {
+	animation: cx-live 2s infinite;
+}
+.cx-presence-tip {
+	position: fixed;
+	z-index: 1040;
+	width: 280px;
+	padding: 12px 14px;
+	border: 1px solid var(--cortex-border, #e4e4e7);
+	border-radius: 12px;
+	background: var(--cortex-surface, #fff);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+	pointer-events: none;
+}
+.cx-presence-tip[hidden] {
+	display: none;
+}
+.cx-presence-tip h4 {
+	margin: 0 0 8px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--cortex-text-secondary, #52525b);
+}
+.cx-presence-tip ul {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.cx-presence-tip li {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.cx-presence-tip .cx-avatar {
+	flex: 0 0 28px;
+	width: 28px;
+	height: 28px;
+	font-size: 10px;
+}
+.cx-tip-text {
+	display: grid;
+	min-width: 0;
+}
+.cx-tip-text b {
+	font-size: 13px;
+	font-weight: 600;
+}
+.cx-tip-text small {
+	overflow: hidden;
+	color: var(--cortex-text-secondary, #52525b);
+	font-size: 12px;
+	line-height: 1.35;
+}
+.cx-presence-tip p {
+	margin: 10px 0 0;
+	padding-top: 8px;
+	border-top: 1px solid var(--cortex-border, #ecebe6);
+	color: #8a8984;
+	font-size: 11.5px;
+}
+@media (max-width: 640px) {
+	.cx-presence-tip {
+		width: min(280px, calc(100vw - 16px));
+	}
+}
+
+
+/* Société → séparateur → Nouvelle location */
+.cx-company {
+	margin: 2px 0 0;
+}
+.cx-nav-sep {
+	flex: 0 0 1px;
+	height: 1px;
+	margin: 14px 6px 14px;
+	background: #d3d2cb;
+}
+body.cx-nav-collapsed .cx-nav-sep {
+	margin: 16px 8px 16px;
+}
+body.cx-nav-collapsed .cx-company {
+	margin-bottom: 0;
+	padding: 8px 0;
+	gap: 0;
+}
+body.cx-nav-collapsed .cx-company-text {
+	display: none;
+}
+
+/* Administration : ancrée en bas, juste au-dessus du profil, avec de l'air au-dessus et un filet de séparation */
+#cx-nav .cx-nav-scroll > .cx-group.cx-group-bottom {
+	margin-top: auto;
+	padding-top: 28px;
+}
+@media (max-width: 991.98px) {
+	.cx-nav-sep {
+		margin: 12px 6px;
+	}
+}
+
+/* Pleine largeur : Frappe borne les pages à 1290 px (conteneur Bootstrap), ce qui laisse de grands vides de chaque côté
+   sur un grand écran. Le contenu occupe toute la largeur utile, avec une marge de 24 px. */
+body.cx-nav-on .page-container .container,
+body.cx-nav-on .page-container .page-head .container,
+body.cx-nav-on .page-container .page-body.container,
+body.cx-nav-on .page-container .page-head-content.container {
+	max-width: none !important;
+	width: 100%;
+}
+body.cx-nav-on .page-container .page-body.container,
+body.cx-nav-on .page-container .page-head .container {
+	padding-inline: 24px;
+}
+
+
+/* Barre latérale : les entrées ne se compressent jamais (elles défilent), un groupe ouvert reste lisible en entier,
+   et un fondu en bas signale qu'il reste des entrées plus bas. */
+#cx-nav .cx-nav-scroll > * {
+	flex-shrink: 0;
+}
+#cx-nav .cx-nav-scroll {
+	padding-bottom: 28px;
+	scrollbar-gutter: stable;
+}
+#cx-nav .cx-nav-scroll.cx-more {
+	-webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+	mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+}
+#cx-nav .cx-nav-scroll > .cx-group.cx-group-bottom {
+	padding-top: 16px;
 }

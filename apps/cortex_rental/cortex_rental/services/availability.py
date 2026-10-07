@@ -113,12 +113,16 @@ class AvailabilityService:
 
             overlapping = frappe.db.sql(
                 f"""
-                SELECT SUM(ti.qty) as total_reserved
+                SELECT SUM(CASE WHEN t.rental_state = 'Quote' THEN 0 ELSE ti.qty END) AS total_reserved,
+                       SUM(CASE WHEN t.rental_state = 'Quote' THEN ti.qty ELSE 0 END) AS total_held
                 FROM `tabCortex Rental Transaction Item` ti
                 JOIN `tabCortex Rental Transaction` t ON t.name = ti.parent
                 WHERE t.company = %(company)s
                   AND ti.item_code = %(item_code)s
-                  AND t.rental_state IN ('Reservation', 'Contract', 'Checked Out')
+                  AND (
+                    t.rental_state IN ('Reservation', 'Contract', 'Checked Out')
+                    OR (t.rental_state = 'Quote' AND t.hold_status = 'Active' AND t.hold_until > NOW())
+                  )
                   AND t.starts_at < %(ends_at)s
                   AND t.ends_at > %(starts_at)s
                   {exclusion_clause}
@@ -130,7 +134,8 @@ class AvailabilityService:
                 float(overlapping[0].total_reserved) if overlapping and overlapping[0].total_reserved else 0.0
             )
 
-            available_qty = max(0.0, total_fleet - unavailable_status_qty - reserved_qty)
+            held_qty = float(overlapping[0].total_held) if overlapping and overlapping[0].total_held else 0.0
+            available_qty = max(0.0, total_fleet - unavailable_status_qty - reserved_qty - held_qty)
             is_available = available_qty >= requested_qty
 
             results.append(
@@ -140,6 +145,7 @@ class AvailabilityService:
                     "available_quantity": available_qty,
                     "total_fleet_quantity": float(total_fleet),
                     "reserved_quantity": reserved_qty,
+                    "held_quantity": held_qty,
                     "unavailable_status_quantity": float(unavailable_status_qty),
                     "is_available": is_available,
                     "starts_at": starts_at,

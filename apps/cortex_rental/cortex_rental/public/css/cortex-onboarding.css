@@ -1,0 +1,608 @@
+/* Assistant de configuration : plein écran, une étape à la fois, tout aligné à gauche. */
+.cx-onb {
+	position: fixed;
+	inset: 0;
+	z-index: 1200;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	background: #fafaf8;
+	color: var(--cortex-text, #09090b);
+}
+.cx-onb-loading {
+	margin: auto;
+	color: #6b6a66;
+}
+.cx-onb-head {
+	border-bottom: 1px solid #e7e6e3;
+	background: #fff;
+}
+/* Même grille que le corps de l'assistant : la marque s'aligne sur les cercles des étapes (bordure 1 px + marge 12 px)
+   et la progression sur le contenu de la carte (bordure 1 px + marge 32 px). */
+.cx-onb-head-in {
+	display: grid;
+	grid-template-columns: 280px minmax(0, 760px);
+	gap: 12px 32px;
+	align-items: center;
+	width: 100%;
+	max-width: 1120px;
+	margin: 0 auto;
+	padding: 16px 32px;
+}
+.cx-onb-head-in .cx-onb-brand {
+	padding-left: 13px;
+}
+.cx-onb-head-end {
+	display: flex;
+	align-items: center;
+	gap: 16px 32px;
+	min-width: 0;
+}
+.cx-onb-head-end .cx-onb-prog {
+	padding-left: 33px;
+}
+.cx-onb-brand {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+.cx-onb-brand b {
+	display: block;
+	font-size: 15px;
+}
+.cx-onb-brand small {
+	color: #6b6a66;
+	font-size: 12.5px;
+}
+.cx-onb-mark {
+	display: block;
+	flex: 0 0 34px;
+	width: 34px;
+	height: 34px;
+	object-fit: contain;
+}
+.cx-onb-prog {
+	display: grid;
+	flex: 1;
+	gap: 6px;
+	min-width: 220px;
+	max-width: 420px;
+	font-size: 12.5px;
+	color: #55544f;
+}
+.cx-onb-bar {
+	height: 6px;
+	border-radius: 3px;
+	background: #ecebe6;
+	overflow: hidden;
+}
+.cx-onb-bar i {
+	display: block;
+	height: 100%;
+	background: #066336;
+	transition: width 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.cx-onb-main {
+	display: grid;
+	grid-template-columns: 280px minmax(0, 760px);
+	gap: 32px;
+	align-items: start;
+	width: 100%;
+	max-width: 1120px;
+	margin: 0 auto;
+	padding: 32px;
+}
+.cx-onb-steps ol {
+	display: grid;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.cx-onb-step {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid transparent;
+	border-radius: 12px;
+	background: transparent;
+	text-align: left;
+	cursor: pointer;
+	transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.cx-onb-step:hover:not(:disabled) {
+	background: #fff;
+}
+.cx-onb-step.on {
+	border-color: #e0dfda;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.cx-onb-step:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+.cx-onb-step i {
+	display: grid;
+	flex: 0 0 26px;
+	place-items: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: #ecebe6;
+	color: #55544f;
+	font-size: 12px;
+	font-style: normal;
+	font-weight: 600;
+	transition: background-color 0.25s ease, color 0.25s ease;
+}
+.cx-onb-step.done i {
+	background: #066336;
+	color: #fff;
+}
+.cx-onb-step.skipped i {
+	background: #fdf1de;
+	color: #8a4b00;
+}
+.cx-onb-step span {
+	display: grid;
+}
+.cx-onb-step b {
+	font-size: 14px;
+	font-weight: 600;
+}
+.cx-onb-step small {
+	color: #6b6a66;
+	font-size: 12px;
+}
+.cx-onb-card {
+	box-sizing: border-box;
+	padding: 28px 32px;
+	border: 1px solid #e7e6e3;
+	border-radius: 16px;
+	background: #fff;
+}
+.cx-onb-title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 14px;
+}
+.cx-onb-title h1 {
+	margin: 0;
+	font-size: 24px;
+	font-weight: 650;
+}
+.cx-onb-tag {
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: #eeeeea;
+	color: #55544f;
+	font-size: 12px;
+	font-weight: 500;
+}
+.cx-onb-tag.req {
+	background: #fdf1de;
+	color: #8a4b00;
+}
+.cx-onb-lead {
+	max-width: 62ch;
+	margin: 10px 0 22px;
+	color: #55544f;
+	font-size: 14.5px;
+	line-height: 1.55;
+}
+.cx-onb-err {
+	margin: 0 0 14px;
+	padding: 10px 14px;
+	border-radius: 10px;
+	background: #fbeaea;
+	color: #b42318;
+	font-size: 13.5px;
+}
+.cx-onb-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 18px 20px;
+}
+.cx-onb-field {
+	display: grid;
+	align-content: start;
+	gap: 5px;
+	margin: 0;
+}
+.cx-onb-field > span {
+	color: #55544f;
+	font-size: 12.5px;
+}
+.cx-onb-field input,
+.cx-onb-field select {
+	width: 100%;
+	height: 38px;
+	padding: 0 10px;
+	border: 1px solid #e0dfda;
+	border-radius: 8px;
+	background: #fff;
+	font: inherit;
+	font-size: 14px;
+}
+.cx-onb-field input[readonly] {
+	background: #f6f6f4;
+	color: #6b6a66;
+}
+.cx-onb-field input:focus-visible,
+.cx-onb-field select:focus-visible {
+	outline: 2px solid #066336;
+	outline-offset: 1px;
+}
+.cx-onb-field small {
+	color: #8a8984;
+	font-size: 12px;
+}
+.cx-onb-logo {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 16px 24px;
+	margin-bottom: 24px;
+	padding: 16px;
+	border: 1px dashed #d9d8d3;
+	border-radius: 12px;
+	background: #fafaf8;
+}
+.cx-onb-logo-prev {
+	display: grid;
+	place-items: center;
+	min-width: 150px;
+	height: 72px;
+	padding: 8px 14px;
+	border-radius: 10px;
+	background: #fff;
+	color: #8a8984;
+	font-size: 13px;
+}
+.cx-onb-logo-prev img {
+	max-width: 200px;
+	max-height: 56px;
+	object-fit: contain;
+}
+.cx-onb-logo p {
+	margin: 2px 0 8px;
+	color: #6b6a66;
+	font-size: 12.5px;
+}
+.cx-onb-logo em {
+	color: #b42318;
+	font-style: normal;
+}
+.cx-onb-foot {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 28px;
+	padding-top: 18px;
+	border-top: 1px solid #efeeea;
+}
+.cx-onb-foot .btn-primary {
+	margin-left: auto;
+}
+.cx-onb-foot .btn {
+	transition: opacity 0.2s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+.cx-onb-foot.busy .btn {
+	opacity: 0.55;
+	pointer-events: none;
+}
+.cx-onb-stat {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	margin-bottom: 18px;
+}
+.cx-onb-stat b {
+	font-size: 32px;
+	font-weight: 650;
+	font-variant-numeric: tabular-nums;
+}
+.cx-onb-stat span {
+	color: #55544f;
+}
+.cx-onb-cta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+.cx-onb-hint {
+	margin-top: 14px;
+	color: #8a8984;
+	font-size: 12.5px;
+}
+.cx-onb-people {
+	display: grid;
+	gap: 0;
+	margin: 0 0 22px;
+	padding: 0;
+	list-style: none;
+	border: 1px solid #efeeea;
+	border-radius: 10px;
+}
+.cx-onb-people li {
+	display: grid;
+	grid-template-columns: 1fr 1fr auto;
+	gap: 12px;
+	padding: 12px 16px;
+	border-top: 1px solid #efeeea;
+	font-size: 13.5px;
+}
+.cx-onb-people li:first-child {
+	border-top: 0;
+}
+.cx-onb-people span,
+.cx-onb-people em {
+	color: #6b6a66;
+	font-style: normal;
+}
+.cx-onb-invite h3,
+.cx-onb-sub {
+	margin: 0 0 12px;
+	font-size: 14px;
+	font-weight: 650;
+}
+.cx-onb-sub {
+	margin-top: 22px;
+}
+.cx-onb-rules {
+	margin: 0 0 8px;
+	padding-left: 18px;
+	font-size: 13.5px;
+}
+.cx-onb-recap {
+	display: grid;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.cx-onb-recap li {
+	display: grid;
+	grid-template-columns: 28px 1fr auto;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 0;
+	border-top: 1px solid #efeeea;
+}
+.cx-onb-recap li:first-child {
+	border-top: 0;
+}
+.cx-onb-recap i {
+	display: grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: #ecebe6;
+	font-size: 12px;
+	font-style: normal;
+}
+.cx-onb-recap li.done i {
+	background: #066336;
+	color: #fff;
+}
+.cx-onb-recap span {
+	display: grid;
+}
+.cx-onb-recap small {
+	color: #6b6a66;
+}
+@media (max-width: 900px) {
+	.cx-onb-main {
+		grid-template-columns: minmax(0, 1fr);
+		padding: 16px;
+	}
+	.cx-onb-steps ol {
+		grid-auto-flow: column;
+		grid-auto-columns: minmax(150px, 1fr);
+		overflow-x: auto;
+		padding-bottom: 4px;
+	}
+	.cx-onb-card {
+		padding: 20px 16px;
+	}
+	.cx-onb-head-in {
+		grid-template-columns: minmax(0, 1fr);
+		padding: 12px 16px;
+	}
+	.cx-onb-head-in .cx-onb-brand,
+	.cx-onb-head-end .cx-onb-prog {
+		padding-left: 0;
+	}
+	.cx-onb-head-end {
+		flex-wrap: wrap;
+	}
+}
+@media (max-width: 640px) {
+	.cx-onb-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.cx-onb-people li {
+		grid-template-columns: 1fr;
+	}
+	.cx-onb-foot .btn-primary {
+		margin-left: 0;
+	}
+}
+
+/* Carte « Terminer votre configuration » sur l'accueil (tant que ce n'est pas terminé) */
+.cx-setup-card {
+	margin-bottom: 16px;
+	padding: 18px 20px;
+	border: 1px solid #e0dfda;
+	border-radius: 14px;
+	background: #fff;
+}
+.cx-setup-top {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px 20px;
+}
+.cx-setup-top h3 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 650;
+}
+.cx-setup-top p {
+	margin: 2px 0 0;
+	color: #6b6a66;
+	font-size: 13px;
+}
+.cx-setup-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+	gap: 8px;
+	margin: 14px 0 0;
+	padding: 0;
+	list-style: none;
+}
+.cx-setup-list a {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 9px 12px;
+	border: 1px solid #efeeea;
+	border-radius: 10px;
+	color: inherit;
+	font-size: 13.5px;
+	text-decoration: none;
+}
+.cx-setup-list a:hover {
+	background: #f7f7f5;
+	text-decoration: none;
+}
+.cx-setup-list i {
+	display: grid;
+	flex: 0 0 22px;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: #ecebe6;
+	font-size: 11px;
+	font-style: normal;
+}
+.cx-setup-list .done i {
+	background: #066336;
+	color: #fff;
+}
+.cx-setup-list small {
+	display: block;
+	color: #8a4b00;
+	font-size: 11.5px;
+}
+
+.cx-guide-video {
+	margin: 0 0 16px;
+	padding: 16px 20px;
+	max-width: none;
+	border: 1px solid #e0dfda;
+	border-radius: 14px;
+	background: #fff;
+}
+.cx-guide-video .cx-video-placeholder {
+	max-width: 420px;
+}
+
+body.cx-onb-open {
+	overflow: hidden;
+}
+
+/* Les fenêtres (téléversement du logo, messages) et les alertes restent au-dessus de l'assistant plein écran. */
+body.cx-onb-open .modal-backdrop {
+	z-index: 1250;
+}
+body.cx-onb-open .modal {
+	z-index: 1260;
+}
+body.cx-onb-open #alert-container,
+body.cx-onb-open .desk-alert {
+	z-index: 1300;
+}
+
+.cx-onb-head-end > .btn {
+	margin-left: auto;
+}
+
+.cx-onb-invite .btn {
+	margin-top: 14px;
+}
+
+/* Mouvement : la carte masque son débordement le temps d'ajuster sa hauteur; le message d'erreur descend doucement. */
+.cx-onb-card.animating {
+	overflow: hidden;
+}
+.cx-onb-err:not([hidden]) {
+	animation: cx-onb-drop 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@keyframes cx-onb-drop {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+.cx-onb .btn {
+	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+.cx-onb .btn:active:not(:disabled) {
+	transform: translateY(1px);
+}
+.cx-onb-field input,
+.cx-onb-field select {
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* La carte « Terminer la configuration » et le guide vidéo apparaissent en fondu sur l'accueil. */
+.cx-setup-card,
+.cx-guide-video {
+	animation: cx-onb-rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.cx-setup-card {
+	animation-delay: 0.05s;
+}
+@keyframes cx-onb-rise {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cx-onb *,
+	.cx-setup-card,
+	.cx-guide-video {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+.cx-onb-head-in .cx-onb-brand {
+	gap: 10px;
+}
+.cx-onb-head-in .cx-onb-brand b {
+	font-size: 14px;
+	white-space: nowrap;
+}
+@media (max-width: 900px) {
+	.cx-onb-head-in .cx-onb-brand b {
+		white-space: normal;
+	}
+}

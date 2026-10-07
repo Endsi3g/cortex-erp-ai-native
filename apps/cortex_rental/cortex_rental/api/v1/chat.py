@@ -17,6 +17,7 @@ except ImportError:
 
 from pydantic import ValidationError
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import (
     require_human_staff_role,
     get_company_context,
@@ -86,6 +87,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
             message=request.message,
             context=request.context.model_dump(),
             chat_session_id=request.chat_session_id,
+            model_tier=request.model_tier,
         )
     except ChatContextPermissionError as exc:
         if frappe:
@@ -106,6 +108,7 @@ def send_message_handler(payload: Dict[str, Any], user: str, company: str) -> Di
 if frappe:
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def create_session():
         require_human_staff_role()
         company = get_company_context()
@@ -116,6 +119,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def send_message():
         require_human_staff_role()
         company = get_company_context()
@@ -124,6 +128,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_session():
         require_human_staff_role()
         name = frappe.local.form_dict.get("name")
@@ -136,6 +141,7 @@ if frappe:
         return {"data": result}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_messages():
         require_human_staff_role()
         name = frappe.local.form_dict.get("name")
@@ -148,6 +154,7 @@ if frappe:
         return {"data": result}
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_sessions():
         require_human_staff_role()
         company = get_company_context()
@@ -155,6 +162,7 @@ if frappe:
         return {"data": result, "meta": {"company": company}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def pin_context():
         require_human_staff_role()
         payload = frappe.local.form_dict
@@ -169,6 +177,7 @@ if frappe:
         return {"data": {"pinned": True}}
 
     @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def clear_context():
         require_human_staff_role()
         payload = frappe.local.form_dict
@@ -177,3 +186,69 @@ if frappe:
             frappe.throw("La conversation est obligatoire.", frappe.ValidationError)
         _service().clear_context(session_name, user=frappe.session.user)
         return {"data": {"pinned": False}}
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def status():
+        """Ce qui répond vraiment aux questions : le modèle d'IA configuré, ou le mode démonstration (sans IA).
+
+        L'interface affiche cet état tel quel (« IA réelle » ou « Démonstration ») : elle ne le devine jamais."""
+        require_human_staff_role()
+        from cortex_rental.services.ai import settings as ai_settings
+
+        conf = frappe.conf
+        provider = str(conf.get("cortex_chat_provider", "gateway")).lower()
+        if provider == "gateway":
+            values = ai_settings.load()
+            offered = [
+                {
+                    "key": t["key"],
+                    "label": t["label"],
+                    "description": t["description"],
+                    "available": t["configured"],
+                    "cost_index": t["cost_index"],
+                }
+                for t in ai_settings.tiers(values)
+                if t["enabled"]
+            ]
+            default = ai_settings.default_tier(values) if values.get("enabled") else ""
+            if values.get("enabled") and default:
+                return {"data": {"mode": "ai", "provider": "cortex", "tiers": offered, "default_tier": default}}
+            return {"data": {"mode": "demo", "provider": "demo", "model": "demo", "tiers": offered, "default_tier": ""}}
+        if provider == "onyx":
+            return {"data": {"mode": "ai", "provider": "onyx", "model": "onyx", "tiers": [], "default_tier": ""}}
+        return {"data": {"mode": "demo", "provider": "demo", "model": "demo", "tiers": [], "default_tier": ""}}
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    def delete_session(name: str = ""):
+        """Retire une de ses conversations de son historique.
+
+        Les messages d'une conversation ne se modifient ni ne se suppriment jamais (journal de la société) : la
+        conversation est masquée, pas détruite. L'interface le dit clairement."""
+        require_human_staff_role()
+        if not name or not frappe.db.exists("Cortex Chat Session", name):
+            frappe.throw("Conversation introuvable.", frappe.DoesNotExistError)
+        if frappe.db.get_value("Cortex Chat Session", name, "user") != frappe.session.user:
+            frappe.throw("Non autorisé : cette conversation appartient à une autre personne.", frappe.PermissionError)
+        _hide_session(name)
+        return {"data": {"deleted": name, "retained_for_audit": True}}
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    @defense.limit_user("chat_clear", 10)
+    def clear_history():
+        """Masque toutes ses propres conversations de la société active (les messages restent au journal)."""
+        require_human_staff_role()
+        company = get_company_context()
+        names = frappe.get_all(
+            "Cortex Chat Session",
+            filters={"user": frappe.session.user, "company": company, "state": ["!=", "Hidden"]},
+            pluck="name",
+        )
+        for name in names:
+            _hide_session(name)
+        return {"data": {"deleted": len(names), "retained_for_audit": True}}
+
+    def _hide_session(name: str) -> None:
+        frappe.db.set_value("Cortex Chat Session", name, "state", "Hidden")

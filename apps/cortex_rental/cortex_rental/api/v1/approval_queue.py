@@ -5,6 +5,8 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
+from cortex_rental.api.v1._shared import page_args
 from cortex_rental.permissions.agent_scopes import get_company_context
 
 
@@ -62,10 +64,11 @@ def _serialize(doc):
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def list_approval_requests(status="pending", page=1, page_size=20):
         _require_approver()
         company = get_company_context()
-        page, page_size = max(1, int(page)), min(100, max(1, int(page_size)))
+        page, page_size = page_args(page, page_size)
         filters = {"company": company}
         if status and status != "all":
             filters["status"] = status.title()
@@ -89,6 +92,7 @@ if frappe:
         }
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_approval_request(name: str):
         _require_approver()
         doc = frappe.get_doc("Approval Request", name)
@@ -96,15 +100,85 @@ if frappe:
             frappe.throw("Demande d’approbation introuvable.", frappe.PermissionError)
         return {"data": _serialize(doc)}
 
-    @frappe.whitelist(methods=["POST"])
-    def decide_approval(name: str, decision: str, reason: str = None):
-        _require_approver()
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def decision_options(name: str):
+        """Ce que la personne connectée peut faire de cette demande (le serveur reste seul juge à la décision)."""
+        from cortex_rental.services import approval_policy
+        from cortex_rental.cortex_rental.doctype.approval_request.approval_request import (
+            APPROVER_ROLES,
+            other_approvers,
+            sole_approver_may_self_approve,
+        )
+
         doc = frappe.get_doc("Approval Request", name)
         if doc.company != get_company_context():
             frappe.throw("Demande d’approbation introuvable.", frappe.PermissionError)
+        user = frappe.session.user
+        pending = doc.status == "Pending"
+        is_approver = bool(APPROVER_ROLES.intersection(frappe.get_roles(user)))
+        mine = doc.requested_by_type == "Human" and doc.requested_by_id == user
+        if not pending:
+            return {"can_approve": False, "can_reject": False, "can_withdraw": False, "note": ""}
+        if mine:
+            sole_allowed = is_approver and sole_approver_may_self_approve(doc.company, user)
+            alone = not other_approvers(doc.company, user)
+            policy = approval_policy.get_policy(doc.company, user)
+            if sole_allowed:
+                note = "Vous êtes la seule personne autorisée de votre société : votre approbation sera notée comme une auto-approbation."
+            elif alone:
+                note = (
+                    "Vous êtes la seule personne autorisée de votre société : personne ne peut approuver cette demande. "
+                    "Ajoutez une personne autorisée dans « Équipe et rôles »"
+                    + (
+                        " ou lisez ce que change l'auto-approbation avant de l'activer."
+                        if policy["can_manage"]
+                        else "."
+                    )
+                )
+            else:
+                note = "Vous avez fait cette demande : une autre personne autorisée doit la décider."
+            return {
+                "can_approve": sole_allowed,
+                "can_reject": False,
+                "can_withdraw": True,
+                "self_approval": sole_allowed,
+                "can_explain_policy": bool(alone and policy["can_manage"] and not sole_allowed),
+                "note": note,
+            }
+        return {"can_approve": is_approver, "can_reject": is_approver, "can_withdraw": False, "note": ""}
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def self_approval_policy():
+        """État de la règle « le seul approbateur décide de ses propres demandes », avec ses bénéfices et ses dangers."""
+        from cortex_rental.services import approval_policy
+
+        return approval_policy.get_policy(get_company_context(), frappe.session.user)
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    def set_self_approval(enabled: int = 0, acknowledged: int = 0):
+        """Active ou désactive la règle (propriétaire seulement). L'activation exige d'avoir confirmé la lecture des risques."""
+        from cortex_rental.services import approval_policy
+
+        return approval_policy.set_self_approval(
+            get_company_context(), frappe.session.user, bool(int(enabled)), bool(int(acknowledged))
+        )
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    def decide_approval(name: str, decision: str, reason: str = None):
         decision = (decision or "").lower()
+        if decision != "withdraw":
+            _require_approver()
+        doc = frappe.get_doc("Approval Request", name)
+        if doc.company != get_company_context():
+            frappe.throw("Demande d’approbation introuvable.", frappe.PermissionError)
         if decision == "approve":
             doc.approve(reason=reason)
+        elif decision == "withdraw":
+            doc.withdraw(reason=reason)
         elif decision == "reject":
             if not reason or len(reason.strip()) < 3:
                 frappe.throw(
@@ -113,7 +187,7 @@ if frappe:
                 )
             doc.reject(reason=reason)
         else:
-            frappe.throw("La décision doit être « approuver » ou « refuser ».", frappe.ValidationError)
+            frappe.throw("La décision doit être « approuver », « refuser » ou « retirer ».", frappe.ValidationError)
         return {
             "request_id": frappe.generate_hash(length=16),
             "entity_id": name,

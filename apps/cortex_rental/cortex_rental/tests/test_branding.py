@@ -46,8 +46,6 @@ class TestNoErpnextInVisibleText(unittest.TestCase):
             "cortex_rental/number_card/*/*.json",
             "cortex_rental/dashboard_chart/*/*.json",
             "cortex_rental/report/*/*",
-            "cortex_rental/onboarding_step/*/*.json",
-            "cortex_rental/module_onboarding/*/*.json",
             "fixtures/*.json",
         ]
         offenders = []

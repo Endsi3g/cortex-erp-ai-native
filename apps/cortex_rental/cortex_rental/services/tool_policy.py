@@ -34,7 +34,7 @@ AGENT_TOOL_MAP = {
     # tool to call until one is built. Empty on purpose, not an oversight.
     # Les outils de lecture de la passerelle IA (services/ai/tools.py) comblent une partie de ce manque :
     # lire les locations et les approbations en attente. Aucun n'écrit ni n'approuve.
-    "cortex-returns": ["list_rentals"],
+    "cortex-returns": ["list_rentals", "late_returns"],
     "cortex-approval-assistant": ["list_pending_approvals", "list_rentals"],
     "cortex-operations": [
         "search_rental_items",
@@ -42,6 +42,8 @@ AGENT_TOOL_MAP = {
         "list_rentals",
         "list_pending_approvals",
         "finance_summary",
+        "customer_summary",
+        "late_returns",
     ],
 }
 

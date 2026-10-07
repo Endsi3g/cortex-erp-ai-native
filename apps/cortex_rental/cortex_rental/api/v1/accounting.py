@@ -36,6 +36,7 @@ try:
 except ImportError:
     frappe = None
 
+from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import require_finance_role, get_company_context
 from cortex_rental.services.audit import AuditService
 
@@ -244,6 +245,7 @@ def transform_pnl_report(columns: List[Dict[str, Any]], data: List[Dict[str, Any
 if frappe:
 
     @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
     def get_profit_and_loss():
         require_finance_role()
         company = get_company_context()

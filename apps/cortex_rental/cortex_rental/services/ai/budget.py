@@ -52,13 +52,17 @@ def status(company: str, settings: Dict[str, Any]) -> Dict[str, Any]:
         percent = used["cost"] / cost_cap * 100
     elif token_cap > 0:
         percent = used["tokens"] / token_cap * 100
+    economy_model = (settings.get("economy_model") or "").strip()
+    # Au plafond : on passe au modèle économique (si défini) jusqu'à `economy_cap_percent` % du budget, puis on refuse.
+    hard = float(settings.get("economy_cap_percent") or 150) if economy_model else 100.0
     return {
         **used,
         "cost_cap": cost_cap,
         "token_cap": token_cap,
         "percent": round(percent, 1),
         "warning": percent >= float(settings.get("warn_percent") or 80) and percent < 100,
-        "blocked": percent >= 100,
+        "economy": bool(economy_model) and 100 <= percent < hard,
+        "blocked": percent >= hard,
     }
 
 
@@ -82,7 +86,9 @@ def record(
     settings: Dict[str, Any],
     request_id: Optional[str] = None,
     tool_calls: int = 0,
+    prices: Optional[Dict[str, Any]] = None,
 ) -> None:
+    """`prices` : prix du modèle réellement utilisé (le modèle économique n'a pas les mêmes prix)."""
     doc = frappe.get_doc(
         {
             "doctype": USAGE,
@@ -92,7 +98,7 @@ def record(
             "model": model,
             "input_tokens": int(input_tokens),
             "output_tokens": int(output_tokens),
-            "cost": cost_of(input_tokens, output_tokens, settings),
+            "cost": cost_of(input_tokens, output_tokens, prices or settings),
             "tool_calls": int(tool_calls),
             "request_id": request_id or "",
         }

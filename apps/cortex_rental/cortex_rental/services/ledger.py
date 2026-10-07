@@ -34,6 +34,7 @@ SETTING_FIELDS = {
     "tvq": "acct_tvq",
     "revenue": "acct_revenue",
     "late_fees": "acct_late_fees",
+    "damages": "acct_damages",
 }
 DEFAULT_ACCOUNTS = {
     "receivable": "1100 - Comptes clients",
@@ -43,6 +44,7 @@ DEFAULT_ACCOUNTS = {
     "tvq": "2320 - TVQ à remettre",
     "revenue": "4000 - Revenus de location",
     "late_fees": "4100 - Frais de retard",
+    "damages": "4200 - Dommages et pertes facturés",
 }
 TOLERANCE = 0.005
 
@@ -140,6 +142,7 @@ def post_invoice(invoice):
             ("deposits", applied, 0),
             ("revenue", 0, by_kind.get("Rental", 0.0)),
             ("late_fees", 0, by_kind.get("Late Fee", 0.0)),
+            ("damages", 0, by_kind.get("Damage", 0.0)),
         ]
     lines += [("tps", 0, tps), ("tvq", 0, tvq)]
     label = "Facture d'acompte" if invoice.invoice_type == "Deposit" else "Facture finale"
