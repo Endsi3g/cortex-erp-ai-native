@@ -1,0 +1,60 @@
+{
+  "actions": [],
+  "creation": "2026-10-07 13:00:00.000000",
+  "modified": "2026-10-07 13:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "states": [],
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "name": "Cortex Stripe Event",
+  "autoname": "field:event_id",
+  "title_field": "event_id",
+  "track_changes": 0,
+  "fields": [
+    {
+      "fieldname": "event_id",
+      "fieldtype": "Data",
+      "label": "Événement Stripe",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "event_type",
+      "fieldtype": "Data",
+      "label": "Type",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Société",
+      "options": "Company"
+    },
+    {
+      "fieldname": "outcome",
+      "fieldtype": "Data",
+      "label": "Résultat"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1
+    },
+    {
+      "role": "Auditor",
+      "read": 1
+    }
+  ],
+  "field_order": [
+    "event_id",
+    "event_type",
+    "company",
+    "outcome"
+  ]
+}

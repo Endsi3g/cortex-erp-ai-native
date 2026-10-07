@@ -31,7 +31,52 @@ Règles :
 - Les montants sont en dollars canadiens, taxes TPS/TVQ précisées quand elles sont données par l'outil.
 - N'invente jamais de numéro de location, de facture ou de client.
 Société : {company}. Date du jour : {today}. Écran actuel : {page}.
-"""
+{rules}"""
+
+
+def company_rules(company: str) -> str:
+    """Les règles de la société que l'assistant doit connaître (taxes, acompte, retenue, approbation), lues dans ses
+    réglages. Lecture seule : l'assistant ne les modifie pas et ne remplace pas les outils pour un prix ou un statut.
+    Vide si rien n'est lisible (jamais de règle inventée)."""
+    if not frappe or not company:
+        return ""
+    try:
+        row = frappe.db.get_value(
+            "Cortex Finance Settings",
+            company,
+            [
+                "apply_taxes",
+                "tps_rate",
+                "tvq_rate",
+                "deposit_percent",
+                "quote_hold_enabled",
+                "quote_hold_hours",
+                "allow_sole_approver_self_approval",
+            ],
+            as_dict=True,
+        )
+    except Exception:
+        return ""
+    if not row:
+        return ""
+    lines = ["Règles de la société (réglages, à citer telles quelles; les prix et les statuts viennent des outils) :"]
+    if row.get("apply_taxes"):
+        lines.append(f"- Taxes : TPS {row['tps_rate']} %, TVQ {row['tvq_rate']} %.")
+    else:
+        lines.append("- Les taxes ne sont pas appliquées par cette société.")
+    lines.append(f"- Acompte : {row['deposit_percent']} % à la réservation.")
+    if row.get("quote_hold_enabled"):
+        lines.append(f"- Un devis retient le matériel {row['quote_hold_hours']} h; la retenue n'est pas une garantie.")
+    lines.append(
+        "- Un contrat est toujours approuvé par une personne; "
+        + (
+            "le seul approbateur de la société peut décider de sa propre demande."
+            if row.get("allow_sole_approver_self_approval")
+            else "personne ne décide de sa propre demande."
+        )
+    )
+    return "\n".join(lines) + "\n"
+
 
 # Libellés lisibles des outils consultés (affichés après coup : seulement ce qui a vraiment été appelé).
 TOOL_LABELS = {
@@ -96,7 +141,7 @@ class TierUnavailable(AIProviderError):
     """Le niveau demandé n'est pas offert (désactivé ou sans clé) alors que d'autres le sont : on le dit, on ne change pas en silence."""
 
 
-def resolve_tier(settings: Dict[str, Any], requested: Optional[str]) -> Dict[str, Any]:
+def resolve_tier(settings: Dict[str, Any], requested: Optional[str], company: Optional[str] = None) -> Dict[str, Any]:
     """Le niveau Cortex à utiliser. Sans demande : le niveau par défaut. Aucun niveau disponible : IA non configurée (démo)."""
     rows = {r["key"]: r for r in ai_settings.tiers(settings)}
     available = [r for r in rows.values() if r["configured"]]
@@ -106,6 +151,15 @@ def resolve_tier(settings: Dict[str, Any], requested: Optional[str]) -> Dict[str
         )
     key = requested or ai_settings.default_tier(settings)
     row = rows.get(key)
+    if company and row and row["configured"]:
+        # Abonnement : seuls les niveaux acquis sont offerts (sans effet tant que la facturation n'est pas activée).
+        from cortex_rental.services import subscriptions
+
+        if not subscriptions.allows_tier(company, key):
+            raise TierUnavailable(
+                f"Le modèle « {row['label']} » n'est pas inclus dans l'abonnement de votre société. "
+                "Le propriétaire peut l'ajouter dans Société et rôles."
+            )
     if not row or not row["configured"]:
         raise TierUnavailable(
             f"Le modèle « {row['label'] if row else key} » n'est pas disponible pour le moment. Choisissez-en un autre."
@@ -202,7 +256,7 @@ class AIGateway:
         prices = None
         if self._provider is None and not economy:
             # Niveau Cortex choisi : son modèle et ses prix (le budget compte le vrai coût du niveau utilisé).
-            self.tier = resolve_tier(self.settings, tier)
+            self.tier = resolve_tier(self.settings, tier, company)
             self._provider = build_provider(self.settings, model=self.tier["model"])
             prices = {
                 "price_input_per_mtok": self.tier["price_input_per_mtok"],
@@ -219,7 +273,10 @@ class AIGateway:
         exposed_names = {t.name for t in exposed}
         declarations = [t.declaration() for t in exposed]
         system = SYSTEM_PROMPT.format(
-            company=company, today=frappe.utils.today() if frappe else "", page=page or "tableau de bord"
+            company=company,
+            today=frappe.utils.today() if frappe else "",
+            page=page or "tableau de bord",
+            rules=company_rules(company),
         )
         messages: List[Any] = [
             provider.history_message(h["role"], h["text"]) for h in (history or [])[-10:] if h.get("text")
@@ -263,7 +320,12 @@ class AIGateway:
                         if proposal:
                             result_blocks.append(proposal)
                     outputs.append({"name": call.name, "id": call.id, "result": output})
-                messages.append(self.provider().tool_results_message(outputs))
+                tool_message = self.provider().tool_results_message(outputs)
+                # Certains fournisseurs (OpenAI) veulent un message par résultat d'outil.
+                if isinstance(tool_message, list):
+                    messages.extend(tool_message)
+                else:
+                    messages.append(tool_message)
                 continue
             text = result.text or (STEPS_EXHAUSTED if result.tool_calls else "")
             break

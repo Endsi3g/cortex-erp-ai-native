@@ -1,0 +1,134 @@
+{
+  "actions": [],
+  "creation": "2026-10-07 13:00:00.000000",
+  "modified": "2026-10-07 13:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Cortex Rental",
+  "owner": "Administrator",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "states": [],
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "name": "Cortex Subscription Settings",
+  "issingle": 1,
+  "track_changes": 1,
+  "fields": [
+    {
+      "fieldname": "enabled",
+      "fieldtype": "Check",
+      "label": "Facturation des abonnements activée",
+      "default": "0",
+      "description": "Désactivée par défaut : tant qu'elle l'est, aucune restriction n'est appliquée et rien n'est facturé. L'activation exige les clés Stripe et des prix confirmés."
+    },
+    {
+      "fieldname": "sb_stripe",
+      "fieldtype": "Section Break",
+      "label": "Stripe (compte de la plateforme Cortex, distinct des paiements de location)"
+    },
+    {
+      "fieldname": "stripe_secret_key",
+      "fieldtype": "Password",
+      "label": "Clé secrète Stripe",
+      "description": "Elle ne quitte jamais le serveur."
+    },
+    {
+      "fieldname": "stripe_webhook_secret",
+      "fieldtype": "Password",
+      "label": "Secret du webhook Stripe",
+      "description": "Adresse du webhook : /api/method/cortex_rental.api.v1.subscriptions.subscription_webhook"
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Select",
+      "label": "Devise",
+      "options": "CAD\nUSD",
+      "default": "CAD"
+    },
+    {
+      "fieldname": "sb_base",
+      "fieldtype": "Section Break",
+      "label": "Abonnement de base"
+    },
+    {
+      "fieldname": "base_label",
+      "fieldtype": "Data",
+      "label": "Libellé",
+      "default": "Cortex : abonnement de base"
+    },
+    {
+      "fieldname": "base_monthly_price",
+      "fieldtype": "Currency",
+      "label": "Prix mensuel de base",
+      "default": "1000",
+      "description": "1 000 $ par mois est le prix de base demandé; il n'est facturé qu'une fois confirmé ci-dessous."
+    },
+    {
+      "fieldname": "base_price_id",
+      "fieldtype": "Data",
+      "label": "Identifiant de prix Stripe du plan de base (price_…)"
+    },
+    {
+      "fieldname": "base_price_confirmed",
+      "fieldtype": "Check",
+      "label": "Prix de base confirmé par un humain",
+      "default": "0"
+    },
+    {
+      "fieldname": "sb_extras",
+      "fieldtype": "Section Break",
+      "label": "Modules, niveaux d'IA et enveloppe incluse"
+    },
+    {
+      "fieldname": "plan_items",
+      "fieldtype": "Table",
+      "label": "Options payantes",
+      "options": "Cortex Subscription Item"
+    },
+    {
+      "fieldname": "included_ai_budget",
+      "fieldtype": "Currency",
+      "label": "Enveloppe d'IA incluse par mois",
+      "default": "0",
+      "description": "À définir : 0 = aucune enveloppe incluse. Les dépassements et leur facturation ne sont pas automatisés."
+    },
+    {
+      "fieldname": "base_includes_tiers",
+      "fieldtype": "Small Text",
+      "label": "Niveaux d'IA inclus dans le plan de base",
+      "default": "rapide",
+      "description": "Clés séparées par des virgules."
+    },
+    {
+      "fieldname": "exempt_companies",
+      "fieldtype": "Small Text",
+      "label": "Sociétés non soumises à l'abonnement",
+      "description": "Une société par ligne (nom exact). À l'activation de la facturation, elles gardent l'accès complet : démonstration, partenaires, clients existants à ménager."
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1
+    }
+  ],
+  "field_order": [
+    "enabled",
+    "sb_stripe",
+    "stripe_secret_key",
+    "stripe_webhook_secret",
+    "currency",
+    "sb_base",
+    "base_label",
+    "base_monthly_price",
+    "base_price_id",
+    "base_price_confirmed",
+    "sb_extras",
+    "plan_items",
+    "included_ai_budget",
+    "base_includes_tiers",
+    "exempt_companies"
+  ]
+}

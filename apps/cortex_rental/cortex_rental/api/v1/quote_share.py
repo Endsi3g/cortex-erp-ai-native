@@ -13,7 +13,11 @@ except ImportError:
     frappe = None
 
 from cortex_rental.services import defense
-from cortex_rental.permissions.agent_scopes import get_company_context, require_human_staff_role
+from cortex_rental.permissions.agent_scopes import (
+    get_company_context,
+    get_company_context_for_document,
+    require_human_staff_role,
+)
 from cortex_rental.services import quote_share
 
 WEBHOOK_MAX_BYTES = 1024 * 1024
@@ -31,7 +35,7 @@ if frappe:
         valid_days: int = quote_share.DEFAULT_DAYS,
     ):
         require_human_staff_role()
-        company = get_company_context()
+        company = get_company_context_for_document("Cortex Rental Transaction", rental_id)
         tx = frappe.get_doc("Cortex Rental Transaction", rental_id)
         if tx.company != company:
             frappe.throw("Cette location n'est pas disponible pour la société active.", frappe.PermissionError)
@@ -51,7 +55,7 @@ if frappe:
     @defense.safe_input
     def list_shares(rental_id: str):
         require_human_staff_role()
-        company = get_company_context()
+        company = get_company_context_for_document("Cortex Rental Transaction", rental_id)
         if frappe.db.get_value("Cortex Rental Transaction", rental_id, "company") != company:
             frappe.throw("Cette location n'est pas disponible pour la société active.", frappe.PermissionError)
         rows = frappe.get_list(
@@ -105,8 +109,17 @@ if frappe:
         responder_name: str = "",
         confirmed: int = 0,
         request_id: str = "",
+        terms_accepted: int = 0,
     ):
-        return quote_share.respond(token, action, message, responder_name, confirmed)
+        from cortex_rental.services import contract_terms
+
+        request = frappe.local.request
+        proof = contract_terms.technical_proof(
+            getattr(frappe.local, "request_ip", "") or "",
+            request.headers.get("User-Agent", "") if request else "",
+            quote_share.hash_token(token),
+        )
+        return quote_share.respond(token, action, message, responder_name, confirmed, terms_accepted, proof)
 
     @frappe.whitelist(allow_guest=True, methods=["POST"])
     @defense.safe_input
@@ -119,6 +132,13 @@ if frappe:
             return quote_share.start_payment(token)
         except PaymentError as exc:
             frappe.throw(str(exc), frappe.ValidationError)
+
+    @frappe.whitelist(allow_guest=True, methods=["POST"])
+    @defense.safe_input
+    @rate_limit(limit=20, seconds=60 * 60)
+    def choose_cheque(token: str = ""):
+        """Client : annonce un paiement par chèque pour l'acompte (facture créée, équipe prévenue, rien n'est marqué payé)."""
+        return quote_share.choose_cheque(token)
 
     @frappe.whitelist(allow_guest=True, methods=["POST"])
     @defense.safe_input

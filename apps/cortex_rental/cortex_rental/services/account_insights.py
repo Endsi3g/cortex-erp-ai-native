@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     import frappe
-    from frappe.utils import add_days, cint, flt, get_datetime, now_datetime, today
+    from frappe.utils import add_days, add_to_date, cint, flt, get_datetime, now_datetime, today
 except ImportError:
     frappe = None
 
@@ -680,6 +680,7 @@ def team_roster(company: str, me: str, show_emails: bool) -> List[Dict[str, Any]
     for u in users:
         out.append(
             {
+                "id": u.name,
                 "name": u.full_name or u.name,
                 "email": u.name if show_emails or u.name == me else "",
                 "you": u.name == me,
@@ -688,6 +689,160 @@ def team_roster(company: str, me: str, show_emails: bool) -> List[Dict[str, Any]
             }
         )
     return out
+
+
+# ---------------------------------------------------------------------------------------------- société
+
+OPEN_RENTAL_STATES = ("Reservation", "Contract", "Checked Out", "Partially Returned")
+
+
+def company_stats(company: str, user: str) -> Dict[str, Any]:
+    """Chiffres de la société (équipe, parc, clients, locations, facturation) lus dans les dossiers réels.
+
+    Chaque bloc n'est rempli que si la personne a le droit de lire les dossiers correspondants : `None` veut dire
+    « hors de vos droits », jamais « zéro ». Aucune estimation.
+    """
+    from cortex_rental.services import team_activity
+
+    since = add_days(now_datetime(), -30)
+    out: Dict[str, Any] = {
+        "period_days": 30,
+        "team": None,
+        "equipment": None,
+        "customers": None,
+        "rentals": None,
+        "billing": None,
+    }
+
+    members = team_activity.company_members(company)
+    if user not in members:
+        members.append(user)
+    out["team"] = {"active": frappe.db.count("User", {"name": ["in", members], "enabled": 1})}
+
+    profile = "Cortex Rental Item Profile"
+    if frappe.has_permission(profile, "read"):
+        equipment: Dict[str, Any] = {"items": frappe.db.count(profile, {"company": company}), "units": None}
+        try:
+            if frappe.db.table_exists("Serial No") and frappe.db.has_column("Serial No", "cortex_status"):
+                rows = frappe.db.sql(
+                    """
+                    SELECT COALESCE(cortex_status, 'Active') AS unit_state, COUNT(*) AS count
+                    FROM `tabSerial No` WHERE company = %(company)s GROUP BY unit_state
+                    """,
+                    {"company": company},
+                    as_dict=True,
+                )
+                equipment["units"] = {r.unit_state: int(r.count) for r in rows}
+        except Exception:
+            equipment["units"] = None
+        out["equipment"] = equipment
+
+    if frappe.has_permission("Customer", "read"):
+        out["customers"] = {"active": frappe.db.count("Customer", {"cortex_company": company, "disabled": 0})}
+
+    tx = "Cortex Rental Transaction"
+    if frappe.has_permission(tx, "read"):
+        by_state = {
+            r.rental_state: int(r.count)
+            for r in frappe.db.sql(
+                "SELECT rental_state, COUNT(*) AS count FROM `tabCortex Rental Transaction` "
+                "WHERE company = %(company)s GROUP BY rental_state",
+                {"company": company},
+                as_dict=True,
+            )
+        }
+        out["rentals"] = {
+            "by_state": by_state,
+            "open": sum(by_state.get(state, 0) for state in OPEN_RENTAL_STATES),
+            "quotes": by_state.get("Quote", 0),
+            "created": frappe.db.count(tx, {"company": company, "creation": [">=", since]}),
+            "late_returns": frappe.db.count(
+                tx, {"company": company, "rental_state": "Checked Out", "ends_at": ["<", now_datetime()]}
+            ),
+        }
+
+    invoice = "Cortex Rental Invoice"
+    if frappe.has_permission(invoice, "read"):
+        issued = frappe.get_all(
+            invoice,
+            filters={"company": company, "status": ["!=", "Cancelled"], "creation": [">=", since]},
+            fields=["sum(total) as total"],
+        )[0]
+        owing = frappe.get_all(
+            invoice,
+            filters={"company": company, "status": ["in", ["Issued", "Partially Paid"]]},
+            fields=["sum(balance) as balance", "count(name) as count"],
+        )[0]
+        billing: Dict[str, Any] = {
+            "invoiced": round(flt(issued.total), 2),
+            "outstanding": round(flt(owing.balance), 2),
+            "outstanding_count": int(owing.count or 0),
+            "collected": None,
+        }
+        if frappe.has_permission("Cortex Rental Payment", "read"):
+            paid = frappe.get_all(
+                "Cortex Rental Payment",
+                filters={"company": company, "creation": [">=", since]},
+                fields=["sum(signed_amount) as total"],
+            )[0]
+            billing["collected"] = round(flt(paid.total), 2)
+        out["billing"] = billing
+    return out
+
+
+def colleague_profile(company: str, viewer: str, email: str) -> Dict[str, Any]:
+    """Profil en lecture seule d'une personne de la même société (photo, rôle, coordonnées, présence, activité récente).
+
+    Toutes les personnes de la société peuvent consulter un profil; seule la gestion des comptes (rôles, activation) est
+    réservée au propriétaire (`administration`). Une personne d'une autre société est refusée comme si elle n'existait
+    pas. Le temps d'utilisation n'est pas mesuré par Cortex : il n'est pas affiché plutôt qu'estimé.
+    """
+    from cortex_rental.services import team_activity
+
+    email = (email or "").strip().lower()
+    members = {m.lower(): m for m in team_activity.company_members(company)}
+    members.setdefault(viewer.lower(), viewer)
+    if email not in members:
+        frappe.throw("Cette personne ne fait pas partie de votre société.", frappe.PermissionError)
+    name = members[email]
+    user = frappe.db.get_value(
+        "User",
+        name,
+        ["full_name", "user_image", "mobile_no", "creation", "last_login", "last_active", "enabled"],
+        as_dict=True,
+    )
+    if not user:
+        frappe.throw("Cette personne ne fait pas partie de votre société.", frappe.PermissionError)
+    since = add_days(now_datetime(), -30)
+    last_active = user.last_active or user.last_login
+    online = bool(
+        user.last_active
+        and get_datetime(user.last_active) >= add_to_date(now_datetime(), minutes=-team_activity.ONLINE_WINDOW_MINUTES)
+    )
+    recent = frappe.get_all(
+        "Audit Event",
+        filters={"company": company, "actor_id": name, "actor_type": "Human"},
+        fields=["action", "creation"],
+        order_by="creation desc",
+        limit_page_length=5,
+    )
+    return {
+        "name": user.full_name or name,
+        "email": name,
+        "phone": user.mobile_no or "",
+        "photo": user.user_image or "",
+        "role": role_summary(name),
+        "enabled": bool(user.enabled),
+        "you": name.lower() == viewer.lower(),
+        "member_since": str(user.creation)[:10],
+        "last_login": str(user.last_login or "")[:16],
+        "last_active": str(last_active or "")[:16],
+        "online": online,
+        "logins_30d": login_count(name, since),
+        "actions_30d": sum(_audit_counts(company, name, since).values()),
+        "recent": [{"text": action_info(r.action)["text"], "at": str(r.creation)[:16]} for r in recent],
+        "usage_time": None,
+    }
 
 
 # ---------------------------------------------------------------------------------------------- à faire

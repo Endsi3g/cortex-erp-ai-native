@@ -246,10 +246,25 @@ class TestReportAndPrintRights(unittest.TestCase):
 
 
 class TestLandingAndWorkspaceDesign(unittest.TestCase):
-    def test_people_land_on_the_cortex_rental_workspace(self):
+    def test_people_land_on_the_ai_assistant_with_a_safe_fallback(self):
+        from types import SimpleNamespace
+
         from cortex_rental import auth_hooks
 
-        self.assertEqual(auth_hooks.HOME_ROUTE, "cortex-rental")
+        self.assertEqual(auth_hooks.HOME_ROUTE, "cortex-home")
+        self.assertEqual(auth_hooks.FALLBACK_HOME_ROUTE, "cortex-rental")
+        original = auth_hooks.frappe
+        try:
+            auth_hooks.frappe = SimpleNamespace(
+                get_all=lambda *a, **k: ["Rental Operator"], get_roles=lambda user: ["Rental Operator", "Guest"]
+            )
+            self.assertEqual(auth_hooks.home_route_for("a@b.c"), "cortex-home")
+            auth_hooks.frappe = SimpleNamespace(
+                get_all=lambda *a, **k: ["Rental Operator"], get_roles=lambda user: ["Customer"]
+            )
+            self.assertEqual(auth_hooks.home_route_for("a@b.c"), "cortex-rental")
+        finally:
+            auth_hooks.frappe = original
 
     def test_number_cards_are_black_except_the_ones_that_need_attention(self):
         cards = {}

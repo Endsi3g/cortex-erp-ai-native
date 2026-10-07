@@ -185,3 +185,43 @@ body.cx-nav-on .page-head .page-actions {
 	white-space: normal;
 	overflow: visible;
 }
+
+
+/* ---- Chargement par page (cortex_loading.js) : barre fine et contenu estompé, sans effet sur une navigation rapide ---- */
+.cx-route-bar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 1090;
+	height: 2px;
+	overflow: hidden;
+	background: rgba(22, 127, 91, 0.14);
+	pointer-events: none;
+}
+.cx-route-bar::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	width: 38%;
+	background: var(--cortex-accent, #167f5b);
+	animation: cx-route-slide 1.1s var(--cx-ease, cubic-bezier(0.2, 0.8, 0.2, 1)) infinite;
+}
+body.cx-route-loading .page-container .layout-main-section {
+	opacity: 0.6;
+	transition: opacity 0.18s ease;
+}
+@keyframes cx-route-slide {
+	0% { transform: translateX(-100%); }
+	100% { transform: translateX(360%); }
+}
+@media (prefers-reduced-motion: reduce) {
+	.cx-route-bar::before {
+		animation: none;
+		width: 100%;
+		opacity: 0.55;
+	}
+	body.cx-route-loading .page-container .layout-main-section {
+		transition: none;
+	}
+}

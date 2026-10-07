@@ -46,7 +46,12 @@
     "sb_tech",
     "rental_version",
     "token_hash",
-    "snapshot_json"
+    "snapshot_json",
+    "payment_method_choice",
+    "terms_version",
+    "terms_hash",
+    "terms_accepted_at",
+    "terms_accept_proof"
   ],
   "fields": [
     {
@@ -261,6 +266,37 @@
       "label": "Instantané du devis",
       "read_only": 1,
       "hidden": 1
+    },
+    {
+      "fieldname": "payment_method_choice",
+      "fieldtype": "Select",
+      "label": "Mode de paiement choisi",
+      "options": "\nOnline\nCheque",
+      "read_only": 1
+    },
+    {
+      "fieldname": "terms_version",
+      "fieldtype": "Int",
+      "label": "Version des conditions acceptées",
+      "read_only": 1
+    },
+    {
+      "fieldname": "terms_hash",
+      "fieldtype": "Data",
+      "label": "Empreinte des conditions acceptées",
+      "read_only": 1
+    },
+    {
+      "fieldname": "terms_accepted_at",
+      "fieldtype": "Datetime",
+      "label": "Conditions acceptées le",
+      "read_only": 1
+    },
+    {
+      "fieldname": "terms_accept_proof",
+      "fieldtype": "Data",
+      "label": "Preuve technique (empreinte IP et navigateur)",
+      "read_only": 1
     }
   ],
   "permissions": [

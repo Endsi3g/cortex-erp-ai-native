@@ -33,15 +33,48 @@ DEFAULTS: Dict[str, Any] = {
     "tier_rapide_enabled": 1,
     "tier_equilibre_enabled": 1,
     "tier_equilibre_model": "claude-sonnet-5-5",
-    "tier_equilibre_price_input": 3.0,
-    "tier_equilibre_price_output": 15.0,
+    "tier_equilibre_price_input": 2.0,
+    "tier_equilibre_price_output": 10.0,
     "tier_avance_enabled": 1,
     "tier_avance_model": "claude-opus-5-5",
-    "tier_avance_price_input": 15.0,
-    "tier_avance_price_output": 75.0,
+    "tier_avance_price_input": 4.0,
+    "tier_avance_price_output": 20.0,
+    # Luna (OpenAI GPT-6 Luna) : désactivé tant qu'une personne autorisée n'a pas saisi la clé OpenAI et activé le niveau.
+    "tier_luna_enabled": 0,
+    "tier_luna_model": "gpt-6-luna",
+    "tier_luna_price_input": 0.1,
+    "tier_luna_price_output": 0.5,
 }
 
-TIER_KEYS = ("rapide", "equilibre", "avance")
+# Identifiants et prix vérifiés auprès des fournisseurs le 2026-10-07 (pages officielles Anthropic et OpenAI, fiche
+# Gemini API). Un identifiant annoncé n'est pas une preuve de disponibilité : les prix sont à revérifier avant chaque
+# changement de tarif (Gemini 3.8 Flash passe de 0,75 $ / 3,75 $ à 1,50 $ / 7,50 $ le 1er janvier 2027).
+VERIFIED_MODELS = {
+    "gemini-3.8-flash": {
+        "provider": "Google",
+        "input": 0.75,
+        "output": 3.75,
+        "note": "Tarif jusqu'au 31 décembre 2026.",
+    },
+    "claude-sonnet-5-5": {"provider": "Anthropic", "input": 2.0, "output": 10.0, "note": ""},
+    "claude-opus-5-5": {"provider": "Anthropic", "input": 4.0, "output": 20.0, "note": ""},
+    "gpt-6-luna": {
+        "provider": "OpenAI",
+        "input": 0.1,
+        "output": 0.5,
+        "note": "Appels d'outils : raisonnement désactivé.",
+    },
+}
+
+# Modèles annoncés mais sans API publique : affichés « à venir », jamais sélectionnables.
+UPCOMING_MODELS = [
+    {
+        "label": "Gemini 4",
+        "note": "À venir : Google n'a publié ni identifiant ni tarif d'API (vérifié le 2026-10-07).",
+    }
+]
+
+TIER_KEYS = ("rapide", "equilibre", "avance", "luna")
 TIER_TEXT = {
     "rapide": ("Cortex Rapide", "Réponses rapides au coût le plus bas : le bon choix pour la plupart des questions."),
     "equilibre": ("Cortex Équilibré", "Meilleur compromis entre qualité des réponses et coût."),
@@ -49,6 +82,7 @@ TIER_TEXT = {
         "Cortex Avancé",
         "Raisonnement le plus poussé, pour les demandes complexes. Consomme le budget plus vite.",
     ),
+    "luna": ("Cortex Luna", "Très économique et grand contexte, pour les demandes simples et nombreuses."),
 }
 
 
@@ -57,6 +91,8 @@ def provider_key_for(model: str, values: Dict[str, Any]) -> str:
     lowered = (model or "").strip().lower()
     if lowered.startswith("claude"):
         return values.get("anthropic_api_key") or ""
+    if lowered.startswith("gpt-"):
+        return values.get("openai_api_key") or ""
     return values.get("api_key") or ""
 
 
@@ -107,6 +143,7 @@ def load() -> Dict[str, Any]:
     values["company_limits"] = {}
     values["api_key"] = ""
     values["anthropic_api_key"] = ""
+    values["openai_api_key"] = ""
     if not frappe:
         return values
     if frappe.db.exists("DocType", DOCTYPE):
@@ -127,10 +164,15 @@ def load() -> Dict[str, Any]:
             values["anthropic_api_key"] = (
                 get_decrypted_password(DOCTYPE, DOCTYPE, "anthropic_api_key", raise_exception=False) or ""
             )
+            values["openai_api_key"] = (
+                get_decrypted_password(DOCTYPE, DOCTYPE, "openai_api_key", raise_exception=False) or ""
+            )
         except Exception:
-            values["api_key"] = values["anthropic_api_key"] = ""
+            values["api_key"] = values["anthropic_api_key"] = values["openai_api_key"] = ""
     if not values["api_key"]:
         values["api_key"] = (getattr(frappe, "conf", None) or {}).get("gemini_api_key") or ""
     if not values["anthropic_api_key"]:
         values["anthropic_api_key"] = (getattr(frappe, "conf", None) or {}).get("anthropic_api_key") or ""
+    if not values["openai_api_key"]:
+        values["openai_api_key"] = (getattr(frappe, "conf", None) or {}).get("openai_api_key") or ""
     return values

@@ -1,7 +1,7 @@
 """Fournisseurs de modèles. Changer de modèle = changer le champ « Modèle » des réglages de l'IA ; changer de
 fournisseur = ajouter une classe ici. Le reste de la passerelle ne connaît que l'interface `LLMProvider`.
 
-Le préfixe de l'identifiant choisit le fournisseur (`gemini-…` → Google, `claude-…` → Anthropic). Aucun identifiant de modèle n'est codé en dur
+Le préfixe de l'identifiant choisit le fournisseur (`gemini-…` → Google, `claude-…` → Anthropic, `gpt-…` → OpenAI). Aucun identifiant de modèle n'est codé en dur
 ailleurs que dans les réglages.
 """
 
@@ -290,6 +290,121 @@ class AnthropicProvider(LLMProvider):
         raise last or AIProviderError("Le service d'IA est indisponible.")
 
 
+class OpenAIProvider(LLMProvider):
+    """OpenAI GPT (API « Chat Completions » avec appel de fonctions).
+
+    GPT-6 Luna n'accepte l'appel de fonctions en Chat Completions que si `reasoning_effort` vaut « none » (documentation
+    OpenAI, vérifiée le 2026-10-07). Non essayé avec une vraie clé : couvert par des tests de format seulement."""
+
+    name = "OpenAI GPT"
+    URL = "https://api.openai.com/v1/chat/completions"
+
+    def user_message(self, text: str) -> Any:
+        return {"role": "user", "content": text}
+
+    def history_message(self, role: str, text: str) -> Any:
+        return {"role": "user" if role == "user" else "assistant", "content": text}
+
+    def assistant_message(self, result: ProviderResult) -> Any:
+        # Le message natif est renvoyé tel quel : l'API exige les mêmes `tool_calls[].id` au tour suivant.
+        if result.raw:
+            return result.raw
+        message: Dict[str, Any] = {"role": "assistant", "content": result.text or None}
+        if result.tool_calls:
+            message["tool_calls"] = [
+                {
+                    "id": c.id,
+                    "type": "function",
+                    "function": {"name": c.name, "arguments": json.dumps(c.args, ensure_ascii=False)},
+                }
+                for c in result.tool_calls
+            ]
+        return message
+
+    def tool_results_message(self, results: List[Dict[str, Any]]) -> Any:
+        # Un message « tool » par appel : la passerelle accepte une liste de messages.
+        return [
+            {
+                "role": "tool",
+                "tool_call_id": r.get("id") or "",
+                "content": json.dumps(r["result"], ensure_ascii=False, default=str),
+            }
+            for r in results
+        ]
+
+    def request_body(self, system: str, messages: List[Any], tools: List[Dict[str, Any]]) -> Dict[str, Any]:
+        body: Dict[str, Any] = {
+            "model": self.model,
+            "messages": [{"role": "system", "content": system}] + list(messages),
+            "max_completion_tokens": self.max_output_tokens,
+            "reasoning_effort": "none",
+        }
+        if tools:
+            body["tools"] = [
+                {
+                    "type": "function",
+                    "function": {"name": t["name"], "description": t["description"], "parameters": t["parameters"]},
+                }
+                for t in tools
+            ]
+        return body
+
+    def parse(self, payload: Dict[str, Any]) -> ProviderResult:
+        choices = payload.get("choices") or []
+        message = (choices[0].get("message") if choices else None) or {}
+        if message.get("refusal") and not message.get("content") and not message.get("tool_calls"):
+            raise AIProviderError("Le modèle n'a pas pu répondre à cette demande.")
+        calls = []
+        for call in message.get("tool_calls") or []:
+            function = call.get("function") or {}
+            try:
+                args = json.loads(function.get("arguments") or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            calls.append(
+                ToolCall(
+                    name=function.get("name", ""), args=args if isinstance(args, dict) else {}, id=call.get("id", "")
+                )
+            )
+        usage = payload.get("usage") or {}
+        return ProviderResult(
+            text=(message.get("content") or "").strip(),
+            tool_calls=calls,
+            input_tokens=int(usage.get("prompt_tokens") or 0),
+            output_tokens=int(usage.get("completion_tokens") or 0),
+            raw={k: v for k, v in message.items() if k in ("role", "content", "tool_calls")} if calls else None,
+        )
+
+    def generate(self, system: str, messages: List[Any], tools: List[Dict[str, Any]]) -> ProviderResult:
+        if not self.api_key:
+            raise AIConfigurationError("Aucune clé API OpenAI n'est configurée.")
+        data = json.dumps(self.request_body(system, messages, tools), ensure_ascii=False).encode("utf-8")
+        last: Optional[Exception] = None
+        for attempt in range(2):
+            request = urllib.request.Request(
+                self.URL,
+                data=data,
+                headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    return self.parse(json.loads(response.read().decode("utf-8")))
+            except urllib.error.HTTPError as exc:
+                last = GeminiProvider._http_error(exc)
+                if not (isinstance(last, AIProviderError) and last.retryable) or attempt:
+                    raise last from exc
+                time.sleep(1.0)
+            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+                last = AIProviderError(
+                    "Le service d'IA n'a pas répondu à temps. Réessayez dans un instant.", retryable=True
+                )
+                if attempt:
+                    raise last from exc
+                time.sleep(1.0)
+        raise last or AIProviderError("Le service d'IA est indisponible.")
+
+
 class ScriptedProvider(LLMProvider):
     """Fournisseur de test : rejoue des réponses prévues, sans réseau. Sert aux tests et au mode développement."""
 
@@ -326,6 +441,8 @@ def provider_for(model: str, api_key: str, **options) -> LLMProvider:
         return GeminiProvider(model.strip(), api_key, **options)
     if lowered.startswith("claude"):
         return AnthropicProvider(model.strip(), api_key, **options)
+    if lowered.startswith("gpt-"):
+        return OpenAIProvider(model.strip(), api_key, **options)
     raise AIConfigurationError(
-        f"Modèle d'IA non pris en charge : « {model} ». Utilisez un identifiant « gemini-… » ou « claude-… »."
+        f"Modèle d'IA non pris en charge : « {model} ». Utilisez un identifiant « gemini-… », « claude-… » ou « gpt-… »."
     )

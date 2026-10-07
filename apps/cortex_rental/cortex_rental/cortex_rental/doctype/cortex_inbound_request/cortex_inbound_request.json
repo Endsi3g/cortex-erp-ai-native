@@ -69,6 +69,26 @@
       "fieldname": "processed_by",
       "fieldtype": "Data",
       "label": "Processed By (Agent / User)"
+    },
+    {
+      "fieldname": "requester_name",
+      "fieldtype": "Data",
+      "label": "Nom du demandeur",
+      "read_only": 1
+    },
+    {
+      "fieldname": "public_message",
+      "fieldtype": "Small Text",
+      "label": "Message au client",
+      "description": "Visible par le client sur sa page de suivi (aucune information interne)."
+    },
+    {
+      "fieldname": "tracking_hash",
+      "fieldtype": "Data",
+      "label": "Empreinte du jeton de suivi",
+      "hidden": 1,
+      "read_only": 1,
+      "no_copy": 1
     }
   ],
   "permissions": [

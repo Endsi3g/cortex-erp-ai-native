@@ -38,7 +38,8 @@ class TestTierAvailability(unittest.TestCase):
     def test_both_keys_offer_three_levels_priced_differently(self):
         v = values(api_key="g", anthropic_api_key="a")
         rows = {t["key"]: t for t in ai_settings.tiers(v)}
-        self.assertTrue(all(r["configured"] for r in rows.values()))
+        self.assertTrue(all(rows[k]["configured"] for k in ("rapide", "equilibre", "avance")))
+        self.assertFalse(rows["luna"]["configured"])  # désactivé par défaut, sans clé OpenAI
         self.assertEqual(rows["rapide"]["cost_index"], 1.0)
         self.assertGreater(rows["equilibre"]["cost_index"], rows["rapide"]["cost_index"])
         self.assertGreater(rows["avance"]["cost_index"], rows["equilibre"]["cost_index"])
@@ -70,7 +71,7 @@ class TestProviders(unittest.TestCase):
         self.assertIsInstance(provider_for("gemini-3.8-flash", "k"), GeminiProvider)
         self.assertIsInstance(provider_for("claude-opus-5-5", "k"), AnthropicProvider)
         with self.assertRaises(AIConfigurationError):
-            provider_for("gpt-x", "k")
+            provider_for("mistral-large", "k")
 
     def test_key_follows_provider(self):
         v = values(api_key="g", anthropic_api_key="a")

@@ -11,6 +11,7 @@ from cortex_rental.services import defense
 from cortex_rental.api.v1._shared import page_args
 from cortex_rental.permissions.agent_scopes import (
     get_company_context,
+    get_company_context_for_document,
     require_human_staff_role,
 )
 from cortex_rental.services.audit import AuditService
@@ -376,7 +377,11 @@ if frappe:
     @defense.safe_input
     def get_rental(name: str):
         require_human_staff_role()
-        return {"data": _serialize(_owned_transaction(name, get_company_context()))}
+        return {
+            "data": _serialize(
+                _owned_transaction(name, get_company_context_for_document("Cortex Rental Transaction", name))
+            )
+        }
 
     @frappe.whitelist(methods=["POST"])
     @defense.safe_input
@@ -456,7 +461,7 @@ if frappe:
     @defense.safe_input
     def request_reservation(name: str, version: int = None):
         require_human_staff_role()
-        company = get_company_context()
+        company = get_company_context_for_document("Cortex Rental Transaction", name)
         doc = _owned_transaction(name, company)
         if version is not None and int(version) != int(doc.version or 1):
             return {
@@ -486,7 +491,7 @@ if frappe:
     def renew_hold(name: str):
         """Reprend la retenue d'un devis (revérifiée sous verrou) : utile quand elle a expiré ou que le devis a changé."""
         require_human_staff_role()
-        doc = _owned_transaction(name, get_company_context())
+        doc = _owned_transaction(name, get_company_context_for_document("Cortex Rental Transaction", name))
         if doc.rental_state != "Quote":
             frappe.throw("Seul un devis retient le matériel.", frappe.ValidationError)
         from cortex_rental.services import holds
@@ -499,7 +504,7 @@ if frappe:
     def release_hold(name: str):
         """Libère le matériel retenu par un devis (il redevient disponible pour les autres)."""
         require_human_staff_role()
-        doc = _owned_transaction(name, get_company_context())
+        doc = _owned_transaction(name, get_company_context_for_document("Cortex Rental Transaction", name))
         if doc.rental_state != "Quote":
             frappe.throw("Seul un devis retient le matériel.", frappe.ValidationError)
         from cortex_rental.services import holds
@@ -514,7 +519,7 @@ if frappe:
         require_human_staff_role()
         if to_state not in ("Closed", "Cancelled", "Disputed"):
             frappe.throw("Cette action n'est pas offerte ici.", frappe.ValidationError)
-        company = get_company_context()
+        company = get_company_context_for_document("Cortex Rental Transaction", name)
         doc = _owned_transaction(name, company)
         if version is not None and int(version) != int(doc.version or 1):
             frappe.throw("La location a changé. Recharge-la avant de continuer.", frappe.ValidationError)
@@ -534,7 +539,7 @@ if frappe:
     @defense.safe_input
     def request_contract(name: str, version: int = None, override_reason: str = None):
         require_human_staff_role()
-        company = get_company_context()
+        company = get_company_context_for_document("Cortex Rental Transaction", name)
         doc = _owned_transaction(name, company)
         if version is not None and int(version) != int(doc.version or 1):
             return {
@@ -604,8 +609,8 @@ if frappe:
     @defense.safe_input
     def update_quote_draft():
         require_human_staff_role()
-        company = get_company_context()
         payload = frappe.local.form_dict
+        company = get_company_context_for_document("Cortex Rental Transaction", payload.get("rental_id"))
         if isinstance(payload.get("items"), str):
             payload["items"] = frappe.parse_json(payload["items"])
         doc = _owned_transaction(payload.get("rental_id"), company)
@@ -687,7 +692,7 @@ if frappe:
     @defense.safe_input
     def get_rental_audit(rental_id: str):
         require_human_staff_role()
-        company = get_company_context()
+        company = get_company_context_for_document("Cortex Rental Transaction", rental_id)
         _owned_transaction(rental_id, company)
         rows = frappe.get_all(
             "Audit Event",

@@ -136,3 +136,24 @@ if frappe:
             "team": account_insights.team_roster(company, user, administration.can_manage_team(user)),
             "can_manage_team": bool(administration.can_manage_team(user)),
         }
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def company_stats():
+        """Chiffres de la société de la personne connectée ; un bloc hors de ses droits est renvoyé à `null`."""
+        user, company = _me()
+        return account_insights.company_stats(company, user)
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def colleague_profile(email: str = ""):
+        """Profil en lecture seule d'une personne de la même société (tout compte de la société peut le consulter)."""
+        user, company = _me()
+        return account_insights.colleague_profile(company, user, email)
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    @defense.limit_user("set_theme", 60)
+    def set_theme(theme: str = ""):
+        """Apparence de la personne connectée : Light (par défaut), Dark ou Automatic."""
+        return {"data": account.set_theme(theme)}

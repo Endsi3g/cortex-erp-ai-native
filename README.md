@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/Socle-Frappe%20%7C%20ERPNext%20v15-3B82F6?style=for-the-badge&logoColor=white" alt="Frappe/ERPNext" />
   <img src="https://img.shields.io/badge/Interface-100%25%20fran%C3%A7ais%20(Qu%C3%A9bec)-6366F1?style=for-the-badge&logoColor=white" alt="Français" />
   <img src="https://img.shields.io/badge/IA-Cortex%20Rapide%20%7C%20%C3%89quilibr%C3%A9%20%7C%20Avanc%C3%A9-8B5CF6?style=for-the-badge&logoColor=white" alt="Modèles Cortex" />
-  <img src="https://img.shields.io/badge/Release-v0.7.0-10B981?style=for-the-badge&logoColor=white" alt="v0.7.0" />
+  <img src="https://img.shields.io/badge/Release-v0.15.1-10B981?style=for-the-badge&logoColor=white" alt="v0.15.1" />
 </p>
 
 </div>
@@ -35,7 +35,7 @@
 
 ## L'assistant IA
 
-- **Modèles Cortex** : *Rapide* (Gemini), *Équilibré* (Claude Sonnet 5.5) et *Avancé* (Claude Opus 5.5). Chaque niveau a son identifiant et ses prix par million de jetons dans les réglages (*Cortex AI Settings*) ; il n'est offert que si la clé de son fournisseur existe. Le budget mensuel de la société compte le coût réel du niveau utilisé. Les clés restent côté serveur.
+- **Modèles Cortex** : *Rapide* (Gemini), *Équilibré* (Claude Sonnet 5.5), *Avancé* (Claude Opus 5.5) et *Luna* (OpenAI GPT-6 Luna, désactivé par défaut). Chaque niveau a son identifiant et ses prix par million de jetons dans les réglages (*Cortex AI Settings*) ; il n'est offert que si la clé de son fournisseur existe. Le budget mensuel de la société compte le coût réel du niveau utilisé. Les clés restent côté serveur.
 - **Mode démonstration** : sans clé, l'assistant répond à quatre demandes (disponibilité, retards de retour, approbations en attente, catalogue) avec de vraies données, et l'affiche clairement.
 - **Garde-fous** : outils en lecture sous les droits de la personne, aucune écriture ni approbation par l'IA, plafond de budget avec bascule vers un modèle économique, historique masquable (les messages restent au journal).
 - Détails et limites : [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md).

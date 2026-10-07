@@ -24,6 +24,8 @@ app_color = "#047857"
 # own styling and isn't part of the Desk chrome these files target.
 website_route_rules = [
     {"from_route": "/devis/<token>", "to_route": "devis"},
+    {"from_route": "/demande/<slug>", "to_route": "demande"},
+    {"from_route": "/suivi/<token>", "to_route": "suivi"},
 ]
 
 app_include_css = [
@@ -39,6 +41,8 @@ app_include_css = [
     "/assets/cortex_rental/css/cortex-dossier.css",
     "/assets/cortex_rental/css/cortex-onboarding.css",
     "/assets/cortex_rental/css/cortex-desk-fixes.css",
+    # Dernière : couche du mode sombre (généré par bin/generate-dark-theme.mjs), sans effet en mode clair.
+    "/assets/cortex_rental/css/cortex-dark.css",
 ]
 
 # Global floating Cortex Copilot launcher — mounted on every Desk page
@@ -51,6 +55,7 @@ app_include_js = [
     "cortex_copilot.bundle.js",
     "/assets/cortex_rental/js/cortex_desk.js",
     "/assets/cortex_rental/js/cortex_nav.js",
+    "/assets/cortex_rental/js/cortex_loading.js",
     "/assets/cortex_rental/js/cortex_pages.js",
     "/assets/cortex_rental/js/cortex_policy.js",
     "/assets/cortex_rental/js/cortex_dossier.js",

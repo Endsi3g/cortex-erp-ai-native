@@ -191,6 +191,19 @@ cortex.AccountPage = class AccountPage {
 				.catch(() => $btn.prop("disabled", false));
 		});
 
+		const themes = [["Light", __("Clair"), __("Par défaut")], ["Dark", __("Sombre"), __("Repose les yeux le soir")], ["Automatic", __("Automatique"), __("Suit le réglage de votre appareil")]];
+		const look = this.card(
+			__("Apparence"),
+			__("Le mode clair reste le mode par défaut. Votre choix est enregistré pour votre compte."),
+			`<div class="cx-acct-grid three" role="radiogroup" aria-label="${__("Apparence")}">${themes
+				.map(([value, label, hint]) => `<label class="cx-hero-num" style="cursor:pointer"><input type="radio" name="cx-theme" value="${value}" ${(d.theme || "Light") === value ? "checked" : ""}> <b style="font-size:15px">${label}</b><span>${hint}</span></label>`)
+				.join("")}</div>`
+		);
+		look.on("change", "input[name=cx-theme]", (e) => {
+			const value = e.target.value;
+			cortex.applyTheme(value);
+			this.call("set_theme", { theme: value }, "POST").then(() => this.toast(__("Apparence enregistrée."))).catch(() => this.toast(__("L'apparence n'a pas pu être enregistrée."), "red"));
+		});
 		const todo = this.card(__("Ce qui m'attend"), __("Vos dossiers qui demandent une action maintenant. Chaque ligne ouvre la liste concernée."), `<ul class="cx-todo"><li class="cx-acct-muted">${__("Chargement…")}</li></ul>`);
 		this.call("todo").then((r) => {
 			todo.find("ul").html(
@@ -212,7 +225,7 @@ cortex.AccountPage = class AccountPage {
 				<a class="btn btn-default btn-sm" href="/app/cortex-account/securite">${__("Mes appareils")}</a>
 			</div>`
 		);
-		this.$body.append(hero, todo, form, quick);
+		this.$body.append(hero, todo, form, look, quick);
 	}
 
 	pickPhoto() {
@@ -608,12 +621,97 @@ cortex.AccountPage = class AccountPage {
 	}
 
 	// ---------- Société et rôles : une seule colonne ----------
+	// Profil en lecture seule d'une personne de la société : tout compte de la société peut le consulter, seul le
+	// propriétaire gère les comptes (page « Équipe et règles »). Le temps d'utilisation n'est pas mesuré : jamais affiché.
+	showColleague(email) {
+		this.call("colleague_profile", { email }).then((p) => {
+			const dialog = new frappe.ui.Dialog({ title: p.name });
+			const photo = p.photo ? `<img src="${this.esc(p.photo)}" alt="" width="64" height="64" style="border-radius:50%;object-fit:cover">` : `<span class="cx-avatar cx-avatar-initials" style="width:64px;height:64px;display:grid;place-items:center;border-radius:50%;background:#eef3ef">${this.esc((p.name || "?").split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase())}</span>`;
+			const line = (label, value) => (value ? `<div><dt>${label}</dt><dd>${value}</dd></div>` : "");
+			const presence = p.online ? `<span class="indicator-pill green">${__("En ligne")}</span>` : `<span class="text-muted">${p.last_active ? __("Vu {0}", [this.when(p.last_active)]) : __("Jamais connecté")}</span>`;
+			const recent = p.recent.length ? `<ul class="cx-recent">${p.recent.map((r) => `<li><span>${this.esc(r.text)}</span><span class="cx-acct-muted">${this.when(r.at)}</span></li>`).join("")}</ul>` : `<p class="cx-acct-muted">${__("Aucune action enregistrée.")}</p>`;
+			const contact = [p.email ? `<a class="btn btn-default btn-sm" href="mailto:${this.esc(p.email)}">${__("Écrire un courriel")}</a>` : "", p.phone ? `<a class="btn btn-default btn-sm" href="tel:${this.esc(p.phone)}">${__("Appeler")}</a>` : ""].join(" ");
+			dialog.$body.html(
+				`<div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">${photo}<div><b>${this.esc(__(p.role.label))}</b><div>${presence}</div>${p.enabled ? "" : `<div class="text-muted">${__("Compte désactivé")}</div>`}</div></div>
+				<dl class="cx-acct-meta">${line(__("Courriel"), this.esc(p.email))}${line(__("Téléphone"), this.esc(p.phone))}${line(__("Membre depuis"), this.esc(p.member_since))}${line(__("Connexions (30 jours)"), this.n(p.logins_30d))}${line(__("Actions (30 jours)"), this.n(p.actions_30d))}</dl>
+				<h6>${__("Activité récente")}</h6>${recent}<div style="margin-top:10px">${contact}</div>
+				<p class="cx-acct-muted" style="margin-top:10px">${__("Le temps d'utilisation n'est pas mesuré par Cortex.")}</p>`
+			);
+			dialog.show();
+		});
+	}
+
+	// Abonnement Cortex (propriétaire seulement). Les droits viennent de Stripe via le webhook signé, jamais d'ici.
+	renderSubscription(after) {
+		const card = this.card(__("Abonnement Cortex"), __("Plan, modules et niveaux d'IA de votre société."), `<div class="cx-sub-body"><p class="cx-acct-muted">${__("Chargement…")}</p></div>`);
+		card.insertAfter(after);
+		const box = card.find(".cx-sub-body");
+		const money = (v, cur) => `${Number(v || 0).toLocaleString("fr-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur === "USD" ? "$ US" : "$"}`;
+		const STATUS = { Active: __("Actif"), Trialing: __("Période d'essai"), "Past Due": __("Paiement en retard"), Canceled: __("Annulé"), Inactive: __("Aucun abonnement") };
+		this.call("get_subscription", {}, "GET", "subscriptions").then((r) => {
+			const sub = (r && r.data) || r || {};
+			if (!sub.billing_enabled) {
+				box.html(`<p class="cx-acct-muted">${__("La facturation des abonnements n'est pas encore activée : aucun frais n'est prélevé et aucune fonction n'est restreinte.")}</p>`);
+				return;
+			}
+			const cat = sub.catalog || { base: {}, options: [] };
+			const active = ["Active", "Trialing", "Past Due"].includes(sub.status);
+			let html = `<p><b>${STATUS[sub.status] || this.esc(sub.status)}</b>${sub.current_period_end ? ` · ${__("période payée jusqu'au")} ${this.when(sub.current_period_end)}` : ""}${sub.cancel_at_period_end ? ` · <span class="text-danger">${__("se termine à la fin de la période")}</span>` : ""}</p>`;
+			if (sub.status === "Past Due") html += `<p class="cx-acct-note">${__("Le dernier paiement a échoué : mettez à jour votre carte dans « Gérer l'abonnement ».")}</p>`;
+			html += `<p>${this.esc(cat.base.label || "")} — <b>${money(cat.base.monthly_price, cat.currency)}</b> ${__("par mois")}</p>`;
+			if (!active && cat.options.length) {
+				html += `<fieldset class="cx-sub-options"><legend class="cx-acct-muted">${__("Options")}</legend>${cat.options.map((o, i) => `<label style="display:block"><input type="checkbox" data-opt="${i}"> ${this.esc(o.label)} — ${money(o.monthly_price, cat.currency)} ${__("par mois")}</label>`).join("")}</fieldset>`;
+			}
+			html += `<div class="cx-acct-actions">${active ? `<button type="button" class="btn btn-default btn-sm" data-sub="portal">${__("Gérer l'abonnement")}</button>` : `<button type="button" class="btn btn-primary btn-sm" data-sub="checkout">${__("Souscrire")}</button>`}</div>`;
+			html += `<p class="cx-acct-muted">${__("Les taxes applicables sont calculées par Stripe. Votre abonnement est distinct des paiements de location de vos clients.")}</p>`;
+			box.html(html);
+			box.on("click", "[data-sub=checkout]", () => {
+				const options = [];
+				box.find("[data-opt]:checked").each((_, el) => options.push({ kind: cat.options[$(el).data("opt")].kind, key: cat.options[$(el).data("opt")].key }));
+				this.call("start_checkout", { options: JSON.stringify(options) }, "POST", "subscriptions").then((x) => {
+					const url = ((x && x.data) || x || {}).url;
+					if (url) window.location.href = url;
+				});
+			});
+			box.on("click", "[data-sub=portal]", () => {
+				this.call("open_portal", {}, "POST", "subscriptions").then((x) => {
+					const url = ((x && x.data) || x || {}).url;
+					if (url) window.location.href = url;
+				});
+			});
+		}).catch(() => box.html(`<p class="cx-acct-muted">${__("L'abonnement est indisponible pour le moment. Réessayez dans un instant.")}</p>`));
+	}
+
 	renderCompany(d) {
 		const head = this.card(
 			"",
 			"",
 			`<div class="cx-co-head">${d.company_logo ? `<img src="${this.esc(d.company_logo)}" alt="" class="cx-co-logo">` : ""}<div><h2>${this.esc(d.company_title || d.company || "—")}</h2><p class="cx-co-role"><b>${this.esc(__(d.role.label))}</b> <span>${this.esc(__(d.role.help))}</span></p></div></div><div class="cx-cta-row cx-co-cta" hidden></div>`
 		);
+		const stats = this.card(__("Votre société en chiffres"), __("Lus dans vos dossiers. Une tuile absente veut dire que votre rôle ne donne pas accès à ces données."), `<div class="cx-co-stats"><p class="cx-acct-muted">${__("Chargement…")}</p></div>`);
+		this.call("company_stats").then((c) => {
+			const tile = (label, value, href, note) => `<a class="cx-hero-num" href="${this.esc(href || "#")}"><b>${value}</b><span>${label}</span>${note ? `<small>${note}</small>` : ""}</a>`;
+			const tiles = [];
+			if (c.team) tiles.push(tile(__("Personnes actives"), this.n(c.team.active), "/app/cortex-admin"));
+			if (c.customers) tiles.push(tile(__("Clients actifs"), this.n(c.customers.active), "/app/customer"));
+			if (c.equipment) {
+				const u = c.equipment.units;
+				const out = u ? Object.entries(u).filter(([k]) => k !== "Active" && u[k]).map(([k, n]) => `${n} ${__(({ Quarantine: "en quarantaine", "Under Repair": "en réparation", Missing: "manquant", Decommissioned: "retiré" })[k] || k)}`).join(" · ") : "";
+				tiles.push(tile(__("Équipements au catalogue"), this.n(c.equipment.items), "/app/cortex-rental-item-profile", u ? `${this.n(u.Active || 0)} ${__("unités actives")}${out ? " · " + out : ""}` : ""));
+			}
+			if (c.rentals) {
+				tiles.push(tile(__("Locations en cours"), this.n(c.rentals.open), "/app/cortex-rental-transaction?rental_state=%5B%22in%22%2C%5B%22Reservation%22%2C%22Contract%22%2C%22Checked%20Out%22%5D%5D"));
+				tiles.push(tile(__("Devis ouverts"), this.n(c.rentals.quotes), "/app/cortex-rental-transaction?rental_state=Quote"));
+				tiles.push(tile(__("Créés en {0} jours", [c.period_days]), this.n(c.rentals.created), "/app/cortex-rental-transaction"));
+				tiles.push(tile(__("Retours en retard"), this.n(c.rentals.late_returns), "/app/cortex-rental-transaction?rental_state=Checked%20Out", c.rentals.late_returns ? __("à relancer") : ""));
+			}
+			if (c.billing) {
+				tiles.push(tile(__("Facturé en {0} jours", [c.period_days]), this.money(c.billing.invoiced), "/app/cortex-rental-invoice"));
+				if (c.billing.collected !== null) tiles.push(tile(__("Encaissé en {0} jours", [c.period_days]), this.money(c.billing.collected), "/app/cortex-rental-payment"));
+				tiles.push(tile(__("Solde dû"), this.money(c.billing.outstanding), "/app/cortex-rental-invoice?status=%5B%22in%22%2C%5B%22Issued%22%2C%22Partially%20Paid%22%5D%5D", `${this.n(c.billing.outstanding_count)} ${__("factures")}`));
+			}
+			stats.find(".cx-co-stats").html(tiles.length ? `<div class="cx-hero-nums">${tiles.join("")}</div>` : `<p class="cx-acct-muted">${__("Votre rôle ne donne accès à aucune statistique de la société.")}</p>`);
+		}).catch(() => stats.find(".cx-co-stats").html(`<p class="cx-acct-muted">${__("Les statistiques sont indisponibles pour le moment. Réessayez dans un instant.")}</p>`));
 		const ai = this.card(__("Assistant IA ce mois-ci"), __("Consommation de votre société."), `<div class="cx-acct-ai"><p class="cx-acct-muted">${__("Chargement…")}</p></div>`);
 		const rights = this.card(__("Mes droits"), __("Ce que votre compte peut faire, écran par écran. Ils découlent de votre rôle : un administrateur peut les ajuster dans « Équipe et règles »."), `<div class="cx-acct-muted">${__("Chargement…")}</div>`);
 		const team = this.card(__("Mon équipe"), __("Les personnes actives de votre société et leur rôle."), `<div class="cx-acct-muted">${__("Chargement…")}</div>`);
@@ -624,18 +722,24 @@ cortex.AccountPage = class AccountPage {
 				this.table([__("Écran"), __("Voir"), __("Créer"), __("Modifier"), ""], o.rights.map((r) => `<tr><td>${this.esc(__(r.area))}</td><td class="c">${mark(r.read)}</td><td class="c">${mark(r.create)}</td><td class="c">${mark(r.write)}</td><td class="r">${r.href ? `<a href="${this.esc(r.href)}">${__("Ouvrir")}</a>` : ""}</td></tr>`), "rights")
 			);
 			team.find(".cx-acct-muted").replaceWith(
-				this.table([__("Personne"), __("Rôle"), __("Dernière activité")], o.team.map((m) => `<tr><td><b>${this.esc(m.name)}</b>${m.you ? ` <span class="cx-acct-muted">(${__("vous")})</span>` : ""}${m.email ? `<div class="cx-acct-muted">${this.esc(m.email)}</div>` : ""}</td><td>${this.esc(__(m.role))}</td><td class="cx-acct-muted">${m.last_active ? this.when(m.last_active) : "—"}</td></tr>`))
+				this.table([__("Personne"), __("Rôle"), __("Dernière activité")], o.team.map((m) => `<tr><td><a href="#" class="cx-person" data-person="${this.esc(m.id)}"><b>${this.esc(m.name)}</b></a>${m.you ? ` <span class="cx-acct-muted">(${__("vous")})</span>` : ""}${m.email ? `<div class="cx-acct-muted">${this.esc(m.email)}</div>` : ""}</td><td>${this.esc(__(m.role))}</td><td class="cx-acct-muted">${m.last_active ? this.when(m.last_active) : "—"}</td></tr>`))
 			);
+			if (o.can_manage_team) this.renderSubscription(head);
+			if (o.can_manage_team) this.card(__("Configuration de l'entreprise"), __("Reprenez l'assistant de configuration (entreprise, équipe, catalogue, taxes) à tout moment."), `<a class="btn btn-default btn-sm" href="/app/cortex-setup">${__("Ouvrir la configuration")}</a>`).insertAfter(head);
 			if (o.can_manage_team) head.find(".cx-co-cta").prop("hidden", false).html(`<a class="btn btn-primary btn-sm" href="/app/cortex-admin">${__("Gérer l'équipe et les rôles")}</a><a class="btn btn-default btn-sm" href="/app/cortex-account/securite">${__("Appareils de l'équipe")}</a><a class="btn btn-default btn-sm" data-go="activite" data-scope="team" href="#">${__("Activité de l'équipe")}</a>`);
+		});
+		team.on("click", "[data-person]", (e) => {
+			e.preventDefault();
+			this.showColleague($(e.currentTarget).data("person"));
 		});
 		this.call("ai_usage").then((u) => {
 			const $box = ai.find(".cx-acct-ai");
 			if (!u.visible) return $box.html(`<p class="cx-acct-muted">${__("Votre rôle ne donne pas accès à la consommation de l'IA.")}</p>`);
 			const pct = u.cost_cap || u.token_cap ? Math.min(100, u.percent) : 0;
-			const label = u.cost_cap ? `${u.cost.toFixed(2)} $ / ${u.cost_cap.toFixed(0)} $` : `${u.tokens.toLocaleString("fr-CA")} ${__("jetons")}`;
+			const label = u.cost_cap ? `${this.money(u.cost)} / ${this.money(u.cost_cap)}` : `${u.tokens.toLocaleString("fr-CA")} ${__("jetons")}`;
 			const note = u.economy ? __("Plafond atteint : l'assistant utilise un modèle plus économique.") : u.blocked ? __("Plafond dépassé : l'assistant est en pause jusqu'au mois prochain.") : u.warning ? __("Vous approchez du plafond mensuel.") : "";
 			$box.html(`<div class="cx-acct-bar" role="img" aria-label="${pct} %"><i style="width:${pct}%"></i></div><p><strong>${label}</strong> · ${u.calls} ${__("appels")}${u.cost_cap ? ` · ${u.percent} %` : ""}</p>${note ? `<p class="cx-acct-note">${note}</p>` : ""}`);
 		});
-		this.$body.append(head, ai, rights, team);
+		this.$body.append(head, stats, ai, rights, team);
 	}
 };

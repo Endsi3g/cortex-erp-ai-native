@@ -53,3 +53,31 @@ if frappe:
             "Cortex Rental Invoice", invoice, ["balance", "status", "amount_paid"], as_dict=True
         )
         return {"payment": name, "invoice": invoice, **balance}
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def tax_presets():
+        """Modèles de taxes canadiens proposés et celui qui correspond aux réglages de la société."""
+        require_human_staff_role()
+        from cortex_rental.services import tax_presets as presets
+
+        return {"data": presets.list_presets(get_company_context())}
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    @defense.limit_user("tax_preset", 20)
+    def apply_tax_preset(preset: str = ""):
+        """Applique un modèle de taxes aux réglages financiers de la société (droit d'écriture requis, audité)."""
+        require_human_staff_role()
+        from cortex_rental.services import tax_presets as presets
+
+        return {"data": presets.apply_preset(get_company_context(), preset, frappe.session.user)}
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def default_terms():
+        """Modèle de départ des conditions du contrat (la société l'adapte librement; rien n'est enregistré)."""
+        require_human_staff_role()
+        from cortex_rental.services import contract_terms
+
+        return {"data": {"text": contract_terms.DEFAULT_TERMS.strip()}}

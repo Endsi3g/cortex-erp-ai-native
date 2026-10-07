@@ -2,6 +2,136 @@
 
 ## Unreleased
 
+
+## v0.15.1 — 2026-10-07
+
+Phase 9.6 et 9.7. **Vu uniquement dans un banc d'essai hors Desk (faux `frappe`, ma propre feuille de style de page) ; testé hors bench ; non essayé sur un Desk Frappe.** Kael signale (2026-10-07) que la barre latérale et le mode sombre ne correspondent pas, dans l'application réelle, à ce qui était demandé : voir le Handoff, « Phase 9.6 et 9.7 ».
+
+### Corrigé
+- **Mode sombre** : lignes de tableaux blanches à texte clair (Mon compte › Société : droits, équipe) : **vu et corrigé**. Boutons, compteurs, puces et tiroir à fond blanc codé en dur : ajoutés à la couche sombre, **non vus à l'écran**.
+- **Mon compte** : plafond d'IA au format canadien-français, activité récente d'un collègue lisible, noms de l'équipe sans bleu de lien par défaut.
+- Barre latérale : pastille et carte de société en mode réduit sur mobile ; avatars à initiales lisibles en sombre.
+
+### Ajouté / modifié
+- **Pied « Propulsé par Cortex »** cliquable vers le site de Cortex quand `cortex_site_url` est réglé dans la configuration du site (https seulement) ; logo clair en mode sombre.
+- **« Demande reçue »** épurée : une colonne, plus d'espace, **Copier le lien** en icône sur petit écran, actions avec icônes, FAQ à chevrons, pastille de lettre sans photo.
+- **Factures imprimées** (A4/Lettre) : logo de la société.
+
+### Pas encore vérifié
+- Formulaires du Desk (paiement avec le client en tête, réglages de taxes) : à ouvrir sur un bench.
+- L'adresse du site Web de Cortex n'est pas dans le dépôt : à régler (`set-config cortex_site_url`).
+
+## v0.15.0 — 2026-10-07
+
+Phase 9 (demandes de Kael du 2026-10-07), première partie. **Vu à l'écran dans Chromium pour le portail, le suivi et le devis ; testé hors bench.**
+
+### Ajouté
+- **Abonnements : valeurs par défaut modifiables** (devise CAD, 1 000 $/mois, enveloppe d'IA de 60 $, options Portail/Équilibré/Avancé/Luna, sociétés existantes exemptées) : patch une fois + bouton. **Prix des options = valeurs de départ à confirmer**; rien n'est facturé.
+- **Contrat : consentement explicite** (« J'ai lu et compris… ») avant d'accepter un devis, **conditions modifiables par société** avec modèle de départ et version, instantané par devis, preuves conservées (version, empreinte, date, empreinte IP/navigateur). Pas d'avis juridique requis (décision de Kael); ce n'est pas une signature certifiée.
+- **Portail** : logo, bannière, phrase d'accueil et couleur d'accent de la société; photos d'équipement; **pied de page « Propulsé par Cortex »** (portail, suivi, devis). Seuls les fichiers publics sont exposés.
+- **« Demande reçue »** dense et interactive : récapitulatif, étapes, copie du lien, courriel prérempli, ajout au calendrier (.ics), impression, nouvelle demande, FAQ. Page de suivi enrichie.
+
+### Corrigé
+- L'ADR-009 avait été créé dans `apps/docs/adr/` au lieu de `docs/adr/` (liens du Handoff cassés) : déplacé.
+
+## v0.14.0 — 2026-10-07
+
+Phase 8 du plan de livraison. **Premier passage : vérifié dans Chromium sur l'accueil IA et la grille de disponibilité; non vérifié sur un Desk Frappe.**
+
+### Ajouté
+- **Mode sombre** : choix Clair / Sombre / Automatique dans *Mon compte › Profil › Apparence* (enregistré par personne; **clair par défaut**).
+- **Couche sombre générée** (`bin/generate-dark-theme.mjs`) : appliquée seulement sous `html[data-theme="dark"]`, le mode clair n'est pas modifié. Contraste audité : 0 texte sous 4,5:1 sur les deux écrans vérifiés; palette testée (WCAG).
+- Captures de validation dans `docs/review/captures/mode-sombre/`.
+
+### Pas encore vérifié
+- Barre latérale, Mon compte, configuration, copilote et Desk de Frappe en sombre : à parcourir sur un Desk actif.
+
+## v0.13.0 — 2026-10-07
+
+Phase 7 du plan de livraison. **Codé et testé par événements Stripe simulés ; désactivé par défaut ; jamais essayé avec un compte Stripe.**
+
+### Ajouté
+- **Abonnements Cortex** (ADR-010) : plan de base, modules et niveaux d'IA payants par société; Stripe Checkout et portail; webhook signé, idempotent et ordonné; droits appliqués côté serveur (niveaux d'IA, portail client).
+- Carte « Abonnement Cortex » dans *Société et rôles* (propriétaire).
+- Réglages de plateforme *Cortex Subscription Settings* : l'activation exige clés, identifiants de prix et **confirmation humaine des prix**; sociétés exemptées possibles.
+
+### À savoir
+- Rien n'est facturé ni restreint tant que la facturation n'est pas activée. Prix, devise, enveloppe d'IA incluse et options sont à décider par une personne.
+
+## v0.12.0 — 2026-10-07
+
+Phase 6 du plan de livraison. **Codé et testé hors bench ; non essayé dans un navigateur.**
+
+### Ajouté
+- **Portail de demandes** (`/demande/<identifiant>`, sans compte) : demande de location, calendrier public du matériel (libre / limité / complet, sans quantité ni client), suivi par lien personnel (`/suivi/<jeton>`). Une demande ne réserve rien. Activé par société, protégé (limite par IP, champ piège, consentement, plafond quotidien).
+- **Paiement par chèque** : annonce par le client sur la page du devis, facture d'acompte créée, équipe prévenue, rapprochement quand l'entreprise enregistre le chèque. Rien n'est marqué payé par le client.
+- Listes « Chèques annoncés » et « Demandes du portail » dans Finance.
+- **ADR-009** : portail, chèque et parcours de signature (défini, non livré; validation juridique requise).
+
+### Corrigé
+- Le gabarit de suivi aurait affiché la méthode `dict.items` au lieu du matériel (bogue trouvé par le test de rendu).
+
+## v0.11.0 — 2026-10-07
+
+Phase 5 du plan de livraison (partielle). **Codé et testé hors bench ; non essayé sur un Desk Frappe.**
+
+### Ajouté
+- **Finance** : listes « Factures à encaisser » et « Factures récentes » (tous les raccourcis conservés).
+- **Paiements** : indicateurs paiement/remboursement; le client (solde dû, locations, retards) en tête du paiement.
+- **Formats d'impression de la facture** : A4 (par défaut) et Lettre, intégrés.
+- **Modèles de taxes** Québec, TPS seule, aucune taxe (`billing.apply_tax_preset`, audité, taux bornés par le serveur). Les provinces à TVH ne sont pas couvertes.
+- « New Email » traduit en « Nouveau courriel ».
+
+### Pas encore fait
+- Relevé de compte client imprimable, densification des paramètres, visualisation du catalogue, casse du statut « Actif ».
+
+## v0.10.0 — 2026-10-07
+
+Phase 4 du plan de livraison. **Codé et testé hors bench ; aucun fournisseur essayé avec une vraie clé.**
+
+### Corrigé
+- **Prix des niveaux IA** : Sonnet 5.5 = 2 $ / 10 $ et Opus 5.5 = 4 $ / 20 $ par million de jetons (page tarifaire d'Anthropic, 2026-10-07). Les anciens défauts surestimaient le coût dans le budget IA. Patch `correct_ai_tier_prices` (ne touche pas aux valeurs saisies à la main).
+
+### Ajouté
+- **Cortex Luna** (OpenAI `gpt-6-luna`) : fournisseur `OpenAIProvider`, clé OpenAI chiffrée côté serveur, désactivé par défaut.
+- **Gemini 4 « à venir »** dans le sélecteur (aucune API publique), jamais sélectionnable.
+- **Règles de la société** (taxes, acompte, retenue, approbation) dans le prompt système de l'assistant.
+- Tests : prix vérifiés, niveaux, fournisseur OpenAI (format), règles de la société.
+
+### À savoir
+- Gemini 3.8 Flash passe à 1,50 $ / 7,50 $ le 1er janvier 2027 : mettre les prix à jour dans les réglages.
+
+## v0.9.0 — 2026-10-07
+
+Phase 3 du plan de livraison (partielle). **Codé et testé hors bench ; non essayé sur un Desk Frappe.**
+
+### Ajouté
+- **Profil d'une personne de la société** (`account.colleague_profile`) : photo, rôle, courriel, téléphone, présence, connexions et actions sur 30 jours, dernières actions, boutons courriel et appel. Ouvert à toute la société, refusé hors société. Le temps d'utilisation n'est pas affiché (non mesuré).
+- Carte « Configuration de l'entreprise » dans *Société et rôles*; l'entrée « Configuration » de la barre latérale n'apparaît que tant que la configuration initiale est incomplète.
+- Tests de contrat : gestion des comptes réservée au propriétaire, profils limités à la société.
+
+### Pas encore fait
+- Alignement présence/activité, lisibilité des notifications, icône bleue, barre latérale du site Web, refonte des pages Notifications/Sécurité/Activité/Statistiques/Profil, messagerie entre collègues (piste ultérieure).
+
+## v0.8.0 — 2026-10-07
+
+Phases 1 et 2 du plan de livraison de Kael (`docs/frontend/CORTEX_UI_HANDOFF_V2.md`). **Codé et testé hors bench ; non essayé sur un Desk Frappe ni dans un navigateur.**
+
+### Corrigé
+- **Saisie vocale impossible** : l'en-tête `Permissions-Policy` interdisait le micro à toute la page (`microphone=()`); il l'autorise maintenant à Cortex seulement (`microphone=(self)`).
+- **« Cette location n'est pas disponible pour la société active »** à tort pour une personne autorisée sur plusieurs sociétés : l'action par location utilise désormais la société du dossier si la personne y est autorisée (`get_company_context_for_document`); une société hors de ses droits reste refusée.
+- **Grille de disponibilité** : les unités en quarantaine, en réparation, manquantes ou retirées ne comptent plus comme libres (comme la vérification qui fait foi).
+
+### Ajouté
+- **Saisie vocale honnête** (`cortexVoice.js`) : indisponibilité dite avant le clic, erreurs expliquées en français (permission, microphone, réseau, service, aucune voix), texte provisoire, reprise en `fr-FR`, zone d'état accessible.
+- **État réel du parc** dans Disponibilité (unités par état, matériel sorti) et **statistiques de la société** (Administration › Société et rôles, `account.company_stats`, chaque bloc selon les droits).
+- **Chargement par page** : barre fine et contenu estompé, respect de « moins d'animations ».
+- Arrivée sur l'Assistant IA (repli sur Cortex Rental sans droit d'accès), commande de repli de la barre latérale en bas du rail, barre repliée sur l'Assistant IA sans préférence enregistrée, libellé « Nom du projet ».
+- Tests : résolution de société, en-têtes, saisie vocale (Node), état du parc, statistiques, contrat de la phase 2.
+
+### Documentation
+- Le handoff décrivait comme codés des éléments absents du code (arrivée sur l'Assistant IA, repli de la barre, `X-Company-ID`, explications du dictaphone); corrigé et réellement implémenté.
+
 ## v0.7.0 — 2026-10-07
 
 Assistant IA refondu, interface pleine largeur, préparation à la production. Remplace les notes de v0.6.0 sur les actions « directes » de l'assistant : l'assistant ne crée plus rien de lui-même.

@@ -20,7 +20,11 @@ GUEST_ALLOWLIST = {
     "access_status",
     "respond",
     "start_payment",
+    "choose_cheque",
+    "portal_calendar",
+    "submit_portal_request",
     "stripe_webhook",
+    "subscription_webhook",
     "health",
     "ready",
 }
@@ -195,6 +199,23 @@ class TestSecurityHeadersAndBrake(unittest.TestCase):
         self.assertEqual(response.headers["X-Frame-Options"], "DENY")
         self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
         self.assertNotIn("Strict-Transport-Security", response.headers)  # jamais en clair
+
+    def test_microphone_is_allowed_for_the_page_itself_only(self):
+        """La saisie vocale de l'assistant exige `microphone=(self)` ; `()` la bloquait pour tout le monde."""
+
+        class Headers(dict):
+            pass
+
+        class Response:
+            headers = Headers()
+
+        response = Response()
+        response.headers = Headers()
+        defense.security_headers(response, None)
+        policy = response.headers["Permissions-Policy"]
+        self.assertIn("microphone=(self)", policy)
+        self.assertNotIn("microphone=*", policy)
+        self.assertIn("geolocation=()", policy)  # le reste reste fermé
 
     def test_the_global_brake_is_far_above_human_use(self):
         self.assertGreaterEqual(defense.USER_PER_MINUTE, 600)

@@ -284,3 +284,39 @@ def get_company_context(company_header: Optional[str] = None) -> str:
         )
 
     return company_header
+
+
+def _explicit_company_hint() -> Optional[str]:
+    """Indice de société envoyé par le client (en-tête `X-Company-ID`, sinon paramètre `company`), jamais fiable seul."""
+    request = getattr(frappe.local, "request", None)
+    hint = request.headers.get("X-Company-ID") if request else None
+    if not hint and getattr(frappe.local, "form_dict", None):
+        hint = frappe.local.form_dict.get("company")
+    return hint or None
+
+
+def get_company_context_for_document(doctype: str, name: Optional[str]) -> str:
+    """Société à utiliser pour agir sur un dossier précis (location, facture…).
+
+    Une personne autorisée sur plusieurs sociétés (ou un administrateur) n'a pas de société « active » côté serveur :
+    prendre sa société par défaut faisait refuser, à tort, une location d'une autre de ses sociétés. Règles :
+
+    1. un indice explicite du client est toujours validé par `get_company_context` (rien ne change);
+    2. sinon, la société du dossier est utilisée **seulement si la personne y est autorisée**;
+    3. sinon, retour au contexte habituel (qui refuse si la société n'est pas la sienne).
+
+    Aucune société n'est jamais acceptée sans appartenir à l'ensemble autorisé côté serveur.
+    """
+    if not frappe:
+        return get_company_context()
+    if _explicit_company_hint():
+        return get_company_context()
+    doc_company = None
+    if name:
+        try:
+            doc_company = frappe.db.get_value(doctype, name, "company")
+        except Exception:
+            doc_company = None
+    if doc_company and doc_company in get_allowed_companies():
+        return doc_company
+    return get_company_context()

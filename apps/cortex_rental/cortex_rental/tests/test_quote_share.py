@@ -46,7 +46,7 @@ class TestClientCanOnlyAnswer(unittest.TestCase):
     def test_guest_endpoints_are_only_respond(self):
         source = read("api", "v1", "quote_share.py")
         guest = re.findall(r"allow_guest=True[^\n]*\n(?:\s*@[^\n]*\n)*\s*def (\w+)", source)
-        self.assertEqual(guest, ["respond", "start_payment", "stripe_webhook"])
+        self.assertEqual(guest, ["respond", "start_payment", "choose_cheque", "stripe_webhook"])
 
     def test_guest_respond_is_rate_limited(self):
         source = read("api", "v1", "quote_share.py")

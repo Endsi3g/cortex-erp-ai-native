@@ -88,6 +88,12 @@
       "fieldname": "required_accessories",
       "fieldtype": "Small Text",
       "label": "Mandatory Kit Accessories (JSON / Comma-separated)"
+    },
+    {
+      "fieldname": "image",
+      "fieldtype": "Attach Image",
+      "label": "Photo de l'équipement",
+      "description": "Affichée aux clients (portail et devis) si elle est publique."
     }
   ],
   "permissions": [

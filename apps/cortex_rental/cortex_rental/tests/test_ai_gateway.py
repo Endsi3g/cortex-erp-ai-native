@@ -143,7 +143,7 @@ class TestGeminiProvider(unittest.TestCase):
 
     def test_unknown_provider_is_refused_clearly(self):
         with self.assertRaises(AIConfigurationError):
-            provider_for("gpt-x", "k")
+            provider_for("mistral-large", "k")
 
 
 class TestToolLoop(GatewayCase):

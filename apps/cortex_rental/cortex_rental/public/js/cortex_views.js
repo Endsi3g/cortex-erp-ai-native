@@ -65,3 +65,13 @@ cortex.SUPPORT_STATES = {
 	"In Progress": [__("En cours"), "blue"],
 	Resolved: [__("Résolue"), "green"],
 };
+
+// Apparence : « Light » (par défaut), « Dark » ou « Automatic » (suit le système). Frappe applique le thème sombre de ses
+// propres écrans avec data-theme="dark"; la couche Cortex (cortex-dark.css) s'y accroche. Le choix est enregistré côté serveur.
+cortex.applyTheme = function (mode) {
+	const value = String(mode || "Light").toLowerCase();
+	const dark = value === "dark" || (value === "automatic" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+	document.documentElement.setAttribute("data-theme-mode", value);
+	document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+};
+

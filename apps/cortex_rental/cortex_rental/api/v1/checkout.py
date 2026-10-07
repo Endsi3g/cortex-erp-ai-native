@@ -9,7 +9,7 @@ except ImportError:
 
 from cortex_rental.services import defense
 from cortex_rental.permissions.agent_scopes import (
-    get_company_context,
+    get_company_context_for_document,
     require_human_staff_role,
 )
 
@@ -39,8 +39,8 @@ if frappe:
     @defense.safe_input
     def record_checkout_scan():
         require_human_staff_role()
-        company = get_company_context()
         payload = frappe.local.form_dict
+        company = get_company_context_for_document("Cortex Rental Transaction", payload.get("rental_id"))
         doc = _transaction(payload.get("rental_id"), company)
         if doc.rental_state != "Contract":
             frappe.throw("Seul un contrat approuvé peut donner lieu à une sortie de matériel.", frappe.ValidationError)
@@ -90,8 +90,8 @@ if frappe:
     @defense.safe_input
     def complete_checkout():
         require_human_staff_role()
-        company = get_company_context()
         payload = frappe.local.form_dict
+        company = get_company_context_for_document("Cortex Rental Transaction", payload.get("rental_id"))
         doc = _transaction(payload.get("rental_id"), company)
         if doc.rental_state != "Contract":
             frappe.throw("Seul un contrat approuvé peut donner lieu à une sortie de matériel.", frappe.ValidationError)

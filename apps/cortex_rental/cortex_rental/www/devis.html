@@ -61,10 +61,19 @@ textarea{min-height:76px;resize:vertical}
 .err{color:var(--bad);font-size:13px;margin:8px 0 0}
 .foot{margin:22px 0 0;color:var(--muted);font-size:11.5px;text-align:center}
 .foot a{color:inherit}
+.thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--soft)}
+ul.lines li.has-img{grid-template-columns:44px 1fr auto;align-items:center}ul.lines li.has-img .lb{grid-column:1/-1}
+details.terms{margin:16px 0 0;border:1px solid var(--line);border-radius:12px;padding:0 12px}
+details.terms summary{cursor:pointer;padding:11px 0;font-weight:600;font-size:14px}
+details.terms .tt{white-space:pre-line;font-size:13px;color:var(--muted);max-height:320px;overflow:auto;padding:0 0 12px}
+.cx-foot{margin:28px 0 0;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:12px}
+.cx-foot img{width:20px;height:20px}
 [hidden]{display:none!important}
 @media (min-width:640px){.wrap{padding-top:32px}h1{font-size:21px}}
 @media print{body{background:#fff;color:#000}.bar,.pay,form,.noprint{display:none!important}.wrap{padding:0}}
+.cx-foot a{display:inline-flex;align-items:center;gap:8px;color:inherit;text-decoration:none}.cx-foot a:hover span,.cx-foot a:focus-visible span{text-decoration:underline}
 </style>
+{% if quote.brand and quote.brand.accent %}<style>@media (prefers-color-scheme:light){:root{--brand:{{ quote.brand.accent }};--brand-ink:{{ quote.brand.accent_ink }}}}</style>{% endif %}
 </head>
 <body>
 <main class="wrap">
@@ -93,7 +102,7 @@ textarea{min-height:76px;resize:vertical}
 
 	<ul class="lines" aria-label="Matériel">
 	{% for line in quote.lines %}
-		<li><div class="it"><b>{{ line.item_name | e }}</b><small>{{ num(line.quantity) }} × {{ num(line.billable_days) }} j × {{ fmt(line.daily_rate) }}{% if line.discount_percentage %} · −{{ num(line.discount_percentage) }} %{% endif %}</small></div><span class="amt">{{ fmt(line.amount) }}</span><div class="lb" aria-hidden="true"><i style="width:{{ share(line.amount) }}%"></i></div></li>
+		<li{% if line.image %} class="has-img"{% endif %}>{% if line.image %}<img class="thumb" src="{{ line.image | e }}" alt="" loading="lazy">{% endif %}<div class="it"><b>{{ line.item_name | e }}</b><small>{{ num(line.quantity) }} × {{ num(line.billable_days) }} j × {{ fmt(line.daily_rate) }}{% if line.discount_percentage %} · −{{ num(line.discount_percentage) }} %{% endif %}</small></div><span class="amt">{{ fmt(line.amount) }}</span><div class="lb" aria-hidden="true"><i style="width:{{ share(line.amount) }}%"></i></div></li>
 	{% endfor %}
 	</ul>
 	{% if quote.total %}
@@ -121,9 +130,26 @@ textarea{min-height:76px;resize:vertical}
 			<div class="row"><p><strong>Acompte {{ fmt(view.payment.amount) }}</strong><br>À régler pour confirmer votre place.</p>
 			{% if view.payment.online %}<button class="primary" type="button" id="pay">Payer par carte</button>{% endif %}</div>
 			<p class="err" id="pay-err" role="alert" hidden></p>
+			{% if view.payment.cheque.accepted %}<div class="row" style="margin-top:10px"><p>Vous préférez payer par chèque ?</p><button type="button" id="cheque">Payer par chèque</button></div>{% endif %}
+			{% if view.payment.cheque.chosen %}<p class="alt" id="cheque-info"><b>Paiement par chèque annoncé</b>{{ "\n" }}Chèque de {{ fmt(view.payment.amount) }}{% if view.payment.cheque.payable_to %} à l'ordre de {{ view.payment.cheque.payable_to | e }}{% endif %}.{% if view.payment.cheque.reference %}{{ "\n" }}Inscrivez la référence {{ view.payment.cheque.reference | e }} au dos du chèque.{% endif %}{{ "\n" }}Votre place est confirmée à la réception du chèque.</p>{% endif %}
 			{% if view.payment.instructions %}<p class="alt"><b>Autre façon de payer</b>{{ "\n" }}{{ view.payment.instructions | e }}</p>{% endif %}
 		{% endif %}
 	</section>
+	{% if view.payment.cheque.accepted %}
+	<script>
+	document.getElementById("cheque").addEventListener("click",function(){
+		var b=this,err=document.getElementById("pay-err");b.disabled=true;err.hidden=true;
+		fetch("/api/method/cortex_rental.api.v1.quote_share.choose_cheque",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({token:{{ view_token | tojson }}})})
+		.then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+		.then(function(res){
+			if(res.ok&&res.j.message){window.location.reload();return;}
+			var t="L'annonce du chèque n'a pas pu être enregistrée. Réessayez dans un instant.";
+			try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)t=JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
+			err.textContent=t;err.hidden=false;b.disabled=false;
+		}).catch(function(){err.textContent="Connexion impossible. Réessayez.";err.hidden=false;b.disabled=false;});
+	});
+	</script>
+	{% endif %}
 	{% if view.payment.online %}
 	<script>
 	document.getElementById("pay").addEventListener("click",function(){
@@ -142,10 +168,14 @@ textarea{min-height:76px;resize:vertical}
 	{% endif %}
 
 	{% if state == "ok" %}
+	{% if quote.terms_text %}
+	<details class="terms noprint" id="terms"><summary>Conditions du contrat{% if quote.terms_version %} <span class="meta">(version {{ quote.terms_version }})</span>{% endif %}</summary><div class="tt">{{ quote.terms_text | e }}</div></details>
+	{% endif %}
 	<form id="form" hidden novalidate class="noprint" aria-label="Votre réponse" autocomplete="off">
 		<p class="sum" id="sum"></p>
 		<div id="f-name"><label for="name">Votre nom</label><input id="name" autocomplete="name" maxlength="140"></div>
 		<div><label for="msg" id="msg-label">Message (facultatif)</label><textarea id="msg" maxlength="1000"></textarea></div>
+		<label class="chk" id="f-terms" hidden><input type="checkbox" id="terms-ok"><span>J'ai lu et compris les conditions du contrat, et je les accepte. Mon nom ci-dessus vaut signature.</span></label>
 		<label class="chk" id="f-ok"><input type="checkbox" id="ok"><span id="ok-text"></span></label>
 		<p class="err" id="err" role="alert" hidden></p>
 		<div class="btns"><button class="quiet" type="button" id="back">Retour</button><button class="primary" type="submit" id="send" disabled>Envoyer</button></div>
@@ -160,8 +190,8 @@ textarea{min-height:76px;resize:vertical}
 	</div></div>
 	<script>
 	(function(){
-		var token={{ token | tojson }},total={{ fmt(quote.total) | tojson }},pick=null,busy=false,sent=false;
-		var bar=document.getElementById("bar"),form=document.getElementById("form"),send=document.getElementById("send"),ok=document.getElementById("ok"),nameEl=document.getElementById("name"),msgEl=document.getElementById("msg");
+		var token={{ token | tojson }},total={{ fmt(quote.total) | tojson }},termsRequired={{ (quote.terms_required and (quote.terms_text | length) > 0) | tojson }},pick=null,busy=false,sent=false;
+		var bar=document.getElementById("bar"),form=document.getElementById("form"),send=document.getElementById("send"),ok=document.getElementById("ok"),termsOk=document.getElementById("terms-ok"),nameEl=document.getElementById("name"),msgEl=document.getElementById("msg");
 		var requestId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.random();
 		var cfg={
 			accept:{send:"Accepter le devis",msg:"Message (facultatif)",sum:"Vous allez accepter ce devis de "+total+" (taxes incluses).",ok:"Je confirme accepter ce devis.",needName:true,needMsg:false},
@@ -173,6 +203,7 @@ textarea{min-height:76px;resize:vertical}
 			if(c.needName && nameEl.value.trim().length<2) return false;
 			if(c.needMsg && msgEl.value.trim().length<3) return false;
 			if(c.ok && !ok.checked) return false;
+			if(pick==="accept" && termsRequired && !termsOk.checked) return false;
 			return true;
 		}
 		function refresh(){ send.disabled = busy || sent || !valid(); }
@@ -184,13 +215,15 @@ textarea{min-height:76px;resize:vertical}
 			document.getElementById("msg-label").textContent=c.msg;
 			document.getElementById("f-name").hidden=!c.needName && pick!=="changes" ? true : false;
 			document.getElementById("f-ok").hidden=!c.ok; document.getElementById("ok-text").textContent=c.ok; ok.checked=false;
+			var needTerms=(pick==="accept"&&termsRequired); document.getElementById("f-terms").hidden=!needTerms; termsOk.checked=false;
+			var td=document.getElementById("terms"); if(td&&needTerms) td.open=true;
 			bar.hidden=true; form.hidden=false; refresh();
 			form.scrollIntoView({behavior:"smooth",block:"center"});
 			// Protection contre le double toucher : le bouton d'envoi reste inactif un court instant.
 			send.disabled=true; window.setTimeout(refresh,700);
 			(c.needMsg?msgEl:nameEl).focus({preventScroll:true});
 		});
-		[nameEl,msgEl,ok].forEach(function(el){el.addEventListener("input",refresh);el.addEventListener("change",refresh);});
+		[nameEl,msgEl,ok,termsOk].forEach(function(el){el.addEventListener("input",refresh);el.addEventListener("change",refresh);});
 		document.getElementById("back").addEventListener("click",function(){ if(busy||sent) return; form.hidden=true; bar.hidden=false; document.getElementById("err").hidden=true; });
 		document.getElementById("pdf").addEventListener("click",function(){ window.print(); });
 		form.addEventListener("submit",function(e){
@@ -199,7 +232,7 @@ textarea{min-height:76px;resize:vertical}
 			busy=true; refresh();
 			var err=document.getElementById("err"); err.hidden=true;
 			fetch("/api/method/cortex_rental.api.v1.quote_share.respond",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
-				body:JSON.stringify({token:token,action:pick,message:msgEl.value,responder_name:nameEl.value,confirmed:1,request_id:requestId})})
+				body:JSON.stringify({token:token,action:pick,message:msgEl.value,responder_name:nameEl.value,confirmed:1,terms_accepted:termsOk.checked?1:0,request_id:requestId})})
 			.then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
 			.then(function(res){
 				if(res.ok){sent=true;refresh();window.location.reload();return;}
@@ -215,6 +248,7 @@ textarea{min-height:76px;resize:vertical}
 	<p class="foot noprint"><a href="#" onclick="window.print();return false">Enregistrer en PDF</a></p>
 	{% endif %}
 {% endif %}
+<footer class="cx-foot noprint">{% if cortex_site %}<a href="{{ cortex_site | e }}" target="_blank" rel="noopener" aria-label="Propulsé par Cortex : découvrir Cortex">{% endif %}<picture><source media="(prefers-color-scheme: dark)" srcset="/assets/cortex_rental/images/cortex-logo-reversed.svg"><img src="/assets/cortex_rental/images/cortex-logo.svg" alt="" onerror="this.remove()"></picture><span>Propulsé par Cortex</span>{% if cortex_site %}</a>{% endif %}</footer>
 </main>
 </body>
 </html>
