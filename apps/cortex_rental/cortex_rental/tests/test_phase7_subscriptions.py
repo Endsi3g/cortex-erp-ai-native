@@ -28,7 +28,7 @@ def ready(**over):
     base = {
         "enabled": 1,
         "currency": "CAD",
-        "stripe_secret_key": "sk_test_x",
+        "stripe_secret_key": "cle-secrete-de-test",
         "stripe_webhook_secret": "whsec_x",
         "base_monthly_price": 1000,
         "base_price_id": "price_base",
@@ -112,7 +112,7 @@ class TestEntitlements(unittest.TestCase):
     def test_public_catalog_has_no_secret_or_stripe_id_and_hides_unconfirmed_options(self):
         cat = subscriptions.catalog(ready(plan_items=[item(), item("AI Tier", "luna", 20, "price_luna", confirmed=0)]))
         flat = json.dumps(cat)
-        for secret in ("sk_test_x", "whsec_x", "price_base", "price_portal", "price_luna"):
+        for secret in ("cle-secrete-de-test", "whsec_x", "price_base", "price_portal", "price_luna"):
             self.assertNotIn(secret, flat)
         self.assertEqual([o["key"] for o in cat["options"]], ["portal"])
         self.assertEqual(cat["base"]["monthly_price"], 1000.0)
@@ -326,7 +326,7 @@ class TestCheckoutForm(unittest.TestCase):
         self.assertEqual(form["metadata[company]"], "A")
         self.assertEqual(form["subscription_data[metadata][company]"], "A")
         self.assertNotIn("customer", form)
-        self.assertNotIn("sk_test_x", json.dumps(form))
+        self.assertNotIn("cle-secrete-de-test", json.dumps(form))
         self.assertIn("customer", subscriptions.checkout_form("A", ready(), [], "cus_9", "https://x.test"))
 
     def test_unoffered_or_unconfirmed_options_are_refused(self):
