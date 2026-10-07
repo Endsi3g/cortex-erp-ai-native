@@ -82,3 +82,67 @@ class TestCompanyStats(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestColleagueProfile(unittest.TestCase):
+    def setUp(self):
+        self._saved = {
+            k: getattr(ai, k, None) for k in ("frappe", "add_days", "add_to_date", "now_datetime", "get_datetime")
+        }
+        self._members = team_activity.company_members
+        team_activity.company_members = lambda company: ["ami@x.c"]
+        ai.add_days = lambda value, days: value
+        ai.add_to_date = lambda value, minutes=0: datetime(2026, 10, 7, 11, 57)
+        ai.now_datetime = lambda: datetime(2026, 10, 7, 12, 0)
+        ai.get_datetime = lambda v: v
+        self._role = ai.role_summary
+        self._logins = ai.login_count
+        self._counts = ai._audit_counts
+        ai.role_summary = lambda user: {"label": "Comptoir", "help": ""}
+        ai.login_count = lambda user, since: 4
+        ai._audit_counts = lambda company, user, since: {"a": 3, "b": 2}
+
+        def throw(message, exc=None):
+            raise (exc or Exception)(message)
+
+        user = SimpleNamespace(
+            full_name="Ami Test",
+            user_image="/files/a.png",
+            mobile_no="514-555-0100",
+            creation=datetime(2026, 1, 1),
+            last_login=datetime(2026, 10, 7, 9, 0),
+            last_active=datetime(2026, 10, 7, 11, 59),
+            enabled=1,
+        )
+        ai.frappe = SimpleNamespace(
+            throw=throw,
+            PermissionError=PermissionError,
+            db=SimpleNamespace(get_value=lambda *a, **k: user),
+            get_all=lambda *a, **k: [
+                SimpleNamespace(action="cortex.rental_transaction.draft_created", creation=datetime(2026, 10, 7, 8, 0))
+            ],
+        )
+
+    def tearDown(self):
+        for key, value in self._saved.items():
+            setattr(ai, key, value)
+        ai.role_summary, ai.login_count, ai._audit_counts = self._role, self._logins, self._counts
+        team_activity.company_members = self._members
+
+    def test_a_colleague_profile_shows_contact_presence_and_recent_activity(self):
+        profile = ai.colleague_profile("Cortex Test", "moi@x.c", "AMI@x.c")
+        self.assertEqual(profile["name"], "Ami Test")
+        self.assertEqual(profile["phone"], "514-555-0100")
+        self.assertTrue(profile["online"])
+        self.assertEqual(profile["actions_30d"], 5)
+        self.assertEqual(profile["recent"][0]["text"], "Devis créé")
+        self.assertIsNone(profile["usage_time"])  # jamais estimé
+        self.assertFalse(profile["you"])
+
+    def test_a_person_outside_the_company_is_refused(self):
+        with self.assertRaises(PermissionError):
+            ai.colleague_profile("Cortex Test", "moi@x.c", "autre@ailleurs.c")
+
+    def test_the_viewer_can_open_their_own_profile(self):
+        profile = ai.colleague_profile("Cortex Test", "ami@x.c", "ami@x.c")
+        self.assertTrue(profile["you"])

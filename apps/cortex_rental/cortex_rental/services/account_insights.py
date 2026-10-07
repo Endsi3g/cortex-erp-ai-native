@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     import frappe
-    from frappe.utils import add_days, cint, flt, get_datetime, now_datetime, today
+    from frappe.utils import add_days, add_to_date, cint, flt, get_datetime, now_datetime, today
 except ImportError:
     frappe = None
 
@@ -680,6 +680,7 @@ def team_roster(company: str, me: str, show_emails: bool) -> List[Dict[str, Any]
     for u in users:
         out.append(
             {
+                "id": u.name,
                 "name": u.full_name or u.name,
                 "email": u.name if show_emails or u.name == me else "",
                 "you": u.name == me,
@@ -787,6 +788,61 @@ def company_stats(company: str, user: str) -> Dict[str, Any]:
             billing["collected"] = round(flt(paid.total), 2)
         out["billing"] = billing
     return out
+
+
+def colleague_profile(company: str, viewer: str, email: str) -> Dict[str, Any]:
+    """Profil en lecture seule d'une personne de la même société (photo, rôle, coordonnées, présence, activité récente).
+
+    Toutes les personnes de la société peuvent consulter un profil; seule la gestion des comptes (rôles, activation) est
+    réservée au propriétaire (`administration`). Une personne d'une autre société est refusée comme si elle n'existait
+    pas. Le temps d'utilisation n'est pas mesuré par Cortex : il n'est pas affiché plutôt qu'estimé.
+    """
+    from cortex_rental.services import team_activity
+
+    email = (email or "").strip().lower()
+    members = {m.lower(): m for m in team_activity.company_members(company)}
+    members.setdefault(viewer.lower(), viewer)
+    if email not in members:
+        frappe.throw("Cette personne ne fait pas partie de votre société.", frappe.PermissionError)
+    name = members[email]
+    user = frappe.db.get_value(
+        "User",
+        name,
+        ["full_name", "user_image", "mobile_no", "creation", "last_login", "last_active", "enabled"],
+        as_dict=True,
+    )
+    if not user:
+        frappe.throw("Cette personne ne fait pas partie de votre société.", frappe.PermissionError)
+    since = add_days(now_datetime(), -30)
+    last_active = user.last_active or user.last_login
+    online = bool(
+        user.last_active
+        and get_datetime(user.last_active) >= add_to_date(now_datetime(), minutes=-team_activity.ONLINE_WINDOW_MINUTES)
+    )
+    recent = frappe.get_all(
+        "Audit Event",
+        filters={"company": company, "actor_id": name, "actor_type": "Human"},
+        fields=["action", "creation"],
+        order_by="creation desc",
+        limit_page_length=5,
+    )
+    return {
+        "name": user.full_name or name,
+        "email": name,
+        "phone": user.mobile_no or "",
+        "photo": user.user_image or "",
+        "role": role_summary(name),
+        "enabled": bool(user.enabled),
+        "you": name.lower() == viewer.lower(),
+        "member_since": str(user.creation)[:10],
+        "last_login": str(user.last_login or "")[:16],
+        "last_active": str(last_active or "")[:16],
+        "online": online,
+        "logins_30d": login_count(name, since),
+        "actions_30d": sum(_audit_counts(company, name, since).values()),
+        "recent": [{"text": action_info(r.action)["text"], "at": str(r.creation)[:16]} for r in recent],
+        "usage_time": None,
+    }
 
 
 # ---------------------------------------------------------------------------------------------- à faire

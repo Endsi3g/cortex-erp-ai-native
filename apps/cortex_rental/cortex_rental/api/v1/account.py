@@ -143,3 +143,10 @@ if frappe:
         """Chiffres de la société de la personne connectée ; un bloc hors de ses droits est renvoyé à `null`."""
         user, company = _me()
         return account_insights.company_stats(company, user)
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def colleague_profile(email: str = ""):
+        """Profil en lecture seule d'une personne de la même société (tout compte de la société peut le consulter)."""
+        user, company = _me()
+        return account_insights.colleague_profile(company, user, email)

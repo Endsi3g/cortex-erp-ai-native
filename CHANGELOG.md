@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## v0.9.0 — 2026-10-07
+
+Phase 3 du plan de livraison (partielle). **Codé et testé hors bench ; non essayé sur un Desk Frappe.**
+
+### Ajouté
+- **Profil d'une personne de la société** (`account.colleague_profile`) : photo, rôle, courriel, téléphone, présence, connexions et actions sur 30 jours, dernières actions, boutons courriel et appel. Ouvert à toute la société, refusé hors société. Le temps d'utilisation n'est pas affiché (non mesuré).
+- Carte « Configuration de l'entreprise » dans *Société et rôles*; l'entrée « Configuration » de la barre latérale n'apparaît que tant que la configuration initiale est incomplète.
+- Tests de contrat : gestion des comptes réservée au propriétaire, profils limités à la société.
+
+### Pas encore fait
+- Alignement présence/activité, lisibilité des notifications, icône bleue, barre latérale du site Web, refonte des pages Notifications/Sécurité/Activité/Statistiques/Profil, messagerie entre collègues (piste ultérieure).
+
 ## v0.8.0 — 2026-10-07
 
 Phases 1 et 2 du plan de livraison de Kael (`docs/frontend/CORTEX_UI_HANDOFF_V2.md`). **Codé et testé hors bench ; non essayé sur un Desk Frappe ni dans un navigateur.**

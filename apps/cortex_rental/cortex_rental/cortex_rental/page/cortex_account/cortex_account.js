@@ -608,6 +608,26 @@ cortex.AccountPage = class AccountPage {
 	}
 
 	// ---------- Société et rôles : une seule colonne ----------
+	// Profil en lecture seule d'une personne de la société : tout compte de la société peut le consulter, seul le
+	// propriétaire gère les comptes (page « Équipe et règles »). Le temps d'utilisation n'est pas mesuré : jamais affiché.
+	showColleague(email) {
+		this.call("colleague_profile", { email }).then((p) => {
+			const dialog = new frappe.ui.Dialog({ title: p.name });
+			const photo = p.photo ? `<img src="${this.esc(p.photo)}" alt="" width="64" height="64" style="border-radius:50%;object-fit:cover">` : `<span class="cx-avatar cx-avatar-initials" style="width:64px;height:64px;display:grid;place-items:center;border-radius:50%;background:#eef3ef">${this.esc((p.name || "?").split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase())}</span>`;
+			const line = (label, value) => (value ? `<div><dt>${label}</dt><dd>${value}</dd></div>` : "");
+			const presence = p.online ? `<span class="indicator-pill green">${__("En ligne")}</span>` : `<span class="text-muted">${p.last_active ? __("Vu {0}", [this.when(p.last_active)]) : __("Jamais connecté")}</span>`;
+			const recent = p.recent.length ? `<ul class="cx-todo">${p.recent.map((r) => `<li>${this.esc(r.text)} <span class="cx-acct-muted">· ${this.when(r.at)}</span></li>`).join("")}</ul>` : `<p class="cx-acct-muted">${__("Aucune action enregistrée.")}</p>`;
+			const contact = [p.email ? `<a class="btn btn-default btn-sm" href="mailto:${this.esc(p.email)}">${__("Écrire un courriel")}</a>` : "", p.phone ? `<a class="btn btn-default btn-sm" href="tel:${this.esc(p.phone)}">${__("Appeler")}</a>` : ""].join(" ");
+			dialog.$body.html(
+				`<div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">${photo}<div><b>${this.esc(__(p.role.label))}</b><div>${presence}</div>${p.enabled ? "" : `<div class="text-muted">${__("Compte désactivé")}</div>`}</div></div>
+				<dl class="cx-acct-meta">${line(__("Courriel"), this.esc(p.email))}${line(__("Téléphone"), this.esc(p.phone))}${line(__("Membre depuis"), this.esc(p.member_since))}${line(__("Connexions (30 jours)"), this.n(p.logins_30d))}${line(__("Actions (30 jours)"), this.n(p.actions_30d))}</dl>
+				<h6>${__("Activité récente")}</h6>${recent}<div style="margin-top:10px">${contact}</div>
+				<p class="cx-acct-muted" style="margin-top:10px">${__("Le temps d'utilisation n'est pas mesuré par Cortex.")}</p>`
+			);
+			dialog.show();
+		});
+	}
+
 	renderCompany(d) {
 		const head = this.card(
 			"",
@@ -648,9 +668,14 @@ cortex.AccountPage = class AccountPage {
 				this.table([__("Écran"), __("Voir"), __("Créer"), __("Modifier"), ""], o.rights.map((r) => `<tr><td>${this.esc(__(r.area))}</td><td class="c">${mark(r.read)}</td><td class="c">${mark(r.create)}</td><td class="c">${mark(r.write)}</td><td class="r">${r.href ? `<a href="${this.esc(r.href)}">${__("Ouvrir")}</a>` : ""}</td></tr>`), "rights")
 			);
 			team.find(".cx-acct-muted").replaceWith(
-				this.table([__("Personne"), __("Rôle"), __("Dernière activité")], o.team.map((m) => `<tr><td><b>${this.esc(m.name)}</b>${m.you ? ` <span class="cx-acct-muted">(${__("vous")})</span>` : ""}${m.email ? `<div class="cx-acct-muted">${this.esc(m.email)}</div>` : ""}</td><td>${this.esc(__(m.role))}</td><td class="cx-acct-muted">${m.last_active ? this.when(m.last_active) : "—"}</td></tr>`))
+				this.table([__("Personne"), __("Rôle"), __("Dernière activité")], o.team.map((m) => `<tr><td><a href="#" class="cx-person" data-person="${this.esc(m.id)}"><b>${this.esc(m.name)}</b></a>${m.you ? ` <span class="cx-acct-muted">(${__("vous")})</span>` : ""}${m.email ? `<div class="cx-acct-muted">${this.esc(m.email)}</div>` : ""}</td><td>${this.esc(__(m.role))}</td><td class="cx-acct-muted">${m.last_active ? this.when(m.last_active) : "—"}</td></tr>`))
 			);
+			if (o.can_manage_team) this.card(__("Configuration de l'entreprise"), __("Reprenez l'assistant de configuration (entreprise, équipe, catalogue, taxes) à tout moment."), `<a class="btn btn-default btn-sm" href="/app/cortex-setup">${__("Ouvrir la configuration")}</a>`).insertAfter(head);
 			if (o.can_manage_team) head.find(".cx-co-cta").prop("hidden", false).html(`<a class="btn btn-primary btn-sm" href="/app/cortex-admin">${__("Gérer l'équipe et les rôles")}</a><a class="btn btn-default btn-sm" href="/app/cortex-account/securite">${__("Appareils de l'équipe")}</a><a class="btn btn-default btn-sm" data-go="activite" data-scope="team" href="#">${__("Activité de l'équipe")}</a>`);
+		});
+		team.on("click", "[data-person]", (e) => {
+			e.preventDefault();
+			this.showColleague($(e.currentTarget).data("person"));
 		});
 		this.call("ai_usage").then((u) => {
 			const $box = ai.find(".cx-acct-ai");

@@ -65,7 +65,7 @@
 				{ id: "acct-securite", label: "Sécurité", icon: "lock", href: "/app/cortex-account/securite", owns: ["cortex-account/securite"], show: ALL },
 				{ id: "acct-notifications", label: "Notifications", icon: "notification", href: "/app/cortex-account/notifications", owns: ["cortex-account/notifications"], show: ALL },
 				{ id: "acct-societe", label: "Société et rôles", icon: "users", href: "/app/cortex-account/societe", owns: ["cortex-account/societe"], show: ALL },
-				{ id: "setup", label: "Configuration", icon: "list-alt", href: "/app/cortex-setup", owns: ["cortex-setup"], show: hasRole("Cortex System Manager", "System Manager") },
+				{ id: "setup", label: "Configuration", icon: "list-alt", href: "/app/cortex-setup", owns: ["cortex-setup"], show: () => hasRole("Cortex System Manager", "System Manager")() && !!(frappe.boot.cortex_home && frappe.boot.cortex_home.setup_pending) },
 				{ id: "admin", label: "Équipe et règles", icon: "setting-gear", href: "/app/cortex-admin", owns: ["cortex-admin", "rental-pricing-rule", "user", "audit-event", "cortex-ai-settings"], show: workspace("Cortex Admin") },
 				{ id: "website", label: "Site Web", icon: "website", href: "/app/website", owns: ["website"], show: hasRole("System Manager", "Website Manager") },
 				{ id: "settings", label: "Paramètres", icon: "setting", href: "/app/erpnext-settings", owns: ["erpnext-settings", "integrations", "build"], show: hasRole("System Manager") },
