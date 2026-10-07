@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## v0.11.0 — 2026-10-07
+
+Phase 5 du plan de livraison (partielle). **Codé et testé hors bench ; non essayé sur un Desk Frappe.**
+
+### Ajouté
+- **Finance** : listes « Factures à encaisser » et « Factures récentes » (tous les raccourcis conservés).
+- **Paiements** : indicateurs paiement/remboursement; le client (solde dû, locations, retards) en tête du paiement.
+- **Formats d'impression de la facture** : A4 (par défaut) et Lettre, intégrés.
+- **Modèles de taxes** Québec, TPS seule, aucune taxe (`billing.apply_tax_preset`, audité, taux bornés par le serveur). Les provinces à TVH ne sont pas couvertes.
+- « New Email » traduit en « Nouveau courriel ».
+
+### Pas encore fait
+- Relevé de compte client imprimable, densification des paramètres, visualisation du catalogue, casse du statut « Actif ».
+
 ## v0.10.0 — 2026-10-07
 
 Phase 4 du plan de livraison. **Codé et testé hors bench ; aucun fournisseur essayé avec une vraie clé.**

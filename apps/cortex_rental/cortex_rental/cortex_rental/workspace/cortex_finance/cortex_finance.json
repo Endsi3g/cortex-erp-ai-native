@@ -2,7 +2,7 @@
  "docstatus": 0,
  "idx": 0,
  "creation": "2026-09-30 08:04:00.000000",
- "modified": "2026-10-01 01:30:00.000000",
+ "modified": "2026-10-07 12:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "module": "Cortex Rental",
@@ -19,7 +19,7 @@
  "hide_custom": 0,
  "indicator_color": "",
  "restrict_to_domain": "",
- "content": "[{\"id\": \"748ea93b35\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Facturé ce mois\", \"col\": 3}}, {\"id\": \"b61f658372\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Encaissé ce mois\", \"col\": 3}}, {\"id\": \"19c22c034d\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Solde à recevoir\", \"col\": 3}}, {\"id\": \"4ed3a3a8ca\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Factures en retard\", \"col\": 3}}, {\"id\": \"8851441324\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"TPS perçue ce mois\", \"col\": 4}}, {\"id\": \"77da72c7e6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"TVQ perçue ce mois\", \"col\": 4}}, {\"id\": \"81aca2b337\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Versements à payer\", \"col\": 4}}, {\"id\": \"130221a56c\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"df5db1d2a7\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Facturé par mois\", \"col\": 6}}, {\"id\": \"1ef05d8380\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Encaissements par mois\", \"col\": 6}}, {\"id\": \"075b92c5af\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"e5478ce646\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"75b4b87763\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Factures\", \"col\": 3}}, {\"id\": \"11003f7df2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Paiements\", \"col\": 3}}, {\"id\": \"fe7b96bb18\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Réglages financiers\", \"col\": 3}}, {\"id\": \"496ce3a9e5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Créances par client\", \"col\": 3}}, {\"id\": \"39479b0606\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Taxes perçues\", \"col\": 3}}, {\"id\": \"728990e3d9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal comptable\", \"col\": 3}}, {\"id\": \"ce8e7239fd\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Balance de vérification\", \"col\": 3}}, {\"id\": \"9b1943bce7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements de consignation\", \"col\": 3}}, {\"id\": \"f0efa20c22\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Propriétaires\", \"col\": 3}}, {\"id\": \"5643ec374d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Relevé propriétaire\", \"col\": 3}}, {\"id\": \"764999a763\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"1814cf6893\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"099acaa456\", \"type\": \"card\", \"data\": {\"card_name\": \"Facturation\", \"col\": 4}}, {\"id\": \"4071a55954\", \"type\": \"card\", \"data\": {\"card_name\": \"Consignation\", \"col\": 4}}]",
+ "content": "[{\"id\": \"748ea93b35\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Facturé ce mois\", \"col\": 3}}, {\"id\": \"b61f658372\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Encaissé ce mois\", \"col\": 3}}, {\"id\": \"19c22c034d\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Solde à recevoir\", \"col\": 3}}, {\"id\": \"4ed3a3a8ca\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Factures en retard\", \"col\": 3}}, {\"id\": \"8851441324\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"TPS perçue ce mois\", \"col\": 4}}, {\"id\": \"77da72c7e6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"TVQ perçue ce mois\", \"col\": 4}}, {\"id\": \"81aca2b337\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Versements à payer\", \"col\": 4}}, {\"id\": \"130221a56c\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"df5db1d2a7\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Facturé par mois\", \"col\": 6}}, {\"id\": \"1ef05d8380\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Encaissements par mois\", \"col\": 6}}, {\"id\": \"075b92c5af\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"a1f3c9d201\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Factures</b></span>\", \"col\": 12}}, {\"id\": \"a1f3c9d202\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Factures à encaisser\", \"col\": 6}}, {\"id\": \"a1f3c9d203\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Factures récentes\", \"col\": 6}}, {\"id\": \"a1f3c9d204\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"e5478ce646\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Raccourcis</b></span>\", \"col\": 12}}, {\"id\": \"75b4b87763\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Factures\", \"col\": 3}}, {\"id\": \"11003f7df2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Paiements\", \"col\": 3}}, {\"id\": \"fe7b96bb18\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Réglages financiers\", \"col\": 3}}, {\"id\": \"496ce3a9e5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Créances par client\", \"col\": 3}}, {\"id\": \"39479b0606\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Taxes perçues\", \"col\": 3}}, {\"id\": \"728990e3d9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal comptable\", \"col\": 3}}, {\"id\": \"ce8e7239fd\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Balance de vérification\", \"col\": 3}}, {\"id\": \"9b1943bce7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Versements de consignation\", \"col\": 3}}, {\"id\": \"f0efa20c22\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Propriétaires\", \"col\": 3}}, {\"id\": \"5643ec374d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Relevé propriétaire\", \"col\": 3}}, {\"id\": \"764999a763\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"1814cf6893\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Rapports et paramètres</b></span>\", \"col\": 12}}, {\"id\": \"099acaa456\", \"type\": \"card\", \"data\": {\"card_name\": \"Facturation\", \"col\": 4}}, {\"id\": \"4071a55954\", \"type\": \"card\", \"data\": {\"card_name\": \"Consignation\", \"col\": 4}}]",
  "charts": [
   {
    "chart_name": "Facturé par mois",
@@ -60,7 +60,18 @@
    "label": "Versements à payer"
   }
  ],
- "quick_lists": [],
+ "quick_lists": [
+  {
+   "document_type": "Cortex Rental Invoice",
+   "label": "Factures à encaisser",
+   "quick_list_filter": "[[\"Cortex Rental Invoice\", \"status\", \"in\", [\"Issued\", \"Partially Paid\"]]]"
+  },
+  {
+   "document_type": "Cortex Rental Invoice",
+   "label": "Factures récentes",
+   "quick_list_filter": "[[\"Cortex Rental Invoice\", \"status\", \"!=\", \"Cancelled\"]]"
+  }
+ ],
  "shortcuts": [
   {
    "label": "Factures",
