@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## v0.14.0 — 2026-10-07
+
+Phase 8 du plan de livraison. **Premier passage : vérifié dans Chromium sur l'accueil IA et la grille de disponibilité; non vérifié sur un Desk Frappe.**
+
+### Ajouté
+- **Mode sombre** : choix Clair / Sombre / Automatique dans *Mon compte › Profil › Apparence* (enregistré par personne; **clair par défaut**).
+- **Couche sombre générée** (`bin/generate-dark-theme.mjs`) : appliquée seulement sous `html[data-theme="dark"]`, le mode clair n'est pas modifié. Contraste audité : 0 texte sous 4,5:1 sur les deux écrans vérifiés; palette testée (WCAG).
+- Captures de validation dans `docs/review/captures/mode-sombre/`.
+
+### Pas encore vérifié
+- Barre latérale, Mon compte, configuration, copilote et Desk de Frappe en sombre : à parcourir sur un Desk actif.
+
 ## v0.13.0 — 2026-10-07
 
 Phase 7 du plan de livraison. **Codé et testé par événements Stripe simulés ; désactivé par défaut ; jamais essayé avec un compte Stripe.**

@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/Socle-Frappe%20%7C%20ERPNext%20v15-3B82F6?style=for-the-badge&logoColor=white" alt="Frappe/ERPNext" />
   <img src="https://img.shields.io/badge/Interface-100%25%20fran%C3%A7ais%20(Qu%C3%A9bec)-6366F1?style=for-the-badge&logoColor=white" alt="Français" />
   <img src="https://img.shields.io/badge/IA-Cortex%20Rapide%20%7C%20%C3%89quilibr%C3%A9%20%7C%20Avanc%C3%A9-8B5CF6?style=for-the-badge&logoColor=white" alt="Modèles Cortex" />
-  <img src="https://img.shields.io/badge/Release-v0.13.0-10B981?style=for-the-badge&logoColor=white" alt="v0.13.0" />
+  <img src="https://img.shields.io/badge/Release-v0.14.0-10B981?style=for-the-badge&logoColor=white" alt="v0.14.0" />
 </p>
 
 </div>

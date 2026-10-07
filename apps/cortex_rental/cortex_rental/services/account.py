@@ -30,6 +30,10 @@ IMAGE_EXT = (".png", ".jpg", ".jpeg", ".webp", ".gif")
 PHOTO_MAX_BYTES = 5 * 1024 * 1024
 
 
+# Apparence de l'interface : clair par défaut; l'automatique suit le réglage du système de la personne.
+THEMES = ("Light", "Dark", "Automatic")
+
+
 def _user() -> str:
     user = frappe.session.user
     if user in ("Guest", "Administrator"):
@@ -64,6 +68,7 @@ def get_account() -> Dict[str, Any]:
             "time_zone",
             "creation",
             "last_login",
+            "desk_theme",
         ],
         as_dict=True,
     )
@@ -81,6 +86,7 @@ def get_account() -> Dict[str, Any]:
         "mobile_no": doc.mobile_no or "",
         "image": doc.user_image or "",
         "language": "fr",
+        "theme": doc.desk_theme if doc.desk_theme in THEMES else "Light",
         "time_zone": doc.time_zone or frappe.db.get_single_value("System Settings", "time_zone") or "",
         "member_since": str(doc.creation)[:10],
         "last_login": str(doc.last_login or "")[:16],
@@ -273,3 +279,12 @@ def ai_usage() -> Dict[str, Any]:
 
     status = budget.status(get_company_context(), ai_settings.load())
     return {"visible": True, **status}
+
+
+def set_theme(theme: str) -> Dict[str, Any]:
+    """Apparence de la personne connectée (clair, sombre ou automatique). Ne touche qu'à son propre compte."""
+    if theme not in THEMES:
+        frappe.throw("Choisissez Clair, Sombre ou Automatique.", frappe.ValidationError)
+    user = _user()
+    frappe.db.set_value("User", user, "desk_theme", theme)
+    return {"theme": theme}

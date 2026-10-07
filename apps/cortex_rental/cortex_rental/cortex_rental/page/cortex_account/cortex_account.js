@@ -191,6 +191,19 @@ cortex.AccountPage = class AccountPage {
 				.catch(() => $btn.prop("disabled", false));
 		});
 
+		const themes = [["Light", __("Clair"), __("Par défaut")], ["Dark", __("Sombre"), __("Repose les yeux le soir")], ["Automatic", __("Automatique"), __("Suit le réglage de votre appareil")]];
+		const look = this.card(
+			__("Apparence"),
+			__("Le mode clair reste le mode par défaut. Votre choix est enregistré pour votre compte."),
+			`<div class="cx-acct-grid three" role="radiogroup" aria-label="${__("Apparence")}">${themes
+				.map(([value, label, hint]) => `<label class="cx-hero-num" style="cursor:pointer"><input type="radio" name="cx-theme" value="${value}" ${(d.theme || "Light") === value ? "checked" : ""}> <b style="font-size:15px">${label}</b><span>${hint}</span></label>`)
+				.join("")}</div>`
+		);
+		look.on("change", "input[name=cx-theme]", (e) => {
+			const value = e.target.value;
+			cortex.applyTheme(value);
+			this.call("set_theme", { theme: value }, "POST").then(() => this.toast(__("Apparence enregistrée."))).catch(() => this.toast(__("L'apparence n'a pas pu être enregistrée."), "red"));
+		});
 		const todo = this.card(__("Ce qui m'attend"), __("Vos dossiers qui demandent une action maintenant. Chaque ligne ouvre la liste concernée."), `<ul class="cx-todo"><li class="cx-acct-muted">${__("Chargement…")}</li></ul>`);
 		this.call("todo").then((r) => {
 			todo.find("ul").html(
@@ -212,7 +225,7 @@ cortex.AccountPage = class AccountPage {
 				<a class="btn btn-default btn-sm" href="/app/cortex-account/securite">${__("Mes appareils")}</a>
 			</div>`
 		);
-		this.$body.append(hero, todo, form, quick);
+		this.$body.append(hero, todo, form, look, quick);
 	}
 
 	pickPhoto() {

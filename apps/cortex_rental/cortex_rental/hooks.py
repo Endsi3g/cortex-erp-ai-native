@@ -41,6 +41,8 @@ app_include_css = [
     "/assets/cortex_rental/css/cortex-dossier.css",
     "/assets/cortex_rental/css/cortex-onboarding.css",
     "/assets/cortex_rental/css/cortex-desk-fixes.css",
+    # Dernière : couche du mode sombre (généré par bin/generate-dark-theme.mjs), sans effet en mode clair.
+    "/assets/cortex_rental/css/cortex-dark.css",
 ]
 
 # Global floating Cortex Copilot launcher — mounted on every Desk page

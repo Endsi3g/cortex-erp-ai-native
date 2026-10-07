@@ -150,3 +150,10 @@ if frappe:
         """Profil en lecture seule d'une personne de la même société (tout compte de la société peut le consulter)."""
         user, company = _me()
         return account_insights.colleague_profile(company, user, email)
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    @defense.limit_user("set_theme", 60)
+    def set_theme(theme: str = ""):
+        """Apparence de la personne connectée : Light (par défaut), Dark ou Automatic."""
+        return {"data": account.set_theme(theme)}
