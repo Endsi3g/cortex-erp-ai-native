@@ -1,0 +1,17 @@
+/* Correctifs visuels ciblés des contrôles natifs du Desk Frappe. */
+
+/*
+ * Le menu Awesomplete du champ Société utilise un fond légèrement translucide
+ * par défaut. Sur le formulaire de location, les sections en dessous restent
+ * visibles à travers la liste. Garder une surface opaque et au-dessus du
+ * formulaire pour que les choix restent lisibles.
+ */
+.form-layout .frappe-control[data-fieldname="company"] .awesomplete > ul {
+	background-color: #fff !important;
+	background-image: none !important;
+	opacity: 1;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+	z-index: 1060;
+}
