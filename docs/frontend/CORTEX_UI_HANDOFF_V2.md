@@ -355,6 +355,21 @@ Contrat complet : [`ADR-010`](../adr/ADR-010-abonnements-cortex.md). Testé par 
 - **Non vérifié** : la barre latérale, *Mon compte*, l'assistant de configuration, le copilote, les dossiers reliés et tout le Desk de Frappe (listes, formulaires, menus, dialogues) en sombre. La couche est appliquée à ces écrans mais **aucun n'a été vu** (il faut un Desk actif); le mode sombre natif de Frappe dépend de sa propre feuille de style. Les pages publiques (devis, demande, suivi, connexion) suivaient déjà le réglage du système. À faire par une personne : parcourir chaque écran en sombre et signaler les défauts.
 - **Finition transversale** : états de chargement par page et `prefers-reduced-motion` respectés (phase 2); aucun nouveau mouvement n'a été ajouté.
 
+## Suite demandée par Kael (2026-10-07, après v0.14.0) : phase 9
+
+Demandes reçues après la livraison des phases 1 à 8. **Aucune n'est encore codée au moment de cette entrée** ; l'état de chacune est mis à jour ici à mesure qu'elle est livrée. Décisions de Kael prises dans ce message :
+
+| # | Demande | Décision / portée | État |
+|---|---|---|---|
+| 9.1 | Abonnements : prix, devise, options offertes, enveloppe d'IA incluse, sociétés exemptées | Créer des **valeurs par défaut modifiables** (réglages préremplis, rien n'est facturé tant que les prix ne sont pas confirmés) | À faire |
+| 9.2 | Acceptation / signature du contrat | **Pas d'avocat requis** (remplace la condition de l'ADR-009). Ajouter d'abord un **consentement explicite** : le client coche qu'il a lu et compris les conditions du contrat avant de signer. **La société peut modifier le contrat** (modèle de conditions propre à chaque société) | À faire |
+| 9.3 | Portail des demandes : identité | Logo de l'entreprise bien visible, **pied de page « Cortex »** | À faire |
+| 9.4 | Image de marque configurable (nice to have) | Configurer les images dans l'ERP (bannière, photos d'équipement) et les **refléter chez les clients** (portail, devis) ; seuls les fichiers publics sont exposés | À faire |
+| 9.5 | Écran « Demande reçue » | Plus dense, plus rempli et **plus interactif** (récapitulatif, étapes, copie du lien, ajout au calendrier, etc.) | À faire |
+| 9.6 | Voir et corriger ce qui n'avait pas été vu à l'écran | Barre latérale, *Mon compte* (Apparence, Abonnement, statistiques de société, profils), assistant de configuration, formulaires du Desk (paiement avec le client en tête, réglages de taxes), formats d'impression de facture | À faire (monter ce qui peut l'être dans Chromium avec un faux `frappe` ; dire ce qui exige un Desk actif) |
+
+Ordre d'exécution voulu : Handoff d'abord, puis commit, push et notes de version, avant tout autre travail. **Les tags et Releases GitHub restent impossibles à créer depuis l'environnement** (poussée de tags refusée par le dépôt, outil sans création de release) : voir `docs/releases/RELEASES_A_PUBLIER.md`.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

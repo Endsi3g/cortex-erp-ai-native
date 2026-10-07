@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Handoff : phase 9 consignée (suite demandée par Kael le 2026-10-07), pas encore codée.
+
 ## v0.14.0 — 2026-10-07
 
 Phase 8 du plan de livraison. **Premier passage : vérifié dans Chromium sur l'accueil IA et la grille de disponibilité; non vérifié sur un Desk Frappe.**

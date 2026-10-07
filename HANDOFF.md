@@ -19,6 +19,8 @@ Les phases ont été livrées dans l'ordre, chacune dans son commit. Le détail 
 7. **Abonnements Cortex avec Stripe — codé (v0.13.0), désactivé par défaut.** Plan, modules et niveaux d'IA par société, webhook signé et idempotent, droits côté serveur; activation refusée sans prix confirmés par un humain. **Jamais essayé avec Stripe**; prix, devise, enveloppe d'IA et options à décider (ADR-010).
 8. **Mode sombre et finition — premier passage (v0.14.0).** Clair par défaut, choix par personne, couche sombre générée, contraste audité (0 texte < 4,5:1) sur l'accueil IA et la grille. **Reste :** voir le reste du Desk en sombre.
 
+9. **Suite demandée le 2026-10-07 — à faire (phase 9).** Valeurs par défaut modifiables pour les abonnements (prix, devise, options, enveloppe d'IA, sociétés exemptées); acceptation du contrat avec **consentement explicite** « j'ai lu et compris » et conditions modifiables par la société (pas d'avocat requis, décision de Kael); logo et pied de page Cortex sur le portail; images de marque configurables dans l'ERP et reflétées chez les clients; écran « Demande reçue » plus dense et interactif; vérification visuelle de la barre latérale, de Mon compte, de l'assistant de configuration, des formulaires du Desk et des formats d'impression. Détail : `docs/frontend/CORTEX_UI_HANDOFF_V2.md`, section « Suite demandée par Kael ».
+
 Avant chaque phase, vérifier les API, permissions et services concernés. Distinguer l'état codé de la validation sur bench et de la production. Le suivi daté et les limites de chaque phase restent dans le handoff canonique.
 
 **Date** : 2026-08-31
