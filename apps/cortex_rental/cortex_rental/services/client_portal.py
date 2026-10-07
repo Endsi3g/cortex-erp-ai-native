@@ -152,7 +152,10 @@ def company_for_slug(slug: str) -> Optional[Dict[str, Any]]:
     if not SLUG_RE.match(slug):
         return None
     row = frappe.db.get_value(
-        SETTINGS, {"portal_slug": slug, "portal_requests_enabled": 1}, ["name", "portal_slug"], as_dict=True
+        SETTINGS,
+        {"portal_slug": slug, "portal_requests_enabled": 1},
+        ["name", "portal_slug", "portal_tagline", "portal_banner_image", "portal_accent_color"],
+        as_dict=True,
     )
     if not row:
         return None
@@ -162,7 +165,10 @@ def company_for_slug(slug: str) -> Optional[Dict[str, Any]]:
     if not subscriptions.allows_module(company, "portal"):
         return None  # module non inclus dans l'abonnement : même réponse qu'un portail inexistant
     info = frappe.db.get_value("Company", company, ["company_name", "company_logo"], as_dict=True) or {}
-    return {"company": company, "name": info.get("company_name") or company, "logo": info.get("company_logo") or ""}
+    from cortex_rental.services import brand
+
+    look = brand.branding(row, info)
+    return {"company": company, "name": info.get("company_name") or company, **look}
 
 
 def known_items(company: str) -> Dict[str, str]:
@@ -173,6 +179,16 @@ def known_items(company: str) -> Dict[str, str]:
         limit_page_length=500,
     )
     return {r.item_code: r.item_name or r.item_code for r in rows}
+
+
+def item_images(company: str) -> Dict[str, str]:
+    """Photos publiques des équipements (jamais un fichier privé)."""
+    from cortex_rental.services import brand
+
+    rows = frappe.get_all(
+        "Cortex Rental Item Profile", filters={"company": company}, fields=["item_code", "image"], limit_page_length=500
+    )
+    return {r.item_code: brand.public_file(r.image) for r in rows if brand.public_file(r.image)}
 
 
 def public_calendar(slug: str, starts: str, ends: str, search: str = "") -> Dict[str, Any]:
@@ -196,13 +212,20 @@ def public_calendar(slug: str, starts: str, ends: str, search: str = "") -> Dict
     )
     days = (last - first).days + 1
     rows = availability_summary.day_statuses(matrix.get("items", []), first.isoformat(), days, datetime.now())
+    images = item_images(info["company"])
     return {
         "company": info["name"],
         "starts": first.isoformat(),
         "ends": last.isoformat(),
         "days": [(first + timedelta(days=i)).isoformat() for i in range(days)],
         "items": [
-            {"item_code": r["item_code"], "item_name": r["item_name"], "category": r["category"], "days": r["days"]}
+            {
+                "item_code": r["item_code"],
+                "item_name": r["item_name"],
+                "category": r["category"],
+                "image": images.get(r["item_code"], ""),
+                "days": r["days"],
+            }
             for r in rows
         ],
         "note": "Indicatif : l'équipe confirme la disponibilité dans son devis. Une demande ne réserve rien.",
@@ -263,17 +286,35 @@ def track(token: str) -> Dict[str, Any]:
     except ValueError:
         payload = {}
     info = frappe.db.get_value("Company", row.company, ["company_name", "company_logo"], as_dict=True) or {}
+    from cortex_rental.services import brand
+
+    look = brand.branding(
+        frappe.db.get_value(
+            SETTINGS, row.company, ["portal_tagline", "portal_banner_image", "portal_accent_color"], as_dict=True
+        ),
+        info,
+    )
     status = public_state(row.status)
+    images = item_images(row.company)
     return {
         **status,
         "reference": row.name,
         "company": info.get("company_name") or row.company,
-        "logo": info.get("company_logo") or "",
+        "logo": look["logo"],
+        "banner": look["banner"],
+        "tagline": look["tagline"],
+        "accent": look["accent"],
+        "accent_ink": look["accent_ink"],
         "received": str(row.creation)[:16],
         "starts": payload.get("starts", ""),
         "ends": payload.get("ends", ""),
         "items": [
-            {"item_name": i.get("item_name", ""), "quantity": i.get("quantity", 1)} for i in payload.get("items", [])
+            {
+                "item_name": i.get("item_name", ""),
+                "quantity": i.get("quantity", 1),
+                "image": images.get(i.get("item_code", ""), ""),
+            }
+            for i in payload.get("items", [])
         ],
         "team_message": clean(row.public_message, 1000, multiline=True),
     }

@@ -109,8 +109,17 @@ if frappe:
         responder_name: str = "",
         confirmed: int = 0,
         request_id: str = "",
+        terms_accepted: int = 0,
     ):
-        return quote_share.respond(token, action, message, responder_name, confirmed)
+        from cortex_rental.services import contract_terms
+
+        request = frappe.local.request
+        proof = contract_terms.technical_proof(
+            getattr(frappe.local, "request_ip", "") or "",
+            request.headers.get("User-Agent", "") if request else "",
+            quote_share.hash_token(token),
+        )
+        return quote_share.respond(token, action, message, responder_name, confirmed, terms_accepted, proof)
 
     @frappe.whitelist(allow_guest=True, methods=["POST"])
     @defense.safe_input

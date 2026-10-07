@@ -72,3 +72,12 @@ if frappe:
         from cortex_rental.services import tax_presets as presets
 
         return {"data": presets.apply_preset(get_company_context(), preset, frappe.session.user)}
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def default_terms():
+        """Modèle de départ des conditions du contrat (la société l'adapte librement; rien n'est enregistré)."""
+        require_human_staff_role()
+        from cortex_rental.services import contract_terms
+
+        return {"data": {"text": contract_terms.DEFAULT_TERMS.strip()}}

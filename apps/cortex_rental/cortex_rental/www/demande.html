@@ -6,37 +6,73 @@
 <meta name="robots" content="noindex, nofollow">
 <title>{{ title }}</title>
 <style>
-:root{--bg:#fbfbfa;--text:#141414;--muted:#6a6a65;--line:#ececea;--brand:#066336;--brand-ink:#fff;--soft:#f1f1ef;--ok:#0b6b3a;--warn:#8a4b00;--bad:#b42318}
-@media (prefers-color-scheme:dark){:root{--bg:#101211;--text:#f1f1ef;--muted:#a1a19b;--line:#242726;--brand:#3fbf80;--brand-ink:#06150e;--soft:#191c1b;--ok:#5fd39b;--warn:#ffcf8a;--bad:#ff9b8f}}
+:root{--bg:#fbfbfa;--text:#141414;--muted:#6a6a65;--line:#ececea;--brand:#066336;--brand-ink:#fff;--soft:#f1f1ef;--card:#fff;--ok:#0b6b3a;--warn:#8a4b00;--bad:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#101211;--text:#f1f1ef;--muted:#a1a19b;--line:#242726;--brand:#3fbf80;--brand-ink:#06150e;--soft:#191c1b;--card:#151817;--ok:#5fd39b;--warn:#ffcf8a;--bad:#ff9b8f}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 "Plus Jakarta Sans",Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:720px;margin:0 auto;padding:16px 16px 48px}
-.top{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line)}
-.top img{width:28px;height:28px;object-fit:contain;border-radius:6px}.top b{font-weight:600}
-h1{font-size:20px;margin:16px 0 4px}h2{font-size:15px;margin:22px 0 8px}
-p{margin:0 0 8px}.muted{color:var(--muted);font-size:13.5px}a{color:var(--brand)}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 40px}
+.top{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.top img{width:40px;height:40px;object-fit:contain;border-radius:8px;background:var(--soft)}.top b{font-weight:650;font-size:16px}
+.hero{position:relative;margin:14px 0 0;border-radius:14px;overflow:hidden;background:var(--soft);min-height:120px}
+.hero img{display:block;width:100%;height:170px;object-fit:cover}
+.hero p{position:absolute;left:0;right:0;bottom:0;margin:0;padding:22px 16px 12px;color:#fff;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.62))}
+h1{font-size:21px;margin:16px 0 4px}h2{font-size:15px;margin:0 0 8px}
+p{margin:0 0 8px}.muted{color:var(--muted);font-size:13.5px}
+a{color:var(--brand)}
+.steps{display:flex;gap:6px;margin:14px 0 0;padding:0;list-style:none;counter-reset:s}
+.steps li{flex:1;counter-increment:s;font-size:12.5px;color:var(--muted);border-top:3px solid var(--line);padding-top:6px}
+.steps li::before{content:counter(s) ". "}
+.steps li.on{color:var(--text);border-color:var(--brand);font-weight:600}
+.card{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px;margin:12px 0 0}
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
 input,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text)}
 input[type=checkbox]{width:auto}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (max-width:520px){.row2{grid-template-columns:1fr}}
+@media (max-width:560px){.row2{grid-template-columns:1fr}}
 button{font:inherit;font-weight:600;border-radius:10px;padding:0 16px;height:44px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer}
 button.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+button.sm{height:36px;padding:0 12px;font-size:13.5px;white-space:nowrap}
 button:disabled{opacity:.55;cursor:default}
 :focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .cal{overflow-x:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px}
 .cal table{border-collapse:collapse;width:100%;font-size:12.5px}
 .cal th,.cal td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
-.cal th:first-child,.cal td:first-child{text-align:left;position:sticky;left:0;background:var(--bg)}
+.cal th:first-child,.cal td:first-child{text-align:left;position:sticky;left:0;background:var(--bg);min-width:190px}
+.cal .item{display:flex;align-items:center;gap:8px}
+.cal .item img{width:34px;height:34px;border-radius:7px;object-fit:cover;background:var(--soft);flex:none}
+.cal input[type=number]{width:56px;padding:4px 6px;font-size:13px}
 .st-ok{color:var(--ok)}.st-partial{color:var(--warn)}.st-full{color:var(--bad)}.st-none{color:var(--muted)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:12.5px;color:var(--muted)}
 .err{color:var(--bad);font-size:13.5px;margin:8px 0 0}
-.done{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .chk{display:flex;gap:8px;align-items:flex-start;color:var(--text);font-size:13.5px}
-.hint{margin-top:6px}@media (min-width:640px){.hint{display:none!important}}
-@media (prefers-reduced-motion:no-preference){button{transition:opacity .15s}}
+.live{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12.5px;background:var(--soft)}
+.hint{margin-top:6px}
+/* Demande reçue */
+.done h1{display:flex;align-items:center;gap:10px}
+.tick{width:30px;height:30px;border-radius:50%;background:var(--brand);color:var(--brand-ink);display:inline-grid;place-items:center;font-size:17px;flex:none}
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13.5px}.kv dt{color:var(--muted)}.kv dd{margin:0;overflow-wrap:anywhere}
+.items{list-style:none;margin:0;padding:0}.items li{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}.items li:last-child{border:0}
+.items img{width:36px;height:36px;border-radius:8px;object-fit:cover;background:var(--soft)}.items .q{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.tl{list-style:none;margin:0;padding:0}.tl li{position:relative;padding:0 0 14px 28px;font-size:13.5px}
+.tl li::before{content:"";position:absolute;left:6px;top:4px;width:10px;height:10px;border-radius:50%;border:2px solid var(--line);background:var(--card)}
+.tl li::after{content:"";position:absolute;left:10px;top:16px;bottom:-2px;width:2px;background:var(--line)}.tl li:last-child::after{display:none}
+.tl li.on::before{background:var(--brand);border-color:var(--brand)}.tl li b{display:block;font-size:14px}
+.linkbox{display:flex;gap:8px}.linkbox input{font-size:13px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+details{border-top:1px solid var(--line);padding:8px 0}details summary{cursor:pointer;font-weight:600;font-size:14px}details p{margin:6px 0 0}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:13.5px;opacity:0;pointer-events:none}
+.toast.show{opacity:1}
+.cx-foot{margin:28px 0 0;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:12px}
+.cx-foot img{width:20px;height:20px}
+[hidden]{display:none!important}
+@media print{.noprint,.cx-foot{display:none!important}body{background:#fff;color:#000}}
+@media (prefers-reduced-motion:no-preference){button,.toast{transition:opacity .15s}}
 </style>
+{% if info.accent %}<style>@media (prefers-color-scheme:light){:root{--brand:{{ info.accent }};--brand-ink:{{ info.accent_ink }}}}</style>{% endif %}
 </head>
 <body>
 <div class="wrap">
@@ -45,48 +81,94 @@ button:disabled{opacity:.55;cursor:default}
 	<p class="muted">Le lien est peut-être incorrect, ou l'entreprise n'accepte pas de demandes en ligne pour le moment.</p>
 {% else %}
 	<div class="top">{% if info.logo %}<img src="{{ info.logo | e }}" alt="">{% endif %}<b>{{ info.name }}</b></div>
+	{% if info.banner %}<div class="hero"><img src="{{ info.banner | e }}" alt="">{% if info.tagline %}<p>{{ info.tagline }}</p>{% endif %}</div>{% endif %}
+
+	<div id="ask">
 	<h1>Demander une location</h1>
-	<p class="muted">Dites-nous quand et quoi. Une demande ne réserve rien : l'équipe vérifie la disponibilité et vous répond avec un devis.</p>
+	<p class="muted">{% if info.tagline and not info.banner %}{{ info.tagline }} · {% endif %}Dites-nous quand et quoi. Une demande ne réserve rien : l'équipe vérifie la disponibilité et vous répond avec un devis.</p>
+	<ol class="steps" aria-label="Étapes"><li id="s1" class="on">Période</li><li id="s2">Matériel</li><li id="s3">Coordonnées</li></ol>
 
 	<form id="req" novalidate autocomplete="on">
 		<div class="hp" aria-hidden="true"><label for="website">Ne pas remplir</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
-		<div class="row2">
-			<div><label for="starts">Début</label><input id="starts" type="date" required></div>
-			<div><label for="ends">Fin</label><input id="ends" type="date" required></div>
+		<div class="card">
+			<h2>Quand ?</h2>
+			<div class="row2">
+				<div><label for="starts">Début</label><input id="starts" type="date" required></div>
+				<div><label for="ends">Fin</label><input id="ends" type="date" required></div>
+			</div>
+			<p style="margin-top:10px"><button type="button" id="load" class="sm">Voir le matériel disponible</button></p>
+			<p class="muted" id="cal-note" role="status"></p>
+			<div class="legend" id="legend" hidden><span class="st-ok">● Libre</span><span class="st-partial">▲ Limité</span><span class="st-full">✕ Complet</span><span class="st-none">— Non offert</span></div>
+			<div class="cal" id="cal" hidden></div>
+			<p class="muted hint" id="hint" hidden>Faites défiler le tableau vers la droite pour voir toutes les dates. Cochez le matériel voulu et indiquez la quantité.</p>
 		</div>
-		<p style="margin-top:10px"><button type="button" id="load">Voir le matériel disponible</button></p>
-		<p class="muted" id="cal-note" role="status"></p>
-		<div class="legend" id="legend" hidden><span class="st-ok">● Libre</span><span class="st-partial">▲ Limité</span><span class="st-full">✕ Complet</span><span class="st-none">— Non offert</span></div>
-		<div class="cal" id="cal" hidden></div>
-		<p class="muted hint" id="hint" hidden>Faites défiler le tableau vers la droite pour voir toutes les dates.</p>
 
-		<h2>Vos coordonnées</h2>
-		<div class="row2">
-			<div><label for="name">Nom</label><input id="name" autocomplete="name" maxlength="80" required></div>
-			<div><label for="email">Courriel</label><input id="email" type="email" autocomplete="email" maxlength="254" required></div>
+		<div class="card">
+			<h2>Vos coordonnées</h2>
+			<div class="row2">
+				<div><label for="name">Nom</label><input id="name" autocomplete="name" maxlength="80" required></div>
+				<div><label for="email">Courriel</label><input id="email" type="email" autocomplete="email" maxlength="254" required></div>
+			</div>
+			<div class="row2">
+				<div><label for="phone">Téléphone (facultatif)</label><input id="phone" type="tel" autocomplete="tel" maxlength="25"></div>
+				<div><label for="organisation">Entreprise (facultatif)</label><input id="organisation" autocomplete="organization" maxlength="120"></div>
+			</div>
+			<label for="project">Projet (facultatif)</label><input id="project" maxlength="120">
+			<label for="message">Votre besoin</label><textarea id="message" rows="4" maxlength="1500" placeholder="Ex. : tournage de 2 jours, 2 caméras, éclairage…"></textarea>
+			<p class="muted" id="count" aria-live="polite" style="text-align:right;margin:2px 0 0">0 / 1500</p>
+			<label class="chk" style="margin-top:8px"><input type="checkbox" id="consent"><span>J'accepte d'être contacté au sujet de cette demande. Mes renseignements ne servent qu'à y répondre.</span></label>
 		</div>
-		<div class="row2">
-			<div><label for="phone">Téléphone (facultatif)</label><input id="phone" type="tel" autocomplete="tel" maxlength="25"></div>
-			<div><label for="organisation">Entreprise (facultatif)</label><input id="organisation" autocomplete="organization" maxlength="120"></div>
-		</div>
-		<label for="project">Projet (facultatif)</label><input id="project" maxlength="120">
-		<label for="message">Votre besoin</label><textarea id="message" rows="4" maxlength="1500" placeholder="Ex. : tournage de 2 jours, 2 caméras, éclairage…"></textarea>
-		<label class="chk" style="margin-top:12px"><input type="checkbox" id="consent"><span>J'accepte d'être contacté au sujet de cette demande. Mes renseignements ne servent qu'à y répondre.</span></label>
+		<div class="live" id="live" aria-live="polite"></div>
 		<p class="err" id="err" role="alert" hidden></p>
 		<p style="margin-top:14px"><button type="submit" class="primary" id="send">Envoyer la demande</button></p>
 	</form>
-
-	<div class="done" id="done" hidden role="status">
-		<h2 style="margin-top:0">Demande reçue</h2>
-		<p>Merci ! L'équipe vous répondra par courriel. Conservez ce lien pour suivre l'avancement :</p>
-		<p><a id="track-link" href="#"></a></p>
-		<p class="muted">Ce lien est personnel : toute personne qui l'a peut voir l'état de votre demande.</p>
 	</div>
+
+	<section class="done" id="done" hidden aria-live="polite">
+		<h1><span class="tick" aria-hidden="true">✓</span>Demande reçue</h1>
+		<p class="muted" id="done-sub"></p>
+		<div class="grid2">
+			<div class="card" style="margin:0">
+				<h2>Récapitulatif</h2>
+				<dl class="kv" id="recap"></dl>
+				<h2 style="margin-top:12px">Matériel demandé</h2>
+				<ul class="items" id="recap-items"></ul>
+				<p class="muted" id="recap-msg" style="margin-top:8px"></p>
+			</div>
+			<div class="card" style="margin:0">
+				<h2>Prochaines étapes</h2>
+				<ol class="tl">
+					<li class="on"><b>Demande reçue</b>Elle est maintenant chez l'équipe.</li>
+					<li><b>Examen</b>L'équipe vérifie la disponibilité du matériel.</li>
+					<li><b>Devis</b>Vous recevez un devis à accepter par courriel.</li>
+					<li><b>Réservation</b>Le matériel est réservé quand vous acceptez et que l'équipe confirme.</li>
+				</ol>
+			</div>
+		</div>
+		<div class="card">
+			<h2>Votre lien de suivi</h2>
+			<p class="muted">Gardez-le : il vous permet de voir l'état de votre demande et la réponse de l'équipe, sans compte.</p>
+			<div class="linkbox"><input id="track-link" readonly aria-label="Lien de suivi"><button type="button" id="copy" class="primary sm">Copier le lien</button></div>
+			<div class="acts noprint">
+				<button type="button" class="sm" id="open-track">Ouvrir le suivi</button>
+				<button type="button" class="sm" id="mail">M'envoyer le lien par courriel</button>
+				<button type="button" class="sm" id="ics">Ajouter au calendrier</button>
+				<button type="button" class="sm" id="print">Imprimer / PDF</button>
+				<button type="button" class="sm" id="again">Faire une autre demande</button>
+			</div>
+		</div>
+		<div class="card">
+			<details open><summary>Que se passe-t-il ensuite ?</summary><p class="muted">L'équipe examine votre demande et vous répond par courriel, en général avec un devis. Rien n'est réservé ni facturé avant que vous acceptiez ce devis.</p></details>
+			<details><summary>Puis-je modifier ma demande ?</summary><p class="muted">Oui : répondez au courriel de l'équipe, ou faites une nouvelle demande avec « Faire une autre demande ». L'équipe garde la plus récente.</p></details>
+			<details><summary>Mon lien est-il privé ?</summary><p class="muted">Le lien est personnel : toute personne qui l'a peut voir l'état de votre demande, mais pas vos coordonnées.</p></details>
+		</div>
+	</section>
+	<div class="toast" id="toast" role="status"></div>
 
 <script>
 (function(){
-var SLUG={{ slug | tojson }};
-var chosen={};
+var SLUG={{ slug | tojson }},COMPANY={{ info.name | tojson }};
+var chosen={},images={},last=null;
 var $=function(id){return document.getElementById(id);};
 var today=new Date().toISOString().slice(0,10);
 $("starts").min=today;$("ends").min=today;
@@ -101,23 +183,42 @@ function message(res,fallback){
   try{var m=JSON.parse(res.j._server_messages||"[]");if(m.length)return JSON.parse(m[0]).message.replace(/<[^>]+>/g,"");}catch(x){}
   return fallback;
 }
+function toast(text){var t=$("toast");t.textContent=text;t.classList.add("show");setTimeout(function(){t.classList.remove("show");},1800);}
+function days(a,b){if(!a||!b)return 0;return Math.round((new Date(b)-new Date(a))/86400000)+1;}
+function fmt(d){try{return new Date(d+"T12:00:00").toLocaleDateString("fr-CA",{day:"numeric",month:"long",year:"numeric"});}catch(e){return d;}}
+function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
+function selected(){return Object.keys(chosen).map(function(c){return {item_code:c,item_name:chosen[c].name,quantity:chosen[c].qty,image:images[c]||""};});}
+function refreshLive(){
+  var live=$("live");live.textContent="";
+  var n=days($("starts").value,$("ends").value),items=selected();
+  if(n>0)live.appendChild(el("span","chip",n+(n>1?" jours":" jour")));
+  live.appendChild(el("span","chip",items.length+(items.length>1?" équipements":" équipement")));
+  var s1=$("s1"),s2=$("s2"),s3=$("s3");
+  s2.className=items.length?"on":(n>0?"on":"");s3.className=($("name").value&&$("email").value)?"on":"";
+}
 var SYM={ok:"●",partial:"▲",full:"✕",none:"—"},TXT={ok:"libre",partial:"limité",full:"complet",none:"non offert"};
 function render(data){
-  var cal=$("cal");cal.textContent="";
-  var table=document.createElement("table"),head=table.createTHead().insertRow();
-  var th=document.createElement("th");th.textContent="Matériel";head.appendChild(th);
-  data.days.forEach(function(d){var h=document.createElement("th");h.textContent=d.slice(8)+"/"+d.slice(5,7);h.scope="col";head.appendChild(h);});
+  var cal=$("cal");cal.textContent="";images={};
+  var table=el("table"),head=table.createTHead().insertRow();
+  var th=el("th",null,"Matériel");head.appendChild(th);
+  data.days.forEach(function(d){var h=el("th",null,d.slice(8)+"/"+d.slice(5,7));h.scope="col";head.appendChild(h);});
   var body=table.createTBody();
   data.items.forEach(function(item){
-    var tr=body.insertRow(),first=tr.insertCell(),box=document.createElement("input");
-    box.type="checkbox";box.id="it-"+item.item_code;box.checked=!!chosen[item.item_code];
-    box.addEventListener("change",function(){if(box.checked)chosen[item.item_code]=item.item_name;else delete chosen[item.item_code];});
-    var lab=document.createElement("label");lab.htmlFor=box.id;lab.style.display="inline";lab.style.color="inherit";lab.style.marginLeft="6px";lab.textContent=item.item_name;
-    first.appendChild(box);first.appendChild(lab);
+    if(item.image)images[item.item_code]=item.image;
+    var tr=body.insertRow(),first=tr.insertCell(),wrap=el("div","item");
+    var box=document.createElement("input");box.type="checkbox";box.id="it-"+item.item_code;box.checked=!!chosen[item.item_code];
+    var qty=document.createElement("input");qty.type="number";qty.min=1;qty.max=99;qty.value=(chosen[item.item_code]&&chosen[item.item_code].qty)||1;qty.hidden=!box.checked;qty.setAttribute("aria-label","Quantité de "+item.item_name);
+    box.addEventListener("change",function(){if(box.checked)chosen[item.item_code]={name:item.item_name,qty:Math.max(1,Math.min(99,parseInt(qty.value,10)||1))};else delete chosen[item.item_code];qty.hidden=!box.checked;refreshLive();});
+    qty.addEventListener("input",function(){if(chosen[item.item_code])chosen[item.item_code].qty=Math.max(1,Math.min(99,parseInt(qty.value,10)||1));});
+    wrap.appendChild(box);
+    if(item.image){var im=el("img");im.src=item.image;im.alt="";im.loading="lazy";wrap.appendChild(im);}
+    var lab=el("label",null,item.item_name);lab.htmlFor=box.id;lab.style.cssText="display:inline;color:inherit;margin:0";wrap.appendChild(lab);wrap.appendChild(qty);
+    first.appendChild(wrap);
     item.days.forEach(function(s,i){var td=tr.insertCell();td.className="st-"+s;td.textContent=SYM[s];td.setAttribute("aria-label",item.item_name+", "+data.days[i]+" : "+TXT[s]);});
   });
   cal.appendChild(table);cal.hidden=false;$("legend").hidden=false;$("hint").hidden=!data.items.length;
   $("cal-note").textContent=data.items.length?data.note:"Aucun matériel n'est présenté pour le moment : décrivez votre besoin ci-dessous.";
+  refreshLive();
 }
 $("load").addEventListener("click",function(){
   var s=$("starts").value,e=$("ends").value;$("err").hidden=true;
@@ -129,22 +230,63 @@ $("load").addEventListener("click",function(){
     $("cal-note").textContent=message(res,"Le calendrier est indisponible pour le moment.");
   }).catch(function(){b.disabled=false;$("cal-note").textContent="Connexion impossible. Réessayez.";});
 });
+["starts","ends","name","email"].forEach(function(id){$(id).addEventListener("input",refreshLive);});
+$("message").addEventListener("input",function(){$("count").textContent=this.value.length+" / 1500";});
+refreshLive();
+
+function icsEscape(t){return String(t).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");}
+function downloadIcs(){
+  if(!last)return;
+  var d=function(s,add){var x=new Date(s+"T12:00:00");x.setDate(x.getDate()+(add||0));return x.toISOString().slice(0,10).replace(/-/g,"");};
+  var lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Cortex//Demande//FR","BEGIN:VEVENT","UID:"+last.ref+"@cortex","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART;VALUE=DATE:"+d(last.starts),"DTEND;VALUE=DATE:"+d(last.ends,1),
+    "SUMMARY:"+icsEscape("Location demandée — "+COMPANY),"DESCRIPTION:"+icsEscape("Matériel : "+(last.items.map(function(i){return i.item_name+" × "+i.quantity;}).join(", ")||"à préciser")+"\nSuivi : "+last.url),"URL:"+last.url,"END:VEVENT","END:VCALENDAR"];
+  var blob=new Blob([lines.join("\r\n")],{type:"text/calendar"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="demande-location.ics";document.body.appendChild(a);a.click();a.remove();
+}
+function showDone(info){
+  last=info;
+  $("ask").hidden=true;$("done").hidden=false;
+  $("done-sub").textContent="Merci "+info.name.split(" ")[0]+" ! Référence "+info.ref+" · reçue à "+new Date().toLocaleTimeString("fr-CA",{hour:"2-digit",minute:"2-digit"})+".";
+  var rc=$("recap");rc.textContent="";
+  var n=days(info.starts,info.ends);
+  [["Période",fmt(info.starts)+" au "+fmt(info.ends)+" ("+n+(n>1?" jours":" jour")+")"],["Au nom de",info.name+(info.organisation?" — "+info.organisation:"")],["Courriel",info.email],["Téléphone",info.phone],["Projet",info.project]].forEach(function(kv){
+    if(!kv[1])return;rc.appendChild(el("dt",null,kv[0]));rc.appendChild(el("dd",null,kv[1]));});
+  var list=$("recap-items");list.textContent="";
+  if(!info.items.length){list.appendChild(el("li","muted","Aucun équipement choisi : votre description sera lue par l'équipe."));}
+  info.items.forEach(function(i){var li=el("li");if(i.image){var im=el("img");im.src=i.image;im.alt="";li.appendChild(im);}li.appendChild(el("span",null,i.item_name));li.appendChild(el("span","q","× "+i.quantity));list.appendChild(li);});
+  $("recap-msg").textContent=info.message?"Votre message : « "+info.message+" »":"";
+  $("track-link").value=info.url;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+$("copy").addEventListener("click",function(){
+  var v=$("track-link").value;
+  (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(function(){toast("Lien copié");},function(){$("track-link").select();try{document.execCommand("copy");toast("Lien copié");}catch(e){toast("Sélectionnez le lien et copiez-le.");}});
+});
+$("track-link").addEventListener("focus",function(){this.select();});
+$("mail").addEventListener("click",function(){
+  if(!last)return;
+  location.href="mailto:"+encodeURIComponent(last.email)+"?subject="+encodeURIComponent("Suivi de ma demande — "+COMPANY)+"&body="+encodeURIComponent("Voici le lien pour suivre ma demande :\n"+last.url);
+});
+$("ics").addEventListener("click",downloadIcs);
+$("open-track").addEventListener("click",function(){if(last)window.open(last.url,"_blank","noopener");});
+$("print").addEventListener("click",function(){window.print();});
+$("again").addEventListener("click",function(){$("done").hidden=true;$("ask").hidden=false;chosen={};$("cal").hidden=true;$("legend").hidden=true;$("hint").hidden=true;$("cal-note").textContent="";$("message").value="";$("count").textContent="0 / 1500";$("consent").checked=false;refreshLive();window.scrollTo({top:0,behavior:"smooth"});});
 $("req").addEventListener("submit",function(ev){
   ev.preventDefault();var err=$("err");err.hidden=true;var btn=$("send");btn.disabled=true;
-  var items=Object.keys(chosen).map(function(code){return {item_code:code,quantity:1};});
-  api("submit_portal_request","POST",{slug:SLUG,name:$("name").value,email:$("email").value,phone:$("phone").value,organisation:$("organisation").value,project:$("project").value,starts:$("starts").value,ends:$("ends").value,items:JSON.stringify(items),message:$("message").value,consent:$("consent").checked?"1":"",website:$("website").value})
+  var items=selected();
+  var payload={name:$("name").value,email:$("email").value,phone:$("phone").value,organisation:$("organisation").value,project:$("project").value,starts:$("starts").value,ends:$("ends").value,message:$("message").value};
+  api("submit_portal_request","POST",Object.assign({slug:SLUG,items:JSON.stringify(items.map(function(i){return {item_code:i.item_code,quantity:i.quantity};})),consent:$("consent").checked?"1":"",website:$("website").value},payload))
   .then(function(res){
     btn.disabled=false;
     if(res.ok&&res.j.message&&res.j.message.tracking_url){
-      var a=$("track-link");a.href=res.j.message.tracking_url;a.textContent=res.j.message.tracking_url;
-      $("req").hidden=true;$("done").hidden=false;$("done").scrollIntoView({block:"start"});return;
+      showDone(Object.assign({ref:res.j.message.request||"",url:res.j.message.tracking_url,items:items},payload));return;
     }
-    err.textContent=message(res,"La demande n'a pas pu être envoyée. Réessayez dans un instant.");err.hidden=false;
+    err.textContent=message(res,"La demande n'a pas pu être envoyée. Réessayez dans un instant.");err.hidden=false;err.scrollIntoView({block:"center"});
   }).catch(function(){btn.disabled=false;err.textContent="Connexion impossible. Réessayez.";err.hidden=false;});
 });
 })();
 </script>
 {% endif %}
+<footer class="cx-foot noprint"><img src="/assets/cortex_rental/images/cortex-logo.svg" alt="" onerror="this.remove()"><span>Propulsé par Cortex</span></footer>
 </div>
 </body>
 </html>

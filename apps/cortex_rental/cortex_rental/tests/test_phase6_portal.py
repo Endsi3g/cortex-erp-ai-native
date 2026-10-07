@@ -248,20 +248,35 @@ class TestSubmitAndTrack(unittest.TestCase):
                     "name": "Marie",
                     "starts": "2026-10-20",
                     "ends": "2026-10-22",
-                    "items": [{"item_name": "Caméra A7", "quantity": 2}],
+                    "items": [
+                        {"item_code": "CAM", "item_name": "Caméra A7", "quantity": 2},
+                        {"item_code": "LENS", "item_name": "Objectif", "quantity": 1},
+                    ],
                 }
             ),
             public_message="<i>Un devis suit</i> demain.",
             creation=datetime(2026, 10, 7, 9, 30),
         )
-        client_portal.frappe = SimpleNamespace(db=FakeDb(inbound=row))
+        client_portal.frappe = SimpleNamespace(
+            db=FakeDb(inbound=row),
+            get_all=lambda *a, **k: [
+                SimpleNamespace(item_code="CAM", image="/files/cam.jpg"),
+                SimpleNamespace(item_code="LENS", image="/private/files/secret.jpg"),
+            ],
+        )
         view = client_portal.track("un-jeton")
         flat = json.dumps(view, ensure_ascii=False)
         self.assertEqual(view["state"], "done")
         self.assertNotIn("marie@exemple.ca", flat)
         self.assertNotIn("514-555-0100", flat)
         self.assertEqual(view["team_message"], "Un devis suit demain.")
-        self.assertEqual(view["items"], [{"item_name": "Caméra A7", "quantity": 2}])
+        self.assertEqual(
+            view["items"],
+            [
+                {"item_name": "Caméra A7", "quantity": 2, "image": "/files/cam.jpg"},
+                {"item_name": "Objectif", "quantity": 1, "image": ""},  # photo privée : jamais montrée à un visiteur
+            ],
+        )
 
     def test_unknown_token_is_unknown(self):
         client_portal.frappe = SimpleNamespace(db=FakeDb(inbound=None))
@@ -305,7 +320,8 @@ class TestPublicPagesRender(unittest.TestCase):
         }
         html = self.render("suivi.html", state="review", view=view, title="t", fmt_day=lambda v: v)
         self.assertIn("En cours d&#39;examen", html)  # l'apostrophe est échappée par Jinja
-        self.assertIn("Caméra × 2", html)
+        self.assertIn("Caméra", html)
+        self.assertIn("× 2", html)
         self.assertNotIn("<script>x</script>", html)
         self.assertIn(
             "Demande introuvable", self.render("suivi.html", state="unknown", view={}, title="t", fmt_day=lambda v: v)

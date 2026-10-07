@@ -1,6 +1,6 @@
 # ADR-009 — Portail client, demandes, chèques et parcours de signature
 
-**Statut :** portail de demandes et chèque livrés (v0.12.0); **signature : définie, non livrée.**
+**Statut :** portail de demandes et chèque livrés (v0.12.0); **acceptation avec consentement explicite livrée (v0.15.0)**.
 **Date :** 2026-10-07
 
 ## Contexte
@@ -26,17 +26,13 @@ définir le parcours de signature **avant** de promettre une signature juridique
 7. **Paiement en ligne** : inchangé (ADR-007), offert seulement si les clés Stripe et le secret du webhook de la société
    existent. Non essayé avec un vrai compte Stripe.
 
-## Parcours de signature : défini, non livré
-Aucune « signature » n'est présentée au client tant que ce qui suit n'est pas décidé et validé par un juriste :
-- **Ce qui est signé** : le contrat approuvé (version figée, empreinte SHA-256 du document), jamais un devis modifiable.
-- **Preuves à conserver** : empreinte du document, identité déclarée (nom, courriel vérifié par lien à usage unique),
-  horodatage serveur, adresse IP et agent utilisateur (empreintes), acceptation explicite du texte affiché, version du
-  contrat, journal d'audit immuable. Le tout rattaché à la location.
-- **Valeur juridique** : au Québec, la *Loi concernant le cadre juridique des technologies de l'information* admet la
-  signature électronique si l'identité et l'intégrité du document peuvent être démontrées. Une simple case à cocher ne
-  l'établit pas forcément : à valider avec un avocat avant d'utiliser le mot « signature » dans l'interface; sinon
-  parler d'« acceptation ».
-- **Hors portée de cette phase** : aucun fournisseur de signature (DocuSign, etc.) n'est intégré.
+## Acceptation et signature : consentement explicite (décision de Kael, 2026-10-07 — remplace la condition d'avis juridique)
+Pas d'avocat requis. À la place :
+- **Conditions du contrat par société** (*Cortex Finance Settings* › « Contrat de location : conditions »). Un **modèle de départ** est fourni (`contract_terms.DEFAULT_TERMS`) et la société le **modifie librement** (bouton « Insérer le modèle par défaut » puis édition). La **version** augmente à chaque changement du texte.
+- **Instantané** : le devis envoyé garde les conditions (texte, version, empreinte SHA-256) telles qu'à l'envoi; modifier le modèle ensuite ne change pas un devis déjà parti.
+- **Consentement avant d'accepter** : le client voit les conditions sur le devis et doit cocher « J'ai lu et compris les conditions du contrat, et je les accepte. Mon nom ci-dessus vaut signature. » ; sans cette case, le serveur refuse l'acceptation (`check_acceptance`). La société peut désactiver cette exigence; les devis envoyés avant cette règle n'en exigent pas.
+- **Preuves conservées** sur le partage : version et empreinte des conditions, date et heure, nom saisi, empreinte (SHA-256) de l'adresse IP et du navigateur liée au jeton, et trace d'audit (acteur « Customer »).
+- **Limites honnêtes** : une case à cocher et un nom saisi sont une acceptation électronique simple; ce n'est pas une signature certifiée ni une vérification d'identité (le courriel n'est pas vérifié par lien). Le modèle de départ est un point de départ à adapter, pas un avis juridique. Aucun fournisseur de signature n'est intégré.
 
 ## Conséquences et limites
 - Le courriel de confirmation au demandeur n'est pas envoyé (courriel sortant non éprouvé) : le lien de suivi s'affiche

@@ -2,7 +2,19 @@
 
 ## Unreleased
 
-- Handoff : phase 9 consignée (suite demandée par Kael le 2026-10-07), pas encore codée.
+
+## v0.15.0 — 2026-10-07
+
+Phase 9 (demandes de Kael du 2026-10-07), première partie. **Vu à l'écran dans Chromium pour le portail, le suivi et le devis ; testé hors bench.**
+
+### Ajouté
+- **Abonnements : valeurs par défaut modifiables** (devise CAD, 1 000 $/mois, enveloppe d'IA de 60 $, options Portail/Équilibré/Avancé/Luna, sociétés existantes exemptées) : patch une fois + bouton. **Prix des options = valeurs de départ à confirmer**; rien n'est facturé.
+- **Contrat : consentement explicite** (« J'ai lu et compris… ») avant d'accepter un devis, **conditions modifiables par société** avec modèle de départ et version, instantané par devis, preuves conservées (version, empreinte, date, empreinte IP/navigateur). Pas d'avis juridique requis (décision de Kael); ce n'est pas une signature certifiée.
+- **Portail** : logo, bannière, phrase d'accueil et couleur d'accent de la société; photos d'équipement; **pied de page « Propulsé par Cortex »** (portail, suivi, devis). Seuls les fichiers publics sont exposés.
+- **« Demande reçue »** dense et interactive : récapitulatif, étapes, copie du lien, courriel prérempli, ajout au calendrier (.ics), impression, nouvelle demande, FAQ. Page de suivi enrichie.
+
+### Corrigé
+- L'ADR-009 avait été créé dans `apps/docs/adr/` au lieu de `docs/adr/` (liens du Handoff cassés) : déplacé.
 
 ## v0.14.0 — 2026-10-07
 

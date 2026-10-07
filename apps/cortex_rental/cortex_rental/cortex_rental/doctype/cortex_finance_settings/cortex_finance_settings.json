@@ -60,7 +60,15 @@
     "portal_slug",
     "cb_portal",
     "accept_cheque",
-    "cheque_payable_to"
+    "cheque_payable_to",
+    "sb_contract",
+    "contract_require_consent",
+    "contract_terms",
+    "contract_terms_version",
+    "sb_brand",
+    "portal_tagline",
+    "portal_banner_image",
+    "portal_accent_color"
   ],
   "fields": [
     {
@@ -347,6 +355,54 @@
       "fieldtype": "Data",
       "label": "Chèque à l'ordre de",
       "description": "Affiché au client avec la référence de la facture."
+    },
+    {
+      "fieldname": "sb_contract",
+      "fieldtype": "Section Break",
+      "label": "Contrat de location : conditions"
+    },
+    {
+      "fieldname": "contract_require_consent",
+      "fieldtype": "Check",
+      "label": "Exiger « j'ai lu et compris » avant d'accepter un devis",
+      "default": "1",
+      "description": "Le client doit cocher qu'il a lu et compris les conditions avant d'accepter. Les preuves (version, empreinte, date) sont conservées."
+    },
+    {
+      "fieldname": "contract_terms",
+      "fieldtype": "Long Text",
+      "label": "Conditions du contrat",
+      "description": "Texte affiché au client sur le devis. Laissez vide pour utiliser le modèle de départ de Cortex, ou utilisez « Insérer le modèle par défaut » puis adaptez-le. Un devis déjà envoyé garde les conditions de son envoi."
+    },
+    {
+      "fieldname": "contract_terms_version",
+      "fieldtype": "Int",
+      "label": "Version des conditions",
+      "read_only": 1,
+      "default": "1"
+    },
+    {
+      "fieldname": "sb_brand",
+      "fieldtype": "Section Break",
+      "label": "Image de marque du portail et des devis"
+    },
+    {
+      "fieldname": "portal_tagline",
+      "fieldtype": "Data",
+      "label": "Phrase d'accueil du portail",
+      "description": "Courte phrase sous le titre (140 caractères)."
+    },
+    {
+      "fieldname": "portal_banner_image",
+      "fieldtype": "Attach Image",
+      "label": "Bannière du portail",
+      "description": "Image publique (téléversée dans les fichiers publics) affichée en haut du portail."
+    },
+    {
+      "fieldname": "portal_accent_color",
+      "fieldtype": "Data",
+      "label": "Couleur d'accent",
+      "description": "Format #RRGGBB (ex. #066336). Laissez vide pour la couleur Cortex."
     }
   ],
   "permissions": [

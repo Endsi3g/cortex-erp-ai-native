@@ -24,3 +24,4 @@ cortex_rental.patches.remove_native_onboarding
 cortex_rental.patches.harden_login_policy
 cortex_rental.patches.correct_ai_tier_prices
 cortex_rental.patches.set_invoice_print_defaults
+cortex_rental.patches.seed_subscription_defaults

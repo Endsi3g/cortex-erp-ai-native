@@ -1,7 +1,17 @@
 // Réglages financiers : modèles de taxes canadiens (le serveur valide, borne les taux et audite le changement).
 frappe.ui.form.on("Cortex Finance Settings", {
 	refresh(frm) {
-		if (frm.is_new() || !frappe.model.can_write("Cortex Finance Settings")) return;
+		if (!frappe.model.can_write("Cortex Finance Settings")) return;
+		// Conditions du contrat : le modèle de départ s'insère puis s'adapte librement.
+		frm.add_custom_button(__("Insérer le modèle par défaut"), () => {
+			const apply = () => cortex.call("billing.default_terms", {}, { type: "GET" }).then((r) => {
+				const data = (r || {}).data || r || {};
+				frm.set_value("contract_terms", data.text || "");
+			});
+			if (frm.doc.contract_terms) frappe.confirm(__("Remplacer les conditions actuelles par le modèle par défaut ?"), apply);
+			else apply();
+		}, __("Contrat"));
+		if (frm.is_new()) return;
 		frm.add_custom_button(__("Appliquer un modèle de taxes"), () => {
 			cortex.call("billing.tax_presets", {}, { type: "GET" }).then((r) => {
 				const data = (r || {}).data || r || {};

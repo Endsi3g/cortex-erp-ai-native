@@ -69,8 +69,35 @@ def build_snapshot(tx, sender_name: str, message: str, valid_until) -> Dict[str,
     )
     logo = company.get("company_logo") or ""
     customer = frappe.db.get_value("Customer", tx.customer, "customer_name") or tx.customer
+    from cortex_rental.services import brand, contract_terms
+
+    row_settings = (
+        frappe.db.get_value(
+            "Cortex Finance Settings",
+            tx.company,
+            [
+                "contract_terms",
+                "contract_terms_version",
+                "contract_require_consent",
+                "portal_tagline",
+                "portal_banner_image",
+                "portal_accent_color",
+            ],
+            as_dict=True,
+        )
+        or {}
+    )
+    images = {
+        p.item_code: brand.public_file(p.image)
+        for p in frappe.get_all(
+            "Cortex Rental Item Profile",
+            filters={"company": tx.company, "item_code": ["in", [r.item_code for r in tx.items]]},
+            fields=["item_code", "image"],
+        )
+    }
     lines = [
         {
+            "image": images.get(row.item_code, ""),
             "item_name": row.item_name or row.item_code,
             "quantity": float(row.qty or 0),
             "daily_rate": float(row.rate or 0),
@@ -100,6 +127,8 @@ def build_snapshot(tx, sender_name: str, message: str, valid_until) -> Dict[str,
         "prepared_by": sender_name,
         "message": message,
         "valid_until": str(valid_until),
+        "brand": brand.branding(row_settings, company),
+        **contract_terms.snapshot_terms(row_settings),
     }
 
 
@@ -276,7 +305,15 @@ def public_view(token: str) -> Dict[str, Any]:
     return view
 
 
-def respond(token: str, action: str, message: str = "", responder_name: str = "", confirmed: int = 0) -> Dict[str, Any]:
+def respond(
+    token: str,
+    action: str,
+    message: str = "",
+    responder_name: str = "",
+    confirmed: int = 0,
+    terms_accepted: int = 0,
+    proof: str = "",
+) -> Dict[str, Any]:
     """`confirmed` : le client a coché la confirmation (accepter, refuser). Sans elle, rien n'est enregistré."""
     if action not in ACTIONS:
         frappe.throw("Action inconnue.", frappe.ValidationError)
@@ -295,12 +332,23 @@ def respond(token: str, action: str, message: str = "", responder_name: str = ""
     if action == "changes" and len(text) < 3:
         frappe.throw("Décrivez la modification souhaitée.", frappe.ValidationError)
     status = ACTIONS[action]
-    frappe.db.set_value(
-        SHARE,
-        doc.name,
-        {"status": status, "responded_at": now_datetime(), "responder_name": name, "response_message": text},
-    )
     snapshot = json.loads(doc.snapshot_json or "{}")
+    changes = {"status": status, "responded_at": now_datetime(), "responder_name": name, "response_message": text}
+    if action == "accept":
+        from cortex_rental.services import contract_terms
+
+        problem = contract_terms.check_acceptance(snapshot, terms_accepted)
+        if problem:
+            frappe.throw(problem, frappe.ValidationError)
+        if snapshot.get("terms_hash"):
+            # Preuve du consentement : version et empreinte des conditions affichées, date, empreinte technique.
+            changes.update(
+                terms_version=int(snapshot.get("terms_version") or 1),
+                terms_hash=snapshot["terms_hash"],
+                terms_accepted_at=now_datetime(),
+                terms_accept_proof=proof,
+            )
+    frappe.db.set_value(SHARE, doc.name, changes)
     who = name or snapshot.get("customer") or "Le client"
     _audit(
         doc.company,
@@ -308,7 +356,16 @@ def respond(token: str, action: str, message: str = "", responder_name: str = ""
         snapshot.get("customer") or who,
         f"cortex.quote.{status.lower().replace(' ', '_')}",
         doc.rental_transaction,
-        {"share": doc.name, "responder": name, "message": text},
+        {
+            "share": doc.name,
+            "responder": name,
+            "message": text,
+            **(
+                {"terms_version": snapshot.get("terms_version"), "terms_hash": snapshot.get("terms_hash")}
+                if action == "accept" and snapshot.get("terms_hash")
+                else {}
+            ),
+        },
     )
     follow = _after_accept(doc, who) if status == "Accepted" else {}
     _notify_team(doc, status, who, snapshot, follow)

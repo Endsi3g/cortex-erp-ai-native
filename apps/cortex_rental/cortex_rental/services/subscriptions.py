@@ -110,6 +110,61 @@ def settings_problems(values: Dict[str, Any]) -> List[str]:
     return problems
 
 
+# ------------------------------------------------------------------ valeurs par défaut modifiables
+# Valeurs de départ proposées (2026-10-07) : tout est modifiable dans *Cortex Subscription Settings*. Rien n'est facturé
+# avec elles : la facturation est désactivée, aucun prix n'est confirmé et aucun identifiant de prix Stripe n'est saisi.
+DEFAULT_BASE_PRICE = 1000.0  # prix de base demandé, par société et par mois
+DEFAULT_AI_ENVELOPE = 60.0  # enveloppe d'IA incluse par mois : celle du budget par défaut d'une société (ADR-006)
+DEFAULT_OPTIONS = (
+    ("Module", "portal", "Portail client (demandes et suivi)", 49.0),
+    ("AI Tier", "equilibre", "Cortex Équilibré (Claude Sonnet 5.5)", 99.0),
+    ("AI Tier", "avance", "Cortex Avancé (Claude Opus 5.5)", 249.0),
+    ("AI Tier", "luna", "Cortex Luna (OpenAI GPT-6 Luna)", 19.0),
+)
+
+
+def default_settings(company_names: List[str]) -> Dict[str, Any]:
+    """Pur : réglages de départ. Les sociétés existantes sont **exemptées** : activer la facturation ne leur retire rien
+    tant qu'une personne ne les retire pas de la liste. Les options sont offertes mais leur prix reste à confirmer."""
+    return {
+        "currency": "CAD",
+        "base_label": "Cortex : abonnement de base",
+        "base_monthly_price": DEFAULT_BASE_PRICE,
+        "base_price_id": "",
+        "base_price_confirmed": 0,
+        "included_ai_budget": DEFAULT_AI_ENVELOPE,
+        "base_includes_tiers": "rapide",
+        "exempt_companies": "\n".join(sorted({c for c in company_names if c})),
+        "plan_items": [
+            {
+                "kind": kind,
+                "key": key,
+                "label": label,
+                "monthly_price": price,
+                "stripe_price_id": "",
+                "enabled": 1,
+                "price_confirmed": 0,
+            }
+            for kind, key, label, price in DEFAULT_OPTIONS
+        ],
+    }
+
+
+def seed_defaults() -> bool:
+    """Applique les valeurs de départ **une seule fois** : seulement si rien n'a jamais été configuré. Retourne vrai si fait."""
+    if not frappe.db.exists("DocType", SETTINGS):
+        return False
+    doc = frappe.get_single(SETTINGS)
+    if doc.get("enabled") or doc.get("plan_items") or (doc.get("exempt_companies") or "").strip():
+        return False
+    values = default_settings(frappe.get_all("Company", pluck="name"))
+    rows = values.pop("plan_items")
+    doc.update(values)
+    doc.set("plan_items", rows)
+    doc.save(ignore_permissions=True)
+    return True
+
+
 # ------------------------------------------------------------------ droits (pur)
 def entitlements_from_items(price_ids: List[str], settings: Dict[str, Any]) -> Dict[str, List[str]]:
     """Pur : modules et niveaux d'IA acquis d'après les prix de l'abonnement (seuls les prix connus comptent)."""

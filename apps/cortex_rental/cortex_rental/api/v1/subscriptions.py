@@ -71,3 +71,10 @@ if frappe:
         if not result.get("ok"):
             frappe.local.response["http_status_code"] = 400
         return result
+
+    @frappe.whitelist(methods=["GET"])
+    @defense.safe_input
+    def default_settings():
+        """Valeurs de départ proposées pour les réglages d'abonnement (administrateur du site seulement; rien n'est enregistré)."""
+        frappe.only_for("System Manager")
+        return {"data": subscriptions.default_settings(frappe.get_all("Company", pluck="name"))}

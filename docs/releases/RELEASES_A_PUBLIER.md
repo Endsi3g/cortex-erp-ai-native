@@ -1,4 +1,4 @@
-# Versions à publier sur GitHub (v0.8.0 à v0.14.0)
+# Versions à publier sur GitHub (v0.8.0 à v0.15.x)
 
 Les versions ont été préparées une par phase, chacune dans son commit (branche `claude/handoff-phases`, PR #14).
 **Les étiquettes (tags) et les « Releases » GitHub n'ont pas pu être créées depuis l'environnement de travail** (le dépôt
