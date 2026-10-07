@@ -211,7 +211,19 @@ if frappe:
                 for t in ai_settings.tiers(values)
                 if t["enabled"]
             ]
+            # Abonnement : un niveau non acquis est montré « non inclus » et ne peut pas être choisi.
+            from cortex_rental.services import subscriptions
+
+            entitled = subscriptions.entitlements(get_company_context())["ai_tiers"]
+            if entitled is not None:
+                for row in offered:
+                    if row["key"] not in entitled:
+                        row["available"] = False
+                        row["locked"] = "Non inclus dans l'abonnement"
             default = ai_settings.default_tier(values) if values.get("enabled") else ""
+            if default and not any(r["key"] == default and r["available"] for r in offered):
+                # Le niveau par défaut n'est pas acquis : on propose le premier niveau réellement disponible.
+                default = next((r["key"] for r in offered if r["available"]), "")
             if values.get("enabled") and default:
                 return {
                     "data": {

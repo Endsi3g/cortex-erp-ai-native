@@ -141,7 +141,7 @@ class TierUnavailable(AIProviderError):
     """Le niveau demandé n'est pas offert (désactivé ou sans clé) alors que d'autres le sont : on le dit, on ne change pas en silence."""
 
 
-def resolve_tier(settings: Dict[str, Any], requested: Optional[str]) -> Dict[str, Any]:
+def resolve_tier(settings: Dict[str, Any], requested: Optional[str], company: Optional[str] = None) -> Dict[str, Any]:
     """Le niveau Cortex à utiliser. Sans demande : le niveau par défaut. Aucun niveau disponible : IA non configurée (démo)."""
     rows = {r["key"]: r for r in ai_settings.tiers(settings)}
     available = [r for r in rows.values() if r["configured"]]
@@ -151,6 +151,15 @@ def resolve_tier(settings: Dict[str, Any], requested: Optional[str]) -> Dict[str
         )
     key = requested or ai_settings.default_tier(settings)
     row = rows.get(key)
+    if company and row and row["configured"]:
+        # Abonnement : seuls les niveaux acquis sont offerts (sans effet tant que la facturation n'est pas activée).
+        from cortex_rental.services import subscriptions
+
+        if not subscriptions.allows_tier(company, key):
+            raise TierUnavailable(
+                f"Le modèle « {row['label']} » n'est pas inclus dans l'abonnement de votre société. "
+                "Le propriétaire peut l'ajouter dans Société et rôles."
+            )
     if not row or not row["configured"]:
         raise TierUnavailable(
             f"Le modèle « {row['label'] if row else key} » n'est pas disponible pour le moment. Choisissez-en un autre."
@@ -247,7 +256,7 @@ class AIGateway:
         prices = None
         if self._provider is None and not economy:
             # Niveau Cortex choisi : son modèle et ses prix (le budget compte le vrai coût du niveau utilisé).
-            self.tier = resolve_tier(self.settings, tier)
+            self.tier = resolve_tier(self.settings, tier, company)
             self._provider = build_provider(self.settings, model=self.tier["model"])
             prices = {
                 "price_input_per_mtok": self.tier["price_input_per_mtok"],

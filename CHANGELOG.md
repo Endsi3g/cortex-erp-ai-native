@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## v0.13.0 — 2026-10-07
+
+Phase 7 du plan de livraison. **Codé et testé par événements Stripe simulés ; désactivé par défaut ; jamais essayé avec un compte Stripe.**
+
+### Ajouté
+- **Abonnements Cortex** (ADR-010) : plan de base, modules et niveaux d'IA payants par société; Stripe Checkout et portail; webhook signé, idempotent et ordonné; droits appliqués côté serveur (niveaux d'IA, portail client).
+- Carte « Abonnement Cortex » dans *Société et rôles* (propriétaire).
+- Réglages de plateforme *Cortex Subscription Settings* : l'activation exige clés, identifiants de prix et **confirmation humaine des prix**; sociétés exemptées possibles.
+
+### À savoir
+- Rien n'est facturé ni restreint tant que la facturation n'est pas activée. Prix, devise, enveloppe d'IA incluse et options sont à décider par une personne.
+
 ## v0.12.0 — 2026-10-07
 
 Phase 6 du plan de livraison. **Codé et testé hors bench ; non essayé dans un navigateur.**

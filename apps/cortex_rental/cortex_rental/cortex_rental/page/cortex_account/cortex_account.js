@@ -628,6 +628,47 @@ cortex.AccountPage = class AccountPage {
 		});
 	}
 
+	// Abonnement Cortex (propriétaire seulement). Les droits viennent de Stripe via le webhook signé, jamais d'ici.
+	renderSubscription(after) {
+		const card = this.card(__("Abonnement Cortex"), __("Plan, modules et niveaux d'IA de votre société."), `<div class="cx-sub-body"><p class="cx-acct-muted">${__("Chargement…")}</p></div>`);
+		card.insertAfter(after);
+		const box = card.find(".cx-sub-body");
+		const money = (v, cur) => `${Number(v || 0).toLocaleString("fr-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur === "USD" ? "$ US" : "$"}`;
+		const STATUS = { Active: __("Actif"), Trialing: __("Période d'essai"), "Past Due": __("Paiement en retard"), Canceled: __("Annulé"), Inactive: __("Aucun abonnement") };
+		this.call("get_subscription", {}, "GET", "subscriptions").then((r) => {
+			const sub = (r && r.data) || r || {};
+			if (!sub.billing_enabled) {
+				box.html(`<p class="cx-acct-muted">${__("La facturation des abonnements n'est pas encore activée : aucun frais n'est prélevé et aucune fonction n'est restreinte.")}</p>`);
+				return;
+			}
+			const cat = sub.catalog || { base: {}, options: [] };
+			const active = ["Active", "Trialing", "Past Due"].includes(sub.status);
+			let html = `<p><b>${STATUS[sub.status] || this.esc(sub.status)}</b>${sub.current_period_end ? ` · ${__("période payée jusqu'au")} ${this.when(sub.current_period_end)}` : ""}${sub.cancel_at_period_end ? ` · <span class="text-danger">${__("se termine à la fin de la période")}</span>` : ""}</p>`;
+			if (sub.status === "Past Due") html += `<p class="cx-acct-note">${__("Le dernier paiement a échoué : mettez à jour votre carte dans « Gérer l'abonnement ».")}</p>`;
+			html += `<p>${this.esc(cat.base.label || "")} — <b>${money(cat.base.monthly_price, cat.currency)}</b> ${__("par mois")}</p>`;
+			if (!active && cat.options.length) {
+				html += `<fieldset class="cx-sub-options"><legend class="cx-acct-muted">${__("Options")}</legend>${cat.options.map((o, i) => `<label style="display:block"><input type="checkbox" data-opt="${i}"> ${this.esc(o.label)} — ${money(o.monthly_price, cat.currency)} ${__("par mois")}</label>`).join("")}</fieldset>`;
+			}
+			html += `<div class="cx-acct-actions">${active ? `<button type="button" class="btn btn-default btn-sm" data-sub="portal">${__("Gérer l'abonnement")}</button>` : `<button type="button" class="btn btn-primary btn-sm" data-sub="checkout">${__("Souscrire")}</button>`}</div>`;
+			html += `<p class="cx-acct-muted">${__("Les taxes applicables sont calculées par Stripe. Votre abonnement est distinct des paiements de location de vos clients.")}</p>`;
+			box.html(html);
+			box.on("click", "[data-sub=checkout]", () => {
+				const options = [];
+				box.find("[data-opt]:checked").each((_, el) => options.push({ kind: cat.options[$(el).data("opt")].kind, key: cat.options[$(el).data("opt")].key }));
+				this.call("start_checkout", { options: JSON.stringify(options) }, "POST", "subscriptions").then((x) => {
+					const url = ((x && x.data) || x || {}).url;
+					if (url) window.location.href = url;
+				});
+			});
+			box.on("click", "[data-sub=portal]", () => {
+				this.call("open_portal", {}, "POST", "subscriptions").then((x) => {
+					const url = ((x && x.data) || x || {}).url;
+					if (url) window.location.href = url;
+				});
+			});
+		}).catch(() => box.html(`<p class="cx-acct-muted">${__("L'abonnement est indisponible pour le moment. Réessayez dans un instant.")}</p>`));
+	}
+
 	renderCompany(d) {
 		const head = this.card(
 			"",
@@ -670,6 +711,7 @@ cortex.AccountPage = class AccountPage {
 			team.find(".cx-acct-muted").replaceWith(
 				this.table([__("Personne"), __("Rôle"), __("Dernière activité")], o.team.map((m) => `<tr><td><a href="#" class="cx-person" data-person="${this.esc(m.id)}"><b>${this.esc(m.name)}</b></a>${m.you ? ` <span class="cx-acct-muted">(${__("vous")})</span>` : ""}${m.email ? `<div class="cx-acct-muted">${this.esc(m.email)}</div>` : ""}</td><td>${this.esc(__(m.role))}</td><td class="cx-acct-muted">${m.last_active ? this.when(m.last_active) : "—"}</td></tr>`))
 			);
+			if (o.can_manage_team) this.renderSubscription(head);
 			if (o.can_manage_team) this.card(__("Configuration de l'entreprise"), __("Reprenez l'assistant de configuration (entreprise, équipe, catalogue, taxes) à tout moment."), `<a class="btn btn-default btn-sm" href="/app/cortex-setup">${__("Ouvrir la configuration")}</a>`).insertAfter(head);
 			if (o.can_manage_team) head.find(".cx-co-cta").prop("hidden", false).html(`<a class="btn btn-primary btn-sm" href="/app/cortex-admin">${__("Gérer l'équipe et les rôles")}</a><a class="btn btn-default btn-sm" href="/app/cortex-account/securite">${__("Appareils de l'équipe")}</a><a class="btn btn-default btn-sm" data-go="activite" data-scope="team" href="#">${__("Activité de l'équipe")}</a>`);
 		});

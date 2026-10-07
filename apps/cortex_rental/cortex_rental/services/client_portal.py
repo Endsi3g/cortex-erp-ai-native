@@ -157,6 +157,10 @@ def company_for_slug(slug: str) -> Optional[Dict[str, Any]]:
     if not row:
         return None
     company = row.name
+    from cortex_rental.services import subscriptions
+
+    if not subscriptions.allows_module(company, "portal"):
+        return None  # module non inclus dans l'abonnement : même réponse qu'un portail inexistant
     info = frappe.db.get_value("Company", company, ["company_name", "company_logo"], as_dict=True) or {}
     return {"company": company, "name": info.get("company_name") or company, "logo": info.get("company_logo") or ""}
 

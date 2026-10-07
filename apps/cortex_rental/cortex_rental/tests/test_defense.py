@@ -24,6 +24,7 @@ GUEST_ALLOWLIST = {
     "portal_calendar",
     "submit_portal_request",
     "stripe_webhook",
+    "subscription_webhook",
     "health",
     "ready",
 }
