@@ -148,9 +148,13 @@
 			const nav = el("nav", { id: "cx-nav", "aria-label": __("Navigation principale") });
 			const head = el("div", { class: "cx-nav-head" });
 			const brand = el("a", { class: "cx-brand", href: "/app/cortex-rental", "aria-label": "Cortex" }, `<img src="${frappe.boot.app_logo_url || "/assets/cortex_rental/images/cortex-logo.svg"}" alt="" width="26" height="26"><span class="cx-label">Cortex</span>`);
-			const toggle = el("button", { type: "button", class: "cx-nav-toggle", "aria-label": __("Réduire ou agrandir le menu"), title: __("Réduire ou agrandir le menu") }, PANEL);
-			toggle.addEventListener("click", () => this.toggleCollapsed());
+			const toggle = el("button", { type: "button", class: "cx-nav-toggle", "aria-label": __("Réduire ou agrandir le menu"), title: __("Réduire ou agrandir le menu"), "aria-controls": "cx-nav", "aria-expanded": String(!document.body.classList.contains("cx-nav-collapsed")) }, PANEL);
+			toggle.addEventListener("click", () => {
+				if (window.matchMedia("(max-width: 768px)").matches) this.closeDrawer();
+				else this.toggleCollapsed();
+			});
 			head.appendChild(brand);
+			head.appendChild(toggle);
 			nav.appendChild(head);
 
 			const scroll = el("div", { class: "cx-nav-scroll" });
@@ -216,16 +220,22 @@
 			});
 			// Indique qu'il reste des entrées sous le bord visible (fondu en bas), sans bande ni ombre.
 			const refreshMore = () => scroll.classList.toggle("cx-more", scroll.scrollTop + scroll.clientHeight < scroll.scrollHeight - 2);
+			const refreshToggle = () => {
+				const mobile = window.matchMedia("(max-width: 768px)").matches;
+				const label = mobile ? __("Fermer le menu") : document.body.classList.contains("cx-nav-collapsed") ? __("Agrandir le menu") : __("Réduire le menu");
+				toggle.setAttribute("aria-label", label);
+				toggle.setAttribute("title", label);
+				toggle.setAttribute("aria-expanded", String(mobile ? document.body.classList.contains("cx-nav-open") : !document.body.classList.contains("cx-nav-collapsed")));
+			};
+			window.addEventListener("resize", refreshToggle);
+			new MutationObserver(refreshToggle).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+			refreshToggle();
 			scroll.addEventListener("scroll", refreshMore, { passive: true });
 			window.addEventListener("resize", refreshMore);
 			// Replier ou déplier la barre change la hauteur du contenu : on recalcule le fondu.
 			new MutationObserver(() => window.setTimeout(refreshMore, 120)).observe(document.body, { attributes: true, attributeFilter: ["class"] });
 			window.setTimeout(refreshMore, 400);
 			nav.appendChild(scroll);
-			// La commande de repli vit en bas du rail, juste au-dessus du profil (ouvert ou replié).
-			const foot = el("div", { class: "cx-nav-foot" });
-			foot.appendChild(toggle);
-			nav.appendChild(foot);
 			nav.appendChild(this.account());
 
 			const backdrop = el("div", { id: "cx-nav-backdrop" });

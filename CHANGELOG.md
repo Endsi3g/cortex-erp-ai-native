@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+## v0.15.2 — 2026-10-09
+
+Profil Desk natif, grille de disponibilité reliée au catalogue de la société, navigation latérale améliorée et isolation accrue des sessions IA. Version du code : `0.15.2`.
+
+### Amélioré
+
+- **Mon compte › Profil** : refonte de la page dans le style natif et sobre du Desk ERPNext. Identité, modification des renseignements permis, photo, apparence, compteurs d'activité, éléments à traiter, activité récente et raccourcis. Erreurs et sauvegardes sont présentées selon le résultat réel des API Frappe.
+- **Disponibilité et catalogue** : la grille utilise les profils de la société active et affiche toutes les catégories par défaut. L'état vide distingue un catalogue sans profil d'une recherche sans résultat et propose une action vers le catalogue lorsque les permissions de lecture l'autorisent. La grille reste limitée à 200 profils; la pagination au-delà est à faire.
+- **Barre latérale** : bouton de repli en haut près du logo; sur téléphone, ce bouton ferme le tiroir. La scrollbar est masquée tout en gardant le défilement fonctionnel.
+- **Sessions IA** : les lectures, messages et contextes épinglés vérifient le propriétaire et la société active. Un changement de société ne reprend pas une session précédente.
+- **Tests sous Windows** : chemins normalisés dans le contrôle des endpoints et descripteurs de fichiers fermés.
+
+### Vérifications
+
+- `pytest apps/cortex_rental/cortex_rental/tests` : **576 réussis, 15 ignorés**.
+- `ruff check` sur les fichiers Python modifiés : réussi.
+- `node --check` sur les scripts de navigation et de page Disponibilité : réussi.
+- Build Frappe `bench build --app cortex_rental` : réussi; couche sombre régénérée depuis les 22 sources.
+- Le rendu et les mutations du Desk Frappe n'ont pas tous été parcourus en navigateur. Stripe et les fournisseurs IA n'ont pas été testés avec des identifiants réels. Aucun déploiement en production.
+
 
 ## v0.15.1 — 2026-10-07
 

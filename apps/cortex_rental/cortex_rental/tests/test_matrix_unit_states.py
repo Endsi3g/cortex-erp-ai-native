@@ -21,6 +21,11 @@ class FakeDb:
     def has_column(self, doctype, column):
         return True
 
+    def count(self, doctype, filters):
+        assert doctype == "Cortex Rental Item Profile"
+        assert filters == {"company": "Cortex Test"}
+        return 2
+
     def sql(self, query, params=None, as_dict=False):
         if "tabSerial No" in query:
             return self.serial_rows

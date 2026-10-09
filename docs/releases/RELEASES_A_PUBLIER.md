@@ -1,7 +1,15 @@
-# Versions à publier sur GitHub (v0.8.0 à v0.15.x)
+# Releases et historique de publication
+
+## v0.15.2 — 2026-10-09
+
+Release ERPNext native : profil Mon compte réorganisé, grille Disponibilité reliée au Catalogue de la société et état vide avec action contextuelle, contrôle de repli de la navigation remonté et masquage visuel de la scrollbar, isolation des sessions IA par propriétaire et société. La grille est limitée à 200 profils. Vérifications : 576 tests réussis, 15 ignorés; Ruff, Node et build Frappe réussis. Pas de validation Stripe/IA avec des clés réelles ni de déploiement production.
+
+L'état actuel de publication de v0.15.2 se vérifie dans GitHub; le tableau qui suit conserve le plan historique v0.8.0–v0.15.1.
+
+## Plan historique — versions antérieures (v0.8.0 à v0.15.1)
 
 Les versions ont été préparées une par phase, chacune dans son commit (branche `claude/handoff-phases`, PR #14).
-**Les étiquettes (tags) et les « Releases » GitHub n'ont pas pu être créées depuis l'environnement de travail** (le dépôt
+**À l'époque, les étiquettes (tags) et les « Releases » GitHub n'avaient pas pu être créées depuis l'environnement de travail** (le dépôt
 refuse les poussées d'étiquettes et l'outil GitHub disponible ne sait que lire les releases). Pour publier, après fusion
 (ou directement sur ces commits) :
 

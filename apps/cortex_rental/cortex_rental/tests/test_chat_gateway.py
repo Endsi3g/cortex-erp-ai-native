@@ -19,7 +19,7 @@ from cortex_rental.services.agent_router import AgentRouter, PAGE_TO_AGENT
 from cortex_rental.services.tool_policy import ToolPolicyResolver, AGENT_TOOL_MAP
 from cortex_rental.services.onyx_chat_client import MockOnyxChatClient
 from cortex_rental.services.chat_response_transformer import ChatResponseTransformer
-from cortex_rental.services.chat_session import ChatSessionService
+from cortex_rental.services.chat_session import ChatSessionService, ChatSessionNotFoundError
 
 
 class TestClientCannotEscalate(unittest.TestCase):
@@ -318,3 +318,11 @@ class TestChatIsolationLive(unittest.TestCase):
         created = service.create_session(user="user-a@test.com", company="Cortex Test Co A", page="availability")
         with self.assertRaises(frappe.PermissionError):
             service.get_session(created["name"], user="user-b@test.com")
+
+    def test_same_user_cannot_read_session_from_another_company_context(self):
+        service = ChatSessionService()
+        created = service.create_session(user="user-a@test.com", company="Cortex Test Co A", page="availability")
+        with self.assertRaises(ChatSessionNotFoundError):
+            service.get_session(created["name"], user="user-a@test.com", company="Cortex Test Co B")
+        with self.assertRaises(ChatSessionNotFoundError):
+            service.get_messages(created["name"], user="user-a@test.com", company="Cortex Test Co B")

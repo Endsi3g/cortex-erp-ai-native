@@ -1,5 +1,29 @@
 # Handoff — Cortex ERP AI-Native
 
+## État courant — 2026-10-09 — branche `main`, v0.15.2
+
+Cette entrée décrit le travail courant et prime sur les descriptions historiques plus bas. Le contrat UI, les API à jour et les limites produit sont dans [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md), section « Mise à jour du 2026-10-09 ».
+
+### Fait dans cette livraison
+
+- Profil *Mon compte* entièrement réorganisé pour reprendre la présentation dense et sobre du Desk : identité, photo, coordonnées éditables permises, langue et fuseau connus, activité, éléments à traiter, compteurs liés, apparence et raccourcis. Les lectures et écritures passent par `cortex_rental.api.v1.account`; états de chargement, validation, échec, annulation et confirmation sont affichés sans annoncer un enregistrement avant la réponse serveur.
+- Disponibilité utilise les profils du Catalogue de la société active. Sans filtre, la grille présente toutes les catégories; la sélection de catégorie reste disponible. Si aucun équipement n'est visible, l'écran distingue catalogue vide et filtres sans résultat, et donne une action vers le catalogue autorisée par `frappe.model.can_read` ou pour retirer les filtres. Le serveur renvoie un décompte société distinct des filtres. **Limite connue :** la grille retourne au plus 200 profils; ajouter la pagination si les sociétés peuvent dépasser ce volume.
+- Barre latérale : bouton de repli remonté en haut près du logo, état mobile qui ferme le tiroir, barre visuelle de défilement masquée mais molette/toucher/clavier conservés.
+- Sessions IA : vérification du propriétaire, de la société et de l'état masqué sur les lectures et contextes épinglés; changement de société ne réutilise pas l'ancienne session; agent résolu côté serveur.
+- Défense des tests statiques sous Windows : chemins normalisés et descripteurs fermés dans `test_defense.py`.
+- Vérifications finales : `pytest apps/cortex_rental/cortex_rental/tests` : **576 réussis, 15 ignorés**; Ruff, `node --check` et `git diff --check` réussis; `bench build --app cortex_rental` réussi et couche sombre régénérée depuis 22 sources. Les fonctions Stripe et les fournisseurs IA n'ont pas été validés avec des identifiants réels.
+
+### Vérifications et travail qui reste
+
+- Vérifier sur le Desk Frappe le profil et la grille avec les données de la société, la sauvegarde photo et profil, le mode sombre, le catalogue vide et le tiroir mobile. L'API disponibilité limite la grille à 200 profils.
+- Parcourir les formulaires Desk natifs et le mode sombre au-delà des écrans ci-dessus, selon les phases UX ouvertes dans le handoff canonique.
+- Tester les fournisseurs et Stripe dans leurs environnements de test avec clés, confirmer prix, devise, options et enveloppe avant tout débit réel; maintenir l'approbation humaine pour les actions métier.
+- Aucun déploiement en production n'a été fait.
+
+`main` était à `76ae50d` après récupération de `origin/main` et avance rapide. La branche locale contient maintenant les correctifs v0.15.2 décrits ici. Le détail historique ci-dessous est conservé comme archive et peut être dépassé par cette section et le handoff canonique.
+
+---
+
 > **Document historique (2026-08-31), conservé pour mémoire.** L'état réel du projet — écrans, assistant IA, déploiement, limites connues — est dans [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md) (document canonique), [`docs/ops/DEPLOIEMENT.md`](docs/ops/DEPLOIEMENT.md) et [`CHANGELOG.md`](CHANGELOG.md). Ce qui suit décrit l'époque des premiers essais de bench (Docker, tour de développement) ; les commandes et les blocages décrits ne s'appliquent plus tels quels. Depuis v0.7.0 : interface 100 % native ERPNext, bench de développement fonctionnel, passerelle IA interne, mise en production documentée.
 
 > **Mise à jour 2026-09-23 :** pour la direction UX, les écrans AI-native, les seuils de confiance, les règles de validation et le contrat d’intégration Onyx/Ollama, le document canonique est [`docs/frontend/CORTEX_UI_HANDOFF_V2.md`](docs/frontend/CORTEX_UI_HANDOFF_V2.md). Les sections frontend historiques ci-dessous peuvent être obsolètes; vérifier chaque état dans le code avant de s’y fier.

@@ -97,7 +97,12 @@ def _endpoints():
                     decorators = [ast.unparse(d) for d in node.decorator_list]
                     if any("frappe.whitelist" in d for d in decorators):
                         found.append(
-                            (os.path.relpath(path, APP_DIR), node.name, decorators, ast.get_source_segment(src, node))
+                            (
+                                os.path.relpath(path, APP_DIR).replace(os.sep, "/"),
+                                node.name,
+                                decorators,
+                                ast.get_source_segment(src, node),
+                            )
                         )
     return found
 
@@ -160,7 +165,8 @@ class TestExternalCallsAndSecrets(unittest.TestCase):
             for name in files:
                 if name.endswith(".py"):
                     path = os.path.join(folder, name)
-                    yield path, open(path, encoding="utf-8").read()
+                    with open(path, encoding="utf-8") as handle:
+                        yield path, handle.read()
 
     def test_every_outbound_http_call_has_a_timeout(self):
         for path, src in self._sources():

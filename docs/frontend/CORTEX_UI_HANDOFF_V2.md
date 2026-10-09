@@ -1,11 +1,22 @@
 # Cortex UI handoff v2 — ERPNext-first, AI-native
 
 **Statut :** contrat produit canonique pour l’interface Cortex et les agents de développement.  
-**Version :** 3.2 · 2026-10-07  
+**Version :** 3.3 · 2026-10-09
 **Socle :** ERPNext + Frappe Framework v15, constructions natives (workspaces, cartes, graphiques, rapports, listes, formulaires) et bundler intégré de Frappe pour l’accueil IA. **Plus de Vite, de Frappe UI ni de SPA `/cortex`** (décision du 2026-09-30 ; plan : [`ERPNEXT_NATIVE_PLAN.md`](ERPNEXT_NATIVE_PLAN.md)).  
 **Principe :** *Cortex suggère, l’humain décide.*
 
 > Les instructions de ce fichier priment sur les descriptions frontend antérieures de `HANDOFF.md`. Elles ne remplacent pas les règles de sécurité métier déjà codées. Quand la documentation et le code divergent, ne prétends jamais qu’une fonction est opérationnelle : vérifie l’endpoint et décris l’écart.
+
+## Mise à jour du 2026-10-09 — profil, disponibilité et navigation (v0.15.2)
+
+- **Mon compte › Profil** a été refait en gardant la Page Desk native et les API Frappe existantes. Identité, modification des champs autorisés, photo, préférences Clair/Sombre/Automatique, compteurs, éléments à traiter, activité récente et raccourcis utilisent les réponses réelles des services `account.*`. Les erreurs sont affichées et les changements du profil ne sont confirmés qu'après une réponse serveur valide. Le courriel demeure en lecture seule. Le contrat `cortex_rental.api.v1.account` et `services/account.py` a été vérifié avant le rendu.
+- **Disponibilité ↔ Catalogue** : `availability.get_matrix` lit les profils `Cortex Rental Item Profile` de la société active. L'entrée sans catégorie affiche désormais toutes les catégories; les catégories restent filtrables. La réponse inclut le décompte des profils de la société afin de distinguer le catalogue vide d'un filtre sans résultat. L'état vide propose « Ouvrir le catalogue » lorsque `frappe.model.can_read` autorise la lecture, ou « Effacer les filtres ». Le décompte est réservé à cette distinction et ne fournit aucune donnée inventée. La grille s'arrête à 200 profils retournés par l'API; la pagination de la grille demeure à faire si un parc dépasse cette limite.
+- **Rail latéral** : la commande de repli est maintenant près du logo Cortex, en haut du rail, et ferme le tiroir sur mobile. Les libellés ARIA suivent l'état. La barre de défilement est invisible sur les moteurs Chromium, Firefox et Edge, mais le défilement vertical demeure actif au clavier, à la molette et au toucher.
+- **Sessions IA** : l'accès aux sessions, messages et contextes épinglés est maintenant restreint à la personne propriétaire et à la société active; une session périmée ou masquée n'est pas réutilisée lors d'un changement de société. Le profil d'agent vient de la configuration serveur.
+- **Vérifications** : `pytest apps/cortex_rental/cortex_rental/tests` : 576 réussis, 15 ignorés; Ruff, `node --check` et `git diff --check` réussis; `bench build --app cortex_rental` réussi après les modifications; couche sombre régénérée depuis 22 sources. Le rendu et les mutations finaux dans un Desk actif, Stripe et les fournisseurs d'IA avec des identifiants réels ne sont pas validés. Ces travaux ne signifient pas que toutes les fonctions de l'application ont été recettées.
+- **Architecture agentic-first** : les outils IA restent limités par les portées, la société et les contrôles serveur déjà documentés plus haut; les décisions métier importantes restent soumises à la personne. Cette livraison ne crée ni sortie de modèle, ni disponibilité, ni autorisation artificielle.
+
+Le suivi historique en bas du présent document décrit les versions antérieures et doit être lu avec cette mise à jour datée.
 
 ## Mandat pour tout agent
 
@@ -405,6 +416,8 @@ Vu à l'écran dans Chromium (portail, suivi et devis rendus avec Jinja, API sim
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :
 
 - **Changements de la phase 2 (2026-10-07) — codés, testés hors bench, non recettés dans un navigateur :** voir la section « Phase 2 : ce qui est réellement livré ». Une version antérieure de ce document décrivait comme codés des éléments absents du code (arrivée sur Assistant IA, repli de la barre, en-tête `X-Company-ID`, explications du dictaphone); ils ne l'étaient pas et sont maintenant réellement implémentés.
+
+- **Protection du contexte de conversation — codée, tests de bench à exécuter :** les lectures, suppressions et contextes épinglés vérifient la société active; un identifiant de session conservé après un changement de société démarre une nouvelle conversation dans la société active au lieu de réutiliser l'ancienne. Un contexte épinglé doit appartenir à cette conversation. Les appels directs au service qui omettent `company` conservent le contrôle du propriétaire, mais les API Desk transmettent toujours la société résolue par le serveur.
 
 - **Vérifié :** redirection d’arrivée vers l’Accueil ; accueil sans violation axe WCAG 2.1 AA et sans débordement dès 320 px ; les 7 workspaces rendent onboarding, graphique, cartes de nombres, raccourcis et listes rapides avec les vraies données ; grille de disponibilité (équipements × jours, détail par cellule) branchée sur `availability.get_matrix` ; liste, Kanban, calendrier/Gantt et formulaire de *Location* ; retour de matériel enregistré de bout en bout depuis le dialogue natif ; les cinq rapports s’exécutent.
 - **Accessibilité et écrans étroits :** `public/js/cortex_a11y.js` ajoute les noms accessibles que Frappe omet (boutons-icônes, cases de liste, filtres, grilles, menus déroulants) et `cortex-a11y.css` corrige les contrastes (gris « muted » de Frappe, calendrier) et le débordement des widgets à 320–375 px ; 0 violation axe WCAG 2.1 AA sur l'accueil, les 7 workspaces, la grille, la liste, le formulaire, le Kanban, le calendrier, le Gantt, les rapports et les approbations. Ces correctifs s'appliquent aussi aux écrans ERPNext d'origine ; ils sont ajoutés par script après rendu, donc un nouvel écran Frappe peut demander une règle de plus.
