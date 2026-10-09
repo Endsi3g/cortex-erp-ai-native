@@ -18,9 +18,9 @@ Cette entrée décrit le travail courant et prime sur les descriptions historiqu
 - Vérifier sur le Desk Frappe le profil et la grille avec les données de la société, la sauvegarde photo et profil, le mode sombre, le catalogue vide et le tiroir mobile. L'API disponibilité limite la grille à 200 profils.
 - Parcourir les formulaires Desk natifs et le mode sombre au-delà des écrans ci-dessus, selon les phases UX ouvertes dans le handoff canonique.
 - Tester les fournisseurs et Stripe dans leurs environnements de test avec clés, confirmer prix, devise, options et enveloppe avant tout débit réel; maintenir l'approbation humaine pour les actions métier.
-- Aucun déploiement en production n'a été fait.
+- La version est publiée : commit `243aa6d85a86a59176ca098d2293ca5f48e521be`, tag `v0.15.2`, Release GitHub [v0.15.2](https://github.com/Endsi3g/cortex-erp-ai-native/releases/tag/v0.15.2). Aucun déploiement en production n'a été fait.
 
-`main` était à `76ae50d` après récupération de `origin/main` et avance rapide. La branche locale contient maintenant les correctifs v0.15.2 décrits ici. Le détail historique ci-dessous est conservé comme archive et peut être dépassé par cette section et le handoff canonique.
+`main` était à `76ae50d` après récupération de `origin/main` et avance rapide. La livraison v0.15.2 a été poussée sur `main`, étiquetée et publiée. Le détail historique ci-dessous est conservé comme archive et peut être dépassé par cette section et le handoff canonique.
 
 ---
 

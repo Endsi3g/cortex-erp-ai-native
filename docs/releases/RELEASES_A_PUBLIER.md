@@ -4,7 +4,7 @@
 
 Release ERPNext native : profil Mon compte réorganisé, grille Disponibilité reliée au Catalogue de la société et état vide avec action contextuelle, contrôle de repli de la navigation remonté et masquage visuel de la scrollbar, isolation des sessions IA par propriétaire et société. La grille est limitée à 200 profils. Vérifications : 576 tests réussis, 15 ignorés; Ruff, Node et build Frappe réussis. Pas de validation Stripe/IA avec des clés réelles ni de déploiement production.
 
-L'état actuel de publication de v0.15.2 se vérifie dans GitHub; le tableau qui suit conserve le plan historique v0.8.0–v0.15.1.
+La Release [v0.15.2 est publiée sur GitHub](https://github.com/Endsi3g/cortex-erp-ai-native/releases/tag/v0.15.2), sur le tag `v0.15.2` qui pointe au commit `243aa6d85a86a59176ca098d2293ca5f48e521be`. Le tableau qui suit conserve le plan historique v0.8.0–v0.15.1.
 
 ## Plan historique — versions antérieures (v0.8.0 à v0.15.1)
 
