@@ -84,6 +84,32 @@ def clean_customer_name(raw: Any) -> str:
     return name
 
 
+def pick_leaf(preferred: Any, leaves: List[str]) -> str:
+    """Pur : la première valeur préférée qui est une feuille existante, sinon la première feuille; vide s'il n'y en a aucune."""
+    for name in preferred if isinstance(preferred, (list, tuple)) else [preferred]:
+        if name and name in leaves:
+            return name
+    return leaves[0] if leaves else ""
+
+
+def default_group_and_territory(company: str):
+    """Groupe de clients et territoire d'un nouveau client, pris parmi ceux qui EXISTENT sur ce site.
+
+    Les noms racines d'ERPNext suivent la langue de l'assistant de configuration (« All Territories » devient
+    « Tous les territoires » sur un site français) : les écrire en dur faisait échouer la création d'un client."""
+    groups = frappe.get_all("Customer Group", filters={"is_group": 0}, pluck="name", order_by="lft")
+    territories = frappe.get_all("Territory", filters={"is_group": 0}, pluck="name", order_by="lft")
+    country = frappe.db.get_value("Company", company, "country") or ""
+    group = pick_leaf(["Commercial"], groups)
+    territory = pick_leaf([country], territories)
+    if not group or not territory:
+        frappe.throw(
+            "Aucun groupe de clients ou territoire n'est configuré : terminez la configuration du site.",
+            frappe.ValidationError,
+        )
+    return group, territory
+
+
 def insert_customer(company: str, name: str):
     """Crée un client de la société avec les droits de la personne connectée et note l'audit.
 
@@ -92,13 +118,14 @@ def insert_customer(company: str, name: str):
         frappe.throw("Votre rôle ne permet pas de créer un client.", frappe.PermissionError)
     if frappe.db.exists("Customer", {"cortex_company": company, "customer_name": name}):
         raise ValueError("Un client portant ce nom existe déjà.")
+    group, territory = default_group_and_territory(company)
     doc = frappe.get_doc(
         {
             "doctype": "Customer",
             "customer_name": name,
             "customer_type": "Company",
-            "customer_group": "Commercial",
-            "territory": "All Territories",
+            "customer_group": group,
+            "territory": territory,
             "cortex_company": company,
             "disabled": 0,
         }

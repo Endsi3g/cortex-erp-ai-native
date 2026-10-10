@@ -224,7 +224,21 @@ def _run_quote(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     return {"id": name, "label": "Ouvrir le devis", "href": href_for("Cortex Rental Transaction", name)}
 
 
-register(ActionSpec("create_customer", "Créer un client", "Customer", "create", _prepare_customer, _run_customer))
+register(
+    ActionSpec(
+        "create_customer",
+        "Créer un client",
+        "Customer",
+        "create",
+        _prepare_customer,
+        _run_customer,
+        effects=(
+            "Ajoute ce client à la liste des clients de votre société.",
+            "Rien n'est envoyé au client et aucun devis n'est créé.",
+            "Pour revenir en arrière : désactiver la fiche du client (elle ne se supprime pas si elle est utilisée).",
+        ),
+    )
+)
 register(
     ActionSpec("create_quote", "Créer le devis", "Cortex Rental Transaction", "create", _prepare_quote, _run_quote)
 )

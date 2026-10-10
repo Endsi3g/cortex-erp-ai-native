@@ -280,6 +280,28 @@ class TestDecide(ActionsCase):
         self.assertIn("cortex.ai_action.failed", self.audits)
 
 
+class TestDefaultGroupAndTerritory(unittest.TestCase):
+    """Les noms racines d'ERPNext suivent la langue du site : jamais de « All Territories » écrit en dur."""
+
+    def test_pick_leaf_prefers_a_listed_name_and_falls_back_to_an_existing_leaf(self):
+        from cortex_rental.api.v1.customers import pick_leaf
+
+        leaves = ["Québec", "Canada", "France"]
+        self.assertEqual(pick_leaf(["Canada"], leaves), "Canada")
+        self.assertEqual(pick_leaf(["Commercial"], ["Particulier", "Gouvernement"]), "Particulier")
+        self.assertEqual(pick_leaf([""], leaves), "Québec")
+        self.assertEqual(pick_leaf(["Canada"], []), "")
+
+    def test_no_hardcoded_root_names_remain(self):
+        import inspect
+
+        from cortex_rental.api.v1 import customers
+
+        source = inspect.getsource(customers.insert_customer)
+        self.assertNotIn('"All Territories"', source)
+        self.assertNotIn('"Commercial"', source)
+
+
 class TestRefresh(ActionsCase):
     def row(self, status="Proposed", user="a@test.com", result=None, error="", expires=None):
         self.fake.db.get_value = lambda *a, **k: SimpleNamespace(
