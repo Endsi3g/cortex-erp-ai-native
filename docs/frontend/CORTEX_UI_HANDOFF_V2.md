@@ -468,6 +468,31 @@ Rien de ce tableau n'a été essayé sur un Desk Frappe actif.
 ### Limites connues
 Rien de cette phase n'a été essayé sur un Desk Frappe actif ni avec un vrai modèle. Les composants ont été vus seulement dans le banc d'essai (`tools/ui-harness/`). Les outils `propose_*` restent invisibles pour le modèle tant que `cortex_ai_actions` n'est pas activé.
 
+## Phases 11 à 13 : suite demandée par Kael le 2026-10-10 (PLAN, rien de codé)
+
+> Plan écrit **avant** le travail (règle de Kael). Chaque phase mettra cette section à jour : fait / reste / pourquoi. Ordre choisi par moi, à contester.
+
+### Demandes de Kael (résumé fidèle)
+1. **Voir la réflexion derrière les actions de l'IA** (pourquoi une proposition de devis, etc.). Cartes de statistiques : très satisfait; **peut aussi utiliser d'autres graphiques** (pas seulement des barres).
+2. L'IA doit pouvoir **tout faire et tout référencer, de A à Z**, dans toute l'application, et le système doit être **versatile pour tous les domaines** de location.
+3. **Parcours d'entrée soigné et animé** : page de connexion → écran de chargement → **onboarding complet** (plusieurs pages dédiées si utile, le plus rapide et facile possible, l'IA aide à configurer dès le début) → **Assistant IA** comme première page.
+4. **Assistant IA plein écran** : pas de fil d'Ariane, pas de barre du haut sauf « Mon compte » et réglages ; barre latérale réduite à son icône (aspect plein écran) ; **polices moins grasses** (sinon « enfantin »).
+5. **Info-bulles** et **visite guidée interactive** de l'application (quelle page fait quoi, comment ça marche), **passable**, qui aide à configurer le compte avec l'IA.
+6. Actions suivantes **dans l'ordre que je veux** : libérer/renouveler la retenue, demander une réservation, etc. (celles qui s'annulent ou passent par une approbation).
+7. Accueil IA : les 3 cartes à dégradés → **accent vert** (ou garder; choix laissé à moi : accent vert, réversible) ; le texte de la zone de saisie ne doit plus **répéter le titre**.
+8. PostHog : la clé viendra plus tard. **Poser des questions, ne rien supposer.** **Prendre des captures, ouvrir un bench et tester moi-même**, visuellement et par le code, tout ce que je livre.
+
+### Plan et logique
+| Phase | Contenu | Pourquoi dans cet ordre |
+| --- | --- | --- |
+| **12 (d'abord)** | **Vrai bench ERPNext** via Docker (images Docker Hub par le miroir `mirror.gcr.io`, car `github.com` est refusé par le proxy du bac à sable et Docker Hub direct renvoie 429) : installer `erpnext` + `cortex_rental`, `bench migrate`, tests Frappe (`test_multitenant_isolation`, etc.), captures du **vrai Desk** | Tout ce qui est livré depuis v0.8.0 n'a **jamais** tourné sur un Desk. Le bench est le seul vrai test; il décide de la suite |
+| **10b** | Réflexion visible dans la carte d'action; autres types de graphiques (anneau, barres horizontales); actions : libérer/renouveler la retenue, demander une réservation, enregistrer un paiement, décider une approbation; outils de **lecture générique** (chercher/lire n'importe quel enregistrement permis) avec carte de référence + lien; correctifs de l'accueil (dégradés, texte de saisie) | Prolonge ce que Kael a validé |
+| **11** | **Maquettes d'abord** (écran de chargement, pages d'onboarding, visite guidée) → intégration : connexion animée, chargement, onboarding multi-pages assisté par l'IA, Assistant IA plein écran, polices allégées, info-bulles, visite guidée | Nouvelles surfaces = proposition validée avant de coder (règle de Kael) |
+| **13** | Modification de structure par l'IA (champs, sections, catégories de pages) avec avant/après et annulation, modèles de secteur ; migration de gros volumes ; chat (flux continu, pièces jointes, mémoire) | Dépend du bench et d'un exemple de fichier du client |
+
+### Garde-fous (rappel)
+Approbation humaine avant toute écriture; droits de la personne; audit; revalidation; **annulable ou refusé**; rien d'irréversible sans question; chaque « vu à l'écran » dit s'il vient du banc d'essai hors Desk ou du vrai bench.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :
