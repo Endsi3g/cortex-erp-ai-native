@@ -78,6 +78,20 @@ class GeminiProvider(LLMProvider):
     name = "Google Gemini"
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 
+    @classmethod
+    def base_url(cls) -> str:
+        """Adresse de l'API. La clé de site `cortex_ai_gemini_base_url` ne sert qu'aux essais (faux serveur local, jamais en
+        production) : seule une adresse https, ou http vers la machine locale, est acceptée; sinon l'adresse officielle."""
+        try:
+            import frappe
+
+            override = str(frappe.conf.get("cortex_ai_gemini_base_url") or "").strip().rstrip("/")
+        except Exception:
+            override = ""
+        if override.startswith("https://") or override.startswith(("http://127.0.0.1", "http://localhost")):
+            return override
+        return cls.BASE_URL
+
     def user_message(self, text: str) -> Any:
         return {"role": "user", "parts": [{"text": text}]}
 
@@ -101,8 +115,36 @@ class GeminiProvider(LLMProvider):
             "parts": [{"functionResponse": {"name": r["name"], "response": {"result": r["result"]}}} for r in results],
         }
 
+    @staticmethod
+    def schema(node: Any) -> Any:
+        """Schéma de paramètres au format de l'API Gemini : types en majuscules (« OBJECT », « STRING »…), jamais de `required`
+        vide. Un objet sans propriété n'est pas valide : l'appelant omet alors `parameters` (voir `_declarations`)."""
+        if isinstance(node, list):
+            return [GeminiProvider.schema(n) for n in node]
+        if not isinstance(node, dict):
+            return node
+        out: Dict[str, Any] = {}
+        for key, value in node.items():
+            if key == "type" and isinstance(value, str):
+                out[key] = value.upper()
+            elif key == "required" and not value:
+                continue
+            elif key == "properties" and isinstance(value, dict):
+                out[key] = {name: GeminiProvider.schema(spec) for name, spec in value.items()}
+            else:
+                out[key] = GeminiProvider.schema(value)
+        return out
+
     def _declarations(self, tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        return [{"name": t["name"], "description": t["description"], "parameters": t["parameters"]} for t in tools]
+        declarations = []
+        for t in tools:
+            declaration = {"name": t["name"], "description": t["description"]}
+            parameters = t.get("parameters") or {}
+            # Une fonction sans argument se déclare sans `parameters` (un OBJECT à `properties` vide est refusé par l'API).
+            if parameters.get("properties"):
+                declaration["parameters"] = self.schema(parameters)
+            declarations.append(declaration)
+        return declarations
 
     def request_body(self, system: str, messages: List[Any], tools: List[Dict[str, Any]]) -> Dict[str, Any]:
         body: Dict[str, Any] = {
@@ -139,7 +181,7 @@ class GeminiProvider(LLMProvider):
     def generate(self, system: str, messages: List[Any], tools: List[Dict[str, Any]]) -> ProviderResult:
         if not self.api_key:
             raise AIConfigurationError("Aucune clé API n'est configurée pour le fournisseur d'IA.")
-        url = f"{self.BASE_URL}/models/{self.model}:generateContent"
+        url = f"{self.base_url()}/models/{self.model}:generateContent"
         data = json.dumps(self.request_body(system, messages, tools), ensure_ascii=False).encode("utf-8")
         last: Optional[Exception] = None
         for attempt in range(2):
@@ -169,8 +211,9 @@ class GeminiProvider(LLMProvider):
     @staticmethod
     def _http_error(exc: urllib.error.HTTPError) -> Exception:
         if exc.code in (401, 403):
-            return AIConfigurationError(
-                "La clé API du fournisseur d'IA est refusée. Un administrateur doit la vérifier."
+            # Une clé REFUSÉE n'est pas une clé ABSENTE : on le dit (jamais le mode démonstration, qui laisserait croire que tout va bien).
+            return AIProviderError(
+                "La clé API du fournisseur d'IA est refusée. Un administrateur doit la vérifier.", status=exc.code
             )
         if exc.code == 404:
             return AIProviderError("Ce modèle d'IA n'est pas disponible chez le fournisseur.", status=404)

@@ -527,6 +527,29 @@ Approbation humaine avant toute écriture; droits de la personne; audit; revalid
 3. `Administrator` est traité comme un agent (voir Phase 12) : question toujours ouverte pour Kael.
 4. Les actions *paiement* et *décision d'approbation* ne s'annulent pas par un bouton (paiement : remboursement; approbation : nouvelle demande); l'aperçu le dit (« Ce qui va se passer »). Validées par Kael dans la liste, mais à garder en tête.
 
+## Phase 10c : l'IA fonctionne de bout en bout dans le vrai Desk (2026-10-10) — priorité demandée par Kael
+
+**Demande de Kael : rendre le système d'IA fonctionnel de bout en bout avant de toucher au reste (le parcours d'entrée est en attente).**
+
+**Ce qui est prouvé (vrai Desk, vrai serveur, vraie base, vrais droits)** — `tools/ui-harness/e2e-ai.mjs`, **27 vérifications sur 27** :
+- *Devis* : demande tapée → modèle → `search_customers` → `search_rental_items` → `check_inventory_availability` → `propose_create_quote` → carte avec « Pourquoi cette proposition » → **approbation** → devis créé en base avec les deux articles → lien qui l'ouvre.
+- *Rechargement* : la carte approuvée reste « Fait ». *Statistiques* : trois cartes (résumé, barres, anneau), la flèche ouvre Finance.
+- *Paiement* : la carte nomme la vraie facture; approuver la fait passer à « Payée » en base, paiement par chèque enregistré. *Retenue* : libérée en base.
+- *Pannes* (toutes en français, sans carte trompeuse) : clé refusée, service indisponible (503), limite 429 du fournisseur (relance silencieuse, réponse obtenue), modèle introuvable (le modèle de repli répond), **plafond de dépense** (entre 100 et 150 % : modèle économique + avis; au-delà : refus clair), **sans clé : mode démonstration étiqueté**.
+
+**Ce qui n'est PAS prouvé** : le comportement d'un **vrai modèle Gemini** (décisions, qualité des raisons, appels d'outils réels) ni la facturation réelle. Le « modèle » des essais est un faux serveur (`tools/bench/fake_gemini.py`) qui **valide la requête comme l'API réelle** et suit des scénarios codés utilisant les vrais résultats des outils. **À faire dès que Kael fournit la clé** : la saisir dans *Cortex AI Settings*, retirer `cortex_ai_gemini_base_url`, rejouer la même suite (`e2e-ai.mjs`) puis juger la qualité des réponses.
+
+**Défauts réels trouvés par ces essais et corrigés** :
+1. Les outils **sans argument** (résumé financier, locations par état) étaient déclarés avec `properties: {}` : la documentation officielle les déclare **sans** `parameters`, l'API risquait de refuser toute la requête. Désormais : types en majuscules, aucun `parameters` ni `required` vide (`GeminiProvider.schema`). Un test de contrat valide chaque outil contre le validateur du protocole.
+2. L'agent principal **n'avait pas l'outil de recherche de clients** : impossible de préparer un devis. Ajouté; un test exige que chaque proposition ait les outils de lecture dont elle a besoin.
+3. Une **clé refusée (401/403)** retombait en mode démonstration comme une clé absente (trompeur) : maintenant message clair « clé refusée ».
+4. **Site neuf sans maîtrise des jetons** : prix = 0 et plafond = 0 (les patchs ne sont pas rejoués à l'installation). `after_install` applique maintenant les valeurs de départ (0,75 $ / 3,75 $ par M de jetons, 60 $ par mois, modèle économique), sans jamais écraser une valeur saisie. **Important pour « un site par client ».**
+5. Message de limite de débit du chat **en anglais** : en français. Disponibilité « 5.0 libre(s) » : format français. Le modèle dit « ci-dessous » (les cartes s'affichent sous son message). Nouvel outil de lecture `list_invoices` (sans lui, impossible de proposer un paiement).
+
+**Rejouer** : `tools/bench/README.md` (faux Gemini, clé d'essai `fake-gemini-key`, `cortex_ai_gemini_base_url` — **jamais en production**, seules les adresses https ou locales sont acceptées).
+
+**Reste à faire (IA)** : action générique « modifier un champ » avec avant/après et annulation (validée par Kael), outil de lecture générique pour tout référencer, modification de structure (champs, sections, catégories) avec approbation du propriétaire, flux continu, pièces jointes, mémoire; qualité avec un vrai modèle.
+
 ## Phase 11 (en cours) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 
 **Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**

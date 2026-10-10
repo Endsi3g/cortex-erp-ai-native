@@ -233,9 +233,22 @@ def after_migrate() -> None:
     ensure_customer_permissions()
 
 
+def apply_default_ai_settings() -> None:
+    """Prix des modèles, plafond mensuel et modèle économique de départ.
+
+    Sur un site NEUF, Frappe ne rejoue pas les patchs : sans cet appel, les prix restent à 0 (le coût compté est donc nul) et
+    il n'y a aucun plafond, donc aucune maîtrise des jetons. Les fonctions sont idempotentes : elles ne remplacent jamais
+    une valeur déjà saisie."""
+    from cortex_rental.patches import set_ai_economy_defaults, set_ai_pricing_defaults
+
+    set_ai_pricing_defaults.execute()
+    set_ai_economy_defaults.execute()
+
+
 def after_install() -> None:
     ensure_prerequisites()
     ensure_customer_permissions()
+    apply_default_ai_settings()
     from cortex_rental.auth_setup import run_all
 
     run_all()

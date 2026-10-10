@@ -240,7 +240,19 @@ register(
     )
 )
 register(
-    ActionSpec("create_quote", "Créer le devis", "Cortex Rental Transaction", "create", _prepare_quote, _run_quote)
+    ActionSpec(
+        "create_quote",
+        "Créer le devis",
+        "Cortex Rental Transaction",
+        "create",
+        _prepare_quote,
+        _run_quote,
+        effects=(
+            "Crée un devis (état « Devis ») avec les prix recalculés par le serveur au moment d'approuver.",
+            "Ne réserve pas le matériel et n'envoie rien au client.",
+            "Pour revenir en arrière : annuler le devis depuis la location.",
+        ),
+    )
 )
 
 

@@ -160,6 +160,18 @@ class TestPure(unittest.TestCase):
         self.assertEqual(actions.href_for("Cortex Rental Transaction", "CR-1"), "/app/cortex-rental-transaction/CR-1")
         self.assertEqual(actions.href_for("Customer", "A/B ?x"), "/app/customer/A%2FB%20%3Fx")
 
+    def test_every_action_explains_what_it_will_do(self):
+        # Trouvé au test de bout en bout : une action sans « effets » affichait une carte sans la section « Ce qui va se passer ».
+        for name, spec in actions.ACTIONS.items():
+            self.assertTrue(spec.effects, name)
+            self.assertTrue(
+                any(
+                    "revenir" in e.lower() or "ne se défait pas" in e.lower() or "ne se supprime pas" in e.lower()
+                    for e in spec.effects
+                ),
+                f"{name}: dire comment revenir en arrière ou que ce n'est pas possible",
+            )
+
     def test_registry_only_holds_known_actions(self):
         self.assertEqual(
             set(actions.ACTIONS),
@@ -377,3 +389,22 @@ class TestToolsAndGateway(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestOperationsAgentCanDoItsJob(unittest.TestCase):
+    """Trouvé au test de bout en bout : sans la recherche de clients, l'assistant ne pouvait pas préparer un devis."""
+
+    def test_every_proposal_has_the_read_tools_it_needs(self):
+        granted = set(AGENT_TOOL_MAP["cortex-operations"])
+        needs = {
+            "propose_create_quote": {"search_customers", "search_rental_items", "check_inventory_availability"},
+            "propose_create_customer": {"search_customers"},
+            "propose_record_payment": {"list_invoices"},
+            "propose_release_hold": {"list_rentals"},
+            "propose_renew_hold": {"list_rentals"},
+            "propose_request_reservation": {"list_rentals"},
+            "propose_decide_approval": {"list_pending_approvals"},
+        }
+        for proposal, reads in needs.items():
+            self.assertIn(proposal, granted)
+            self.assertTrue(reads <= granted, f"{proposal} manque : {sorted(reads - granted)}")

@@ -38,12 +38,14 @@ AGENT_TOOL_MAP = {
     "cortex-approval-assistant": ["list_pending_approvals", "list_rentals"],
     "cortex-operations": [
         "search_rental_items",
+        "search_customers",
         "check_inventory_availability",
         "list_rentals",
         "list_pending_approvals",
         "finance_summary",
         "finance_trend",
         "rentals_by_state",
+        "list_invoices",
         "customer_summary",
         "late_returns",
         # Proposent une écriture; la personne approuve (services/ai/actions.py). Offerts seulement si `cortex_ai_actions` est actif.

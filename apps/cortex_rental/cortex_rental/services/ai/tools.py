@@ -293,6 +293,33 @@ def customer_summary(customer: str):
 
 
 @tool(
+    "list_invoices",
+    "Liste les factures de la société, par état (Issued, Partially Paid, Paid, Cancelled) et/ou par client. Sert à retrouver l'identifiant d'une facture avant de proposer un paiement.",
+    {
+        "status": {"type": "string", "description": "Issued, Partially Paid, Paid ou Cancelled (facultatif)"},
+        "customer": {"type": "string", "description": "Identifiant exact du client (facultatif)"},
+        "limit": {"type": "integer"},
+    },
+)
+def list_invoices(status: str = "", customer: str = "", limit: int = 10):
+    if not frappe.has_permission("Cortex Rental Invoice", "read"):
+        return {"error": "Vous n'avez pas accès aux factures."}
+    filters = {"company": _company()}
+    if status in ("Issued", "Partially Paid", "Paid", "Cancelled"):
+        filters["status"] = status
+    if customer:
+        filters["customer"] = customer
+    rows = frappe.get_list(
+        "Cortex Rental Invoice",
+        filters=filters,
+        fields=["name", "customer", "status", "total", "balance", "due_date", "rental_transaction"],
+        order_by="modified desc",
+        limit_page_length=max(1, min(_as_int(limit, 10), 25)),
+    )
+    return {"invoices": [{**dict(r), "due_date": str(r.due_date or "")} for r in rows]}
+
+
+@tool(
     "late_returns",
     "Liste les retours en retard : locations sorties dont la date de fin est passée.",
     {"limit": {"type": "integer"}},

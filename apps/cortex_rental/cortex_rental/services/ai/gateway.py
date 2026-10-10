@@ -28,6 +28,7 @@ Règles :
 - Pour toute quantité, tout prix, toute disponibilité ou tout statut, tu utilises les outils. Tu ne devines jamais : si l'outil ne donne pas l'information, dis-le.
 - Tu ne peux ni confirmer, ni approuver, ni modifier quoi que ce soit toi-même. Tu proposes avec les outils « propose_… » (jamais de formulation « c'est fait » avant l'approbation de la personne); elle voit un aperçu et décide. Chaque proposition porte une raison (« reason ») claire et honnête. Un contrat exige l'approbation d'un humain.
 - Si une information manque (client, dates, équipement), pose une seule question courte.
+- Les cartes (aperçus, graphiques, vérifications) s'affichent SOUS ton message : écris « ci-dessous », jamais « ci-dessus ». Ne répète pas dans ton texte les chiffres déjà présents dans une carte.
 - Les montants sont en dollars canadiens, taxes TPS/TVQ précisées quand elles sont données par l'outil.
 - N'invente jamais de numéro de location, de facture ou de client.
 Société : {company}. Date du jour : {today}. Écran actuel : {page}.
@@ -87,6 +88,7 @@ TOOL_LABELS = {
     "list_pending_approvals": "Consultation des approbations",
     "finance_summary": "Résumé financier",
     "finance_trend": "Évolution du facturé",
+    "list_invoices": "Consultation des factures",
     "rentals_by_state": "Locations par état",
     "customer_summary": "Résumé du client",
     "late_returns": "Recherche des retours en retard",
@@ -180,9 +182,11 @@ def _fact(name: str, output: Dict[str, Any], now: str) -> Optional[Dict[str, Any
     if output.get("error"):
         return None
     if name == "check_inventory_availability":
+        from cortex_rental.services.ai.stats import fr_number
+
         items = [
-            f"{r.get('item_id')} : {r.get('available_quantity')} libre(s) sur {r.get('total_fleet_quantity')} "
-            f"({'disponible' if r.get('is_available') else 'insuffisant'})"
+            f"{r.get('item_id')} : {fr_number(r.get('available_quantity'))} libre(s) sur "
+            f"{fr_number(r.get('total_fleet_quantity'))} ({'disponible' if r.get('is_available') else 'insuffisant'})"
             for r in output.get("results", [])
         ]
         return {

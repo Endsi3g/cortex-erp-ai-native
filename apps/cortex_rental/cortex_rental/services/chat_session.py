@@ -84,7 +84,8 @@ def _check_rate_limit(user: str) -> None:
     count = frappe.cache().get_value(cache_key) or 0
     if int(count) >= RATE_LIMIT_MAX_MESSAGES:
         raise ChatRateLimitError(
-            f"Rate limit exceeded: max {RATE_LIMIT_MAX_MESSAGES} messages per {RATE_LIMIT_WINDOW_SECONDS}s."
+            f"Vous envoyez des messages très rapidement : attendez quelques secondes avant de réessayer "
+            f"(limite de {RATE_LIMIT_MAX_MESSAGES} messages par minute)."
         )
     frappe.cache().set_value(cache_key, int(count) + 1, expires_in_sec=RATE_LIMIT_WINDOW_SECONDS)
 
