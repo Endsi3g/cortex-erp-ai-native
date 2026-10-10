@@ -76,6 +76,44 @@ def search_customers_handler(query: str, company: str) -> List[Dict[str, Any]]:
     return custs
 
 
+def clean_customer_name(raw: Any) -> str:
+    """Pur : le nom du client sans espaces superflus, 2 à 140 caractères, sinon ValueError (message en français)."""
+    name = " ".join(str(raw or "").split())[:140]
+    if len(name) < 2:
+        raise ValueError("Le nom du client doit avoir au moins 2 caractères.")
+    return name
+
+
+def insert_customer(company: str, name: str):
+    """Crée un client de la société avec les droits de la personne connectée et note l'audit.
+
+    Voie unique pour la création depuis le compositeur et pour l'action « créer un client » de l'assistant."""
+    if not frappe.has_permission("Customer", "create"):
+        frappe.throw("Votre rôle ne permet pas de créer un client.", frappe.PermissionError)
+    if frappe.db.exists("Customer", {"cortex_company": company, "customer_name": name}):
+        raise ValueError("Un client portant ce nom existe déjà.")
+    doc = frappe.get_doc(
+        {
+            "doctype": "Customer",
+            "customer_name": name,
+            "customer_type": "Company",
+            "customer_group": "Commercial",
+            "territory": "All Territories",
+            "cortex_company": company,
+            "disabled": 0,
+        }
+    )
+    doc.insert()
+    AuditService.record_mutation(
+        company=company,
+        action="cortex.customer.created",
+        entity_type="Customer",
+        entity_id=doc.name,
+        after_state={"customer_name": name},
+    )
+    return doc
+
+
 TRANSACTION = "Cortex Rental Transaction"
 OPEN_STATES = ("Reservation", "Contract", "Checked Out", "Partially Returned")
 
@@ -231,30 +269,6 @@ if frappe:
         """Crée un client de la société active (équipe humaine seulement) depuis l'assistant ou le compositeur."""
         require_human_staff_role()
         company = get_company_context()
-        name = " ".join((customer_name or "").split())[:140]
-        if len(name) < 2:
-            raise ValueError("Le nom du client doit avoir au moins 2 caractères.")
-        if not frappe.has_permission("Customer", "create"):
-            frappe.throw("Votre rôle ne permet pas de créer un client.", frappe.PermissionError)
-        if frappe.db.exists("Customer", {"cortex_company": company, "customer_name": name}):
-            raise ValueError("Un client portant ce nom existe déjà.")
-        doc = frappe.get_doc(
-            {
-                "doctype": "Customer",
-                "customer_name": name,
-                "customer_type": "Company",
-                "customer_group": "Commercial",
-                "territory": "All Territories",
-                "cortex_company": company,
-                "disabled": 0,
-            }
-        )
-        doc.insert()
-        AuditService.record_mutation(
-            company=company,
-            action="cortex.customer.created",
-            entity_type="Customer",
-            entity_id=doc.name,
-            after_state={"customer_name": name},
-        )
+        name = clean_customer_name(customer_name)
+        doc = insert_customer(company, name)
         return {"data": {"id": doc.name, "name": doc.customer_name}}

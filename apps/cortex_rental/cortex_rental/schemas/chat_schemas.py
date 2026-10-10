@@ -98,7 +98,9 @@ class ProposalBlock(BaseModel):
     title: str
     summary: str
     impact: List[str] = Field(default_factory=list)
-    action: Literal["open_quote_composer", "create_quote_draft", "open_availability_flow", "open_approvals_flow"]
+    action: Literal[
+        "open_quote_composer", "create_quote_draft", "open_availability_flow", "open_approvals_flow", "decide_ai_action"
+    ]
     draft_id: Optional[str] = None
     requires_approval: bool = False
 

@@ -89,6 +89,8 @@ TOOL_LABELS = {
     "customer_summary": "Résumé du client",
     "late_returns": "Recherche des retours en retard",
     "create_quote_draft": "Calcul du devis proposé",
+    "propose_create_customer": "Préparation de la création du client",
+    "propose_create_quote": "Préparation du devis",
 }
 
 
@@ -319,6 +321,8 @@ class AIGateway:
                             result_blocks.append(fact)
                         if proposal:
                             result_blocks.append(proposal)
+                        if output.get("action_block"):
+                            result_blocks.append(output["action_block"])
                     outputs.append({"name": call.name, "id": call.id, "result": output})
                 tool_message = self.provider().tool_results_message(outputs)
                 # Certains fournisseurs (OpenAI) veulent un message par résultat d'outil.

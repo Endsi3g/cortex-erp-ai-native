@@ -60,6 +60,10 @@ def cortex_ai_usage_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Cortex AI Usage")
 
 
+def cortex_ai_action_query_conditions(user: str) -> str:
+    return _company_scoped_condition(user, "Cortex AI Action")
+
+
 def cortex_support_request_query_conditions(user: str) -> str:
     return _company_scoped_condition(user, "Cortex Support Request")
 

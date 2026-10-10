@@ -269,9 +269,75 @@ def create_quote_draft(customer: str, starts_at: str, ends_at: str, items: List[
     }
 
 
+def _propose(action_type: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    from cortex_rental.services.ai import actions
+
+    if not actions_enabled():
+        return {"error": "Les actions de l'assistant ne sont pas activées sur ce site."}
+    try:
+        block = actions.propose(action_type, args, _company(), frappe.session.user)
+    except actions.ActionError as exc:
+        return {"error": str(exc)}
+    return {
+        "action_block": block,
+        "note": "Proposition affichée à la personne. Rien n'est fait tant qu'elle n'approuve pas : ne dis jamais que c'est fait.",
+    }
+
+
+@tool(
+    "propose_create_customer",
+    "PROPOSE de créer un client. La personne voit un aperçu et approuve ou refuse; rien n'est créé avant son approbation.",
+    {
+        "customer_name": {
+            "type": "string",
+            "description": "Nom du client (utiliser search_customers d'abord pour éviter un doublon)",
+        }
+    },
+    ["customer_name"],
+)
+def propose_create_customer(customer_name: str):
+    return _propose("create_customer", {"customer_name": customer_name})
+
+
+@tool(
+    "propose_create_quote",
+    "PROPOSE de créer un devis (prix calculés par le serveur). La personne voit l'aperçu et approuve ou refuse; rien n'est créé avant son approbation. Vérifie d'abord le client et la disponibilité.",
+    {
+        "customer": {"type": "string", "description": "Identifiant exact du client (utiliser search_customers)"},
+        "starts_at": DATETIME,
+        "ends_at": DATETIME,
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"item_code": STR, "quantity": {"type": "number"}},
+                "required": ["item_code", "quantity"],
+            },
+        },
+    },
+    ["customer", "starts_at", "ends_at", "items"],
+)
+def propose_create_quote(customer: str, starts_at: str, ends_at: str, items: List[Dict[str, Any]]):
+    return _propose("create_quote", {"customer": customer, "starts_at": starts_at, "ends_at": ends_at, "items": items})
+
+
+# Outils qui proposent une écriture (approbation humaine requise). Offerts au modèle seulement si le site les active :
+# clé `cortex_ai_actions` de la configuration du site (éteinte par défaut tant que l'affichage des propositions n'est pas validé).
+PROPOSING_TOOLS = ("propose_create_customer", "propose_create_quote")
+
+
+def actions_enabled() -> bool:
+    return bool(frappe and frappe.conf.get("cortex_ai_actions"))
+
+
 def exposed(allowed_names: List[str]) -> List[Tool]:
     """Les outils réellement offerts au modèle : ceux de la liste d'autorisations qui existent dans le registre."""
-    return [REGISTRY[name] for name in allowed_names if name in REGISTRY]
+    allow_proposals = actions_enabled()
+    return [
+        REGISTRY[name]
+        for name in allowed_names
+        if name in REGISTRY and (allow_proposals or name not in PROPOSING_TOOLS)
+    ]
 
 
 def execute(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
