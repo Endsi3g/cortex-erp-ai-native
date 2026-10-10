@@ -14,10 +14,11 @@
 	const hasRole = (...roles) => () => roles.some((r) => (frappe.user_roles || []).includes(r));
 	const workspace = (name) => () => ((frappe.boot && frappe.boot.allowed_workspaces) || []).some((w) => w.name === name);
 
-	// Catégories de la grille de disponibilité (valeurs stockées ; libellés français via la traduction). Une seule
-	// liste pour la barre et pour la page : quand la société pourra configurer ses catégories, on la lira du serveur.
+	// Catégories d'équipement (valeurs stockées ; libellés français via la traduction). Une seule liste pour la barre et
+	// les pages : celle du site, lue du serveur (`boot.cortex_categories`, modifiable par un modèle de secteur); la liste
+	// d'origine ne sert que si le serveur ne la donne pas.
 	window.cortex = window.cortex || {};
-	cortex.CATEGORIES = cortex.CATEGORIES || ["Lighting", "Power & Batteries", "Camera Bodies", "Cinema Lenses", "Grip & Rigging", "Monitors & Wireless Video", "Audio"];
+	cortex.CATEGORIES = cortex.CATEGORIES || (frappe.boot && frappe.boot.cortex_categories && frappe.boot.cortex_categories.length ? frappe.boot.cortex_categories : ["Lighting", "Power & Batteries", "Camera Bodies", "Cinema Lenses", "Grip & Rigging", "Monitors & Wireless Video", "Audio"]);
 
 	// Icônes : celles des espaces d'origine (assets, calendar, stock, list-alt, money-coins-1, message…).
 	const GROUPS = [
@@ -66,6 +67,7 @@
 				{ id: "acct-notifications", label: "Notifications", icon: "notification", href: "/app/cortex-account/notifications", owns: ["cortex-account/notifications"], show: ALL },
 				{ id: "acct-societe", label: "Société et rôles", icon: "users", href: "/app/cortex-account/societe", owns: ["cortex-account/societe"], show: ALL },
 				{ id: "setup", label: "Configuration", icon: "list-alt", href: "/app/cortex-setup", owns: ["cortex-setup"], show: () => hasRole("Cortex System Manager", "System Manager")() && !!(frappe.boot.cortex_home && frappe.boot.cortex_home.setup_pending) },
+				{ id: "templates", label: "Modèles de secteur", icon: "list-alt", href: "/app/cortex-sector-templates", owns: ["cortex-sector-templates"], show: hasRole("Cortex System Manager", "System Manager") },
 				{ id: "admin", label: "Équipe et règles", icon: "setting-gear", href: "/app/cortex-admin", owns: ["cortex-admin", "rental-pricing-rule", "user", "audit-event", "cortex-ai-settings"], show: workspace("Cortex Admin") },
 				{ id: "website", label: "Site Web", icon: "website", href: "/app/website", owns: ["website"], show: hasRole("System Manager", "Website Manager") },
 				{ id: "settings", label: "Paramètres", icon: "setting", href: "/app/erpnext-settings", owns: ["erpnext-settings", "integrations", "build"], show: hasRole("System Manager") },

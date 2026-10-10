@@ -38,7 +38,9 @@ class TestAIRecordsLive(unittest.TestCase):
 
     def setUp(self):
         # Les propositions laissées ouvertes par les essais précédents plafonnent à 20 par personne : on repart à zéro.
-        frappe.db.delete("Cortex AI Action", {"requested_by": ("in", [self.operator, self.reader]), "status": "Proposed"})
+        frappe.db.delete(
+            "Cortex AI Action", {"requested_by": ("in", [self.operator, self.reader]), "status": "Proposed"}
+        )
         frappe.set_user(self.operator)
         self.code = f"itm-rec-{frappe.generate_hash(length=6)}"
         ensure_profile(COMPANY, self.code, serialized=0, quantity=5, rate=120.0)

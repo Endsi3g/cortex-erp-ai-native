@@ -187,6 +187,21 @@ def scenario(question, exchanges, declared):
         missing = [x for x in names if x not in declared]
         return say("Je n'ai pas accès à l'outil nécessaire (" + ", ".join(missing) + ").") if missing else None
 
+    if re.search(r"modele de secteur|secteur", q):
+        miss = need("propose_apply_sector_template")
+        if miss:
+            return [miss]
+        if n == 0:
+            return [
+                call(
+                    "propose_apply_sector_template",
+                    {
+                        "template": "cinema_video",
+                        "reason": "Vous louez du matériel de tournage : le modèle Cinéma et vidéo prépare les catégories, les règles de prix et les réglages habituels.",
+                    },
+                )
+            ]
+        return [say("Voici ce que le modèle ajouterait, ci-dessous. Vous pourrez l'annuler après coup.")]
     rate = re.search(r"tarif .*?de (\S+) a (\d+(?:[.,]\d+)?)", q)
     if rate:
         miss = need("find_records", "propose_update_field")

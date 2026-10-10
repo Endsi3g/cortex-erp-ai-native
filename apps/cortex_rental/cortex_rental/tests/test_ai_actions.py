@@ -184,6 +184,7 @@ class TestPure(unittest.TestCase):
                 "record_payment",
                 "decide_approval",
                 "update_field",
+                "apply_sector_template",
             },
         )
 

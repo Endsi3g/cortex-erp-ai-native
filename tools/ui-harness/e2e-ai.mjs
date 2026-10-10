@@ -163,6 +163,56 @@ const lastText = (page) => page.locator(".cp-conversation").first().innerText().
 	await ctx.close();
 }
 
+// --- S9 : modèle de secteur, par la page puis par l'assistant ---------------------------------------------------------------------------
+const siteState = () => py(`from cortex_rental.services import sector_templates as st\nC='Studio Lumière'\nprint(json.dumps({'cats':st.categories(),'rules':frappe.get_all('Rental Pricing Rule',filters={'company':C,'rule_name':['like','%jours pour%']},pluck='rule_name'),'deposit':float(frappe.db.get_value('Cortex Finance Settings',C,'deposit_percent') or 0)}))`);
+const resetSite = () => py(`from cortex_rental.services import sector_templates as st\nC='Studio Lumière'\nst._set_categories([c for c in st.categories() if c not in ('Audio','Lighting')])\nfrappe.db.delete('Rental Pricing Rule',{'company':C,'rule_name':['like','%jours pour%']})\nif not frappe.db.exists('Cortex Finance Settings',C): frappe.get_doc({'doctype':'Cortex Finance Settings','company':C}).insert(ignore_permissions=True)\nfrappe.db.set_value('Cortex Finance Settings',C,{'deposit_percent':10})\nprint(json.dumps(True))`);
+{
+	resetSite();
+	const { ctx, page } = await session();
+	await page.goto(BASE + "/app/cortex-sector-templates", { waitUntil: "networkidle" });
+	await page.waitForSelector(".cx-tpl-card", { timeout: 20000 }).catch(() => {});
+	check("S9 la page affiche le modèle Cinéma et vidéo", /Cinéma et vidéo/.test(await page.locator(".cx-tpl").innerText()));
+	check("S9 « Modèles de secteur » est dans la barre latérale (Administration)", (await page.locator(".cx-nav-item", { hasText: "Modèles de secteur" }).count()) >= 1);
+	await page.getByRole("button", { name: /Voir l'aperçu/ }).click();
+	await page.waitForSelector(".cx-tpl-preview", { timeout: 20000 }).catch(() => {});
+	const preview = await page.locator(".cx-tpl-preview").innerText();
+	check("S9 l'aperçu liste catégories, règles et réglages (avant → après)", /Audio/.test(preview) && /7 jours pour 3/.test(preview) && /Avant : 10/.test(preview) && /Après : 30/.test(preview), preview.replace(/\s+/g, " ").slice(0, 200));
+	const s0 = siteState();
+	check("S9 rien n'est écrit avant l'approbation", !s0.cats.includes("Audio") && s0.rules.length === 0 && s0.deposit === 10, JSON.stringify(s0));
+	await page.screenshot({ path: `${OUT}/s9-apercu.png`, fullPage: true });
+	await page.getByRole("button", { name: /Appliquer le modèle/ }).click();
+	await page.locator(".cx-tpl-badge", { hasText: "Appliqué" }).waitFor({ timeout: 20000 }).catch(() => {});
+	const s1 = siteState();
+	check("S9 le modèle est appliqué (catégories, règles, acompte)", s1.cats.includes("Audio") && s1.cats.includes("Lighting") && s1.rules.length === 2 && s1.deposit === 30, JSON.stringify(s1));
+	await page.screenshot({ path: `${OUT}/s9-applique.png`, fullPage: true });
+	await page.getByRole("button", { name: /Annuler ce modèle/ }).click();
+	await page.locator(".cx-tpl-badge", { hasText: "Annulé" }).waitFor({ timeout: 20000 }).catch(() => {});
+	const s2 = siteState();
+	check("S9 l'annulation remet le site comme avant", !s2.cats.includes("Audio") && s2.rules.length === 0 && s2.deposit === 10, JSON.stringify(s2));
+	await page.screenshot({ path: `${OUT}/s9-annule.png`, fullPage: true });
+	check("S9 aucune erreur JavaScript (page)", page.errors.length === 0, page.errors.join(" | "));
+	await ctx.close();
+}
+{
+	resetSite();
+	const { ctx, page } = await session();
+	await ask(page, "Je loue du matériel de tournage : applique le modèle de secteur qui me convient.");
+	const card = page.locator(".cp-action").last();
+	const text = await card.innerText();
+	check("S9 l'assistant propose le modèle avec le même aperçu", /Appliquer le modèle/.test(text) && /Audio/.test(text) && /7 jours pour 3/.test(text), text.replace(/\s+/g, " ").slice(0, 160));
+	check("S9 rien n'est écrit avant l'approbation (assistant)", !siteState().cats.includes("Audio"));
+	await card.getByRole("button", { name: /Appliquer le modèle/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Fait" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S9 le modèle est appliqué par l'assistant", siteState().cats.includes("Audio"));
+	await card.getByRole("button", { name: /Annuler ce modèle/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Annulée" }).waitFor({ timeout: 20000 }).catch(() => {});
+	const back = siteState();
+	check("S9 l'annulation depuis la carte remet le site comme avant", !back.cats.includes("Audio") && back.rules.length === 0 && back.deposit === 10, JSON.stringify(back));
+	await page.screenshot({ path: `${OUT}/s9-assistant.png`, fullPage: true });
+	check("S9 aucune erreur JavaScript (assistant)", page.errors.length === 0, page.errors.join(" | "));
+	await ctx.close();
+}
+
 // --- Pannes : le système échoue proprement, en français, sans carte trompeuse ------------------------------------------------------------
 const setAI = (fields) => py(`d=frappe.get_doc('Cortex AI Settings')\nfor k,v in ${JSON.stringify(fields)}.items(): d.set(k,v)\nd.save(ignore_permissions=True)\nprint(json.dumps(True))`);
 const KEY = "fake-gemini-key";

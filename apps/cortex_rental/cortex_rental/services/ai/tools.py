@@ -561,6 +561,13 @@ propose_update_field = _proposing_tool(
     },
     ["doctype", "name", "fieldname", "value"],
 )
+propose_apply_sector_template = _proposing_tool(
+    "propose_apply_sector_template",
+    "apply_sector_template",
+    "PROPOSE d'appliquer un modèle de secteur (catégories d'équipement, règles de prix, réglages par défaut). Réservé au propriétaire. Modèle disponible : cinema_video (cinéma et vidéo). Ajoute ce qui manque, ne retire rien, annulable.",
+    {"template": {"type": "string", "description": "Clé du modèle, p. ex. cinema_video"}},
+    ["template"],
+)
 
 
 # Outils qui proposent une écriture (approbation humaine requise). Offerts au modèle seulement si le site les active :
@@ -574,6 +581,7 @@ PROPOSING_TOOLS = (
     "propose_record_payment",
     "propose_decide_approval",
     "propose_update_field",
+    "propose_apply_sector_template",
 )
 
 

@@ -62,6 +62,7 @@ class ActionSpec:
     effects: Tuple[str, ...] = ()
     # Défait une exécution à partir de ce que `run` a renvoyé sous la clé « undo » (None = action non annulable ici).
     undo: Optional[Callable[[Dict[str, Any], str], Dict[str, Any]]] = None
+    undo_label: str = "Annuler cette modification"
 
 
 ACTIONS: Dict[str, ActionSpec] = {}
@@ -104,6 +105,7 @@ def block_for(record: Dict[str, Any]) -> Dict[str, Any]:
         "result_href": record.get("result_href") or None,
         "reasoning": record.get("reasoning") or None,
         "can_undo": bool(record.get("can_undo")),
+        "undo_label": record.get("undo_label") or None,
     }
 
 
@@ -337,6 +339,7 @@ def propose(
             "subtitle": prepared.subtitle,
             "approve_label": prepared.approve_label,
             "reasoning": reasoning_for(spec.effects, reason, checks),
+            "undo_label": spec.undo_label if spec.undo else None,
         }
     )
 
@@ -447,7 +450,7 @@ def undo(name: str, company: str, user: str) -> Dict[str, Any]:
     return {
         "ok": True,
         "status": UNDONE,
-        "message": "Modification annulée : l'ancienne valeur est remise.",
+        "message": done.get("message") or "Modification annulée : l'ancienne valeur est remise.",
         "result_label": done.get("label"),
         "result_href": done.get("href"),
         "can_undo": False,
@@ -501,4 +504,7 @@ def refresh_blocks(blocks: List[Dict[str, Any]], user: str) -> List[Dict[str, An
 
 
 # Les actions du catalogue (retenue, réservation, paiement, approbation) s'enregistrent à l'import.
+from cortex_rental.services import sector_templates  # noqa: E402
 from cortex_rental.services.ai import action_catalog, records  # noqa: E402,F401
+
+sector_templates.register_action()

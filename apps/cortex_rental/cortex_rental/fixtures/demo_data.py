@@ -267,8 +267,8 @@ def _ensure_pricing_rules(company: str) -> None:
                 "doctype": "Rental Pricing Rule",
                 "company": company,
                 "rule_name": "7 jours pour 3",
-                "min_days": 7,
-                "billable_multiplier": 3.0 / 7.0,
+                "calendar_days": 7,
+                "billable_days": 3.0,
                 "is_active": 1,
             }
         )

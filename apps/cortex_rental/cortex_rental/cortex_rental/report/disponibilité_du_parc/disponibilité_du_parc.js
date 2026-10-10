@@ -26,7 +26,7 @@ frappe.query_reports["Disponibilité du parc"] = {
 			fieldname: "category",
 			label: __("Catégorie"),
 			fieldtype: "Select",
-			options: ["", "Camera Bodies", "Cinema Lenses", "Lighting", "Grip & Rigging", "Audio", "Monitors & Wireless Video", "Power & Batteries"],
+			options: ["", ...((frappe.boot && frappe.boot.cortex_categories) || ["Camera Bodies", "Cinema Lenses", "Lighting", "Grip & Rigging", "Audio", "Monitors & Wireless Video", "Power & Batteries"])],
 		},
 	],
 	formatter(value, row, column, data, default_formatter) {

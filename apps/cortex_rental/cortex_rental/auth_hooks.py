@@ -82,6 +82,13 @@ def boot_session(bootinfo) -> None:
     home.update(_company_identity())
     bootinfo.cortex_home = home
     try:
+        from cortex_rental.services import sector_templates
+
+        bootinfo.cortex_categories = sector_templates.categories()
+    except Exception:
+        # Sans cette liste, l'interface retombe sur sa liste d'origine : jamais bloquer le Desk.
+        frappe.log_error(title="Cortex categories boot failed")
+    try:
         from cortex_rental.services import analytics
 
         config = analytics.boot_config(frappe.session.user, home.get("company") or "")

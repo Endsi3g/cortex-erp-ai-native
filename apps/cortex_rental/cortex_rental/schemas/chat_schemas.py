@@ -136,6 +136,7 @@ class ActionCardBlock(BaseModel):
     result_href: Optional[str] = None  # chemin du Desk (« /app/... ») du document créé
     reasoning: Optional[ActionReasoning] = None
     can_undo: bool = False  # vrai quand l'action faite peut être annulée depuis la carte
+    undo_label: Optional[str] = None  # texte du bouton d'annulation (« Annuler cette modification »…)
 
 
 class StatKpi(BaseModel):

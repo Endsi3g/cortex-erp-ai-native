@@ -104,6 +104,7 @@ TOOL_LABELS = {
     "propose_record_payment": "Préparation du paiement",
     "propose_decide_approval": "Préparation de la décision",
     "propose_update_field": "Préparation de la modification",
+    "propose_apply_sector_template": "Préparation du modèle de secteur",
 }
 
 

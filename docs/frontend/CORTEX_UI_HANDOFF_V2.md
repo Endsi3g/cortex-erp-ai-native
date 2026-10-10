@@ -619,6 +619,12 @@ Le produit est câblé « cinéma » : la catégorie d'un équipement est une li
 - Les champs ainsi ajoutés deviennent modifiables par `update_field` (liste blanche dynamique : seulement les champs `cx_…`).
 - **Pas** dans cette phase : modifier/supprimer un champ existant, sections, catégories de pages/espaces de travail (à décider avec Kael après usage).
 
+### Bilan 14.1 — modèles de secteur (FAIT, 2026-10-10)
+- **Fait et vérifié** (banc : 718 tests OK; vrai Desk : `e2e-ai.mjs` 46/46 avec S9; captures `docs/review/captures/phase14-modeles/`) : `services/sector_templates.py` (modèle `cinema_video`, `plan`, action `apply_sector_template` + annulation), catégories lues du site (`boot.cortex_categories` → barre latérale et filtre du rapport), page Desk **Modèles de secteur** (Administration, propriétaire seulement) via `api/v1/sector_templates.py` (`list_templates`, `propose`) + `chat.decide_action` / `chat.undo_action`, outil `propose_apply_sector_template`, `ActionSpec.undo_label` (« Annuler ce modèle »), message d'annulation détaillé (ce qui a été défait / laissé), correctif de la règle de la démo.
+- **Pourquoi ainsi** : une seule mécanique d'approbation/annulation pour la page et l'assistant (donc un seul chemin à auditer); les catégories sont une Property Setter (survit à `bench migrate`, Frappe valide la liste, pas seulement l'interface); l'annulation ne retire jamais une catégorie utilisée ni un réglage modifié depuis, et le dit.
+- **Limites connues** : seul le secteur cinéma existe (les valeurs de catégorie restent en anglais, traduites à l'affichage par Frappe; un autre secteur ajoutera ses propres valeurs); la liste des catégories est du site entier (un site par client); `bench migrate` requis pour la nouvelle page; après `bench build`, `bench clear-cache`.
+- **Reste** : autres secteurs (véhicules, événementiel, outils : demandés en option, non livrés — à écrire avec les chiffres réels d'un client); pas d'exemples de catalogue (non demandés).
+
 ### Vérification prévue
 Tests purs (plan, aperçu, sécurité), tests banc (appliquer, annuler, droits, catégories visibles par Frappe), essais E2E dans le vrai Desk (page + assistant) avec captures, 100 % de la suite du banc; bilan écrit ici à la fin de chaque sous-phase.
 

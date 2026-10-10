@@ -59,8 +59,8 @@ async function undo() {
 		const out = await undoAction(props.block.action_id);
 		status.value = out.status || status.value;
 		canUndo.value = !!out.can_undo;
-		// Réussi : l'état « Annulée » se dit lui-même dans le pied de carte; un refus garde son message.
-		message.value = out.ok ? "" : out.message || "";
+		// Le serveur dit ce qui a été défait (et ce qui a été laissé); sans message, le pied de carte le dit en général.
+		message.value = out.message || "";
 		if (out.ok) {
 			resultLabel.value = out.result_label || resultLabel.value;
 			resultHref.value = out.result_href || resultHref.value;
@@ -129,11 +129,11 @@ async function undo() {
 				<span class="cp-action-result">Fait.</span>
 				<button v-if="hasLink" type="button" class="cp-action-link" @click="openDeskPath(resultHref)">{{ resultLabel }}</button>
 				<button v-if="canUndo" type="button" class="cp-action-reject" :disabled="undoing" @click="undo">
-					{{ undoing ? "En cours…" : "Annuler cette modification" }}
+					{{ undoing ? "En cours…" : block.undo_label || "Annuler cette modification" }}
 				</button>
 			</template>
 			<template v-else-if="status === 'Undone'">
-				<span class="cp-action-note is-left">Modification annulée : l'ancienne valeur est remise.</span>
+				<span v-if="!message" class="cp-action-note is-left">Annulée : ce qui avait été fait est défait.</span>
 				<button v-if="hasLink" type="button" class="cp-action-link" @click="openDeskPath(resultHref)">{{ resultLabel }}</button>
 			</template>
 			<span v-else-if="status === 'Rejected'" class="cp-action-note">Proposition refusée. Rien n'a été fait.</span>
