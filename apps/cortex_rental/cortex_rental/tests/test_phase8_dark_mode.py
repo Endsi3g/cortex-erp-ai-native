@@ -132,8 +132,10 @@ class TestGeneratedLayer(unittest.TestCase):
         hooks = (ROOT / "hooks.py").read_text(encoding="utf-8")
         css_list = hooks.split("app_include_css = [", 1)[1].split("]", 1)[0]
         self.assertTrue(css_list.rstrip().rstrip(",").endswith('cortex-dark.css"'))
-        generator = (ROOT.parents[2] / "bin" / "generate-dark-theme.mjs").read_text(encoding="utf-8")
-        self.assertIn("jamais modifié", generator)
+        generator_path = ROOT.parents[2] / "bin" / "generate-dark-theme.mjs"
+        if not generator_path.exists():
+            self.skipTest("le générateur est dans le dépôt, pas dans un bench (testé hors bench)")
+        self.assertIn("jamais modifié", generator_path.read_text(encoding="utf-8"))
 
 
 class TestThemeChoice(unittest.TestCase):

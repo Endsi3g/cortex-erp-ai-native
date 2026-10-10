@@ -493,6 +493,22 @@ Rien de cette phase n'a été essayé sur un Desk Frappe actif ni avec un vrai m
 ### Garde-fous (rappel)
 Approbation humaine avant toute écriture; droits de la personne; audit; revalidation; **annulable ou refusé**; rien d'irréversible sans question; chaque « vu à l'écran » dit s'il vient du banc d'essai hors Desk ou du vrai bench.
 
+## Phase 12 : vrai bench ERPNext (2026-10-10) — premier résultat
+
+**Montage (reproductible)** : Docker par le miroir `mirror.gcr.io` (`github.com` est refusé par le proxy du bac à sable; Docker Hub direct répond 429). `dockerd` démarré à la main (`--iptables=false --bridge=none`, réseau `host`) ; MariaDB 10.6 + Redis 7 + `frappe/erpnext:v15` (ERPNext 15.122) ; l'app est copiée dans `apps/cortex_rental` et installée en éditable avec `PIP_CERT=/root/.ccr/ca-bundle.crt` (le proxy ré-émet le TLS : ne jamais désactiver la vérification). Site `cortex.localhost`, **assistant de configuration ERPNext exécuté** (langue Français, Canada, CAD) : sans lui, il manque types d'entrepôt, groupes d'articles, etc. `bench install-app cortex_rental` puis `bench migrate` : **sans erreur, 40 DocTypes Cortex créés**.
+
+**Résultat de la suite complète dans le bench : 649 tests, 0 échec** (22 ignorés : tests écrits pour le mode « sans Frappe », et tests qui lisent le `Makefile` ou `bin/` du dépôt). Au premier passage : 29 erreurs et 2 échecs, **tous venant des tests** (fixtures manquantes, hypothèses fausses), pas du produit :
+- **Isolation entre sociétés : prouvée** (6 tests : une personne de la société A ne voit ni ne lit le journal d'audit de B; un compte d'agent ne lit pas le journal du tout). Le test utilisait `frappe.get_all` (qui ignore les permissions) : corrigé en `get_list`.
+- **Concurrence** (4), **télémétrie des agents** (2), **retours de matériel complet/partiel** (2) : passent. Le verrou Redis par article fonctionne; le test était fragile (le verrou vit 5 s).
+- Fixtures communes : `tests/live_fixtures.py` (société avec pays, article avec groupe, client, utilisateurs humains). `NO_FRAPPE` marque les tests du mode simulé.
+
+**Constats sur le produit (à décider, non modifiés)**
+1. **L'utilisateur `Administrator` est traité comme un agent** : il reçoit tous les rôles, dont « Agent Service Account », donc il ne peut pas confirmer une réservation ni décider une approbation (`_current_actor_is_agent`, `audit.py`, `approval_request.py`). Un humain doit avoir le rôle Rental Manager. Je n'ai pas « corrigé » : si le serveur MCP des agents se connectait avec le compte Administrator, la correction donnerait des pouvoirs humains aux agents. **Question pour Kael.**
+2. **Un devis retient le matériel** (72 h par défaut) : un test ou un client qui crée plusieurs devis pour les mêmes dates peut se voir refuser une réservation (c'est voulu; attention aux jeux de données de démonstration).
+3. Les noms racines d'ERPNext (« Tous les départements ») suivent la langue de l'assistant de configuration. Création de société testée en `fr` et en `en` sur ce site : OK; à retester quand le provisionnement client sera exercé.
+
+**Commandes pour rejouer** : voir `tools/bench/README.md`.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

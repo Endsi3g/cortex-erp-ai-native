@@ -30,6 +30,9 @@ class TestMultiTenantIsolation(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # Identifiants uniques par exécution : le journal d'audit est immuable, les essais précédents restent en base.
+        suffix = frappe.generate_hash(length=8)
+        cls.entity_a, cls.entity_b = f"TEST-A-{suffix}", f"TEST-B-{suffix}"
         for company, abbr in ((cls.COMPANY_A, "CTA"), (cls.COMPANY_B, "CTB")):
             if not frappe.db.exists("Company", company):
                 frappe.get_doc(
@@ -42,6 +45,7 @@ class TestMultiTenantIsolation(unittest.TestCase):
                     }
                 ).insert(ignore_permissions=True)
 
+        # Une personne de la société A (gestionnaire de location) : un compte de service d'agent, lui, ne lit pas le journal d'audit.
         cls.user_a = "tenant-a-agent@cortex.test"
         if not frappe.db.exists("User", cls.user_a):
             frappe.get_doc(
@@ -50,7 +54,7 @@ class TestMultiTenantIsolation(unittest.TestCase):
                     "email": cls.user_a,
                     "first_name": "Tenant A Agent",
                     "send_welcome_email": 0,
-                    "roles": [{"role": "Agent Service Account"}, {"role": "Cortex Agent Reporting"}],
+                    "roles": [{"role": "Rental Manager"}],
                 }
             ).insert(ignore_permissions=True)
             frappe.get_doc(
@@ -65,7 +69,7 @@ class TestMultiTenantIsolation(unittest.TestCase):
                 "actor_id": cls.user_a,
                 "action": "test.tenant_a_event",
                 "entity_type": "Test",
-                "entity_id": "TEST-A-1",
+                "entity_id": cls.entity_a,
             }
         )
         cls.audit_a.flags.ignore_permissions = True
@@ -79,7 +83,7 @@ class TestMultiTenantIsolation(unittest.TestCase):
                 "actor_id": "system",
                 "action": "test.tenant_b_event",
                 "entity_type": "Test",
-                "entity_id": "TEST-B-1",
+                "entity_id": cls.entity_b,
             }
         )
         cls.audit_b.flags.ignore_permissions = True
@@ -92,16 +96,34 @@ class TestMultiTenantIsolation(unittest.TestCase):
         frappe.set_user("Administrator")
 
     def test_agent_scoped_to_company_a_cannot_list_company_b_audit_events(self):
-        names = frappe.get_all("Audit Event", filters={"entity_id": "TEST-B-1"}, pluck="name")
+        # `get_list` applique les permissions de la personne connectée; `get_all` les ignore par conception.
+        names = frappe.get_list("Audit Event", filters={"entity_id": self.entity_b}, pluck="name")
         self.assertEqual(names, [], "Company B audit event must not be visible to a Company A-scoped identity")
 
     def test_agent_scoped_to_company_a_can_list_its_own_audit_events(self):
-        names = frappe.get_all("Audit Event", filters={"entity_id": "TEST-A-1"}, pluck="name")
+        names = frappe.get_list("Audit Event", filters={"entity_id": self.entity_a}, pluck="name")
         self.assertEqual(names, [self.audit_a.name])
 
     def test_agent_cannot_read_company_b_audit_event_by_direct_get(self):
         with self.assertRaises(frappe.PermissionError):
             frappe.get_doc("Audit Event", self.audit_b.name).check_permission("read")
+
+    def test_agent_service_account_cannot_read_audit_events_at_all(self):
+        agent = "tenant-a-service@cortex.test"
+        frappe.set_user("Administrator")
+        if not frappe.db.exists("User", agent):
+            frappe.get_doc(
+                {
+                    "doctype": "User",
+                    "email": agent,
+                    "first_name": "Tenant A Service",
+                    "send_welcome_email": 0,
+                    "roles": [{"role": "Agent Service Account"}, {"role": "Cortex Agent Reporting"}],
+                }
+            ).insert(ignore_permissions=True)
+        frappe.set_user(agent)
+        with self.assertRaises(frappe.PermissionError):
+            frappe.get_list("Audit Event", filters={"entity_id": self.entity_a}, pluck="name")
 
     def test_get_company_context_rejects_unauthorized_company_header(self):
         from cortex_rental.permissions.agent_scopes import get_company_context
