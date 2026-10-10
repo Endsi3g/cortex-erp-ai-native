@@ -7,6 +7,8 @@ jamais exposé au modèle.
 
 from typing import Any, Callable, Dict, List
 
+from cortex_rental.services.ai import stats
+
 try:
     import frappe
     from frappe.utils import flt, getdate, today
@@ -167,7 +169,7 @@ def finance_summary():
         filters={"company": company, "paid_on": [">=", first]},
         fields=["sum(signed_amount) as total"],
     )[0]
-    return {
+    result = {
         "mois": str(first)[:7],
         "facture": flt(invoiced.total, 2),
         "tps": flt(invoiced.tps, 2),
@@ -176,6 +178,105 @@ def finance_summary():
         "solde_a_recevoir": flt(open_invoices.balance, 2),
         "factures_ouvertes": int(open_invoices.count or 0),
         "factures_en_retard": int(overdue.count or 0),
+    }
+    result["stat_block"] = stats.card(
+        f"Finance — {result['mois']}",
+        "Ouvrir Finance",
+        "/app/cortex-finance",
+        subtitle="Mois en cours (partiel)",
+        kpis=[
+            stats.kpi_block("Facturé", stats.money(result["facture"])),
+            stats.kpi_block("Encaissé", stats.money(result["encaisse"]), tone="good"),
+            stats.kpi_block(
+                "Solde à recevoir", stats.money(result["solde_a_recevoir"]), f"{result['factures_ouvertes']} facture(s)"
+            ),
+            stats.kpi_block(
+                "Factures en retard",
+                str(result["factures_en_retard"]),
+                tone="bad" if result["factures_en_retard"] else "good",
+            ),
+        ],
+        checked_at=str(frappe.utils.now_datetime()),
+    )
+    return result
+
+
+@tool(
+    "finance_trend",
+    "Évolution mensuelle du facturé et de l'encaissé sur les derniers mois (3 à 12). Affiche un graphique à la personne.",
+    {"months": {"type": "integer", "description": "Nombre de mois, de 3 à 12 (6 par défaut)"}},
+)
+def finance_trend(months: int = 6):
+    if not frappe.has_permission("Cortex Rental Invoice", "read"):
+        return {"error": "Vous n'avez pas accès aux données financières."}
+    count = max(3, min(_as_int(months, 6), 12))
+    now = frappe.utils.now_datetime()
+    today_tuple = (now.year, now.month, now.day)
+    span = stats.last_months(today_tuple, count)[0]
+    start = f"{span[0]:04d}-{span[1]:02d}-01"
+    company = _company()
+    invoices = frappe.get_list(
+        "Cortex Rental Invoice",
+        filters={"company": company, "status": ["!=", "Cancelled"], "issue_date": [">=", start]},
+        fields=["issue_date", "total"],
+        limit_page_length=0,
+    )
+    payments = frappe.get_list(
+        "Cortex Rental Payment",
+        filters={"company": company, "paid_on": [">=", start]},
+        fields=["paid_on", "signed_amount"],
+        limit_page_length=0,
+    )
+    labels, invoiced = stats.monthly_totals(invoices, today_tuple, count, "total", "issue_date")
+    _, received = stats.monthly_totals(payments, today_tuple, count, "signed_amount", "paid_on")
+    return {
+        "mois": labels,
+        "facture": invoiced,
+        "encaisse": received,
+        "stat_block": stats.card(
+            "Facturé par mois",
+            "Ouvrir Finance",
+            "/app/cortex-finance",
+            subtitle=f"{count} derniers mois · le mois en cours est partiel",
+            kpis=[
+                stats.kpi_block("Total facturé", stats.money(sum(invoiced))),
+                stats.kpi_block("Total encaissé", stats.money(sum(received)), tone="good"),
+            ],
+            series=stats.series_block("bar", labels, invoiced, "$"),
+            checked_at=str(now),
+        ),
+    }
+
+
+@tool(
+    "rentals_by_state",
+    "Nombre de locations de la société par état (Devis, Réservation, Contrat, Sortie, Retournée…). Affiche un graphique à la personne.",
+    {},
+)
+def rentals_by_state():
+    if not frappe.has_permission("Cortex Rental Transaction", "read"):
+        return {"error": "Vous n'avez pas accès aux locations."}
+    rows = frappe.get_list(
+        "Cortex Rental Transaction",
+        filters={"company": _company()},
+        fields=["rental_state", "count(name) as n"],
+        group_by="rental_state",
+        limit_page_length=0,
+    )
+    counts = {r.rental_state: int(r.n or 0) for r in rows}
+    order = [s for s in stats.STATE_ORDER if s in counts] + [s for s in counts if s not in stats.STATE_ORDER]
+    labels = [stats.STATE_LABELS.get(s, s) for s in order]
+    return {
+        "par_etat": {stats.STATE_LABELS.get(s, s): counts[s] for s in order},
+        "stat_block": stats.card(
+            "Locations par état",
+            "Ouvrir les locations",
+            "/app/cortex-rental-transaction",
+            subtitle="Toutes les locations de la société",
+            kpis=[stats.kpi_block("Total", str(sum(counts.values())))],
+            series=stats.series_block("bar", labels, [counts[s] for s in order], "locations"),
+            checked_at=str(frappe.utils.now_datetime()),
+        ),
     }
 
 

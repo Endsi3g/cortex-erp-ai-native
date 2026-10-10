@@ -413,6 +413,48 @@ Demandé par Kael : IA complètement fonctionnelle, migration de données access
 
 Rien de ce tableau n'a été essayé sur un Desk Frappe actif.
 
+## Phase 10 : IA native — actions, cartes dédiées, statistiques (2026-10-10, EN COURS)
+
+> **Règle de travail de Kael (2026-10-10) :** avant un gros chantier, écrire le plan ici et le pousser ; à la fin de chaque phase, mettre cette section à jour (**fait / reste à faire / pourquoi ces choix**), pour qu'une autre personne reprenne vite. Ne jamais redessiner la page Assistant IA sans proposition validée (maquette d'abord) ; corriger seulement les défauts sûrs. Demander plutôt que supposer. Pas de travail difficile à annuler.
+
+### Intention de Kael
+« AI native » ne veut pas dire que tout passe par l'IA : **beaucoup d'actions restent manuelles**, mais **l'IA de Cortex doit pouvoir tout faire dans l'application** (et s'améliorer avec les modèles). Un seul système pour toute société de location (caméras, équipement, véhicules…), adaptable (colonnes, sections, catégories de pages). Le chat doit être riche et interactif (cartes dédiées pour chaque action, cartes de statistiques avec une flèche vers l'endroit d'où vient le chiffre), au design de Cortex.
+
+### Décisions prises (avec Kael) et pourquoi
+| Décision | Pourquoi |
+| --- | --- |
+| Propose → aperçu → **approbation humaine** → exécution (ADR-011) | Garde « Cortex suggère, l'humain décide » ; l'IA ne contourne ni droits ni audit |
+| Exécution avec **les droits de la personne**, par la même fonction que l'écran | Une seule voie d'écriture à tester ; aucune élévation de privilèges |
+| **Carte dédiée (maquette B)** pour chaque action | Choix de Kael ; aperçu en tableau, totaux, état (à approuver, fait, refusé, périmée, échec) |
+| Changements de structure : **aperçu + approbation du propriétaire**, un **site par client** | Un site par client isole `Custom Field`/`Property Setter`/`Workspace` ; le propriétaire garde la main ; annulable |
+| Secteurs : **modèles de secteur + IA** | Prévisible pour le client, flexible grâce à l'IA |
+| Interrupteur de site `cortex_ai_actions` (éteint par défaut) | Réversible en une commande ; rien ne s'active sans validation |
+| L'état d'une carte vient **toujours du serveur** (`actions.refresh_blocks`) | Une carte approuvée ne redevient jamais « à approuver » au rechargement |
+| Statistiques : **données réelles seulement**, lien `/app/...` vérifié (`stats.safe_href`) | Aucune estimation inventée ; jamais de lien externe |
+
+### Fait (poussé ou en cours de poussée sur la branche `claude/fervent-thompson-fs0kg0`, PR #15)
+- Moteur d'actions (`services/ai/actions.py`, DocType `Cortex AI Action`, `chat.decide_action`) : créer un client, créer un devis. Revalidation, verrou, point de sauvegarde, audit. 20+ tests.
+- Blocs de chat `action_card` et `stat_card` (schéma `chat_schemas.py`), outils de lecture `finance_trend`, `rentals_by_state` et carte pour `finance_summary` (`services/ai/stats.py`).
+- Composants Vue : `CopilotActionCard.vue` (carte dédiée B), `CopilotStatCard.vue` (KPI + graphique + flèche vers la source), branchés dans `CopilotConversation.vue` (donc aussi dans l'accueil IA).
+- Maquette : `docs/frontend/mockups/proposition-assistant.html`.
+
+### Reste à faire (ordre proposé)
+1. Vérifier les deux cartes dans Chromium (banc d'essai hors Desk, à dire comme tel), clair et sombre ; régénérer `cortex-dark.css` ; captures dans `docs/review/captures/`.
+2. Plus d'actions métier, **une par une, seulement celles qu'on peut annuler facilement ou qui passent déjà par l'approbation** (réservation, retenue, paiement, approbation…). Candidates à valider avec Kael.
+3. Modifier la structure par l'IA (champs, sections, espaces, catégories de pages) avec avant/après et annulation ; modèles de secteur.
+4. Chat : réponse en continu, pièces jointes, mémoire/projets, étapes visibles.
+5. Migration de gros volumes (modèles de fichier, validation avant import, reprise ; `max_file_size` 10 Mo trop petit).
+6. PostHog : la clé `phc_…` est à fournir par Kael ; avis de confidentialité ; réglage individuel.
+7. Audit de l'interface de la page Assistant IA : liste des défauts sûrs corrigés / à décider.
+
+### Comment ajouter une action ou une carte (pour la personne suivante)
+- **Action** : écrire `_prepare_x(args, company) -> Prepared` (validation, droits, aperçu structuré `rows`/`totals`) et `_run_x(payload, company)` (appelle la fonction partagée de l'écran), `register(ActionSpec(...))` dans `actions.py`, ajouter l'outil `propose_x` dans `tools.py` (via `_propose`), à `PROPOSING_TOOLS`, à `tool_policy.AGENT_TOOL_MAP` et à `gateway.TOOL_LABELS`. Si la fonction de l'écran est enfermée dans un décorateur, **extraire un cœur** (voir `rentals.insert_quote`, `customers.insert_customer`) plutôt que dupliquer.
+- **Carte de statistiques** : un outil de lecture qui renvoie `stat_block` = `stats.card(...)` avec des chiffres lus par `frappe.get_list` (droits + société) et un `source_href` réel.
+- **Jamais** : écrire directement depuis un outil, inventer un chiffre, mettre un lien externe, ou présenter une exécution échouée comme réussie.
+
+### Limites connues
+Rien de cette phase n'a été essayé sur un Desk Frappe actif ni avec un vrai modèle. Les composants n'ont pas encore été vus à l'écran (voir « Reste à faire » 1).
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

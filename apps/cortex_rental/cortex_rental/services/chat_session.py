@@ -178,6 +178,14 @@ class ChatSessionService:
                 blocks = frappe.parse_json(row.ui_blocks_json) if row.ui_blocks_json else []
             except Exception:
                 blocks = []
+            if isinstance(blocks, list) and any(isinstance(b, dict) and b.get("type") == "action_card" for b in blocks):
+                # L'état d'une carte d'action vient toujours du serveur (une carte approuvée ne redevient pas « à approuver »).
+                try:
+                    from cortex_rental.services.ai import actions
+
+                    blocks = actions.refresh_blocks(blocks, user)
+                except Exception:
+                    frappe.log_error(title="Cortex AI action cards refresh failed")
             messages.append(
                 {
                     "id": row.name,

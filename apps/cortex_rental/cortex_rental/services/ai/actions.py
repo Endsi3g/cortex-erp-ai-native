@@ -35,11 +35,17 @@ class ActionError(Exception):
 
 @dataclass
 class Prepared:
-    """Ce qu'une action valide : les données propres, un résumé et les lignes de l'aperçu (ce que la personne approuve)."""
+    """Ce qu'une action valide : les données propres, un résumé et l'aperçu (ce que la personne approuve).
+
+    `lines` (texte) fonde l'empreinte de l'aperçu; `rows` et `totals` sont les mêmes informations en structure, pour la carte."""
 
     payload: Dict[str, Any]
     summary: str
     lines: List[str]
+    rows: Optional[List[Dict[str, Any]]] = None
+    totals: Optional[List[Dict[str, Any]]] = None
+    subtitle: str = ""
+    approve_label: str = "Approuver"
 
 
 @dataclass
@@ -76,16 +82,30 @@ def is_expired(expires_at: Any, now: Any) -> bool:
 
 
 def block_for(record: Dict[str, Any]) -> Dict[str, Any]:
-    """Pur : le bloc de conversation qui présente la proposition (réutilise le bloc « proposal » des cartes existantes)."""
+    """Pur : la carte d'action (bloc `action_card`) qui présente la proposition dans la conversation."""
     return {
-        "type": "proposal",
+        "type": "action_card",
+        "action_id": record["name"],
+        "action_type": record["action_type"],
         "title": record["label"],
-        "summary": record["summary"],
-        "impact": list(record["lines"]) + ["Rien n'est fait tant que vous n'approuvez pas."],
-        "action": "decide_ai_action",
-        "draft_id": record["name"],
-        "requires_approval": True,
+        "subtitle": record.get("subtitle") or record.get("summary") or None,
+        "rows": list(record.get("rows") or [{"label": line} for line in record.get("lines", [])]),
+        "totals": list(record.get("totals") or []),
+        "status": record.get("status", "Proposed"),
+        "approve_label": record.get("approve_label") or "Approuver",
+        "message": record.get("message") or None,
+        "result_label": record.get("result_label") or None,
+        "result_href": record.get("result_href") or None,
     }
+
+
+def href_for(doctype: str, name: str) -> str:
+    """Pur : chemin du Desk d'un document (« /app/customer/CUST-1 »), sûr à mettre dans un lien."""
+    from urllib.parse import quote
+
+    from cortex_rental.services.ai.stats import safe_href
+
+    return safe_href(f"/app/{doctype.lower().replace(' ', '-')}/{quote(str(name), safe='')}")
 
 
 # --- Actions (chaque écriture passe par la fonction de l'écran correspondant) ----------------------------------------
@@ -100,14 +120,21 @@ def _prepare_customer(args: Dict[str, Any], company: str) -> Prepared:
         raise ActionError(str(exc))
     if frappe.db.exists("Customer", {"cortex_company": company, "customer_name": name}):
         raise ActionError(f"Un client « {name} » existe déjà.")
-    return Prepared({"customer_name": name}, f"Nouveau client : {name}", [f"Client à créer : {name}"])
+    return Prepared(
+        {"customer_name": name},
+        f"Nouveau client : {name}",
+        [f"Client à créer : {name}"],
+        rows=[{"label": "Nom du client", "value": name}],
+        subtitle="Ajouté à la liste des clients de votre société",
+        approve_label="Créer le client",
+    )
 
 
 def _run_customer(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     from cortex_rental.api.v1.customers import insert_customer
 
     doc = insert_customer(company, payload["customer_name"])
-    return {"id": doc.name, "label": "Ouvrir la fiche du client", "route": ["Form", "Customer", doc.name]}
+    return {"id": doc.name, "label": "Ouvrir la fiche du client", "href": href_for("Customer", doc.name)}
 
 
 def _prepare_quote(args: Dict[str, Any], company: str) -> Prepared:
@@ -139,7 +166,30 @@ def _prepare_quote(args: Dict[str, Any], company: str) -> Prepared:
         "notes": "Proposé par l'assistant, approuvé par une personne.",
     }
     period = f"{payload['starts_at'][:16]} → {payload['ends_at'][:16]}"
-    return Prepared(payload, f"Devis pour {customer} · {period}", lines)
+    rows = [
+        {
+            "label": l["item_name"],
+            "detail": f"× {l['quantity']:g} · {l['daily_rate']:.2f} $ par jour",
+            "value": f"{l['line_subtotal']:.2f} $",
+        }
+        for l in priced["lines"]
+    ]
+    total = round(priced["subtotal"] + tps + tvq, 2)
+    totals = [
+        {"label": "Sous-total", "value": f"{priced['subtotal']:.2f} $"},
+        {"label": "TPS", "value": f"{tps:.2f} $"},
+        {"label": "TVQ", "value": f"{tvq:.2f} $"},
+        {"label": "Total", "value": f"{total:.2f} $"},
+    ]
+    return Prepared(
+        payload,
+        f"Devis pour {customer} · {period}",
+        lines,
+        rows=rows,
+        totals=totals,
+        subtitle=f"{customer} · {period} · {priced['billable_days']} jour(s) facturable(s)",
+        approve_label="Créer le devis",
+    )
 
 
 def _run_quote(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
@@ -147,7 +197,7 @@ def _run_quote(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
 
     priced = _pricing(payload, company)  # les prix sont recalculés par le serveur au moment d'écrire
     name = insert_quote(company, payload, priced)
-    return {"id": name, "label": "Ouvrir le devis", "route": ["Form", "Cortex Rental Transaction", name]}
+    return {"id": name, "label": "Ouvrir le devis", "href": href_for("Cortex Rental Transaction", name)}
 
 
 register(ActionSpec("create_customer", "Créer un client", "Customer", "create", _prepare_customer, _run_customer))
@@ -197,14 +247,34 @@ def propose(action_type: str, args: Dict[str, Any], company: str, user: str, ses
             "expires_at": _now() + timedelta(hours=LIFETIME_HOURS),
             "payload_json": json.dumps(prepared.payload, ensure_ascii=False),
             "preview_json": json.dumps(
-                {"lines": prepared.lines, "signature": preview_signature(prepared.lines)}, ensure_ascii=False
+                {
+                    "lines": prepared.lines,
+                    "signature": preview_signature(prepared.lines),
+                    "rows": prepared.rows,
+                    "totals": prepared.totals,
+                    "subtitle": prepared.subtitle,
+                    "approve_label": prepared.approve_label,
+                },
+                ensure_ascii=False,
             ),
         }
     )
     doc.flags.from_ai_actions = True
     doc.insert(ignore_permissions=True)
     _audit(company, "cortex.ai_action.proposed", doc.name, {"type": action_type, "summary": prepared.summary})
-    return block_for({"name": doc.name, "label": spec.label, "summary": prepared.summary, "lines": prepared.lines})
+    return block_for(
+        {
+            "name": doc.name,
+            "action_type": action_type,
+            "label": spec.label,
+            "summary": prepared.summary,
+            "lines": prepared.lines,
+            "rows": prepared.rows,
+            "totals": prepared.totals,
+            "subtitle": prepared.subtitle,
+            "approve_label": prepared.approve_label,
+        }
+    )
 
 
 def _finish(doc, status: str, user: str, result: Optional[Dict[str, Any]] = None, error: str = "") -> None:
@@ -260,10 +330,50 @@ def decide(name: str, approve: bool, company: str, user: str) -> Dict[str, Any]:
         return _close(doc, FAILED, user, message)
     _finish(doc, EXECUTED, user, result=result)
     _audit(company, "cortex.ai_action.executed", name, {"type": row.action_type, "result": result})
-    return {"ok": True, "status": EXECUTED, "message": f"{spec.label} : fait.", "result": result}
+    return {
+        "ok": True,
+        "status": EXECUTED,
+        "message": f"{spec.label} : fait.",
+        "result_label": result.get("label"),
+        "result_href": result.get("href"),
+    }
 
 
 def _close(doc, status: str, user: str, message: str) -> Dict[str, Any]:
     """Note l'issue et la renvoie comme résultat (jamais une exception : elle annulerait la note elle-même)."""
     _finish(doc, status, user, error=message)
     return {"ok": False, "status": status, "message": message}
+
+
+def refresh_blocks(blocks: List[Dict[str, Any]], user: str) -> List[Dict[str, Any]]:
+    """Au rechargement d'une conversation, remet à jour l'état de chaque carte d'action (exécutée, refusée, périmée…).
+
+    Sans cela, une carte déjà approuvée redeviendrait « à approuver » : le serveur est la seule source de l'état."""
+    out = []
+    for block in blocks:
+        if not isinstance(block, dict) or block.get("type") != "action_card":
+            out.append(block)
+            continue
+        row = frappe.db.get_value(
+            DOCTYPE,
+            block.get("action_id"),
+            ["status", "requested_by", "result_json", "error", "expires_at"],
+            as_dict=True,
+        )
+        if not row or row.requested_by != user:
+            out.append({**block, "status": "Expired", "message": "Cette proposition n'est plus disponible."})
+            continue
+        status = row.status
+        if status == PROPOSED and is_expired(row.expires_at, _now()):
+            status = EXPIRED
+        result = json.loads(row.result_json) if row.result_json else {}
+        out.append(
+            {
+                **block,
+                "status": status,
+                "message": (row.error or None) if status in (FAILED, EXPIRED) else None,
+                "result_label": result.get("label"),
+                "result_href": result.get("href"),
+            }
+        )
+    return out

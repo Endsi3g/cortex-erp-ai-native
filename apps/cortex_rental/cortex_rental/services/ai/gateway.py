@@ -86,6 +86,8 @@ TOOL_LABELS = {
     "list_rentals": "Consultation des locations",
     "list_pending_approvals": "Consultation des approbations",
     "finance_summary": "Résumé financier",
+    "finance_trend": "Évolution du facturé",
+    "rentals_by_state": "Locations par état",
     "customer_summary": "Résumé du client",
     "late_returns": "Recherche des retours en retard",
     "create_quote_draft": "Calcul du devis proposé",
@@ -185,7 +187,8 @@ def _fact(name: str, output: Dict[str, Any], now: str) -> Optional[Dict[str, Any
             "source_ids": [],
             "checked_at": now,
         }
-    if name == "finance_summary":
+    if name == "finance_summary" and not output.get("stat_block"):
+        # Repli sans carte de statistiques (l'outil la fournit normalement) : le même contenu, en liste vérifiée.
         items = [
             f"Facturé : {output['facture']:.2f} $ · Encaissé : {output['encaisse']:.2f} $",
             f"Solde à recevoir : {output['solde_a_recevoir']:.2f} $ ({output['factures_ouvertes']} facture(s))",
@@ -323,6 +326,8 @@ class AIGateway:
                             result_blocks.append(proposal)
                         if output.get("action_block"):
                             result_blocks.append(output["action_block"])
+                        if output.get("stat_block"):
+                            result_blocks.append(output["stat_block"])
                     outputs.append({"name": call.name, "id": call.id, "result": output})
                 tool_message = self.provider().tool_results_message(outputs)
                 # Certains fournisseurs (OpenAI) veulent un message par résultat d'outil.

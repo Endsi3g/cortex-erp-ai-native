@@ -42,6 +42,8 @@ AGENT_TOOL_MAP = {
         "list_rentals",
         "list_pending_approvals",
         "finance_summary",
+        "finance_trend",
+        "rentals_by_state",
         "customer_summary",
         "late_returns",
         # Proposent une écriture; la personne approuve (services/ai/actions.py). Offerts seulement si `cortex_ai_actions` est actif.

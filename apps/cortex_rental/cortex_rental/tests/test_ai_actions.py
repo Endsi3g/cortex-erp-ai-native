@@ -119,21 +119,46 @@ class TestPure(unittest.TestCase):
         self.assertTrue(actions.is_expired(NOW - timedelta(seconds=1), NOW))
         self.assertFalse(actions.is_expired(NOW + timedelta(seconds=1), NOW))
 
-    def test_block_says_nothing_is_done_until_approval(self):
-        block = actions.block_for({"name": "ACT-1", "label": "Créer un client", "summary": "S", "lines": ["L"]})
-        self.assertEqual(block["type"], "proposal")
-        self.assertEqual(
-            (block["action"], block["draft_id"], block["requires_approval"]), ("decide_ai_action", "ACT-1", True)
-        )
-        self.assertIn("Rien n'est fait tant que vous n'approuvez pas.", block["impact"])
+    def record(self, **extra):
+        base = {
+            "name": "ACT-1",
+            "action_type": "create_customer",
+            "label": "Créer un client",
+            "summary": "S",
+            "lines": ["L"],
+        }
+        return {**base, **extra}
 
-    def test_block_validates_against_the_chat_schema(self):
+    def test_block_is_a_dedicated_card_in_the_proposed_state(self):
+        block = actions.block_for(
+            self.record(
+                rows=[{"label": "Caméra", "detail": "× 1", "value": "450.00 $"}],
+                totals=[{"label": "Total", "value": "450.00 $"}],
+                approve_label="Créer le devis",
+            )
+        )
+        self.assertEqual((block["type"], block["action_id"], block["status"]), ("action_card", "ACT-1", "Proposed"))
+        self.assertEqual(block["approve_label"], "Créer le devis")
+        self.assertEqual(block["totals"][0]["value"], "450.00 $")
+
+    def test_block_without_rows_falls_back_to_the_text_lines(self):
+        block = actions.block_for(self.record())
+        self.assertEqual(block["rows"], [{"label": "L"}])
+
+    def test_blocks_validate_against_the_chat_schema(self):
         from pydantic import TypeAdapter
 
         from cortex_rental.schemas.chat_schemas import ChatBlock
 
-        block = actions.block_for({"name": "ACT-1", "label": "Créer un client", "summary": "S", "lines": ["L"]})
-        TypeAdapter(ChatBlock).validate_python(block)
+        adapter = TypeAdapter(ChatBlock)
+        adapter.validate_python(actions.block_for(self.record()))
+        adapter.validate_python(
+            actions.block_for(self.record(status="Executed", result_label="Ouvrir", result_href="/app/customer/C-1"))
+        )
+
+    def test_href_is_a_desk_path_and_escapes_the_name(self):
+        self.assertEqual(actions.href_for("Cortex Rental Transaction", "CR-1"), "/app/cortex-rental-transaction/CR-1")
+        self.assertEqual(actions.href_for("Customer", "A/B ?x"), "/app/customer/A%2FB%20%3Fx")
 
     def test_registry_only_holds_known_actions(self):
         self.assertEqual(set(actions.ACTIONS), {"create_customer", "create_quote"})
@@ -145,7 +170,7 @@ class TestPropose(ActionsCase):
         with self.register_fake(lambda p, c: ran.append(p)):
             block = actions.propose("create_customer", {"customer_name": "Acme"}, "Société A", "a@test.com")
         self.assertEqual(ran, [])  # proposer n'exécute jamais
-        doc = FakeFrappe.store[block["draft_id"]]
+        doc = FakeFrappe.store[block["action_id"]]
         self.assertEqual((doc.status, doc.requested_by, doc.company), ("Proposed", "a@test.com", "Société A"))
         self.assertTrue(doc.flags.from_ai_actions)
         self.assertEqual(self.audits, ["cortex.ai_action.proposed"])
@@ -195,7 +220,7 @@ class TestDecide(ActionsCase):
 
         def run(payload, company):
             ran.append((payload, company))
-            return {"id": "CUST-1", "label": "Ouvrir", "route": ["Form", "Customer", "CUST-1"]}
+            return {"id": "CUST-1", "label": "Ouvrir", "href": "/app/customer/CUST-1"}
 
         with self.register_fake(run):
             out = actions.decide("ACT-1", True, "Société A", "a@test.com")
@@ -203,6 +228,7 @@ class TestDecide(ActionsCase):
         self.assertTrue(out["ok"])
         self.assertEqual(doc.status, "Executed")
         self.assertEqual(json.loads(doc.result_json)["id"], "CUST-1")
+        self.assertEqual((out["result_label"], out["result_href"]), ("Ouvrir", "/app/customer/CUST-1"))
         self.assertEqual(doc.decided_by, "a@test.com")
         self.assertEqual(self.audits, ["cortex.ai_action.executed"])
         self.assertEqual(FakeFrappe.savepoints, [actions.SAVEPOINT])
@@ -241,6 +267,47 @@ class TestDecide(ActionsCase):
         self.assertEqual(FakeFrappe.rollbacks, [actions.SAVEPOINT])
         self.assertIn("existe déjà", doc.error)
         self.assertIn("cortex.ai_action.failed", self.audits)
+
+
+class TestRefresh(ActionsCase):
+    def row(self, status="Proposed", user="a@test.com", result=None, error="", expires=None):
+        self.fake.db.get_value = lambda *a, **k: SimpleNamespace(
+            status=status,
+            requested_by=user,
+            result_json=json.dumps(result) if result else "",
+            error=error,
+            expires_at=expires or NOW + timedelta(hours=1),
+        )
+
+    def card(self):
+        return actions.block_for(
+            {"name": "ACT-1", "action_type": "create_customer", "label": "Créer", "summary": "S", "lines": ["L"]}
+        )
+
+    def test_executed_card_comes_back_executed_with_its_link(self):
+        self.row("Executed", result={"id": "C-1", "label": "Ouvrir la fiche", "href": "/app/customer/C-1"})
+        [out] = actions.refresh_blocks([self.card()], "a@test.com")
+        self.assertEqual(
+            (out["status"], out["result_label"], out["result_href"]),
+            ("Executed", "Ouvrir la fiche", "/app/customer/C-1"),
+        )
+
+    def test_open_card_past_its_expiry_comes_back_expired(self):
+        self.row("Proposed", expires=NOW - timedelta(minutes=1))
+        [out] = actions.refresh_blocks([self.card()], "a@test.com")
+        self.assertEqual(out["status"], "Expired")
+
+    def test_failed_card_carries_its_message(self):
+        self.row("Failed", error="Un client portant ce nom existe déjà.")
+        [out] = actions.refresh_blocks([self.card()], "a@test.com")
+        self.assertEqual((out["status"], out["message"]), ("Failed", "Un client portant ce nom existe déjà."))
+
+    def test_other_blocks_pass_through_and_someone_elses_card_is_unavailable(self):
+        self.row("Executed", user="b@test.com")
+        text = {"type": "assistant_text", "text": "Bonjour"}
+        out = actions.refresh_blocks([text, self.card()], "a@test.com")
+        self.assertEqual(out[0], text)
+        self.assertEqual(out[1]["status"], "Expired")
 
 
 class TestToolsAndGateway(unittest.TestCase):
