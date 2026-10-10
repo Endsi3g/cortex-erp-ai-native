@@ -550,6 +550,31 @@ Approbation humaine avant toute écriture; droits de la personne; audit; revalid
 
 **Reste à faire (IA)** : action générique « modifier un champ » avec avant/après et annulation (validée par Kael), outil de lecture générique pour tout référencer, modification de structure (champs, sections, catégories) avec approbation du propriétaire, flux continu, pièces jointes, mémoire; qualité avec un vrai modèle.
 
+## Phase 13 (PLAN, écrit avant le travail) : IA de bout en bout — lecture générique et « modifier un champ » avec avant/après et annulation (2026-10-10)
+
+> Priorité actuelle de Kael : « rendre le système AI fonctionnel end-to-end avant de toucher autres choses ». La phase 11 (parcours d'entrée) reste en attente. Ce plan sera complété (fait / reste / pourquoi) à la fin de la phase.
+
+### Ce que je construis
+1. **Lecture générique « tout référencer »** : deux outils de lecture, sans écriture, sous les droits de la personne et la société active.
+   - `find_records(doctype, query)` : cherche dans une **liste blanche** de types (clients, profils d'équipement, locations, factures, paiements, demandes d'approbation, règles de prix, retours) et renvoie nom, quelques champs lisibles et un lien `/app/…` réel.
+   - `get_record(doctype, name)` : détail d'un enregistrement (champs simples seulement : pas de mots de passe, pièces jointes ni tables), avec lien.
+   - Pourquoi une liste blanche : « tout » = tout ce qui est utile en location, pas les tables techniques (chat, clés, journaux).
+2. **Action générique « modifier un champ »** (`propose_update_field`) : approuvée par Kael, avec **avant / après** et **annulation**.
+   - **Liste blanche de champs modifiables par type** (pas « n'importe quel champ ») : p. ex. profil d'équipement (nom, tarif journalier, valeur de remplacement, dépôt, préparation, accessoires), location en état Devis/Réservation (notes, nom du projet), client (notes, site web), règle de prix (active, multiplicateur, jours facturables, description).
+   - Validation par type de champ (nombre ≥ 0, entier, case à cocher, liste de choix, texte borné), société de l'enregistrement = société active, droit d'écriture de la personne, jamais un champ en lecture seule.
+   - L'aperçu montre **la valeur actuelle et la nouvelle**; si la valeur change entre la proposition et l'approbation, la proposition est périmée (empreinte existante). À l'exécution : verrou, relecture, `doc.save()` avec les droits de la personne (mêmes validations que l'écran).
+   - **Annulation** : bouton « Annuler cette modification » sur la carte exécutée; remet l'ancienne valeur **seulement si la valeur actuelle est encore celle que l'assistant a écrite** (sinon refus clair : quelqu'un l'a modifiée depuis). Nouvel état `Undone`; tout au journal d'audit.
+3. **Faux Gemini + tests** : scénarios « change le tarif de la caméra », « cherche la fiche de… »; tests unitaires, tests banc, et vérifications E2E dans le vrai Desk (captures).
+
+### Ce que je ne fais PAS (et pourquoi)
+- Pas de modification de structure (champs, sections, catégories de pages) : plus risqué, à faire après, avec approbation du propriétaire (point 3 de « Reste à faire »).
+- Pas de modification de statut/étape (réservation, contrat…) par ce chemin : ces transitions ont leurs actions dédiées et leurs règles.
+- Pas de suppression, pas de montants déjà facturés/payés, pas d'écriture sans carte approuvée.
+
+### Questions ouvertes pour Kael
+- La liste blanche de champs ci-dessus convient-elle? (je pars de la plus petite liste utile; on ajoute à la demande)
+- Le tarif journalier modifié ne change pas les devis déjà créés (les prix des devis sont figés par le serveur) : à confirmer comme comportement voulu.
+
 ## Phase 11 (en cours) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 
 **Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**
