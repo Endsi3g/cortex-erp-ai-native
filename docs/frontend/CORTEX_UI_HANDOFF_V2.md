@@ -527,11 +527,19 @@ Approbation humaine avant toute écriture; droits de la personne; audit; revalid
 3. `Administrator` est traité comme un agent (voir Phase 12) : question toujours ouverte pour Kael.
 4. Les actions *paiement* et *décision d'approbation* ne s'annulent pas par un bouton (paiement : remboursement; approbation : nouvelle demande); l'aperçu le dit (« Ce qui va se passer »). Validées par Kael dans la liste, mais à garder en tête.
 
-## Phase 11 (en cours) : parcours d'entrée — décisions de Kael (2026-10-10)
+## Phase 11 (en cours) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 
-- **Garder l'onboarding actuel tel quel** (`/app/cortex-setup`, six étapes) et **y ajouter l'IA et des animations**. Ne pas le remplacer par une autre mise en page.
-- **Administration replié par défaut** dans la barre latérale — **fait et vérifié dans le vrai Desk** : le groupe s'ouvrait à cause de la page `cortex-setup` (qui lui appartient) et ne se refermait jamais en la quittant. Maintenant : un groupe ouvert seulement par la page courante se referme au départ; un clic de la personne reste respecté (`data-auto` dans `cortex_nav.js`). Vérifié : sur Profil → ouvert; vers Tableau de bord → replié; clic → ouvert et conservé.
-- Maquette `docs/frontend/mockups/parcours-entree.html` (chargement, onboarding actuel + IA, Assistant plein écran, visite guidée) et captures `docs/review/captures/phase11-maquettes/` : **Kael a répondu que les maquettes ne sont pas bonnes (« on ne va pas vers là »)**. Rien de ce parcours n'est codé. Les points à reprendre sont demandés à Kael avant toute nouvelle maquette.
+**Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**
+
+| # | Chantier | Décision de Kael | État |
+| --- | --- | --- | --- |
+| 11.0 | Barre latérale | **Administration replié par défaut** (il s'ouvrait à cause de `cortex-setup` et ne se refermait pas) | **Fait, vérifié dans le vrai Desk** (`data-auto` dans `cortex_nav.js`) |
+| 11.1 | Écran de chargement après la connexion | **Accueil personnalisé court** : « Bienvenue, {prénom} », nom et logo de la société, fondu doux, pas de liste d'étapes, une seule fois par connexion | À faire |
+| 11.2 | Assistant IA plein écran | **Ta page, presque intacte** : retirer le fil d'Ariane et la barre du haut (sauf Mon compte et Paramètres), barre latérale réduite aux icônes (avec son bouton), **polices plus légères** | À faire |
+| 11.3 | Onboarding | **Garder l'actuel tel quel**; ajouter **animations seulement** (transition entre étapes, coche, barre de progression, « Enregistré »). Pas d'IA | À faire |
+| 11.4 | Visite guidée | **Une visite globale pas à pas** (halo + bulles), **contenu** : où est chaque page et à quoi elle sert + comment l'application fonctionne (demande → devis → réservation → contrat → sortie → retour → facture → paiement); **elle ouvre chaque page**; **automatique une fois** à la première arrivée sur l'Assistant IA après l'onboarding, **relançable** depuis Aide; passable à tout moment. Pas d'IA | À faire |
+
+Pourquoi : l'IA qui remplit tout coûte des jetons et retire le contrôle; un onboarding guidé par des textes, des exemples et des animations est prévisible, rapide et gratuit à exécuter. L'IA commence sur l'Assistant IA, sur demande.
 
 ## Niveau de vérité de l’implémentation
 
