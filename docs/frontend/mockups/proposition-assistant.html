@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette — proposition d'action de l'assistant</title>
+<style>
+	:root {
+		--ink: #0f172a; --text: #334155; --muted: #64748b; --line: #e2e8f0; --line-strong: #cbd5e1;
+		--bg: #f8fafc; --card: #ffffff; --accent: #047857; --accent-ink: #ffffff; --accent-soft: #ecfdf5;
+		--warn: #8a4b00; --warn-soft: #fff7ed; --danger: #b42318; --danger-soft: #fef3f2;
+	}
+	* { box-sizing: border-box; }
+	body { margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+	main { max-width: 980px; margin: 0 auto; }
+	h1 { font-size: 20px; margin: 0 0 4px; color: var(--ink); }
+	.lead { margin: 0 0 20px; color: var(--muted); }
+	h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 28px 0 10px; }
+	.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+	@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+	.col { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+	.col > .tag { font-size: 12px; font-weight: 600; color: var(--accent); margin: 0 0 12px; }
+	.col > .tag.alt { color: var(--muted); }
+	.msg { margin: 0 0 10px; color: var(--ink); }
+	.state-label { font-size: 12px; color: var(--muted); margin: 14px 0 6px; }
+
+	/* Variante A : la carte actuelle (CopilotProposalCard), deux boutons à la place du bouton unique */
+	.cp-proposal { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+	.cp-summary, .cp-impact { flex: 1 1 100%; margin: 0; font-size: 14px; color: var(--text); }
+	.cp-impact { padding-left: 18px; font-size: 12.5px; color: var(--muted); }
+	button { font: inherit; cursor: pointer; }
+	button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+	.cp-ghost { height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; font-size: 13px; font-weight: 500; color: var(--text); }
+	.cp-ghost:hover { border-color: var(--line-strong); background: var(--bg); color: var(--ink); }
+	.cp-primary { height: 30px; padding: 0 14px; border: 1px solid var(--accent); border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 600; }
+	.cp-primary:hover { filter: brightness(.95); }
+	.cp-flag { font-size: 12px; color: var(--warn); }
+	.cp-done { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; color: var(--accent); }
+	.cp-done a { color: var(--accent); font-weight: 600; }
+	.cp-fail { font-size: 13px; color: var(--danger); }
+	.cp-muted { font-size: 13px; color: var(--muted); }
+
+	/* Variante B : carte dédiée avec aperçu en tableau */
+	.dc { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); }
+	.dc-head { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--bg); }
+	.dc-title { font-weight: 600; color: var(--ink); }
+	.dc-badge { font-size: 12px; color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+	.dc-sub { padding: 8px 12px 0; font-size: 13px; color: var(--muted); }
+	table { width: 100%; border-collapse: collapse; font-size: 13px; }
+	th, td { padding: 6px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+	th { font-weight: 500; color: var(--muted); font-size: 12px; }
+	td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+	tr.total td { font-weight: 600; color: var(--ink); border-bottom: 0; }
+	.dc-foot { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); }
+	.dc-note { margin-left: auto; font-size: 12px; color: var(--muted); }
+	.note { margin-top: 24px; padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; font-size: 13px; }
+	.note strong { color: var(--ink); }
+</style>
+</head>
+<body>
+<main>
+	<h1>Proposition d'action de l'assistant — maquette</h1>
+	<p class="lead">Maquette statique, aucun code de la page Assistant IA n'est modifié. Mêmes couleurs, bordures et pastilles que la carte de proposition actuelle. Rien n'est fait tant que la personne n'approuve pas.</p>
+
+	<div class="grid">
+		<section class="col" aria-labelledby="a">
+			<p class="tag" id="a">A · Réutiliser la carte actuelle (recommandé)</p>
+			<p class="msg">J'ai préparé le devis pour Acme. Les prix viennent du serveur; vérifiez et approuvez.</p>
+
+			<div class="state-label">1 · Proposé</div>
+			<div class="cp-proposal">
+				<p class="cp-summary">Devis pour Acme · 2026-10-14 09:00 → 2026-10-16 18:00</p>
+				<ul class="cp-impact">
+					<li>Caméra cinéma A × 1 — 450,00 $</li>
+					<li>Trépied fluide × 2 — 120,00 $</li>
+					<li>Sous-total 570,00 $ · TPS 28,50 $ · TVQ 56,86 $</li>
+					<li>Rien n'est fait tant que vous n'approuvez pas.</li>
+				</ul>
+				<button type="button" class="cp-primary">Approuver et créer le devis</button>
+				<button type="button" class="cp-ghost">Refuser</button>
+				<span class="cp-flag">approbation requise</span>
+			</div>
+
+			<div class="state-label">2 · Fait</div>
+			<div class="cp-done">✓ Devis créé. <a href="#">Ouvrir le devis</a></div>
+
+			<div class="state-label">3 · Refusé</div>
+			<div class="cp-muted">Proposition refusée. Rien n'a été fait.</div>
+
+			<div class="state-label">4 · Les prix ont changé / expirée / échec</div>
+			<div class="cp-fail" role="alert">Les prix ont changé depuis la proposition. Demandez-la de nouveau à l'assistant.</div>
+		</section>
+
+		<section class="col" aria-labelledby="b">
+			<p class="tag alt" id="b">B · Carte dédiée (nouvel élément visuel)</p>
+			<p class="msg">J'ai préparé le devis pour Acme. Les prix viennent du serveur; vérifiez et approuvez.</p>
+
+			<div class="state-label">1 · Proposé</div>
+			<div class="dc">
+				<div class="dc-head"><span class="dc-title">Créer le devis — Acme</span><span class="dc-badge">approbation requise</span></div>
+				<div class="dc-sub">14 oct. 09:00 → 16 oct. 18:00 · 3 jours facturables</div>
+				<table>
+					<thead><tr><th>Équipement</th><th class="n">Qté</th><th class="n">Montant</th></tr></thead>
+					<tbody>
+						<tr><td>Caméra cinéma A</td><td class="n">1</td><td class="n">450,00 $</td></tr>
+						<tr><td>Trépied fluide</td><td class="n">2</td><td class="n">120,00 $</td></tr>
+						<tr><td>TPS + TVQ</td><td class="n"></td><td class="n">85,36 $</td></tr>
+						<tr class="total"><td>Total</td><td class="n"></td><td class="n">655,36 $</td></tr>
+					</tbody>
+				</table>
+				<div class="dc-foot">
+					<button type="button" class="cp-primary">Approuver</button>
+					<button type="button" class="cp-ghost">Refuser</button>
+					<span class="dc-note">Rien n'est fait avant votre approbation</span>
+				</div>
+			</div>
+
+			<div class="state-label">2 · Fait</div>
+			<div class="cp-done">✓ Devis créé. <a href="#">Ouvrir le devis</a></div>
+		</section>
+	</div>
+
+	<div class="note">
+		<strong>Accessibilité :</strong> boutons natifs au clavier, focus visible vert, message d'erreur annoncé (<code>role="alert"</code>), pendant la décision les boutons sont désactivés (pas de double clic).
+		<br><strong>Texte :</strong> tout en français québécois, vouvoiement, sans jargon. <strong>Mode sombre :</strong> repris de la couche sombre générée de Cortex (à vérifier à l'intégration).
+	</div>
+</main>
+</body>
+</html>
