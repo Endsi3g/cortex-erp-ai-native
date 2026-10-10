@@ -70,28 +70,76 @@ READABLE: Dict[str, Readable] = {
         ("name", "rule_name"),
         ("name", "rule_name", "is_active", "calendar_days", "billable_days", "multiplier"),
     ),
+    "Consignment Owner": Readable(
+        "Propriétaire en consignation",
+        "company",
+        ("name", "owner_name", "short_code"),
+        ("name", "owner_name", "short_code", "owner_type", "default_percentage"),
+    ),
+    # Réglages de la société : lecture seule des champs simples (les mots de passe et clés ne sont jamais lus).
+    "Cortex Finance Settings": Readable(
+        "Réglages de facturation",
+        "company",
+        ("name",),
+        ("name", "deposit_percent", "invoice_due_days", "quote_hold_hours"),
+    ),
 }
 
 # Champs modifiables, type par type. Volontairement petite : on l'élargit à la demande, jamais « tout champ ».
 EDITABLE: Dict[str, Dict[str, str]] = {
     "Cortex Rental Item Profile": {
         "item_name": "Nom affiché",
+        "category": "Catégorie",
         "daily_rate": "Tarif journalier",
         "replacement_value": "Valeur de remplacement",
         "deposit_required": "Dépôt exigé",
+        "total_quantity": "Quantité du parc (équipement non sérialisé)",
         "prep_hours": "Heures de préparation",
         "required_accessories": "Accessoires requis",
         "is_consignment_allowed": "Consignation permise",
     },
     "Cortex Rental Transaction": {"notes": "Notes", "project_name": "Nom du projet"},
-    "Customer": {"customer_details": "Notes sur le client", "website": "Site web"},
+    "Customer": {
+        "customer_details": "Notes sur le client",
+        "website": "Site web",
+        "tax_id": "Numéro de taxes du client",
+    },
     "Rental Pricing Rule": {
+        "rule_name": "Nom de la règle",
         "is_active": "Règle active",
-        "multiplier": "Multiplicateur",
+        "calendar_days": "Jours du calendrier",
         "billable_days": "Jours facturables",
+        "multiplier": "Multiplicateur",
         "description": "Description",
     },
+    "Consignment Owner": {
+        "owner_name": "Nom du propriétaire",
+        "default_percentage": "Pourcentage par défaut",
+        "email": "Courriel",
+        "phone": "Téléphone",
+        "billing_address": "Adresse de facturation",
+    },
+    # Paramètres d'exploitation seulement. JAMAIS : taxes (taux, numéros), comptes comptables, clés de paiement, textes
+    # juridiques du contrat, adresse publique du portail, ni la règle d'auto-approbation (ce sont des contrôles).
+    "Cortex Finance Settings": {
+        "deposit_percent": "Acompte (%)",
+        "invoice_due_days": "Délai de paiement des factures (jours)",
+        "quote_hold_enabled": "Retenue du matériel par les devis",
+        "quote_hold_hours": "Durée de la retenue (heures)",
+        "auto_reserve_on_accept": "Réserver automatiquement à l'acceptation",
+        "late_fee_enabled": "Frais de retard",
+        "late_fee_grace_minutes": "Délai de grâce du retard (minutes)",
+        "late_fee_percent": "Frais de retard (% du tarif journalier)",
+        "late_fee_cap_days": "Plafond des frais de retard (jours)",
+        "damage_billing_enabled": "Facturation des dommages",
+        "missing_billing_percent": "Matériel manquant facturé (%)",
+        "accept_cheque": "Accepter les chèques",
+        "cheque_payable_to": "Chèque à l'ordre de",
+        "payment_instructions": "Instructions de paiement",
+    },
 }
+# Bornes de bon sens (un pourcentage d'acompte de 500 est une faute de frappe, pas une décision).
+MAX_VALUE = {"deposit_percent": 100, "missing_billing_percent": 100, "quote_hold_hours": 720, "invoice_due_days": 365}
 # Une location ne se modifie par ce chemin que tant qu'elle n'est pas engagée (devis ou réservation).
 EDITABLE_STATES = {"Cortex Rental Transaction": ("Quote", "Reservation")}
 
@@ -316,6 +364,10 @@ def _prepare_update(args: Dict[str, Any], company: str) -> Prepared:
     if "value" not in args:
         raise ActionError("La nouvelle valeur est obligatoire.")
     after = coerce_value(df.fieldtype, args.get("value"), label, df.options or "")
+    if fieldname in MAX_VALUE and float(after) > MAX_VALUE[fieldname]:
+        raise ActionError(f"« {label} » ne peut pas dépasser {fr_number(MAX_VALUE[fieldname])}.")
+    if doctype == "Cortex Rental Item Profile" and fieldname == "total_quantity" and doc.get("is_serialized"):
+        raise ActionError("Le parc d'un équipement sérialisé vient de ses numéros de série, pas d'une quantité.")
     before = doc.get(fieldname)
     if same_value(df.fieldtype, before, after):
         raise ActionError(f"« {label} » a déjà cette valeur ({display_value(df.fieldtype, before)}). Rien à modifier.")
@@ -400,7 +452,7 @@ register(
         _run_update,
         effects=(
             "Change une seule valeur sur l'enregistrement indiqué, avec vos droits et les validations habituelles.",
-            "Les documents déjà créés (devis, factures) ne sont pas recalculés.",
+            "Les devis et factures déjà créés gardent leurs prix : seuls les nouveaux devis, ou un devis que vous modifiez ensuite, utilisent la nouvelle valeur.",
             "Pour revenir en arrière : le bouton « Annuler cette modification » de la carte remet l'ancienne valeur, tant que personne ne l'a changée entre-temps.",
         ),
         undo=_undo_update,

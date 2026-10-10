@@ -37,6 +37,8 @@ class TestAIRecordsLive(unittest.TestCase):
         frappe.flags.in_test = True
 
     def setUp(self):
+        # Les propositions laissées ouvertes par les essais précédents plafonnent à 20 par personne : on repart à zéro.
+        frappe.db.delete("Cortex AI Action", {"requested_by": ("in", [self.operator, self.reader]), "status": "Proposed"})
         frappe.set_user(self.operator)
         self.code = f"itm-rec-{frappe.generate_hash(length=6)}"
         ensure_profile(COMPANY, self.code, serialized=0, quantity=5, rate=120.0)
@@ -87,6 +89,81 @@ class TestAIRecordsLive(unittest.TestCase):
             self.skipTest("le rôle lecture seule peut lire les factures sur ce site")
         with self.assertRaises(self.actions.ActionError):
             self.records.find("Cortex Rental Invoice", "", COMPANY)
+
+    def test_every_editable_field_exists_and_is_writable_on_the_real_meta(self):
+        """Contrôle sur les vraies fiches (y compris Customer, d'ERPNext) : aucune faute de frappe dans la liste blanche."""
+        for doctype, allowed in self.records.EDITABLE.items():
+            meta = frappe.get_meta(doctype)
+            for fieldname in allowed:
+                df = meta.get_field(fieldname)
+                self.assertIsNotNone(df, f"{doctype}.{fieldname}")
+                self.assertFalse(df.read_only, f"{doctype}.{fieldname} est en lecture seule")
+                self.assertIn(df.fieldtype, self.records.SUPPORTED, f"{doctype}.{fieldname}")
+        for doctype, spec in self.records.READABLE.items():
+            meta = frappe.get_meta(doctype)
+            for f in spec.list_fields + spec.search_fields:
+                self.assertTrue(f == "name" or meta.has_field(f), f"{doctype}.{f}")
+
+    def test_finance_settings_are_editable_within_bounds_and_taxes_are_not(self):
+        if not frappe.db.exists("Cortex Finance Settings", COMPANY):
+            frappe.get_doc({"doctype": "Cortex Finance Settings", "company": COMPANY}).insert(ignore_permissions=True)
+        base = {"doctype": "Cortex Finance Settings", "name": COMPANY}
+        for bad in ({"fieldname": "tps_rate", "value": "0"}, {"fieldname": "deposit_percent", "value": "500"}):
+            with self.assertRaises(self.actions.ActionError, msg=str(bad)):
+                self.actions.propose("update_field", {**base, **bad}, COMPANY, self.operator)
+        before = frappe.db.get_value("Cortex Finance Settings", COMPANY, "deposit_percent")
+        value = 25 if float(before) != 25 else 35
+        block = self.actions.propose(
+            "update_field", {**base, "fieldname": "deposit_percent", "value": str(value)}, COMPANY, self.operator
+        )
+        self.assertTrue(self.actions.decide(block["action_id"], True, COMPANY, self.operator)["ok"])
+        self.assertEqual(float(frappe.db.get_value("Cortex Finance Settings", COMPANY, "deposit_percent")), value)
+        self.assertTrue(self.actions.undo(block["action_id"], COMPANY, self.operator)["ok"])
+        self.assertEqual(
+            float(frappe.db.get_value("Cortex Finance Settings", COMPANY, "deposit_percent")), float(before)
+        )
+
+    def test_serialized_fleet_quantity_and_consignment_owner(self):
+        serial = ensure_profile(
+            COMPANY, f"itm-ser-{frappe.generate_hash(length=6)}", serialized=1, quantity=0, rate=90.0
+        )
+        name = frappe.db.get_value("Cortex Rental Item Profile", {"item_code": serial, "company": COMPANY}, "name")
+        with self.assertRaises(self.actions.ActionError):
+            self.actions.propose(
+                "update_field",
+                {"doctype": "Cortex Rental Item Profile", "name": name, "fieldname": "total_quantity", "value": "4"},
+                COMPANY,
+                self.operator,
+            )
+        block = self.actions.propose(
+            "update_field",
+            {
+                "doctype": "Cortex Rental Item Profile",
+                "name": self.profile,
+                "fieldname": "total_quantity",
+                "value": "8",
+            },
+            COMPANY,
+            self.operator,
+        )
+        self.assertTrue(self.actions.decide(block["action_id"], True, COMPANY, self.operator)["ok"])
+        self.assertEqual(frappe.db.get_value("Cortex Rental Item Profile", self.profile, "total_quantity"), 8)
+
+        code = frappe.generate_hash(length=5).upper()
+        owner = frappe.get_doc(
+            {"doctype": "Consignment Owner", "company": COMPANY, "owner_name": f"Prêteur {code}", "short_code": code}
+        ).insert(ignore_permissions=True)
+        frappe.db.commit()
+        found = self.records.find("Consignment Owner", code, COMPANY)
+        self.assertEqual([r["name"] for r in found["records"]], [owner.name])
+        phone = self.actions.propose(
+            "update_field",
+            {"doctype": "Consignment Owner", "name": owner.name, "fieldname": "phone", "value": "514 555-0100"},
+            COMPANY,
+            self.operator,
+        )
+        self.assertTrue(self.actions.decide(phone["action_id"], True, COMPANY, self.operator)["ok"])
+        self.assertEqual(frappe.db.get_value("Consignment Owner", owner.name, "phone"), "514 555-0100")
 
     # --- modification et annulation ----------------------------------------------------------------------------------
 
@@ -155,7 +232,7 @@ class TestAIRecordsLive(unittest.TestCase):
     def test_refused_inputs(self):
         cases = [
             {"fieldname": "company"},  # hors liste blanche
-            {"fieldname": "total_quantity", "value": "9"},  # hors liste blanche (stock)
+            {"fieldname": "category", "value": "Catégorie inventée"},  # hors des choix de la liste
             {"fieldname": "daily_rate", "value": "beaucoup"},
             {"fieldname": "daily_rate", "value": "-5"},
             {"fieldname": "daily_rate", "value": "120"},  # déjà cette valeur

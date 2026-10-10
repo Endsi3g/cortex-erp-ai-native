@@ -90,6 +90,10 @@ class TestRegistry(unittest.TestCase):
         }
         for doctype, allowed in records.EDITABLE.items():
             self.assertFalse(banned & set(allowed), doctype)
+            self.assertFalse([f for f in allowed if f.startswith("acct_")], doctype)
+
+    def test_every_editable_type_is_also_readable(self):
+        self.assertFalse(set(records.EDITABLE) - set(records.READABLE))
 
     def test_readable_list_fields_exist(self):
         for doctype, spec in records.READABLE.items():

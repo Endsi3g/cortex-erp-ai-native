@@ -592,6 +592,36 @@ Approbation humaine avant toute écriture; droits de la personne; audit; revalid
 4. **Qualité avec un vrai modèle** : tout a été prouvé avec le faux Gemini (protocole fidèle) mais jamais avec une vraie clé : saisir la clé dans *Cortex AI Settings*, retirer `cortex_ai_gemini_base_url`, relancer `e2e-ai.mjs`, et regarder si le vrai modèle choisit bien `find_records` → `propose_update_field` (et si ses descriptions d'outils sont assez claires).
 5. Le tarif modifié ne change pas les devis déjà créés (comportement voulu : les prix d'un devis sont figés); à confirmer.
 
+## Phase 14 (PLAN, écrit avant le travail) : modèles de secteur, puis modification de structure (2026-10-10)
+
+> Ordre voulu par Kael : (1) **modèles de secteur**, (2) **modification de structure avec approbation du propriétaire**, (3) **ensuite seulement la phase 11** (parcours d'entrée). Réponses de Kael : secteur livré d'abord = **cinéma/vidéo**; contenu = **catégories, règles de prix, réglages par défaut** (pas d'exemples de catalogue); application = **page « Modèles de secteur » (Administration) + assistant**, onboarding intact; liste de champs modifiables : **ajouter plus** (fait : voir ci-dessous); tarif des devis : **« analyse-le toi-même »** (analyse plus bas).
+
+### Analyse : un tarif modifié change-t-il les devis déjà créés ? (lue dans le code)
+Non. Chaque ligne d'une location garde son `rate` à la création (`Cortex Rental Transaction Item.rate`), et `validate()` recalcule les montants à partir de ce `rate`, jamais du profil. Un **nouveau** devis, ou un devis **modifié ensuite par l'écran « modifier le devis »** (qui refait le prix avec le profil), prend le nouveau tarif. Les factures émises ne changent jamais. Conclusion : comportement sûr et voulu; la carte le dit maintenant dans « Ce qui va se passer ».
+
+### Fait avant la phase : liste de champs élargie (demande de Kael « ajouter plus »)
+`records.EDITABLE` couvre maintenant : profil d'équipement (+ catégorie, quantité du parc non sérialisé — refusée pour un équipement sérialisé), client (+ numéro de taxes), règle de prix (+ nom, jours du calendrier), **propriétaire en consignation** (nom, pourcentage, courriel, téléphone, adresse) et **réglages de facturation** (acompte, délai de paiement, retenue, frais de retard, dommages, chèques, instructions) avec bornes (acompte ≤ 100 %, etc.). **Jamais** : taxes (taux, numéros), comptes comptables, clés de paiement, textes juridiques, adresse publique du portail, auto-approbation, indicateurs de conformité d'une location (assurance, paiement, compte prêt). Un test échoue si on en ajoute un.
+
+### Constat qui motive les modèles
+Le produit est câblé « cinéma » : la catégorie d'un équipement est une liste figée de 7 choix de caméra dans la fiche (`Cortex Rental Item Profile.category`), répétée en dur dans `cortex_nav.js` et dans le filtre du rapport « Disponibilité du parc ». Un autre secteur (véhicules, événements…) ne peut donc pas être configuré.
+
+### 14.1 Modèles de secteur (déterministe, sans IA, aucun jeton)
+- **Données** dans `services/sector_templates.py` (en dur, relues par une personne). Premier modèle : `cinema_video`, qui **reprend exactement l'existant** (les 7 catégories actuelles, valeurs inchangées pour ne casser aucune donnée), la règle « 7 jours pour 3 » (règle canonique du produit), une règle « Fin de semaine : 3 jours pour 1 » **créée inactive** (suggestion que le propriétaire active), et des réglages par défaut du secteur (acompte 30 %, retenue 72 h, frais de retard, facturation des dommages). Jamais de taxes ni de comptes.
+- **Catégories configurables par site** : la liste devient une *Property Setter* sur `category` (survit à `bench migrate`), lue partout par `frappe.boot.cortex_categories` (nav, filtre du rapport) au lieu de la liste en dur. Appliquer un modèle **ajoute** des catégories, **n'en retire jamais** une utilisée.
+- **Appliquer = une action approuvée** (`apply_sector_template`, même moteur que les autres : aperçu → approbation → exécution → **annulation**). L'aperçu liste ce qui sera **ajouté** (catégories, règles) et **changé** (réglages : avant → après); ce qui est déjà identique n'apparaît pas. L'annulation retire les règles créées (si elles existent encore), remet les réglages **qui n'ont pas changé depuis** et les catégories ajoutées non utilisées; elle dit ce qu'elle a laissé en place.
+- **Qui** : propriétaire (`Cortex System Manager`) ou `System Manager` (l'ajout d'une catégorie modifie la structure).
+- **Où** : page Desk « Modèles de secteur » sous Administration (cartes de modèles → aperçu → Appliquer → Annuler) **et** outil de l'assistant `propose_apply_sector_template` (même carte). L'onboarding n'est pas touché.
+- Correctif au passage : `fixtures/demo_data.py` créait la règle avec des champs inexistants (`min_days`, `billable_multiplier`) : la règle n'avait donc aucun nombre de jours.
+
+### 14.2 Modification de structure (propriétaire seulement)
+- Actions approuvées, **propriétaire/System Manager seulement**, jamais exécutées sans carte : `add_category` (ajoute une catégorie d'équipement) et `add_custom_field` (ajoute un champ à la fiche équipement, au client ou à la location : texte, nombre, montant, case, date ou liste de choix; nom technique préfixé `cx_`).
+- **Annulation sans perte** : retirer une catégorie seulement si aucune fiche ne l'utilise; un champ ajouté est supprimé seulement s'il est encore vide partout, sinon il est **masqué** (les données restent).
+- Les champs ainsi ajoutés deviennent modifiables par `update_field` (liste blanche dynamique : seulement les champs `cx_…`).
+- **Pas** dans cette phase : modifier/supprimer un champ existant, sections, catégories de pages/espaces de travail (à décider avec Kael après usage).
+
+### Vérification prévue
+Tests purs (plan, aperçu, sécurité), tests banc (appliquer, annuler, droits, catégories visibles par Frappe), essais E2E dans le vrai Desk (page + assistant) avec captures, 100 % de la suite du banc; bilan écrit ici à la fin de chaque sous-phase.
+
 ## Phase 11 (en cours) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 
 **Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**

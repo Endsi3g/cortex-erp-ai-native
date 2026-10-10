@@ -399,7 +399,7 @@ def create_quote_draft(customer: str, starts_at: str, ends_at: str, items: List[
 
 @tool(
     "find_records",
-    "Cherche des enregistrements de la société dans un type permis (Customer, Cortex Rental Item Profile, Cortex Rental Transaction, Cortex Rental Invoice, Cortex Rental Payment, Approval Request, Cortex Check-In, Rental Pricing Rule) par mot ou identifiant. Renvoie des lignes avec un lien. À utiliser pour retrouver l'identifiant exact avant d'agir.",
+    "Cherche des enregistrements de la société dans un type permis (Customer, Cortex Rental Item Profile, Cortex Rental Transaction, Cortex Rental Invoice, Cortex Rental Payment, Approval Request, Cortex Check-In, Rental Pricing Rule, Consignment Owner, Cortex Finance Settings) par mot ou identifiant. Renvoie des lignes avec un lien. À utiliser pour retrouver l'identifiant exact avant d'agir.",
     {
         "doctype": {"type": "string", "description": "Type exact, p. ex. Cortex Rental Item Profile"},
         "query": {"type": "string", "description": "Mot ou identifiant à chercher (vide = les plus récents)"},
@@ -552,7 +552,7 @@ propose_decide_approval = _proposing_tool(
 propose_update_field = _proposing_tool(
     "propose_update_field",
     "update_field",
-    "PROPOSE de modifier UN champ d'un enregistrement (avant/après visibles, annulable). Champs permis : profil d'équipement (item_name, daily_rate, replacement_value, deposit_required, prep_hours, required_accessories, is_consignment_allowed), location en devis ou réservation (notes, project_name), client (customer_details, website), règle de prix (is_active, multiplier, billable_days, description). Retrouve l'identifiant avec find_records d'abord.",
+    "PROPOSE de modifier UN champ d'un enregistrement (avant/après visibles, annulable). Types : Cortex Rental Item Profile (équipement : tarif, dépôt, parc…), Cortex Rental Transaction (notes d'un devis ou d'une réservation), Customer (notes, site web), Rental Pricing Rule, Consignment Owner, Cortex Finance Settings (acompte, retenue, frais de retard…; nom = la société). get_record donne editable_fields; si le champ n'est pas permis, la réponse liste les champs permis. Jamais de taxes, de comptes ni de statut. Retrouve l'identifiant avec find_records d'abord.",
     {
         "doctype": {"type": "string", "description": "Type exact, p. ex. Cortex Rental Item Profile"},
         "name": {"type": "string", "description": "Identifiant exact de l'enregistrement (find_records)"},
