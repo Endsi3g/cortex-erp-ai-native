@@ -1208,13 +1208,14 @@ defineExpose({ refresh });
 
 .ch-card-link-btn {
 	position: absolute;
-	right: 14px;
-	bottom: 36px;
+	/* Zone cliquable de 24 px (WCAG 2.2, 2.5.8) : le padding grandit, la position décale de la même valeur, l'icône ne bouge pas. */
+	right: 10.5px;
+	bottom: 32.5px;
 	border: none;
 	background: transparent;
 	color: #64748b;
 	cursor: pointer;
-	padding: 2px;
+	padding: 5.5px;
 	border-radius: 4px;
 	display: flex;
 	align-items: center;
@@ -1319,6 +1320,9 @@ defineExpose({ refresh });
 
 .ch-demo-hide {
 	flex: none;
+	display: inline-flex;
+	align-items: center;
+	min-height: 24px; /* zone cliquable minimale (WCAG 2.2, 2.5.8) */
 	border: 0;
 	background: none;
 	color: #8a4b00;

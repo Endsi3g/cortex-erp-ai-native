@@ -441,6 +441,11 @@ Rien de ce tableau n'a été essayé sur un Desk Frappe actif.
 - **Vérifié dans le banc d'essai (Chromium, faux `frappe`, PAS le Desk)** : rendu clair/sombre, bureau 900 px et mobile 390 px ; clic « Créer le devis » → appel `decide_action` correct, état « Fait », lien « Ouvrir le devis » → route du document ; échec de droits → message en rouge et bouton encore actif ; flèches des cartes de statistiques → bonne route ; 122 textes, **0 sous 4,5:1** en clair et en sombre. Captures : `docs/review/captures/phase10-cartes/`.
 - Maquette : `docs/frontend/mockups/proposition-assistant.html`.
 
+### Audit de la page Assistant IA (banc d'essai, lecture seule + 2 correctifs sûrs)
+- **Corrigé (sans changer l'apparence)** : zone cliquable de 24 px (WCAG 2.2, 2.5.8) pour les trois icônes « Ouvrir… » des cartes (les icônes n'ont pas bougé d'un pixel; seul le fond au survol est plus grand) et pour « Masquer » du bandeau de démonstration (texte ~2 px plus bas). Audit mécanique après : 0 bouton sans nom, 0 cible < 24 px, 0 débordement horizontal à 1280 et 390 px, 0 image sans `alt`.
+- **Non touché, à décider par Kael** : (1) les trois illustrations des questionnaires guidés utilisent des **dégradés violet, bleu, vert** alors que la direction visuelle de ce document demande « aucun violet néon, halo ou dégradé copilote » ; (2) le texte de la zone de saisie (« Que puis-je faire pour vous aujourd'hui ? ») répète le titre (« Comment puis-je vous aider aujourd'hui ? ») ; (3) le mode démonstration est signalé deux fois (bandeau + pastille), voulu ou redondant ?
+- Limite : audit fait avec un faux `frappe` et sans les feuilles de style du Desk ; non vu dans l'application réelle.
+
 ### Décisions de cette étape
 - Les montants des cartes d'action utilisent le même format que les statistiques (« 1 234,50 $ ») : un seul format partout.
 - Le graphique est un SVG maison (pas de bibliothèque) : aucune dépendance de plus, rendu identique clair/sombre, `role="img"` + `<title>` par barre. Limite : pas d'infobulle riche ni de zoom.
