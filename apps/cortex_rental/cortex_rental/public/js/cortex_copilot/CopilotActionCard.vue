@@ -15,6 +15,10 @@ const resultHref = ref(props.block.result_href || "");
 const deciding = ref(false);
 
 const open = computed(() => status.value === "Proposed");
+const reasoning = computed(() => {
+	const r = props.block.reasoning;
+	return r && (r.stated || (r.checks && r.checks.length) || (r.effects && r.effects.length)) ? r : null;
+});
 const hasLink = computed(() => resultLabel.value && isDeskPath(resultHref.value));
 const BADGE = {
 	Proposed: ["À approuver", "is-pending"],
@@ -67,6 +71,25 @@ async function decide(approve) {
 				</tr>
 			</tbody>
 		</table>
+
+		<details v-if="reasoning" class="cp-action-why">
+			<summary>Pourquoi cette proposition</summary>
+			<div class="cp-why-body">
+				<section v-if="reasoning.stated">
+					<h4>Explication de l'assistant</h4>
+					<p>{{ reasoning.stated }}</p>
+					<p class="cp-why-note">C'est l'explication de l'assistant, pas un fait vérifié : contrôlez l'aperçu ci-dessus.</p>
+				</section>
+				<section v-if="reasoning.checks && reasoning.checks.length">
+					<h4>Données consultées dans cette conversation</h4>
+					<ul><li v-for="(c, i) in reasoning.checks" :key="i">{{ c }}</li></ul>
+				</section>
+				<section v-if="reasoning.effects && reasoning.effects.length">
+					<h4>Ce qui va se passer</h4>
+					<ul><li v-for="(e, i) in reasoning.effects" :key="i">{{ e }}</li></ul>
+				</section>
+			</div>
+		</details>
 
 		<footer class="cp-action-foot">
 			<template v-if="open">
@@ -168,6 +191,58 @@ async function decide(approve) {
 	border-bottom: 0;
 	font-weight: 650;
 	color: #0f172a;
+}
+.cp-action-why {
+	border-top: 1px solid #e2e8f0;
+	font-size: 13px;
+}
+.cp-action-why > summary {
+	padding: 8px 12px;
+	cursor: pointer;
+	color: #475569;
+	list-style: none;
+}
+.cp-action-why > summary::-webkit-details-marker {
+	display: none;
+}
+.cp-action-why > summary::before {
+	content: "›";
+	display: inline-block;
+	width: 12px;
+	margin-right: 4px;
+	transition: transform 0.15s ease;
+}
+.cp-action-why[open] > summary::before {
+	transform: rotate(90deg);
+}
+.cp-action-why > summary:hover {
+	color: #0f172a;
+}
+.cp-action-why > summary:focus-visible {
+	outline: 2px solid #047857;
+	outline-offset: -2px;
+}
+.cp-why-body {
+	padding: 0 12px 10px 28px;
+	color: #334155;
+}
+.cp-why-body h4 {
+	margin: 8px 0 2px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #64748b;
+}
+.cp-why-body p {
+	margin: 0;
+}
+.cp-why-body ul {
+	margin: 0;
+	padding-left: 18px;
+}
+.cp-why-note {
+	margin-top: 2px;
+	font-size: 12px;
+	color: #64748b;
 }
 .cp-action-foot {
 	display: flex;

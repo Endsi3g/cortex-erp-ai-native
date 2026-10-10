@@ -5,6 +5,7 @@ Les noms suivent la liste d'autorisations par agent (`services/tool_policy.py`) 
 jamais exposé au modèle.
 """
 
+from contextvars import ContextVar
 from typing import Any, Callable, Dict, List
 
 from cortex_rental.services.ai import stats
@@ -274,7 +275,7 @@ def rentals_by_state():
             "/app/cortex-rental-transaction",
             subtitle="Toutes les locations de la société",
             kpis=[stats.kpi_block("Total", str(sum(counts.values())))],
-            series=stats.series_block("bar", labels, [counts[s] for s in order], "locations"),
+            series=stats.series_block("donut", labels, [counts[s] for s in order], "locations"),
             checked_at=str(frappe.utils.now_datetime()),
         ),
     }
@@ -370,13 +371,25 @@ def create_quote_draft(customer: str, starts_at: str, ends_at: str, items: List[
     }
 
 
-def _propose(action_type: str, args: Dict[str, Any]) -> Dict[str, Any]:
+# Libellés des outils de lecture déjà appelés dans ce tour : l'assistant les montre dans « Pourquoi cette proposition ».
+# Posé par la passerelle (gateway.py) à chaque tour; vide hors passerelle.
+CONSULTED: ContextVar = ContextVar("cortex_ai_consulted", default=None)
+
+REASON = {
+    "type": "string",
+    "description": "Pourquoi tu proposes cette action, en une ou deux phrases claires pour la personne (ce que tu as constaté, ce que tu cherches à faire).",
+}
+
+
+def _propose(action_type: str, args: Dict[str, Any], reason: str = "") -> Dict[str, Any]:
     from cortex_rental.services.ai import actions
 
     if not actions_enabled():
         return {"error": "Les actions de l'assistant ne sont pas activées sur ce site."}
     try:
-        block = actions.propose(action_type, args, _company(), frappe.session.user)
+        block = actions.propose(
+            action_type, args, _company(), frappe.session.user, reason=reason, checks=tuple(CONSULTED.get() or ())
+        )
     except actions.ActionError as exc:
         return {"error": str(exc)}
     return {
@@ -385,9 +398,27 @@ def _propose(action_type: str, args: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-@tool(
+def _proposing_tool(name: str, action_type: str, description: str, properties: Dict[str, Any], required: List[str]):
+    """Déclare un outil « propose_* » : il passe par `actions.propose` et n'écrit jamais lui-même."""
+
+    def run(reason: str = "", **args):
+        return _propose(action_type, args, reason)
+
+    run.__name__ = name
+    props = {**properties, "reason": REASON}
+    tool(
+        name,
+        description + " La personne voit un aperçu et approuve ou refuse; rien n'est fait avant son approbation.",
+        props,
+        required,
+    )(run)
+    return run
+
+
+propose_create_customer = _proposing_tool(
     "propose_create_customer",
-    "PROPOSE de créer un client. La personne voit un aperçu et approuve ou refuse; rien n'est créé avant son approbation.",
+    "create_customer",
+    "PROPOSE de créer un client.",
     {
         "customer_name": {
             "type": "string",
@@ -396,13 +427,10 @@ def _propose(action_type: str, args: Dict[str, Any]) -> Dict[str, Any]:
     },
     ["customer_name"],
 )
-def propose_create_customer(customer_name: str):
-    return _propose("create_customer", {"customer_name": customer_name})
-
-
-@tool(
+propose_create_quote = _proposing_tool(
     "propose_create_quote",
-    "PROPOSE de créer un devis (prix calculés par le serveur). La personne voit l'aperçu et approuve ou refuse; rien n'est créé avant son approbation. Vérifie d'abord le client et la disponibilité.",
+    "create_quote",
+    "PROPOSE de créer un devis (prix calculés par le serveur). Vérifie d'abord le client et la disponibilité.",
     {
         "customer": {"type": "string", "description": "Identifiant exact du client (utiliser search_customers)"},
         "starts_at": DATETIME,
@@ -418,13 +446,59 @@ def propose_create_customer(customer_name: str):
     },
     ["customer", "starts_at", "ends_at", "items"],
 )
-def propose_create_quote(customer: str, starts_at: str, ends_at: str, items: List[Dict[str, Any]]):
-    return _propose("create_quote", {"customer": customer, "starts_at": starts_at, "ends_at": ends_at, "items": items})
+RENTAL = {"rental": {"type": "string", "description": "Identifiant exact de la location (utiliser list_rentals)"}}
+propose_release_hold = _proposing_tool(
+    "propose_release_hold", "release_hold", "PROPOSE de libérer la retenue de matériel d'un devis.", RENTAL, ["rental"]
+)
+propose_renew_hold = _proposing_tool(
+    "propose_renew_hold", "renew_hold", "PROPOSE de renouveler la retenue de matériel d'un devis.", RENTAL, ["rental"]
+)
+propose_request_reservation = _proposing_tool(
+    "propose_request_reservation",
+    "request_reservation",
+    "PROPOSE de transformer un devis en réservation (la disponibilité est vérifiée).",
+    RENTAL,
+    ["rental"],
+)
+propose_record_payment = _proposing_tool(
+    "propose_record_payment",
+    "record_payment",
+    "PROPOSE d'enregistrer un paiement DÉJÀ REÇU sur une facture (ne prélève rien).",
+    {
+        "invoice": {"type": "string", "description": "Identifiant exact de la facture"},
+        "amount": {"type": "number", "description": "Montant reçu, en dollars"},
+        "method": {"type": "string", "description": "Card, Cash, Bank Transfer, Cheque ou Other"},
+        "reference": {
+            "type": "string",
+            "description": "Référence du paiement (numéro de chèque, de virement…), facultatif",
+        },
+    },
+    ["invoice", "amount"],
+)
+propose_decide_approval = _proposing_tool(
+    "propose_decide_approval",
+    "decide_approval",
+    "PROPOSE d'approuver ou de refuser une demande d'approbation en attente (utiliser list_pending_approvals).",
+    {
+        "approval": {"type": "string", "description": "Identifiant exact de la demande"},
+        "decision": {"type": "string", "description": "approve ou reject"},
+        "decision_reason": {"type": "string", "description": "Motif de la décision (obligatoire pour un refus)"},
+    },
+    ["approval", "decision"],
+)
 
 
 # Outils qui proposent une écriture (approbation humaine requise). Offerts au modèle seulement si le site les active :
 # clé `cortex_ai_actions` de la configuration du site (éteinte par défaut tant que l'affichage des propositions n'est pas validé).
-PROPOSING_TOOLS = ("propose_create_customer", "propose_create_quote")
+PROPOSING_TOOLS = (
+    "propose_create_customer",
+    "propose_create_quote",
+    "propose_release_hold",
+    "propose_renew_hold",
+    "propose_request_reservation",
+    "propose_record_payment",
+    "propose_decide_approval",
+)
 
 
 def actions_enabled() -> bool:

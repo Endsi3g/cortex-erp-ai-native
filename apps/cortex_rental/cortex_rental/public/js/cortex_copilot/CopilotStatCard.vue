@@ -17,7 +17,7 @@ const H = 120;
 const PAD = { top: 18, right: 8, bottom: 22, left: 8 };
 const plot = computed(() => {
 	const s = series.value;
-	if (!s || !s.values || !s.values.length) return null;
+	if (!s || !s.values || !s.values.length || ["donut", "hbar"].includes(s.kind)) return null;
 	const max = Math.max(...s.values, 0) || 1;
 	const n = s.values.length;
 	const innerW = W - PAD.left - PAD.right;
@@ -32,6 +32,22 @@ const plot = computed(() => {
 	}));
 	return { points, step, baseline: PAD.top + innerH, barWidth: Math.max(6, Math.min(28, step * 0.6)) };
 });
+// Anneau : part de chaque valeur; les étiquettes, valeurs et pourcentages sont écrits (la couleur n'est jamais seule).
+const R = 38;
+const CIRC = 2 * Math.PI * R;
+const total = computed(() => (series.value ? series.value.values.reduce((a, b) => a + b, 0) : 0));
+const segments = computed(() => {
+	const s = series.value;
+	if (!s || !total.value) return [];
+	let offset = 0;
+	return s.values.map((value, i) => {
+		const len = (value / total.value) * CIRC;
+		const seg = { i, value, label: s.labels[i] || "", pct: Math.round((value / total.value) * 100), dash: `${Math.max(len - 1.5, 0)} ${CIRC - Math.max(len - 1.5, 0)}`, offset: -offset };
+		offset += len;
+		return seg;
+	});
+});
+const maxValue = computed(() => (series.value ? Math.max(...series.value.values, 0) || 1 : 1));
 const showValues = computed(() => (series.value ? series.value.values.length <= 7 : false));
 
 function compact(value) {
@@ -102,6 +118,34 @@ function checked(value) {
 				<text v-for="(p, i) in plot.points" :key="`l${i}`" :x="p.x" :y="H - 6" class="cp-label" text-anchor="middle">{{ p.label }}</text>
 			</svg>
 			<figcaption v-if="series.unit" class="cp-stat-unit">Unité : {{ series.unit }}</figcaption>
+		</figure>
+
+		<figure v-else-if="series && series.kind === 'donut' && segments.length" class="cp-stat-donut">
+			<svg viewBox="0 0 100 100" role="img" :aria-label="summary" class="cp-donut">
+				<circle cx="50" cy="50" :r="R" class="cp-donut-track" fill="none" />
+				<circle v-for="seg in segments" :key="seg.i" cx="50" cy="50" :r="R" fill="none" :class="`cp-seg seg-${seg.i % 9}`" :stroke-dasharray="seg.dash" :stroke-dashoffset="seg.offset" transform="rotate(-90 50 50)">
+					<title>{{ seg.label }} : {{ full(seg.value, series.unit) }} ({{ seg.pct }} %)</title>
+				</circle>
+				<text x="50" y="49" text-anchor="middle" class="cp-donut-total">{{ full(total) }}</text>
+				<text x="50" y="60" text-anchor="middle" class="cp-donut-unit">{{ series.unit }}</text>
+			</svg>
+			<ul class="cp-legend">
+				<li v-for="seg in segments" :key="seg.i">
+					<span :class="`cp-swatch seg-bg-${seg.i % 9}`" aria-hidden="true"></span>
+					<span class="cp-legend-label">{{ seg.label }}</span>
+					<span class="cp-legend-value">{{ full(seg.value) }} · {{ seg.pct }} %</span>
+				</li>
+			</ul>
+		</figure>
+
+		<figure v-else-if="series && series.kind === 'hbar' && series.values.length" class="cp-stat-hbar">
+			<ul class="cp-hbars" role="img" :aria-label="summary">
+				<li v-for="(value, i) in series.values" :key="i" class="cp-hbar-row">
+					<span class="cp-hbar-label">{{ series.labels[i] }}</span>
+					<span class="cp-hbar-track"><span class="cp-hbar-fill" :style="{ width: `${(value / maxValue) * 100}%` }"></span></span>
+					<span class="cp-hbar-value">{{ full(value, series.unit) }}</span>
+				</li>
+			</ul>
 		</figure>
 
 		<p v-if="block.checked_at" class="cp-stat-meta">Données vérifiées le {{ checked(block.checked_at) }}</p>
@@ -228,6 +272,114 @@ function checked(value) {
 .cp-label {
 	font-size: 10px;
 	fill: #64748b;
+}
+.cp-stat-donut {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px 24px;
+	margin: 12px 0 0;
+}
+.cp-donut {
+	flex: none;
+	width: 150px;
+	height: 150px;
+}
+.cp-donut-track {
+	stroke: #f1f5f9;
+	stroke-width: 12;
+}
+.cp-seg {
+	stroke-width: 12;
+}
+.cp-donut-total {
+	font-size: 15px;
+	font-weight: 650;
+	fill: #0f172a;
+}
+.cp-donut-unit {
+	font-size: 6.5px;
+	fill: #64748b;
+}
+.seg-0 { stroke: #047857; }
+.seg-1 { stroke: #0369a1; }
+.seg-2 { stroke: #b45309; }
+.seg-3 { stroke: #0f766e; }
+.seg-4 { stroke: #475569; }
+.seg-5 { stroke: #be123c; }
+.seg-6 { stroke: #4d7c0f; }
+.seg-7 { stroke: #0891b2; }
+.seg-8 { stroke: #78716c; }
+.seg-bg-0 { background: #047857; }
+.seg-bg-1 { background: #0369a1; }
+.seg-bg-2 { background: #b45309; }
+.seg-bg-3 { background: #0f766e; }
+.seg-bg-4 { background: #475569; }
+.seg-bg-5 { background: #be123c; }
+.seg-bg-6 { background: #4d7c0f; }
+.seg-bg-7 { background: #0891b2; }
+.seg-bg-8 { background: #78716c; }
+.cp-legend {
+	flex: 1 1 180px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-size: 13px;
+}
+.cp-legend li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 3px 0;
+}
+.cp-swatch {
+	flex: none;
+	width: 10px;
+	height: 10px;
+	border-radius: 3px;
+}
+.cp-legend-label {
+	flex: 1;
+	color: #334155;
+}
+.cp-legend-value {
+	font-variant-numeric: tabular-nums;
+	color: #475569;
+}
+.cp-stat-hbar {
+	margin: 12px 0 0;
+}
+.cp-hbars {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.cp-hbar-row {
+	display: grid;
+	grid-template-columns: minmax(70px, 28%) 1fr auto;
+	align-items: center;
+	gap: 10px;
+	padding: 4px 0;
+	font-size: 13px;
+}
+.cp-hbar-label {
+	color: #334155;
+}
+.cp-hbar-track {
+	height: 10px;
+	border-radius: 999px;
+	background: #f1f5f9;
+	overflow: hidden;
+}
+.cp-hbar-fill {
+	display: block;
+	height: 100%;
+	border-radius: 999px;
+	background: #047857;
+}
+.cp-hbar-value {
+	font-variant-numeric: tabular-nums;
+	color: #475569;
 }
 .cp-stat-unit {
 	margin-top: 2px;

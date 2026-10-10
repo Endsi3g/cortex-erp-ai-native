@@ -111,6 +111,14 @@ class ActionRow(BaseModel):
     value: Optional[str] = None
 
 
+class ActionReasoning(BaseModel):
+    """« Pourquoi cette proposition » : l'explication de l'assistant (non vérifiée), ce qu'il a consulté, ce que l'action fera."""
+
+    stated: Optional[str] = None
+    checks: List[str] = Field(default_factory=list)
+    effects: List[str] = Field(default_factory=list)
+
+
 class ActionCardBlock(BaseModel):
     """Carte d'une action proposée par l'assistant (services/ai/actions.py) : la personne approuve ou refuse sur la carte."""
 
@@ -126,6 +134,7 @@ class ActionCardBlock(BaseModel):
     message: Optional[str] = None  # issue notée par le serveur (échec, périmée…)
     result_label: Optional[str] = None
     result_href: Optional[str] = None  # chemin du Desk (« /app/... ») du document créé
+    reasoning: Optional[ActionReasoning] = None
 
 
 class StatKpi(BaseModel):
@@ -136,7 +145,7 @@ class StatKpi(BaseModel):
 
 
 class StatSeries(BaseModel):
-    kind: Literal["bar", "line"] = "bar"
+    kind: Literal["bar", "line", "donut", "hbar"] = "bar"
     labels: List[str]
     values: List[float]
     unit: str = ""  # « $ », « locations »…

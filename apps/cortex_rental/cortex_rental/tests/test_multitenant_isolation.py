@@ -33,7 +33,13 @@ class TestMultiTenantIsolation(unittest.TestCase):
         for company, abbr in ((cls.COMPANY_A, "CTA"), (cls.COMPANY_B, "CTB")):
             if not frappe.db.exists("Company", company):
                 frappe.get_doc(
-                    {"doctype": "Company", "company_name": company, "abbr": abbr, "default_currency": "USD"}
+                    {
+                        "doctype": "Company",
+                        "company_name": company,
+                        "abbr": abbr,
+                        "default_currency": "CAD",
+                        "country": "Canada",
+                    }
                 ).insert(ignore_permissions=True)
 
         cls.user_a = "tenant-a-agent@cortex.test"

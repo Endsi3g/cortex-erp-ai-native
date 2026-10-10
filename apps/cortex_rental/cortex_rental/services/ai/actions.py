@@ -14,7 +14,7 @@ Règles (ADR-011) :
 import json
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 try:
     import frappe
@@ -56,6 +56,8 @@ class ActionSpec:
     ptype: str
     prepare: Callable[[Dict[str, Any], str], Prepared]
     run: Callable[[Dict[str, Any], str], Dict[str, Any]]
+    # Ce qui va se passer, ce qui ne se passera pas et comment revenir en arrière : montré dans « Pourquoi cette proposition ».
+    effects: Tuple[str, ...] = ()
 
 
 ACTIONS: Dict[str, ActionSpec] = {}
@@ -96,7 +98,28 @@ def block_for(record: Dict[str, Any]) -> Dict[str, Any]:
         "message": record.get("message") or None,
         "result_label": record.get("result_label") or None,
         "result_href": record.get("result_href") or None,
+        "reasoning": record.get("reasoning") or None,
     }
+
+
+def clean_reason(value: Any) -> str:
+    """Pur : la raison déclarée par l'assistant, sans espaces superflus, 600 caractères au plus."""
+    return " ".join(str(value or "").split())[:600]
+
+
+def reasoning_for(spec_effects: Any, stated: Any = "", checks: Any = ()) -> Optional[Dict[str, Any]]:
+    """Pur : « Pourquoi cette proposition » = l'explication de l'assistant (non vérifiée), ce qu'il a réellement consulté
+    (outils appelés dans ce tour) et ce que l'action fera ou ne fera pas. Rien de tout cela n'est du texte inventé ici."""
+    text = clean_reason(stated)
+    seen, done = set(), []
+    for label in checks or ():
+        if label and label not in seen:
+            seen.add(label)
+            done.append(str(label))
+    effects = [str(e) for e in spec_effects or ()]
+    if not (text or done or effects):
+        return None
+    return {"stated": text or None, "checks": done, "effects": effects}
 
 
 def href_for(doctype: str, name: str) -> str:
@@ -226,7 +249,15 @@ def _audit(company: str, action: str, name: str, after: Dict[str, Any]) -> None:
         frappe.log_error(title="Cortex AI action audit failed")
 
 
-def propose(action_type: str, args: Dict[str, Any], company: str, user: str, session: str = "") -> Dict[str, Any]:
+def propose(
+    action_type: str,
+    args: Dict[str, Any],
+    company: str,
+    user: str,
+    session: str = "",
+    reason: str = "",
+    checks: Tuple[str, ...] = (),
+) -> Dict[str, Any]:
     """Valide et garde une proposition. Ne crée rien d'autre que la proposition elle-même."""
     spec = ACTIONS.get(action_type)
     if not spec:
@@ -274,6 +305,7 @@ def propose(action_type: str, args: Dict[str, Any], company: str, user: str, ses
             "totals": prepared.totals,
             "subtitle": prepared.subtitle,
             "approve_label": prepared.approve_label,
+            "reasoning": reasoning_for(spec.effects, reason, checks),
         }
     )
 
@@ -325,7 +357,11 @@ def decide(name: str, approve: bool, company: str, user: str) -> Dict[str, Any]:
     try:
         result = spec.run(fresh.payload, company)
     except Exception as exc:  # noqa: BLE001 - un refus de droits ou de validation est dit tel quel, jamais présenté en succès
-        frappe.db.rollback(save_point=SAVEPOINT)
+        try:
+            frappe.db.rollback(save_point=SAVEPOINT)
+        except Exception:
+            # Certaines écritures (ex. retenue de devis) valident elles-mêmes la transaction : le point de sauvegarde n'existe plus.
+            frappe.log_error(title="Cortex AI action rollback impossible")
         message = str(getattr(exc, "message", None) or exc)[:300]
         _audit(company, "cortex.ai_action.failed", name, {"type": row.action_type, "error": message})
         return _close(doc, FAILED, user, message)
@@ -378,3 +414,7 @@ def refresh_blocks(blocks: List[Dict[str, Any]], user: str) -> List[Dict[str, An
             }
         )
     return out
+
+
+# Les actions du catalogue (retenue, réservation, paiement, approbation) s'enregistrent à l'import.
+from cortex_rental.services.ai import action_catalog  # noqa: E402,F401

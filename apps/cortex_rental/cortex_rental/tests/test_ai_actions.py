@@ -161,7 +161,18 @@ class TestPure(unittest.TestCase):
         self.assertEqual(actions.href_for("Customer", "A/B ?x"), "/app/customer/A%2FB%20%3Fx")
 
     def test_registry_only_holds_known_actions(self):
-        self.assertEqual(set(actions.ACTIONS), {"create_customer", "create_quote"})
+        self.assertEqual(
+            set(actions.ACTIONS),
+            {
+                "create_customer",
+                "create_quote",
+                "release_hold",
+                "renew_hold",
+                "request_reservation",
+                "record_payment",
+                "decide_approval",
+            },
+        )
 
 
 class TestPropose(ActionsCase):

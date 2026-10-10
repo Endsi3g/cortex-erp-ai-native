@@ -26,7 +26,7 @@ SYSTEM_PROMPT = """Tu es l'assistant Cortex d'une société de location de maté
 Tu écris en français du Québec, avec calme, clarté et concision, sans jargon ni exagération. Tu vouvoies la personne.
 Règles :
 - Pour toute quantité, tout prix, toute disponibilité ou tout statut, tu utilises les outils. Tu ne devines jamais : si l'outil ne donne pas l'information, dis-le.
-- Tu ne peux ni confirmer, ni approuver, ni modifier quoi que ce soit. Tu proposes; la personne décide. Un contrat exige l'approbation d'un humain.
+- Tu ne peux ni confirmer, ni approuver, ni modifier quoi que ce soit toi-même. Tu proposes avec les outils « propose_… » (jamais de formulation « c'est fait » avant l'approbation de la personne); elle voit un aperçu et décide. Chaque proposition porte une raison (« reason ») claire et honnête. Un contrat exige l'approbation d'un humain.
 - Si une information manque (client, dates, équipement), pose une seule question courte.
 - Les montants sont en dollars canadiens, taxes TPS/TVQ précisées quand elles sont données par l'outil.
 - N'invente jamais de numéro de location, de facture ou de client.
@@ -93,6 +93,11 @@ TOOL_LABELS = {
     "create_quote_draft": "Calcul du devis proposé",
     "propose_create_customer": "Préparation de la création du client",
     "propose_create_quote": "Préparation du devis",
+    "propose_release_hold": "Préparation de la libération de la retenue",
+    "propose_renew_hold": "Préparation du renouvellement de la retenue",
+    "propose_request_reservation": "Préparation de la réservation",
+    "propose_record_payment": "Préparation du paiement",
+    "propose_decide_approval": "Préparation de la décision",
 }
 
 
@@ -291,6 +296,8 @@ class AIGateway:
         now = str(frappe.utils.now_datetime()) if frappe else ""
         result_blocks: List[Dict[str, Any]] = []
         used_tools: List[str] = []
+        consulted: List[str] = []
+        tools.CONSULTED.set(consulted)  # lu par les outils « propose_* » pour « Pourquoi cette proposition »
         total_in = total_out = 0
         text = ""
         for step in range(max_steps + 1):
@@ -318,6 +325,8 @@ class AIGateway:
                     else:
                         output = tools.execute(call.name, call.args)
                         used_tools.append(call.name)
+                        if call.name not in tools.PROPOSING_TOOLS:
+                            consulted.append(TOOL_LABELS.get(call.name, call.name))
                         self._audit(company, call.name)
                         fact, proposal = _fact(call.name, output, now), _proposal(output)
                         if fact:

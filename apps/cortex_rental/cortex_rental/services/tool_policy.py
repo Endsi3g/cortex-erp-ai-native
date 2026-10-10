@@ -49,6 +49,11 @@ AGENT_TOOL_MAP = {
         # Proposent une écriture; la personne approuve (services/ai/actions.py). Offerts seulement si `cortex_ai_actions` est actif.
         "propose_create_customer",
         "propose_create_quote",
+        "propose_release_hold",
+        "propose_renew_hold",
+        "propose_request_reservation",
+        "propose_record_payment",
+        "propose_decide_approval",
     ],
 }
 

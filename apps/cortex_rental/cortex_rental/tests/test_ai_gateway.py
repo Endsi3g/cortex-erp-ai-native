@@ -391,6 +391,11 @@ class TestPolicyAndDoctypes(unittest.TestCase):
 
     def test_no_tool_in_the_registry_can_write_or_approve(self):
         for name in tools.REGISTRY:
+            if name in tools.PROPOSING_TOOLS:
+                # Seuls les outils « propose_* » portent un nom d'action : ils ne font que PROPOSER (voir test_ai_actions.py :
+                # aucun n'écrit lui-même, l'approbation humaine est requise).
+                self.assertTrue(name.startswith("propose_"), name)
+                continue
             self.assertFalse(any(w in name for w in self.WRITE_WORDS), name)
 
     def test_quote_tool_only_proposes(self):
