@@ -63,6 +63,7 @@ app_include_js = [
     "/assets/cortex_rental/js/cortex_views.js",
     "/assets/cortex_rental/js/cortex_a11y.js",
     "/assets/cortex_rental/js/cortex_i18n.js",
+    "/assets/cortex_rental/js/cortex_analytics.js",
 ]
 
 # Fiche client 360° (devis ouverts, locations en cours, solde dû).

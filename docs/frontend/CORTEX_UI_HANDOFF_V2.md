@@ -400,6 +400,19 @@ Vu à l'écran dans Chromium (portail, suivi et devis rendus avec Jinja, API sim
 - **Photos d'essai** : deux vraies photos de **Sony α7 IV** (Wikimedia Commons, **CC0**, Bautsch) ont servi à juger les vignettes ; elles restent hors du dépôt (jeu d'essai local).
 
 
+## Plan du pilote « avant lundi » (2026-10-10) : état réel
+
+Demandé par Kael : IA complètement fonctionnelle, migration de données accessible à de gros volumes, toutes les pages d'un ERP, Gemini 3.8 à l'essai, PostHog.
+
+| Point du plan | État vérifié dans le code | Reste |
+| --- | --- | --- |
+| Modèle Gemini 3.8 | `gemini-3.8-flash` est le défaut de *Cortex AI Settings* (patch `set_ai_pricing_defaults`), repli `gemini-3.5-flash-lite`, plafond puis modèle économique. Prix annoncé jusqu'au 31 déc. 2026. | **Jamais essayé avec une vraie clé** dans le Desk. Premier essai réel = premier critère de réussite du pilote. |
+| PostHog | **Codé (cette livraison)** : `services/analytics.py`, `public/js/cortex_analytics.js`, boot `cortex_analytics`. Éteint sans `posthog_key`. Masquage par défaut des données d'affaires. | Créer le projet PostHog, régler la clé, tester dans un Desk ; avis de confidentialité aux utilisateurs du client ; réglage individuel dans Mon compte ; événements métier explicites (`cortex.track`) à ajouter écran par écran. |
+| Migration de données | Existe seulement par l'*Importation de données* native de Frappe (liens dans Administration et Catalogue ; historique par société). **Rien de propre à Cortex** : pas de modèles de fichier par type, pas de validation avant import, pas de reprise. | `max_file_size` est à 10 Mo dans l'exemple de production : trop petit pour des centaines de milliers de lignes. Vérifier sur bench la limite de lignes par importation de Frappe v15 et la tenue du travail en arrière-plan avant de promettre ce volume. |
+| Pages d'un ERP complet | Locations, disponibilité, approbations, sorties/retours, catalogue, séries, clients, factures, paiements, finance, abonnements, portail. | Écart non mesuré : achats/fournisseurs, inventaire/entrepôts, paie, rapports comptables ne sont pas des écrans Cortex. À décider avec Kael ce qui est « nécessaire » pour le pilote. |
+
+Rien de ce tableau n'a été essayé sur un Desk Frappe actif.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

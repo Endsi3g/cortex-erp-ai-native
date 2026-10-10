@@ -81,3 +81,12 @@ def boot_session(bootinfo) -> None:
             frappe.log_error(title="Cortex onboarding boot flag failed")
     home.update(_company_identity())
     bootinfo.cortex_home = home
+    try:
+        from cortex_rental.services import analytics
+
+        config = analytics.boot_config(frappe.session.user, home.get("company") or "")
+        if config:
+            bootinfo.cortex_analytics = config
+    except Exception:
+        # La mesure d'usage ne doit jamais bloquer le Desk.
+        frappe.log_error(title="Cortex analytics boot config failed")

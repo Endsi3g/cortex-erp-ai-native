@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Ajouté
+- **Mesure d'usage avec PostHog** (plan d'implémentation du pilote). **Testé hors bench (logique de configuration et branchement) ; jamais chargé dans un Desk ni essayé avec une vraie clé PostHog.** Éteinte tant que `posthog_key` n'est pas réglée dans la configuration du site. Capture clics, pages (changement de route), erreurs, performances et enregistrements de session ; la société est le « groupe » PostHog. La personne est identifiée par une empreinte HMAC, jamais par son courriel ni son nom ; champs de saisie et texte des données d'affaires masqués par défaut (`posthog_capture_pii` pour lever le masque) ; « Ne pas me suivre » respecté. Voir `docs/ops/DEPLOIEMENT.md`.
+
 
 ## v0.15.1 — 2026-10-07
 
