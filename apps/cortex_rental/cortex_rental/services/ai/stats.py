@@ -49,6 +49,14 @@ def money(value: Any) -> str:
     return f"-{text}" if amount < 0 else text
 
 
+def fr_number(value: Any) -> str:
+    """Pur : un nombre au format français sans zéros inutiles (2.5 devient « 2,5 », 3.0 devient « 3 »)."""
+    try:
+        return f"{float(value):g}".replace(".", ",")
+    except (TypeError, ValueError):
+        return str(value or "")
+
+
 def human_dt(value: Any) -> str:
     """Pur : « 14 oct. 2026, 09 h 00 » à partir de « AAAA-MM-JJ hh:mm… »; le texte d'origine si le format est inattendu."""
     text = str(value or "").strip()

@@ -50,10 +50,10 @@ async function decide(approve) {
 
 <template>
 	<section class="cp-action" :class="`is-${status.toLowerCase()}`" :aria-label="block.title">
-		<header class="cp-action-head">
+		<div class="cp-action-head">
 			<h3 class="cp-action-title">{{ block.title }}</h3>
 			<span class="cp-action-badge" :class="badge[1]">{{ badge[0] }}</span>
-		</header>
+		</div>
 		<p v-if="block.subtitle" class="cp-action-sub">{{ block.subtitle }}</p>
 
 		<table v-if="block.rows && block.rows.length" class="cp-action-table">
@@ -91,7 +91,7 @@ async function decide(approve) {
 			</div>
 		</details>
 
-		<footer class="cp-action-foot">
+		<div class="cp-action-foot">
 			<template v-if="open">
 				<button type="button" class="cp-action-approve" :disabled="deciding" @click="decide(true)">
 					{{ deciding ? "En cours…" : block.approve_label || "Approuver" }}
@@ -104,7 +104,7 @@ async function decide(approve) {
 				<button v-if="hasLink" type="button" class="cp-action-link" @click="openDeskPath(resultHref)">{{ resultLabel }}</button>
 			</template>
 			<span v-else-if="status === 'Rejected'" class="cp-action-note">Proposition refusée. Rien n'a été fait.</span>
-		</footer>
+		</div>
 		<p v-if="message" class="cp-action-message" :class="{ 'is-bad': status === 'Failed' || open }" role="alert">{{ message }}</p>
 	</section>
 </template>

@@ -509,6 +509,24 @@ Approbation humaine avant toute écriture; droits de la personne; audit; revalid
 
 **Commandes pour rejouer** : voir `tools/bench/README.md`.
 
+## Phase 10b et 12 (suite) : vérifié dans le VRAI Desk (2026-10-10)
+
+**Fait et vu dans un vrai Desk Frappe (Chromium → `bench serve`, ERPNext 15, site français)** : connexion, arrivée sur l'Assistant IA, historique, conversation avec **vraies cartes** (données créées par le moteur d'actions lui-même : 4 devis, 2 réservations, 2 factures, 1 paiement), **approbation réelle** (« Créer le devis » → devis `CR-TRX-2026-00036` créé, lien « Ouvrir le devis » qui l'ouvre), flèches des cartes de statistiques (→ Finance), anneau et barres avec les chiffres réels, mode sombre. **Aucune erreur JavaScript** (hors `socket.io`, absent de mon bench). `bench build` compile les trois bundles Vue avec le vrai bundler de Frappe. Captures : `docs/review/captures/phase12-vrai-bench/`.
+
+**Suite complète dans le vrai bench : 668 tests, 0 échec** (22 ignorés : mode « sans Frappe » et tests qui lisent des fichiers du dépôt). Nouveaux tests d'intégration : `test_ai_actions_live.py` (16 : proposer sans écrire, approuver par la voie de l'écran, refus par les droits de Frappe, aperçu périmé = rien d'écrit, double approbation, isolation entre sociétés, retenue libérée puis renouvelée puis réservation, paiement sur une vraie facture d'acompte, décision d'approbation par un autre humain).
+
+**Bogue de production trouvé et corrigé** : `insert_customer` écrivait `territory = "All Territories"` et `customer_group = "Commercial"` en dur ; sur un site configuré en français ces noms n'existent pas (« Tous les territoires ») et **la création d'un client échouait** (aussi dans le compositeur de devis). Maintenant : un groupe et un territoire pris parmi ceux qui existent (`default_group_and_territory`).
+
+**Ajouté dans cette étape** : réflexion visible (« Pourquoi cette proposition » : explication déclarée par l'assistant, étiquetée non vérifiée; données consultées; ce que l'action fera et comment revenir en arrière), cartes d'action pour retenue (libérer, renouveler), réservation, paiement, décision d'approbation (ADR-011), anneau et barres horizontales, accueil IA : zone de saisie qui ne répète plus le titre et **trois cartes en accent vert** (choix de Kael).
+
+**Corrigé grâce au vrai Desk** : la balise `<footer>` des cartes était décalée par la feuille du Desk (remplacée par un `div`); « 2.5 jour(s) » écrit au format français.
+
+**Constats ouverts**
+1. Quelques icônes de la barre latérale paraissent ternes en mode sombre sur la capture (contraste des traits mesuré à 12:1 : c'est le dessin de certaines icônes du Desk, à examiner).
+2. Le texte « Bonsoir, kael. » vient du nom complet de l'utilisateur de test (non recalculé) : à revérifier avec un vrai compte.
+3. `Administrator` est traité comme un agent (voir Phase 12) : question toujours ouverte pour Kael.
+4. Les actions *paiement* et *décision d'approbation* ne s'annulent pas par un bouton (paiement : remboursement; approbation : nouvelle demande); l'aperçu le dit (« Ce qui va se passer »). Validées par Kael dans la liste, mais à garder en tête.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

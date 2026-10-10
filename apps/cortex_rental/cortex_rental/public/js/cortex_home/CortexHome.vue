@@ -496,7 +496,7 @@ defineExpose({ refresh });
 					v-model="text"
 					class="ch-input"
 					rows="1"
-					placeholder="Que puis-je faire pour vous aujourd'hui ?"
+					placeholder="Décrivez ce que vous voulez faire…"
 					:disabled="sending"
 					@input="resize"
 					@keydown="onKeydown"
@@ -1044,16 +1044,17 @@ defineExpose({ refresh });
 	overflow: hidden;
 }
 
+/* Accent vert Cortex pour les trois cartes (choix de Kael, 2026-10-10) : des teintes douces de la même famille. */
 .ch-card-quote .ch-card-header {
-	background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 50%, #7c3aed 100%);
+	background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
 }
 
 .ch-card-availability .ch-card-header {
-	background: linear-gradient(135deg, #38bdf8 0%, #2563eb 60%, #1d4ed8 100%);
+	background: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
 }
 
 .ch-card-approvals .ch-card-header {
-	background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+	background: linear-gradient(135deg, #d1fae5 0%, #bbf7d0 100%);
 }
 
 .ch-mock-window {
@@ -1081,9 +1082,9 @@ defineExpose({ refresh });
 	display: inline-block;
 }
 
-.ch-dot-red { background: #ef4444; }
-.ch-dot-yellow { background: #f59e0b; }
-.ch-dot-green { background: #10b981; }
+.ch-dot-red,
+.ch-dot-yellow,
+.ch-dot-green { background: #cbd5e1; }
 
 .ch-code-lines {
 	display: flex;
@@ -1112,7 +1113,7 @@ defineExpose({ refresh });
 	border-radius: 3px;
 }
 
-.ch-bar-purple { background: #8b5cf6; }
+.ch-bar-purple { background: #047857; }
 .ch-bar-dark { background: #1e293b; }
 .ch-bar-gray { background: #e2e8f0; }
 .ch-bar-slate { background: #cbd5e1; }
@@ -1164,7 +1165,7 @@ defineExpose({ refresh });
 	width: 13px;
 	height: 13px;
 	border-radius: 50%;
-	background: #f472b6;
+	background: #34d399;
 	display: inline-block;
 }
 
@@ -1172,7 +1173,7 @@ defineExpose({ refresh });
 	width: 4px;
 	height: 4px;
 	border-radius: 50%;
-	background: #3b82f6;
+	background: #047857;
 	display: inline-block;
 }
 

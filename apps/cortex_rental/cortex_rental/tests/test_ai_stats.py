@@ -36,6 +36,12 @@ class TestStatsPure(unittest.TestCase):
         self.assertEqual(stats.money(0), "0,00 $")
         self.assertEqual(stats.money(-12), "-12,00 $")
 
+    def test_fr_number_uses_a_comma_and_drops_useless_zeros(self):
+        self.assertEqual(stats.fr_number(2.5), "2,5")
+        self.assertEqual(stats.fr_number(3.0), "3")
+        self.assertEqual(stats.fr_number("abc"), "abc")
+        self.assertEqual(stats.fr_number(None), "")
+
     def test_human_dt_is_readable_and_never_crashes(self):
         self.assertEqual(stats.human_dt("2026-10-14 09:00:00"), "14 oct. 2026, 09 h 00")
         self.assertEqual(stats.human_dt("2026-01-02T18:30"), "2 janv. 2026, 18 h 30")

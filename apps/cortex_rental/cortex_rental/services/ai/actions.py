@@ -161,7 +161,7 @@ def _run_customer(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
 
 
 def _prepare_quote(args: Dict[str, Any], company: str) -> Prepared:
-    from cortex_rental.services.ai.stats import human_dt, money
+    from cortex_rental.services.ai.stats import fr_number, human_dt, money
     from cortex_rental.api.v1.rentals import _customer_in_company, _pricing
     from cortex_rental.services import billing
 
@@ -193,7 +193,7 @@ def _prepare_quote(args: Dict[str, Any], company: str) -> Prepared:
     rows = [
         {
             "label": l["item_name"],
-            "detail": f"× {l['quantity']:g} · {money(l['daily_rate'])} par jour",
+            "detail": f"× {fr_number(l['quantity'])} · {money(l['daily_rate'])} par jour",
             "value": money(l["line_subtotal"]),
         }
         for l in priced["lines"]
@@ -211,7 +211,7 @@ def _prepare_quote(args: Dict[str, Any], company: str) -> Prepared:
         lines,
         rows=rows,
         totals=totals,
-        subtitle=f"{customer} · {period} · {priced['billable_days']} jour(s) facturable(s)",
+        subtitle=f"{customer} · {period} · {fr_number(priced['billable_days'])} jour(s) facturable(s)",
         approve_label="Créer le devis",
     )
 

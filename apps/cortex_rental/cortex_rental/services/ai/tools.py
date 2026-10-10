@@ -274,7 +274,6 @@ def rentals_by_state():
             "Ouvrir les locations",
             "/app/cortex-rental-transaction",
             subtitle="Toutes les locations de la société",
-            kpis=[stats.kpi_block("Total", str(sum(counts.values())))],
             series=stats.series_block("donut", labels, [counts[s] for s in order], "locations"),
             checked_at=str(frappe.utils.now_datetime()),
         ),
