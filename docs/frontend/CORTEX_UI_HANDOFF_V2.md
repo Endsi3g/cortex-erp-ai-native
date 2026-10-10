@@ -527,6 +527,12 @@ Approbation humaine avant toute écriture; droits de la personne; audit; revalid
 3. `Administrator` est traité comme un agent (voir Phase 12) : question toujours ouverte pour Kael.
 4. Les actions *paiement* et *décision d'approbation* ne s'annulent pas par un bouton (paiement : remboursement; approbation : nouvelle demande); l'aperçu le dit (« Ce qui va se passer »). Validées par Kael dans la liste, mais à garder en tête.
 
+## Phase 11 (en cours) : parcours d'entrée — décisions de Kael (2026-10-10)
+
+- **Garder l'onboarding actuel tel quel** (`/app/cortex-setup`, six étapes) et **y ajouter l'IA et des animations**. Ne pas le remplacer par une autre mise en page.
+- **Administration replié par défaut** dans la barre latérale — **fait et vérifié dans le vrai Desk** : le groupe s'ouvrait à cause de la page `cortex-setup` (qui lui appartient) et ne se refermait jamais en la quittant. Maintenant : un groupe ouvert seulement par la page courante se referme au départ; un clic de la personne reste respecté (`data-auto` dans `cortex_nav.js`). Vérifié : sur Profil → ouvert; vers Tableau de bord → replié; clic → ouvert et conservé.
+- Maquette `docs/frontend/mockups/parcours-entree.html` (chargement, onboarding actuel + IA, Assistant plein écran, visite guidée) et captures `docs/review/captures/phase11-maquettes/` : **Kael a répondu que les maquettes ne sont pas bonnes (« on ne va pas vers là »)**. Rien de ce parcours n'est codé. Les points à reprendre sont demandés à Kael avant toute nouvelle maquette.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

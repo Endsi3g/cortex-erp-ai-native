@@ -180,6 +180,8 @@
 				const stored = this.groups[group.title];
 				const open = group.pinned || (stored === undefined ? !!(here && here.group === group) : stored !== false);
 				const section = el("section", { class: "cx-group" + (open ? "" : " closed") + (group.bottom ? " cx-group-bottom" : "") + (group.pinned ? " pinned" : "") });
+				// Ouvert seulement parce que la page courante lui appartient (aucun choix de la personne) : il se refermera au départ.
+				if (!group.pinned && open && stored === undefined) section.dataset.auto = "1";
 				const title = group.pinned
 					? el("div", { class: "cx-group-title static" }, `<span class="cx-label">${__(group.title)}</span>`)
 					: el("button", { type: "button", class: "cx-group-title", "aria-expanded": String(open) }, `<span class="cx-label">${__(group.title)}</span><span class="cx-chev">${CHEVRON}</span>`);
@@ -187,6 +189,7 @@
 				const inner = el("div", { class: "cx-group-inner" });
 				if (!group.pinned) title.addEventListener("click", () => {
 					const closed = section.classList.toggle("closed");
+					delete section.dataset.auto; // la personne a choisi : on ne referme plus ce groupe à sa place
 					title.setAttribute("aria-expanded", String(!closed));
 					this.groups[group.title] = !closed;
 					store(GROUP_STORE, JSON.stringify(this.groups));
@@ -429,8 +432,21 @@
 			const current = this.nodes[active];
 			if (current && current.wrap) {
 				const section = current.wrap.closest(".cx-group");
-				if (section && section.classList.contains("closed")) section.classList.remove("closed");
+				if (section && section.classList.contains("closed")) {
+					section.classList.remove("closed");
+					const title = section.querySelector(".cx-group-title");
+					// Ouvert par la page, pas par un choix : il se refermera quand on la quittera.
+					if (title && this.groups[(title.textContent || "").trim()] === undefined) section.dataset.auto = "1";
+				}
 			}
+			// Un groupe ouvert seulement à cause de la page précédente se referme (ex. Administration après la configuration).
+			document.querySelectorAll("#cx-nav .cx-group[data-auto='1']").forEach((section) => {
+				if (current && current.wrap && section.contains(current.wrap)) return;
+				section.classList.add("closed");
+				delete section.dataset.auto;
+				const title = section.querySelector(".cx-group-title");
+				if (title) title.setAttribute("aria-expanded", "false");
+			});
 		}
 
 		// Sans préférence enregistrée par la personne : barre repliée sur l'Assistant IA (page de conversation) et sur

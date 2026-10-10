@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette — parcours d'entrée Cortex</title>
+<style>
+	:root {
+		--ink: #0f172a; --text: #334155; --muted: #64748b; --line: #e2e8f0; --line-strong: #cbd5e1;
+		--bg: #ffffff; --canvas: #f8fafc; --accent: #047857; --accent-soft: #ecfdf5; --accent-line: #a7f3d0;
+		--warn: #8a4b00; --warn-soft: #fff7ed;
+		--ease: cubic-bezier(.22,.8,.3,1);
+	}
+	* { box-sizing: border-box; }
+	html, body { margin: 0; height: 100%; }
+	body { font: 400 15px/1.55 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text); background: var(--canvas); -webkit-font-smoothing: antialiased; }
+	h1, h2, h3, h4 { margin: 0; color: var(--ink); font-weight: 500; letter-spacing: -.01em; }
+	button { font: inherit; cursor: pointer; }
+	button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+	/* Sélecteur d'écran de la maquette (n'existe pas dans le produit) */
+	.switcher { position: fixed; z-index: 100; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; padding: 4px; background: #0f172a; border-radius: 999px; box-shadow: 0 6px 20px rgba(15,23,42,.25); }
+	.switcher button { border: 0; background: transparent; color: #cbd5e1; padding: 6px 14px; border-radius: 999px; font-size: 13px; }
+	.switcher button[aria-pressed="true"] { background: #ffffff; color: #0f172a; }
+	.screen { display: none; min-height: 100vh; scroll-margin-top: 0; }
+	.screen.on { display: block; animation: fade .5s var(--ease); }
+	@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+	/* 1 · Chargement */
+	#loading { display: none; align-items: center; justify-content: center; flex-direction: column; background: #fff; }
+	#loading.on { display: flex; }
+	.ld-mark { width: 64px; height: 64px; position: relative; }
+	.ld-mark svg { width: 64px; height: 64px; }
+	.ld-ring { stroke-dasharray: 160; stroke-dashoffset: 160; animation: draw 1.6s var(--ease) forwards, breathe 2.4s ease-in-out 1.6s infinite; }
+	.ld-dot { opacity: 0; animation: pop .5s var(--ease) 1.3s forwards; }
+	@keyframes draw { to { stroke-dashoffset: 0; } }
+	@keyframes pop { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: scale(1); } }
+	@keyframes breathe { 50% { opacity: .75; } }
+	.ld-title { margin-top: 26px; font-size: 20px; font-weight: 400; color: var(--ink); animation: fade .8s var(--ease) .4s both; }
+	.ld-steps { margin: 18px 0 0; padding: 0; list-style: none; width: 300px; font-size: 14px; color: var(--muted); }
+	.ld-steps li { display: flex; align-items: center; gap: 10px; padding: 5px 0; opacity: 0; animation: fade .5s var(--ease) forwards; }
+	.ld-steps li:nth-child(1) { animation-delay: .9s; } .ld-steps li:nth-child(2) { animation-delay: 1.7s; } .ld-steps li:nth-child(3) { animation-delay: 2.5s; }
+	.ld-check { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--line-strong); flex: none; display: grid; place-items: center; }
+	.ld-steps li .ld-check { animation: done .3s ease forwards; }
+	.ld-steps li:nth-child(1) .ld-check { animation-delay: 1.6s; } .ld-steps li:nth-child(2) .ld-check { animation-delay: 2.4s; } .ld-steps li:nth-child(3) .ld-check { animation-delay: 3.2s; }
+	@keyframes done { to { background: var(--accent); border-color: var(--accent); } }
+	.ld-bar { margin-top: 22px; width: 300px; height: 3px; background: var(--line); border-radius: 3px; overflow: hidden; }
+	.ld-bar i { display: block; height: 100%; width: 0; background: var(--accent); animation: load 3.4s var(--ease) .6s forwards; }
+	@keyframes load { to { width: 100%; } }
+
+	/* 2 · Onboarding */
+	.onb { display: grid; grid-template-columns: 260px minmax(0, 1fr) 320px; min-height: 100vh; }
+	.onb-rail { padding: 28px 22px; border-right: 1px solid var(--line); background: #fff; }
+	.brand { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--ink); margin-bottom: 30px; }
+	.brand svg { width: 26px; height: 26px; }
+	.steps { list-style: none; margin: 0; padding: 0; }
+	.steps li { display: flex; gap: 12px; padding: 10px 0; color: var(--muted); position: relative; }
+	.steps li:not(:last-child)::after { content: ""; position: absolute; left: 11px; top: 36px; bottom: -6px; width: 1px; background: var(--line); }
+	.steps .n { width: 23px; height: 23px; border-radius: 50%; border: 1px solid var(--line-strong); display: grid; place-items: center; font-size: 12px; flex: none; background: #fff; transition: all .3s var(--ease); }
+	.steps li.cur { color: var(--ink); }
+	.steps li.cur .n { background: var(--accent); border-color: var(--accent); color: #fff; }
+	.steps li.done .n { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+	.steps small { display: block; font-size: 12px; color: var(--muted); }
+	.rail-foot { margin-top: 28px; font-size: 13px; color: var(--muted); }
+	.onb-main { padding: 40px 48px; max-width: 760px; width: 100%; margin: 0 auto; }
+	.progress { height: 3px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 30px; }
+	.progress i { display: block; height: 100%; width: 25%; background: var(--accent); transition: width .5s var(--ease); }
+	.onb-main h2 { font-size: 26px; }
+	.onb-main .lead { margin: 6px 0 26px; color: var(--muted); }
+	.sectors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+	.sector { text-align: left; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; transition: border-color .2s, background .2s, transform .2s var(--ease); }
+	.sector:hover { border-color: var(--line-strong); transform: translateY(-1px); }
+	.sector[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+	.sector b { display: block; font-weight: 500; color: var(--ink); font-size: 14px; }
+	.sector span { font-size: 12.5px; color: var(--muted); }
+	.field { display: grid; gap: 6px; margin-bottom: 16px; }
+	.field label { font-size: 13px; color: var(--muted); }
+	.field input { height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 8px; font: inherit; background: #fff; color: var(--ink); }
+	.field input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+	.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+	.ai-describe { display: flex; gap: 8px; margin: 4px 0 22px; }
+	.ai-describe input { flex: 1; height: 42px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 999px; font: inherit; }
+	.btn { height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; color: var(--text); font-weight: 500; }
+	.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+	.btn:hover { filter: brightness(.97); }
+	.onb-foot { display: flex; align-items: center; gap: 10px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+	.onb-foot .skip { margin-left: auto; color: var(--muted); background: none; border: 0; text-decoration: underline; }
+	.assist { padding: 28px 22px; border-left: 1px solid var(--line); background: #fff; }
+	.assist h4 { font-size: 13px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 12px; }
+	.bubble { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--canvas); font-size: 14px; margin-bottom: 10px; animation: fade .5s var(--ease); }
+	.proposal { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; margin: 10px 0; font-size: 13.5px; }
+	.proposal .ph { padding: 8px 12px; background: var(--canvas); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; color: var(--ink); }
+	.proposal .ph em { font-style: normal; font-size: 12px; color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 0 8px; }
+	.proposal ul { margin: 0; padding: 8px 12px 8px 28px; }
+	.proposal .pf { padding: 8px 12px; border-top: 1px solid var(--line); display: flex; gap: 8px; }
+	.chip { display: inline-flex; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 12.5px; color: var(--text); background: #fff; margin: 2px 4px 2px 0; }
+
+
+	/* 2 · Onboarding actuel + IA */
+	.ob-top { display: grid; grid-template-columns: 1fr minmax(240px, 400px) auto; gap: 24px; align-items: center; padding: 14px max(24px, calc((100% - 1060px) / 2)); background: #fff; border-bottom: 1px solid var(--line); }
+	.ob-brand { display: flex; gap: 10px; align-items: center; } .ob-brand svg { width: 30px; height: 30px; } .ob-brand b { display: block; font-weight: 500; color: var(--ink); font-size: 14px; } .ob-brand small { color: var(--muted); font-size: 12.5px; }
+	.ob-prog { font-size: 12.5px; color: var(--muted); } .ob-prog .bar { height: 4px; border-radius: 4px; background: var(--line); margin-top: 6px; overflow: hidden; } .ob-prog .bar i { display: block; height: 100%; width: 16%; background: var(--accent); transition: width .6s var(--ease); }
+	.btn.soft { background: #f1f5f9; border-color: transparent; height: 34px; font-size: 13.5px; } .btn.sm { height: 32px; font-size: 13px; padding: 0 14px; }
+	.ob-grid { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 32px; padding: 30px max(24px, calc((100% - 1060px) / 2)) 90px; }
+	.ob-steps { list-style: none; margin: 0; padding: 0; } .ob-steps li { display: flex; gap: 12px; padding: 10px 14px; border-radius: 12px; color: var(--muted); margin-bottom: 4px; transition: background .3s, color .3s; }
+	.ob-steps li.cur { background: #fff; border: 1px solid var(--line); color: var(--ink); padding: 9px 13px; }
+	.ob-steps .n { width: 26px; height: 26px; border-radius: 50%; background: #eef2f6; display: grid; place-items: center; font-size: 12px; flex: none; transition: all .35s var(--ease); }
+	.ob-steps li.cur .n { background: #e8edf2; color: var(--ink); } .ob-steps li.done .n { background: #6aa890; color: #fff; transform: scale(1.06); }
+	.ob-steps small { display: block; font-size: 12px; color: var(--muted); }
+	.ob-card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 28px 32px; animation: fade .5s var(--ease); }
+	.ob-card h2 { font-size: 26px; display: flex; gap: 10px; align-items: center; } .tag { font-size: 12px; color: var(--warn); background: var(--warn-soft); padding: 2px 10px; border-radius: 999px; font-weight: 400; }
+	.ob-card .lead { margin: 8px 0 20px; color: var(--muted); max-width: 640px; }
+	.ob-ai { border: 1px solid var(--accent-line); background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; }
+	.ob-ai-h { display: flex; gap: 8px; align-items: center; color: var(--ink); margin-bottom: 10px; } .ob-ai-h b { font-weight: 500; } .spark { color: var(--accent); }
+	.ob-ai-row { display: flex; gap: 8px; } .ob-ai-row input { flex: 1; height: 40px; padding: 0 14px; border: 1px solid var(--accent-line); border-radius: 999px; background: #fff; font: inherit; }
+	.ob-ai-note { margin-top: 8px; font-size: 12.5px; color: var(--muted); } .ob-ai-note.run { color: var(--accent); }
+	.logo-zone { display: flex; gap: 16px; align-items: center; padding: 16px; border: 1px dashed var(--line-strong); border-radius: 12px; margin-bottom: 18px; background: #fbfdfc; }
+	.logo-box { width: 130px; height: 70px; border-radius: 10px; background: #fff; display: grid; place-items: center; color: var(--muted); font-size: 13px; border: 1px solid var(--line); } .logo-zone p { margin: 2px 0 8px; font-size: 13px; color: var(--muted); }
+	.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; } .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; } .hint { color: var(--muted); font-size: 12px; margin-left: 6px; }
+	.ob-card .field input { width: 100%; } .ob-card .field input.ro { background: #f1f5f9; } .ob-card .field input.ai-filled { background: var(--accent-soft); border-color: var(--accent-line); transition: background 1.2s, border-color 1.2s; }
+	.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; } .sector-chip { height: 34px; padding: 0 14px; border: 1px solid var(--line-strong); background: #fff; border-radius: 999px; color: var(--text); font-size: 13.5px; transition: all .2s var(--ease); } .sector-chip:hover { transform: translateY(-1px); } .sector-chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+	.ob-card .proposal { margin: 18px 0 0; animation: fade .5s var(--ease); } .ob-card .proposal[hidden] { display: none; } .proposal details { padding: 0 12px; font-size: 13px; color: var(--muted); } .proposal summary { cursor: pointer; padding: 4px 0; } .proposal .why { padding: 4px 0 8px; color: var(--text); }
+	.ob-foot { display: flex; align-items: center; gap: 14px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); } .saved { font-size: 13px; color: var(--accent); opacity: 0; transition: opacity .3s; } .saved.on { opacity: 1; }
+	.ob-help { position: fixed; right: 22px; bottom: 22px; z-index: 40; height: 40px; padding: 0 16px; border: 1px solid var(--line); background: #fff; border-radius: 999px; color: var(--ink); display: flex; gap: 8px; align-items: center; box-shadow: 0 8px 24px rgba(15,23,42,.1); }
+	@keyframes slide { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+	.ob-card.next { animation: slide .45s var(--ease); }
+	@media (max-width: 900px) { .ob-grid { grid-template-columns: 1fr; } .ob-steps { display: none; } .grid2 { grid-template-columns: 1fr; } .ob-top { grid-template-columns: 1fr auto; } .ob-prog { display: none; } }
+
+	/* 3 · Assistant plein écran */
+	.ai { display: grid; grid-template-columns: 56px 1fr; min-height: 100vh; background: #fff; }
+	.rail { border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 0; background: #fff; }
+	.rail .logo { width: 28px; height: 28px; margin-bottom: 10px; }
+	.rail button { position: relative; width: 38px; height: 38px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); display: grid; place-items: center; }
+	.rail button:hover { background: var(--canvas); color: var(--ink); }
+	.rail button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+	.rail svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+	.rail .sp { flex: 1; }
+	.tip { position: absolute; left: 46px; top: 50%; transform: translateY(-50%) translateX(-4px); background: #0f172a; color: #fff; font-size: 12.5px; padding: 4px 9px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s var(--ease); z-index: 20; }
+	.rail button:hover .tip, .rail button:focus-visible .tip { opacity: 1; transform: translateY(-50%); }
+	.ai-top { position: absolute; top: 14px; right: 18px; z-index: 5; display: flex; gap: 8px; align-items: center; }
+	.ai-top button { height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--text); display: inline-flex; gap: 8px; align-items: center; font-size: 13.5px; }
+	.ai-top .av { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 11px; font-weight: 500; }
+	.ai-body { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px 60px; }
+	.ai-body h1 { font-size: 34px; font-weight: 400; text-align: center; }
+	.ai-body .sub { font-size: 20px; color: var(--muted); font-weight: 400; margin: 4px 0 28px; text-align: center; }
+	.composer { width: min(760px, 100%); border: 1px solid var(--line-strong); border-radius: 18px; padding: 14px 16px; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+	.composer p { margin: 0 0 24px; color: var(--muted); }
+	.composer .row { display: flex; align-items: center; gap: 8px; }
+	.composer .send { margin-left: auto; width: 36px; height: 36px; border-radius: 10px; border: 0; background: #e2e8f0; color: #64748b; }
+	.sugs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; max-width: 760px; }
+	.sugs .chip { padding: 6px 14px; font-size: 13.5px; cursor: pointer; transition: border-color .2s, background .2s; }
+	.sugs .chip:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+	.setup-card { margin-top: 26px; width: min(760px, 100%); border: 1px solid var(--accent-line); background: var(--accent-soft); border-radius: 12px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; font-size: 14px; }
+	.setup-card .btn { margin-left: auto; height: 34px; }
+
+	/* 4 · Visite guidée */
+	.tour-wrap { position: relative; }
+	.dim { position: absolute; inset: 0; background: rgba(15,23,42,.55); z-index: 30; }
+	.spot { position: absolute; z-index: 31; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(15,23,42,.55); outline: 2px solid #fff; transition: all .5s var(--ease); }
+	.pop { position: absolute; z-index: 32; width: 340px; background: #fff; border-radius: 14px; padding: 16px 18px; box-shadow: 0 18px 50px rgba(15,23,42,.3); transition: all .5s var(--ease); }
+	.pop .st { font-size: 12px; color: var(--muted); }
+	.pop h3 { margin: 4px 0 6px; font-size: 17px; }
+	.pop p { margin: 0 0 14px; font-size: 14px; }
+	.pop .ctl { display: flex; align-items: center; gap: 8px; }
+	.pop .ctl .skip { margin-right: auto; background: none; border: 0; color: var(--muted); text-decoration: underline; white-space: nowrap; padding: 0; }
+	.dots { display: flex; gap: 4px; margin: 0 0 12px; }
+	.dots i { width: 14px; height: 3px; border-radius: 3px; background: var(--line); }
+	.dots i.on { background: var(--accent); }
+	.note { max-width: 980px; margin: 0 auto; padding: 24px 24px 90px; font-size: 13.5px; color: var(--muted); }
+	@media (max-width: 1100px) { .onb { grid-template-columns: 1fr; } .onb-rail, .assist { border: 0; } .onb-rail { display: none; } .sectors { grid-template-columns: 1fr 1fr; } }
+	@media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; animation-delay: 0s !important; } }
+</style>
+</head>
+<body>
+
+<nav class="switcher" aria-label="Écrans de la maquette">
+	<button data-go="loading" aria-pressed="true">1 · Chargement</button>
+	<button data-go="onb" aria-pressed="false">2 · Onboarding (actuel + IA)</button>
+	<button data-go="ai" aria-pressed="false">3 · Assistant plein écran</button>
+	<button data-go="tour" aria-pressed="false">4 · Visite guidée</button>
+</nav>
+
+<!-- 1 · Chargement après la connexion -->
+<section id="loading" class="screen on" aria-label="Écran de chargement">
+	<div class="ld-mark">
+		<svg viewBox="0 0 64 64" fill="none"><circle class="ld-ring" cx="32" cy="32" r="25" stroke="#0f172a" stroke-width="7" stroke-linecap="round" transform="rotate(40 32 32)"/><circle class="ld-dot" cx="47" cy="22" r="5" fill="#047857"/></svg>
+	</div>
+	<div class="ld-title">Bienvenue, Kael.</div>
+	<ul class="ld-steps" aria-live="polite">
+		<li><span class="ld-check"></span> Ouverture de votre espace sécurisé</li>
+		<li><span class="ld-check"></span> Chargement de votre société</li>
+		<li><span class="ld-check"></span> Préparation de votre assistant</li>
+	</ul>
+	<div class="ld-bar" role="progressbar" aria-label="Chargement"><i></i></div>
+</section>
+
+<!-- 2 · Onboarding ACTUEL + IA + animations (même disposition que /app/cortex-setup) -->
+<section id="onb" class="screen" aria-label="Onboarding">
+	<header class="ob-top">
+		<div class="ob-brand"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="25" stroke="#0f172a" stroke-width="7" stroke-linecap="round" stroke-dasharray="130 160" transform="rotate(40 32 32)"/><circle cx="47" cy="22" r="5" fill="#047857"/></svg><div><b>Configuration de votre espace</b><small>Studio Lumière</small></div></div>
+		<div class="ob-prog"><span id="obcount">1 sur 6 étapes · obligatoires 0/2</span><div class="bar"><i id="obbar"></i></div></div>
+		<button class="btn soft">Continuer plus tard</button>
+	</header>
+	<div class="ob-grid">
+		<ol class="ob-steps" id="obsteps">
+			<li class="cur"><span class="n">1</span><div>Votre entreprise<small>Obligatoire</small></div></li>
+			<li><span class="n">2</span><div>Vous, le propriétaire<small>Obligatoire</small></div></li>
+			<li><span class="n">3</span><div>Votre équipe<small>Facultatif</small></div></li>
+			<li><span class="n">4</span><div>Votre catalogue<small>Facultatif</small></div></li>
+			<li><span class="n">5</span><div>Prix, taxes et règles<small>Facultatif</small></div></li>
+			<li><span class="n">6</span><div>Votre première location<small>Facultatif</small></div></li>
+		</ol>
+		<div class="ob-card" id="obcard">
+			<h2>Votre entreprise <span class="tag">Obligatoire</span></h2>
+			<p class="lead">Ces informations apparaissent sur vos devis et vos factures, et nous permettent de vous aider rapidement si vous avez besoin de soutien.</p>
+
+			<!-- AJOUT : remplissage assisté par l'IA -->
+			<div class="ob-ai" id="obai">
+				<div class="ob-ai-h"><span class="spark">✦</span><b>Gagnez du temps avec l'assistant</b></div>
+				<div class="ob-ai-row"><input id="obsite" aria-label="Site Web ou description" placeholder="Collez l'adresse de votre site Web ou décrivez votre entreprise…"><button class="btn primary" id="obfill">Remplir avec l'IA</button></div>
+				<div class="ob-ai-note" id="obnote">L'assistant lit votre site public et propose des valeurs. Rien n'est enregistré avant que vous ne cliquiez sur « Continuer ».</div>
+			</div>
+
+			<div class="logo-zone"><div class="logo-box">Aucun logo</div><div><b>Logo de l'entreprise <i style="color:#b42318">*</i></b><p>PNG, JPEG ou WebP, 2 Mo au plus. Il apparaît dans la barre latérale et sur les devis.</p><button class="btn soft">Ajouter le logo</button></div></div>
+
+			<!-- AJOUT : secteur (adapte catégories, champs et tarification) -->
+			<div class="field"><label>Votre secteur <span class="hint">adapte le système, modifiable plus tard</span></label>
+				<div class="chips" id="obsect"><button class="sector-chip" aria-pressed="false">Cinéma et vidéo</button><button class="sector-chip" aria-pressed="false">Équipement lourd</button><button class="sector-chip" aria-pressed="false">Véhicules</button><button class="sector-chip" aria-pressed="false">Événementiel</button><button class="sector-chip" aria-pressed="false">Outillage</button><button class="sector-chip" aria-pressed="false">Autre</button></div>
+			</div>
+
+			<div class="grid2">
+				<div class="field"><label>Nom de l'entreprise</label><input class="ro" value="Studio Lumière" readonly></div>
+				<div class="field"><label>Adresse *</label><input data-fill="12, rue Saint-Paul"></div>
+				<div class="field"><label>Ville *</label><input data-fill="Montréal"></div>
+				<div class="field"><label>Province ou État *</label><input data-fill="Québec"></div>
+				<div class="field"><label>Code postal *</label><input data-fill="H2Y 1G4"></div>
+				<div class="field"><label>Pays *</label><input class="ro" value="Canada" readonly></div>
+				<div class="field"><label>Téléphone de l'entreprise *</label><input data-fill="514 555-0142"></div>
+				<div class="field"><label>Courriel de contact *</label><input data-fill="bonjour@studiolumiere.ca"></div>
+			</div>
+
+			<!-- AJOUT : proposition à approuver (même carte que dans le chat) -->
+			<div class="proposal" id="obprop" hidden>
+				<div class="ph"><b style="font-weight:500">Adapter Cortex à « Cinéma et vidéo »</b><em>à approuver</em></div>
+				<ul><li>Catégories du catalogue : Caméras, Optiques, Éclairage, Support, Audio</li><li>Tarification par jour; 7 jours = 3 jours facturables</li><li>Champs ajoutés : monture, assurance requise</li></ul>
+				<details><summary>Pourquoi cette proposition</summary><div class="why">Vous avez choisi « Cinéma et vidéo ». Ce sont les réglages les plus courants dans ce secteur. Rien n'est appliqué avant votre approbation, et tout se modifie ensuite.</div></details>
+				<div class="pf"><button class="btn primary sm" id="obok">Approuver</button><button class="btn sm">Modifier</button></div>
+			</div>
+
+			<div class="ob-foot"><button class="btn primary" id="obnext">Continuer</button><span class="saved" id="obsaved">Enregistré</span></div>
+		</div>
+	</div>
+	<button class="ob-help" aria-label="Demander à l'assistant"><span class="spark">✦</span> Demander à l'assistant</button>
+</section>
+
+<!-- 3 · Assistant IA plein écran -->
+<section id="ai" class="screen" aria-label="Assistant IA">
+	<div class="ai">
+		<nav class="rail" aria-label="Navigation">
+			<svg class="logo" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="25" stroke="#0f172a" stroke-width="7" stroke-linecap="round" stroke-dasharray="130 160" transform="rotate(40 32 32)"/><circle cx="47" cy="22" r="5" fill="#047857"/></svg>
+			<button aria-current="page" aria-label="Assistant IA"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.4A8 8 0 1 1 21 12Z"/></svg><span class="tip">Assistant IA</span></button>
+			<button aria-label="Locations"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg><span class="tip">Locations</span></button>
+			<button aria-label="Disponibilité"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg><span class="tip">Disponibilité</span></button>
+			<button aria-label="Clients"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tip">Clients</span></button>
+			<button aria-label="Finance"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="tip">Finance</span></button>
+			<span class="sp"></span>
+			<button aria-label="Déplier la barre latérale"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg><span class="tip">Déplier la barre latérale</span></button>
+		</nav>
+		<div class="ai-body">
+			<div class="ai-top"><button aria-label="Paramètres"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></button><button><span class="av">K</span> Mon compte</button></div>
+			<h1>Bonjour, Kael.</h1>
+			<div class="sub">Que voulez-vous faire aujourd'hui ?</div>
+			<div class="composer"><p>Décrivez ce que vous voulez faire…</p><div class="row"><button class="btn" style="height:32px;font-size:13px;border-radius:999px">+ Joindre</button><button class="send" aria-label="Envoyer">↑</button></div></div>
+			<div class="sugs"><span class="chip">Créer un devis</span><span class="chip">Qu'est-ce qui revient cette semaine ?</span><span class="chip">Importer mon catalogue</span><span class="chip">Ajouter un collègue</span><span class="chip">Résumer ma facturation</span></div>
+			<div class="setup-card"><span>Il vous reste 2 étapes de configuration. Je peux les faire avec vous.</span><button class="btn">Continuer la configuration</button></div>
+		</div>
+	</div>
+</section>
+
+<!-- 4 · Visite guidée -->
+<section id="tour" class="screen" aria-label="Visite guidée">
+	<div class="tour-wrap" id="tourwrap">
+		<div class="ai" style="pointer-events:none">
+			<nav class="rail" aria-hidden="true">
+				<svg class="logo" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="25" stroke="#0f172a" stroke-width="7" stroke-linecap="round" stroke-dasharray="130 160" transform="rotate(40 32 32)"/><circle cx="47" cy="22" r="5" fill="#047857"/></svg>
+				<button id="t-ai" aria-current="page"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.4A8 8 0 1 1 21 12Z"/></svg></button>
+				<button id="t-loc"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></button>
+				<button id="t-dis"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg></button>
+				<button id="t-cli"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+				<button id="t-fin"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
+				<span class="sp"></span>
+			</nav>
+			<div class="ai-body">
+				<div class="ai-top"><button id="t-set"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></button><button id="t-acc"><span class="av">K</span> Mon compte</button></div>
+				<h1>Bonjour, Kael.</h1><div class="sub">Que voulez-vous faire aujourd'hui ?</div>
+				<div class="composer" id="t-comp"><p>Décrivez ce que vous voulez faire…</p><div class="row"><button class="send">↑</button></div></div>
+			</div>
+		</div>
+		<div class="spot" id="spot"></div>
+		<div class="pop" id="pop" role="dialog" aria-label="Visite guidée">
+			<div class="dots" id="dots"></div>
+			<div class="st" id="pst"></div><h3 id="ptitle"></h3><p id="ptext"></p>
+			<div class="ctl"><button class="skip" id="pskip">Passer la visite</button><button class="btn" id="pprev">Précédent</button><button class="btn primary" id="pnext">Suivant</button></div>
+		</div>
+	</div>
+</section>
+
+<p class="note" id="note"></p>
+
+<script>
+	const notes = {
+		loading: "Écran de chargement après la connexion : le logo se dessine, trois étapes réelles se cochent (pas de faux chargement : la barre suit l'ouverture réelle de l'espace), puis on arrive à l'onboarding (première fois) ou à l'Assistant IA. Animations douces, désactivées si la personne demande moins de mouvement.",
+		onb: "L'onboarding ACTUEL est conservé (même disposition, mêmes six étapes). Ajouts : (1) « Remplir avec l'IA » lit le site public et remplit les champs en les surlignant doucement; (2) un choix de secteur qui déclenche une proposition à approuver, avec « Pourquoi cette proposition »; (3) un bouton « Demander à l'assistant » à chaque étape; (4) animations : transition entre étapes, coche animée, barre de progression, « Enregistré ». Essayez : cliquez « Remplir avec l'IA », un secteur, puis « Continuer ».",
+		ai: "Assistant IA plein écran : ni fil d'Ariane ni barre du haut, seulement « Paramètres » et « Mon compte » en haut à droite. La barre latérale est réduite à ses icônes (info-bulle au survol) et se déplie avec le bouton du bas. Polices plus légères (400 et 500, jamais en gras) pour un ton posé.",
+		tour: "Visite guidée interactive : un halo met en valeur chaque élément, une bulle explique à quoi il sert et où il mène. Passable à tout moment, relançable depuis « Aide ». À la fin, l'assistant propose de continuer la configuration avec la personne."
+	};
+	const screens = document.querySelectorAll(".screen"), btns = document.querySelectorAll(".switcher button"), note = document.getElementById("note");
+	function show(id) {
+		screens.forEach(s => s.classList.toggle("on", s.id === id));
+		btns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.go === id)));
+		note.textContent = notes[id]; note.style.display = "block";
+		if (id === "loading") { const l = document.getElementById("loading"); l.classList.remove("on"); void l.offsetWidth; l.classList.add("on"); }
+		if (id === "tour") setTimeout(() => go(0), 50);
+	}
+	btns.forEach(b => b.addEventListener("click", () => show(b.dataset.go)));
+	document.querySelectorAll(".sector").forEach(b => b.addEventListener("click", () => { document.querySelectorAll(".sector").forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); }));
+
+	const steps = [
+		{ el: "t-ai", t: "Assistant IA", x: "Votre point de départ. Demandez, cherchez ou créez : l'assistant propose, vous approuvez.", side: "right" },
+		{ el: "t-loc", t: "Locations", x: "Vos devis, réservations et contrats, du premier appel au retour du matériel.", side: "right" },
+		{ el: "t-dis", t: "Disponibilité", x: "Voyez ce qui est libre sur une période avant de promettre quoi que ce soit.", side: "right" },
+		{ el: "t-cli", t: "Clients", x: "Vos clients, leur historique et leurs soldes.", side: "right" },
+		{ el: "t-fin", t: "Finance", x: "Factures, paiements et taxes. Chaque chiffre mène à sa source.", side: "right" },
+		{ el: "t-acc", t: "Mon compte et paramètres", x: "Votre profil, votre équipe, vos règles et l'apparence. Tout se règle ici.", side: "left" },
+		{ el: "t-comp", t: "Dites-le simplement", x: "Écrivez ce que vous voulez faire. Je peux continuer la configuration avec vous, tout de suite.", side: "above" }
+	];
+	let i = 0;
+	const spot = document.getElementById("spot"), pop = document.getElementById("pop"), wrap = document.getElementById("tourwrap");
+	function go(n) {
+		i = Math.max(0, Math.min(steps.length - 1, n)); const s = steps[i], el = document.getElementById(s.el);
+		const w = wrap.getBoundingClientRect(), r = el.getBoundingClientRect(), pad = 6;
+		Object.assign(spot.style, { left: r.left - w.left - pad + "px", top: r.top - w.top - pad + "px", width: r.width + pad * 2 + "px", height: r.height + pad * 2 + "px" });
+		let left = r.right - w.left + 16, top = r.top - w.top - 8;
+		if (s.side === "left") { left = r.left - w.left - 346; top = r.bottom - w.top + 10; left = Math.max(12, r.right - w.left - 330); }
+		if (s.side === "above") { left = r.left - w.left + (r.width - 330) / 2; top = r.top - w.top - 190; }
+		Object.assign(pop.style, { left: left + "px", top: top + "px" });
+		document.getElementById("pst").textContent = `Étape ${i + 1} sur ${steps.length}`;
+		document.getElementById("ptitle").textContent = s.t; document.getElementById("ptext").textContent = s.x;
+		document.getElementById("dots").innerHTML = steps.map((_, k) => `<i class="${k <= i ? "on" : ""}"></i>`).join("");
+		document.getElementById("pprev").style.visibility = i ? "visible" : "hidden";
+		document.getElementById("pnext").textContent = i === steps.length - 1 ? "Terminer" : "Suivant";
+	}
+	document.getElementById("pnext").addEventListener("click", () => i === steps.length - 1 ? show("ai") : go(i + 1));
+	document.getElementById("pprev").addEventListener("click", () => go(i - 1));
+	document.getElementById("pskip").addEventListener("click", () => show("ai"));
+	window.addEventListener("resize", () => document.getElementById("tour").classList.contains("on") && go(i));
+
+	// Maquette de l'onboarding : l'IA remplit les champs (surlignés en vert doux), le secteur déclenche une proposition à approuver.
+	(function () {
+		const fill = document.getElementById("obfill"), note = document.getElementById("obnote");
+		fill.addEventListener("click", () => {
+			note.textContent = "Lecture du site public…"; note.classList.add("run");
+			const inputs = [...document.querySelectorAll("#obcard [data-fill]")];
+			inputs.forEach((inp, k) => setTimeout(() => {
+				const text = inp.dataset.fill; inp.value = ""; inp.classList.add("ai-filled");
+				let n = 0; const t = setInterval(() => { inp.value = text.slice(0, ++n); if (n >= text.length) clearInterval(t); }, 28);
+			}, 500 + k * 380));
+			setTimeout(() => { note.textContent = "Proposé par l'assistant : vérifiez chaque champ avant de continuer."; note.classList.remove("run"); }, 500 + inputs.length * 380 + 600);
+		});
+		document.querySelectorAll("#obsect .sector-chip").forEach((b) => b.addEventListener("click", () => {
+			document.querySelectorAll("#obsect .sector-chip").forEach((x) => x.setAttribute("aria-pressed", "false"));
+			b.setAttribute("aria-pressed", "true"); document.getElementById("obprop").hidden = false;
+		}));
+		const steps = [...document.querySelectorAll("#obsteps li")], bar = document.getElementById("obbar"), count = document.getElementById("obcount"), card = document.getElementById("obcard");
+		let cur = 0;
+		document.getElementById("obnext").addEventListener("click", () => {
+			steps[cur].classList.remove("cur"); steps[cur].classList.add("done"); steps[cur].querySelector(".n").textContent = "✓";
+			cur = Math.min(cur + 1, steps.length - 1); steps[cur].classList.add("cur");
+			bar.style.width = ((cur + 1) / 6 * 100) + "%"; count.textContent = (cur + 1) + " sur 6 étapes · obligatoires " + Math.min(cur, 2) + "/2";
+			const s = document.getElementById("obsaved"); s.classList.add("on"); setTimeout(() => s.classList.remove("on"), 1600);
+			card.classList.remove("next"); void card.offsetWidth; card.classList.add("next");
+		});
+		document.getElementById("obok").addEventListener("click", (e) => { e.target.textContent = "Approuvé ✓"; e.target.disabled = true; });
+	})();
+	show(location.hash.replace("#", "") || "loading");
+</script>
+</body>
+</html>
