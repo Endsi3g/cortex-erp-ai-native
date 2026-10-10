@@ -185,6 +185,8 @@ class TestPure(unittest.TestCase):
                 "decide_approval",
                 "update_field",
                 "apply_sector_template",
+                "add_category",
+                "add_custom_field",
             },
         )
 

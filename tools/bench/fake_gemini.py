@@ -187,6 +187,39 @@ def scenario(question, exchanges, declared):
         missing = [x for x in names if x not in declared]
         return say("Je n'ai pas accès à l'outil nécessaire (" + ", ".join(missing) + ").") if missing else None
 
+    quoted = re.search(r"[«\"](.+?)[»\"]", question)
+    if re.search(r"categorie", q) and quoted:
+        miss = need("propose_add_category")
+        if miss:
+            return [miss]
+        if n == 0:
+            return [
+                call(
+                    "propose_add_category",
+                    {
+                        "category": quoted.group(1).strip(),
+                        "reason": "Vous demandez une nouvelle catégorie d'équipement pour classer ce matériel.",
+                    },
+                )
+            ]
+        return [say("Voici la catégorie proposée, ci-dessous. Vous pourrez l'annuler.")]
+    if re.search(r"\bchamp\b", q) and quoted:
+        miss = need("propose_add_custom_field")
+        if miss:
+            return [miss]
+        if n == 0:
+            return [
+                call(
+                    "propose_add_custom_field",
+                    {
+                        "doctype": "Cortex Rental Item Profile",
+                        "label": quoted.group(1).strip(),
+                        "fieldtype": "Data",
+                        "reason": "Vous voulez garder cette information sur chaque équipement.",
+                    },
+                )
+            ]
+        return [say("Voici le champ proposé, ci-dessous. Vous pourrez l'annuler.")]
     if re.search(r"modele de secteur|secteur", q):
         miss = need("propose_apply_sector_template")
         if miss:

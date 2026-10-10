@@ -145,7 +145,10 @@ EDITABLE_STATES = {"Cortex Rental Transaction": ("Quote", "Reservation")}
 
 NUMERIC = ("Currency", "Float", "Int", "Percent")
 TEXT = ("Data", "Small Text", "Text")
-SUPPORTED = NUMERIC + TEXT + ("Check", "Select")
+SUPPORTED = NUMERIC + TEXT + ("Check", "Select", "Date")
+CUSTOM_PREFIX = (
+    "cx_"  # champs ajoutés par l'assistant (services/structure.py) : modifiables comme ceux de la liste blanche
+)
 SKIP_TYPES = (
     "Table", "Table MultiSelect", "Password", "Attach", "Attach Image", "Code", "JSON", "HTML", "Image", "Signature",
     "Section Break", "Column Break", "Tab Break", "Button", "Heading", "HTML Editor", "Markdown Editor",
@@ -163,6 +166,20 @@ def company_field_of(doctype: str) -> str:
 def label_of(doctype: str) -> str:
     spec = READABLE.get(doctype)
     return spec.label if spec else doctype
+
+
+def editable_map(doctype: str) -> Dict[str, str]:
+    """La liste blanche d'un type : celle du code + les champs `cx_…` ajoutés par la personne (visibles seulement)."""
+    allowed = dict(EDITABLE.get(doctype, {}))
+    if frappe and doctype in EDITABLE:
+        for row in frappe.get_all(
+            "Custom Field",
+            filters={"dt": doctype, "fieldname": ["like", "cx_%"], "hidden": 0},
+            fields=["fieldname", "label"],
+        ):
+            if row.fieldname.startswith(CUSTOM_PREFIX):  # « _ » est un joker de LIKE : on revérifie le préfixe exact
+                allowed[row.fieldname] = row.label or row.fieldname
+    return allowed
 
 
 def coerce_value(fieldtype: str, value: Any, label: str, options: str = "") -> Any:
@@ -196,6 +213,13 @@ def coerce_value(fieldtype: str, value: Any, label: str, options: str = "") -> A
         if fieldtype == "Percent" and number > 100:
             raise ActionError(f"« {label} » ne peut pas dépasser 100.")
         return round(number, 6)
+    if fieldtype == "Date":
+        from datetime import date
+
+        try:
+            return date.fromisoformat(str(value).strip()[:10]).isoformat()
+        except ValueError:
+            raise ActionError(f"« {label} » doit être une date au format AAAA-MM-JJ.")
     text = (
         " ".join(str(value if value is not None else "").split()) if fieldtype == "Data" else str(value or "").strip()
     )
@@ -313,7 +337,7 @@ def get(doctype: str, name: str, company: str) -> Dict[str, Any]:
         "fields": fields,  # nom technique → valeur
         "labels": labels,  # nom technique → libellé affiché
         "tables": children,
-        "editable_fields": sorted(EDITABLE.get(doctype, {})),
+        "editable_fields": sorted(editable_map(doctype)),
         "href": href_for(doctype, doc.name),
     }
 
@@ -341,7 +365,7 @@ def _editable_doc(doctype: str, name: str, company: str):
 
 
 def _field(doctype: str, fieldname: str):
-    allowed = EDITABLE.get(doctype, {})
+    allowed = editable_map(doctype)
     if fieldname not in allowed:
         raise ActionError(
             f"Ce champ n'est pas modifiable par l'assistant. Champs permis pour {label_of(doctype).lower()} : "
@@ -360,7 +384,7 @@ def _prepare_update(args: Dict[str, Any], company: str) -> Prepared:
     fieldname = str(args.get("fieldname") or "").strip()
     doc = _editable_doc(doctype, name, company)
     df = _field(doctype, fieldname)
-    label = EDITABLE[doctype][fieldname]
+    label = editable_map(doctype)[fieldname]
     if "value" not in args:
         raise ActionError("La nouvelle valeur est obligatoire.")
     after = coerce_value(df.fieldtype, args.get("value"), label, df.options or "")

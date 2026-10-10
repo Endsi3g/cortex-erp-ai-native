@@ -60,6 +60,8 @@ AGENT_TOOL_MAP = {
         "propose_decide_approval",
         "propose_update_field",
         "propose_apply_sector_template",
+        "propose_add_category",
+        "propose_add_custom_field",
     ],
 }
 

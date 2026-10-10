@@ -21,6 +21,9 @@ function py(code) {
 // Les devis des essais précédents retiennent encore le matériel (72 h) : on libère ces retenues pour repartir d'un parc libre.
 py("frappe.db.sql(\"update `tabCortex Rental Transaction` set hold_status='Released' where rental_state='Quote'\")\nprint(json.dumps(True))");
 
+// Les propositions laissées ouvertes par les essais précédents plafonnent à 20 par personne : on repart à zéro.
+py("frappe.db.delete('Cortex AI Action',{'requested_by':'kael@studio-lumiere.test','status':'Proposed'})\nprint(json.dumps(True))");
+
 // Une facture d'acompte neuve et ouverte pour le scénario de paiement : devis puis réservation d'un article neuf, par le moteur d'actions.
 py(`import json as _j\nfrom cortex_rental.tests.live_fixtures import ensure_profile, ensure_customer\nfrom cortex_rental.services.ai import actions\nU='kael@studio-lumiere.test'; C='Studio Lumière'\ncode='E2E-'+frappe.generate_hash(length=6)\nensure_profile(C, code, serialized=0, quantity=5, rate=200.0)\ncust=ensure_customer('Client essai bout en bout', C)\nfrappe.db.commit(); frappe.set_user(U)\nb=actions.propose('create_quote',{'customer':cust,'starts_at':'2027-03-08 09:00:00','ends_at':'2027-03-10 18:00:00','items':[{'item_code':code,'quantity':1}]},C,U)\nactions.decide(b['action_id'],True,C,U)\nname=_j.loads(frappe.db.get_value('Cortex AI Action',b['action_id'],'result_json'))['id']\nb2=actions.propose('request_reservation',{'rental':name},C,U)\nprint(_j.dumps(actions.decide(b2['action_id'],True,C,U)['ok']))`);
 
@@ -212,6 +215,57 @@ const resetSite = () => py(`from cortex_rental.services import sector_templates 
 	check("S9 aucune erreur JavaScript (assistant)", page.errors.length === 0, page.errors.join(" | "));
 	await ctx.close();
 }
+
+// --- S10 : structure par l'assistant (propriétaire) : catégorie puis champ, avec annulation -----------------------------------------------
+{
+	const tag = Date.now().toString(36).toUpperCase();
+	py("frappe.db.delete('Custom Field',{'dt':'Cortex Rental Item Profile','fieldname':['like','cx_numero_de_plaque%']})\nfrappe.clear_cache(doctype='Cortex Rental Item Profile')\nprint(json.dumps(True))");
+	const cats = () => py(`from cortex_rental.services import sector_templates as st\nprint(json.dumps(st.categories()))`);
+	const { ctx, page } = await session();
+	await ask(page, `Ajoute la catégorie « Drones ${tag} » à mon catalogue.`);
+	let card = page.locator(".cp-action").last();
+	check("S10 carte de catégorie affichée", /Ajouter la catégorie/.test(await card.innerText()));
+	check("S10 rien n'est écrit avant l'approbation (catégorie)", !(await cats()).includes(`Drones ${tag}`));
+	await card.getByRole("button", { name: /Ajouter la catégorie/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Fait" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S10 la catégorie est ajoutée au site", (await cats()).includes(`Drones ${tag}`));
+	await page.screenshot({ path: `${OUT}/s10-categorie.png`, fullPage: true });
+	await card.getByRole("button", { name: /Annuler la catégorie/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Annulée" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S10 l'annulation retire la catégorie", !(await cats()).includes(`Drones ${tag}`));
+
+	await ask(page, `Ajoute un champ « Numéro de plaque ${tag} » aux équipements.`);
+	card = page.locator(".cp-action").last();
+	const text = await card.innerText();
+	check("S10 carte de champ affichée (fiche, libellé, type)", /Ajouter le champ/.test(text) && new RegExp(`Numéro de plaque ${tag}`).test(text) && /Texte court/.test(text), text.replace(/\s+/g, " ").slice(0, 200));
+	const slug = `cx_numero_de_plaque_${tag.toLowerCase()}`.slice(0, 27);
+	const hasField = () => py(`print(json.dumps(bool(frappe.db.exists('Custom Field',{'dt':'Cortex Rental Item Profile','fieldname':'${slug}'}))))`);
+	check("S10 rien n'est écrit avant l'approbation (champ)", !(await hasField()));
+	await card.getByRole("button", { name: /Ajouter le champ/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Fait" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S10 le champ est créé", await hasField());
+	await page.goto(BASE + "/app/cortex-rental-item-profile/new", { waitUntil: "networkidle" });
+	await page.waitForTimeout(1500);
+	check("S10 le champ apparaît sur la fiche équipement", (await page.locator(`[data-fieldname="${slug}"]`).count()) >= 1);
+	const order = await page.evaluate((slug) => { const names = [...document.querySelectorAll("[data-fieldname]")].map((n) => n.dataset.fieldname); return { mine: names.indexOf(slug), image: names.indexOf("image"), first: names.indexOf("company") }; }, slug);
+	check("S10 le champ s'ajoute à la fin de la fiche (après la photo, pas en tête)", order.mine > order.image && order.image > order.first, JSON.stringify(order));
+	await page.screenshot({ path: `${OUT}/s10-champ-fiche.png`, fullPage: true });
+	await page.goto(BASE + "/app/cortex-home", { waitUntil: "networkidle" });
+	await page.waitForTimeout(1200);
+	await page.locator("button[title*='istor'], button[aria-label*='istor']").first().click(); await page.waitForTimeout(700);
+	await page.getByText(/Ajoute la catégorie « Drones/).first().click(); // même conversation que la catégorie : le titre est son premier message
+	await page.waitForSelector(".cp-action", { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(1000);
+	card = page.locator(".cp-action").last();
+	check("S10 après rechargement, la carte reste « Fait » avec son bouton d'annulation", (await card.locator(".cp-action-badge").innerText()) === "Fait" && (await card.getByRole("button", { name: /Annuler le champ/ }).count()) === 1);
+	await card.getByRole("button", { name: /Annuler le champ/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Annulée" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S10 l'annulation supprime le champ (il était vide)", !(await hasField()));
+	check("S10 aucune erreur JavaScript", page.errors.length === 0, page.errors.join(" | "));
+	await ctx.close();
+}
+
+// La limite réelle est de 20 messages par minute : on laisse la fenêtre se vider avant les scénarios de panne.
+await new Promise((r) => setTimeout(r, 65000));
 
 // --- Pannes : le système échoue proprement, en français, sans carte trompeuse ------------------------------------------------------------
 const setAI = (fields) => py(`d=frappe.get_doc('Cortex AI Settings')\nfor k,v in ${JSON.stringify(fields)}.items(): d.set(k,v)\nd.save(ignore_permissions=True)\nprint(json.dumps(True))`);

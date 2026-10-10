@@ -504,7 +504,7 @@ def refresh_blocks(blocks: List[Dict[str, Any]], user: str) -> List[Dict[str, An
 
 
 # Les actions du catalogue (retenue, réservation, paiement, approbation) s'enregistrent à l'import.
-from cortex_rental.services import sector_templates  # noqa: E402
+from cortex_rental.services import sector_templates, structure  # noqa: E402,F401  (structure s'enregistre à l'import)
 from cortex_rental.services.ai import action_catalog, records  # noqa: E402,F401
 
 sector_templates.register_action()

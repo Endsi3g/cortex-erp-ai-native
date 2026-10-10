@@ -145,11 +145,11 @@ def _settings_doc(company: str):
     )  # valeurs par défaut de la fiche, pas encore enregistrée
 
 
-def require_owner() -> None:
+def require_owner(message: str = "Seul le propriétaire de la société peut appliquer un modèle de secteur.") -> None:
     from cortex_rental.services.ai.actions import ActionError
 
     if not set(OWNER_ROLES) & set(frappe.get_roles()):
-        raise ActionError("Seul le propriétaire de la société peut appliquer un modèle de secteur.")
+        raise ActionError(message)
 
 
 def require_owner_or_throw() -> None:
@@ -207,7 +207,12 @@ def _prepare(args: Dict[str, Any], company: str):
         raise ActionError(f"Le modèle « {spec['label']} » est déjà appliqué : rien à ajouter ni à changer.")
     rows, lines = [], []
     if found["categories"]:
-        rows.append({"label": "Catégories d'équipement à ajouter", "detail": ", ".join(found["categories"])})
+        rows.append(
+            {
+                "label": "Catégories d'équipement à ajouter",
+                "detail": ", ".join(frappe._(c) for c in found["categories"]),
+            }
+        )
         lines.append("Catégories : " + ", ".join(found["categories"]))
     for rule in found["rules"]:
         state = "active" if rule["is_active"] else "inactive (à activer par vous)"

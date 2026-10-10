@@ -625,6 +625,13 @@ Le produit est câblé « cinéma » : la catégorie d'un équipement est une li
 - **Limites connues** : seul le secteur cinéma existe (les valeurs de catégorie restent en anglais, traduites à l'affichage par Frappe; un autre secteur ajoutera ses propres valeurs); la liste des catégories est du site entier (un site par client); `bench migrate` requis pour la nouvelle page; après `bench build`, `bench clear-cache`.
 - **Reste** : autres secteurs (véhicules, événementiel, outils : demandés en option, non livrés — à écrire avec les chiffres réels d'un client); pas d'exemples de catalogue (non demandés).
 
+### Bilan 14.2 — modification de structure (FAIT, 2026-10-10)
+- **Fait et vérifié** (banc : 732 tests OK; vrai Desk : `e2e-ai.mjs` 58/58 avec S10; captures `docs/review/captures/phase14-structure/`) : `services/structure.py` — actions `add_category` et `add_custom_field` (propriétaire/System Manager seulement), outils `propose_add_category` et `propose_add_custom_field`. Champs permis : texte court/long, entier, nombre, montant, case, date, liste de choix, sur la fiche équipement, le client ou la location; nom technique `cx_…` (au plus 20 par fiche), ajouté **à la fin** de la fiche. Les champs `cx_…` visibles deviennent modifiables par `update_field` (`records.editable_map`) — le type Date est maintenant géré.
+- **Annulation sans perte** : catégorie retirée seulement si aucune fiche ne l'utilise (sinon refus qui le dit); champ **supprimé s'il est vide partout, sinon masqué** (données gardées, plus modifiable par l'assistant).
+- **Pourquoi ainsi** : un changement de structure s'applique à tout le site et peut perdre des données : donc propriétaire seulement, jamais de modification ni de suppression d'un champ existant, et une annulation qui préfère masquer à détruire.
+- Bogues trouvés par l'essai réel : le champ ajouté apparaissait **en tête** de la fiche (corrigé : `insert_after` = dernier champ); un `LIKE 'cx\_%'` fragile (remplacé par un préfixe revérifié en Python); import circulaire (les actions de `structure.py` s'enregistrent à l'import). Les essais de bout en bout dépassaient la limite réelle de 20 messages par minute : le script attend maintenant 65 s avant les scénarios de panne.
+- **Reste / non fait (décisions à prendre avec Kael)** : modifier ou retirer un champ existant; sections; catégories de pages et espaces de travail (barre latérale) — non commencés volontairement; un secteur autre que cinéma.
+
 ### Vérification prévue
 Tests purs (plan, aperçu, sécurité), tests banc (appliquer, annuler, droits, catégories visibles par Frappe), essais E2E dans le vrai Desk (page + assistant) avec captures, 100 % de la suite du banc; bilan écrit ici à la fin de chaque sous-phase.
 

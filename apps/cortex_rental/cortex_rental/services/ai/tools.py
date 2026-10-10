@@ -568,6 +568,28 @@ propose_apply_sector_template = _proposing_tool(
     {"template": {"type": "string", "description": "Clé du modèle, p. ex. cinema_video"}},
     ["template"],
 )
+propose_add_category = _proposing_tool(
+    "propose_add_category",
+    "add_category",
+    "PROPOSE d'ajouter une catégorie d'équipement à la liste du site (modification de structure, réservée au propriétaire, annulable).",
+    {"category": {"type": "string", "description": "Nom de la catégorie, p. ex. Véhicules utilitaires"}},
+    ["category"],
+)
+propose_add_custom_field = _proposing_tool(
+    "propose_add_custom_field",
+    "add_custom_field",
+    "PROPOSE d'ajouter un champ à la fiche équipement (Cortex Rental Item Profile), au client (Customer) ou à la location (Cortex Rental Transaction). Modification de structure réservée au propriétaire, annulable. Types : Data (texte court), Small Text (texte long), Int, Float, Currency (montant), Check (case à cocher), Date, Select (liste de choix).",
+    {
+        "doctype": {
+            "type": "string",
+            "description": "Cortex Rental Item Profile, Customer ou Cortex Rental Transaction",
+        },
+        "label": {"type": "string", "description": "Libellé affiché, p. ex. Numéro de plaque"},
+        "fieldtype": {"type": "string", "description": "Data, Small Text, Int, Float, Currency, Check, Date ou Select"},
+        "options": {"type": "string", "description": "Pour Select seulement : les choix séparés par des virgules"},
+    },
+    ["doctype", "label", "fieldtype"],
+)
 
 
 # Outils qui proposent une écriture (approbation humaine requise). Offerts au modèle seulement si le site les active :
@@ -582,6 +604,8 @@ PROPOSING_TOOLS = (
     "propose_decide_approval",
     "propose_update_field",
     "propose_apply_sector_template",
+    "propose_add_category",
+    "propose_add_custom_field",
 )
 
 
