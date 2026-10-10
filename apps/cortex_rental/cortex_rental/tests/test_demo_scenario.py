@@ -1,4 +1,6 @@
 import unittest
+
+from cortex_rental.tests.live_fixtures import NO_FRAPPE
 from cortex_rental.services.pricing import PricingService
 from cortex_rental.services.transaction_state import TransactionStateService
 from cortex_rental.api.v1.quotes import create_draft_handler, preview_pricing_handler
@@ -9,6 +11,7 @@ from cortex_rental.cortex_rental.doctype.approval_request.approval_request impor
 from cortex_rental.cortex_rental.doctype.audit_event.audit_event import AuditEvent
 
 
+@NO_FRAPPE
 class TestCortexDemoScenario(unittest.TestCase):
     def setUp(self):
         self.company = "CineRental Montreal"

@@ -134,3 +134,35 @@ export function money(value) {
 export function toServerDate(local) {
 	return local ? `${local.replace("T", " ")}:00` : "";
 }
+
+
+// Chemin du Desk sûr (« /app/... ») : le serveur le vérifie déjà (services/ai/stats.py::safe_href), on le revérifie ici.
+const DESK_PATH = /^\/app\/[a-z0-9][a-z0-9-]{0,60}(\/[A-Za-z0-9_%.-]{1,160}){0,2}(\?[A-Za-z0-9_=%&.-]{0,200})?$/;
+
+export function isDeskPath(href) {
+	return typeof href === "string" && DESK_PATH.test(href) && !href.includes("..");
+}
+
+// Ouvre un endroit précis du Desk (page, document ou liste filtrée) sans recharger l'application.
+export function openDeskPath(href) {
+	if (!isDeskPath(href)) return false;
+	const [path, query] = href.slice("/app/".length).split("?");
+	if (query) {
+		const options = {};
+		new URLSearchParams(query).forEach((value, key) => {
+			options[key] = value;
+		});
+		frappe.route_options = options;
+	}
+	frappe.set_route(path.split("/").map(decodeURIComponent));
+	return true;
+}
+
+// Décision de la personne sur une action proposée par l'assistant (approuver = exécuter avec SES droits).
+export function undoAction(actionId) {
+	return apiCall("cortex_rental.api.v1.chat.undo_action", { name: actionId }, "POST");
+}
+
+export function decideAction(actionId, approve) {
+	return apiCall("cortex_rental.api.v1.chat.decide_action", { name: actionId, approve: approve ? 1 : 0 }, "POST");
+}

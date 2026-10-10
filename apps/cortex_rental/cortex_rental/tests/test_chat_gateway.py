@@ -15,11 +15,17 @@ except ImportError:
     frappe = None
 
 from cortex_rental.api.v1.chat import send_message_handler
+from cortex_rental.tests import live_fixtures
 from cortex_rental.services.agent_router import AgentRouter, PAGE_TO_AGENT
 from cortex_rental.services.tool_policy import ToolPolicyResolver, AGENT_TOOL_MAP
 from cortex_rental.services.onyx_chat_client import MockOnyxChatClient
 from cortex_rental.services.chat_response_transformer import ChatResponseTransformer
 from cortex_rental.services.chat_session import ChatSessionService
+
+
+# Hors bench, la validation lève `ValueError` (pydantic); dans un vrai site, le point d'accès la convertit en
+# `frappe.ValidationError` (message en français). Dans les deux cas la demande est refusée.
+REJECTED = (ValueError, frappe.ValidationError) if frappe else (ValueError,)
 
 
 class TestClientCannotEscalate(unittest.TestCase):
@@ -37,7 +43,7 @@ class TestClientCannotEscalate(unittest.TestCase):
         return base
 
     def test_rejects_client_supplied_company(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(REJECTED):
             send_message_handler(
                 self._payload(company="Someone Else's Company"),
                 user="u@test.com",
@@ -45,11 +51,11 @@ class TestClientCannotEscalate(unittest.TestCase):
             )
 
     def test_rejects_client_supplied_model(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(REJECTED):
             send_message_handler(self._payload(model="claude-sonnet-5"), user="u@test.com", company="C1")
 
     def test_rejects_client_supplied_allowed_tool_ids(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(REJECTED):
             send_message_handler(
                 self._payload(allowed_tool_ids=["activate_contract"]),
                 user="u@test.com",
@@ -59,18 +65,18 @@ class TestClientCannotEscalate(unittest.TestCase):
     def test_rejects_client_supplied_agent_inside_context(self):
         payload = self._payload()
         payload["context"]["agent"] = "admin_agent"
-        with self.assertRaises(ValueError):
+        with self.assertRaises(REJECTED):
             send_message_handler(payload, user="u@test.com", company="C1")
 
     def test_rejects_message_over_length_limit(self):
         payload = self._payload(message="x" * 5000)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(REJECTED):
             send_message_handler(payload, user="u@test.com", company="C1")
 
     def test_rejects_too_many_selected_items(self):
         payload = self._payload()
         payload["context"]["selected_item_codes"] = [f"ITEM-{i}" for i in range(51)]
-        with self.assertRaises(ValueError):
+        with self.assertRaises(REJECTED):
             send_message_handler(payload, user="u@test.com", company="C1")
 
 
@@ -277,7 +283,14 @@ class TestSendMessageEndToEndNoFrappe(unittest.TestCase):
     """frappe is unimportable in this sandbox, so ChatSessionService
     takes its documented no-DB branch — this still exercises real
     validation, routing, tool-policy, mock-client and transformer code,
-    just without persistence."""
+    just without persistence. Dans un vrai bench, les mêmes appels persistent la conversation : les fixtures
+    (société et personne) sont alors créées d'abord."""
+
+    @classmethod
+    def setUpClass(cls):
+        if frappe:
+            live_fixtures.ensure_company("CineRental Montreal", "CRM")
+            live_fixtures.ensure_user("camille@cinerental.test", ["Rental Manager"], "CineRental Montreal")
 
     def test_returns_typed_blocks_for_an_availability_question(self):
         response = send_message_handler(
@@ -312,6 +325,12 @@ class TestChatIsolationLive(unittest.TestCase):
     """Written so the first real `bench run-tests` proves session/message
     privacy holds, not just Company scoping — see
     permissions/__init__.py's _own_chat_session_condition."""
+
+    @classmethod
+    def setUpClass(cls):
+        live_fixtures.ensure_company("Cortex Test Co A", "CTA")
+        for email in ("user-a@test.com", "user-b@test.com"):
+            live_fixtures.ensure_user(email, ["Rental Manager"], "Cortex Test Co A")
 
     def test_user_cannot_read_another_users_session(self):
         service = ChatSessionService()

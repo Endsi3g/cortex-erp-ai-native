@@ -400,6 +400,268 @@ Vu à l'écran dans Chromium (portail, suivi et devis rendus avec Jinja, API sim
 - **Photos d'essai** : deux vraies photos de **Sony α7 IV** (Wikimedia Commons, **CC0**, Bautsch) ont servi à juger les vignettes ; elles restent hors du dépôt (jeu d'essai local).
 
 
+## Plan du pilote « avant lundi » (2026-10-10) : état réel
+
+Demandé par Kael : IA complètement fonctionnelle, migration de données accessible à de gros volumes, toutes les pages d'un ERP, Gemini 3.8 à l'essai, PostHog.
+
+| Point du plan | État vérifié dans le code | Reste |
+| --- | --- | --- |
+| Modèle Gemini 3.8 | `gemini-3.8-flash` est le défaut de *Cortex AI Settings* (patch `set_ai_pricing_defaults`), repli `gemini-3.5-flash-lite`, plafond puis modèle économique. Prix annoncé jusqu'au 31 déc. 2026. | **Jamais essayé avec une vraie clé** dans le Desk. Premier essai réel = premier critère de réussite du pilote. |
+| PostHog | **Codé (cette livraison)** : `services/analytics.py`, `public/js/cortex_analytics.js`, boot `cortex_analytics`. Éteint sans `posthog_key`. Masquage par défaut des données d'affaires. | Créer le projet PostHog, régler la clé, tester dans un Desk ; avis de confidentialité aux utilisateurs du client ; réglage individuel dans Mon compte ; événements métier explicites (`cortex.track`) à ajouter écran par écran. |
+| Migration de données | Existe seulement par l'*Importation de données* native de Frappe (liens dans Administration et Catalogue ; historique par société). **Rien de propre à Cortex** : pas de modèles de fichier par type, pas de validation avant import, pas de reprise. | `max_file_size` est à 10 Mo dans l'exemple de production : trop petit pour des centaines de milliers de lignes. Vérifier sur bench la limite de lignes par importation de Frappe v15 et la tenue du travail en arrière-plan avant de promettre ce volume. |
+| Pages d'un ERP complet | Locations, disponibilité, approbations, sorties/retours, catalogue, séries, clients, factures, paiements, finance, abonnements, portail. | Écart non mesuré : achats/fournisseurs, inventaire/entrepôts, paie, rapports comptables ne sont pas des écrans Cortex. À décider avec Kael ce qui est « nécessaire » pour le pilote. |
+
+Rien de ce tableau n'a été essayé sur un Desk Frappe actif.
+
+## Phase 10 : IA native — actions, cartes dédiées, statistiques (2026-10-10, EN COURS)
+
+> **Règle de travail de Kael (2026-10-10) :** avant un gros chantier, écrire le plan ici et le pousser ; à la fin de chaque phase, mettre cette section à jour (**fait / reste à faire / pourquoi ces choix**), pour qu'une autre personne reprenne vite. Ne jamais redessiner la page Assistant IA sans proposition validée (maquette d'abord) ; corriger seulement les défauts sûrs. Demander plutôt que supposer. Pas de travail difficile à annuler.
+
+### Intention de Kael
+« AI native » ne veut pas dire que tout passe par l'IA : **beaucoup d'actions restent manuelles**, mais **l'IA de Cortex doit pouvoir tout faire dans l'application** (et s'améliorer avec les modèles). Un seul système pour toute société de location (caméras, équipement, véhicules…), adaptable (colonnes, sections, catégories de pages). Le chat doit être riche et interactif (cartes dédiées pour chaque action, cartes de statistiques avec une flèche vers l'endroit d'où vient le chiffre), au design de Cortex.
+
+### Décisions prises (avec Kael) et pourquoi
+| Décision | Pourquoi |
+| --- | --- |
+| Propose → aperçu → **approbation humaine** → exécution (ADR-011) | Garde « Cortex suggère, l'humain décide » ; l'IA ne contourne ni droits ni audit |
+| Exécution avec **les droits de la personne**, par la même fonction que l'écran | Une seule voie d'écriture à tester ; aucune élévation de privilèges |
+| **Carte dédiée (maquette B)** pour chaque action | Choix de Kael ; aperçu en tableau, totaux, état (à approuver, fait, refusé, périmée, échec) |
+| Changements de structure : **aperçu + approbation du propriétaire**, un **site par client** | Un site par client isole `Custom Field`/`Property Setter`/`Workspace` ; le propriétaire garde la main ; annulable |
+| Secteurs : **modèles de secteur + IA** | Prévisible pour le client, flexible grâce à l'IA |
+| Interrupteur de site `cortex_ai_actions` (éteint par défaut) | Réversible en une commande ; rien ne s'active sans validation |
+| L'état d'une carte vient **toujours du serveur** (`actions.refresh_blocks`) | Une carte approuvée ne redevient jamais « à approuver » au rechargement |
+| Statistiques : **données réelles seulement**, lien `/app/...` vérifié (`stats.safe_href`) | Aucune estimation inventée ; jamais de lien externe |
+
+### Fait (poussé sur la branche `claude/fervent-thompson-fs0kg0`, PR #15)
+- **Moteur d'actions** (`services/ai/actions.py`, DocType `Cortex AI Action`, `chat.decide_action`) : créer un client, créer un devis. Revalidation, verrou, point de sauvegarde, audit. Tests : `test_ai_actions.py`.
+- **Blocs de chat** `action_card` et `stat_card` (`chat_schemas.py`) ; outils de lecture `finance_trend`, `rentals_by_state` et carte pour `finance_summary` (`services/ai/stats.py`, tests `test_ai_stats.py`). Format canadien-français (`stats.money`, `stats.human_dt`).
+- **Composants Vue** : `CopilotActionCard.vue` (carte dédiée, choix B de Kael), `CopilotStatCard.vue` (KPI, barres ou ligne en SVG, flèche en haut à droite vers la source), branchés dans `CopilotConversation.vue` (l'accueil IA les reçoit aussi). `chatClient.js` : `decideAction`, `openDeskPath` (chemin `/app/...` revérifié, `route_options` pour les listes filtrées).
+- **Mode sombre** : `cortex-dark.css` régénéré (+140 lignes, rien retiré).
+- **Banc d'essai réutilisable** : `tools/ui-harness/` (README).
+- **Vérifié dans le banc d'essai (Chromium, faux `frappe`, PAS le Desk)** : rendu clair/sombre, bureau 900 px et mobile 390 px ; clic « Créer le devis » → appel `decide_action` correct, état « Fait », lien « Ouvrir le devis » → route du document ; échec de droits → message en rouge et bouton encore actif ; flèches des cartes de statistiques → bonne route ; 122 textes, **0 sous 4,5:1** en clair et en sombre. Captures : `docs/review/captures/phase10-cartes/`.
+- Maquette : `docs/frontend/mockups/proposition-assistant.html`.
+
+### Audit de la page Assistant IA (banc d'essai, lecture seule + 2 correctifs sûrs)
+- **Corrigé (sans changer l'apparence)** : zone cliquable de 24 px (WCAG 2.2, 2.5.8) pour les trois icônes « Ouvrir… » des cartes (les icônes n'ont pas bougé d'un pixel; seul le fond au survol est plus grand) et pour « Masquer » du bandeau de démonstration (texte ~2 px plus bas). Audit mécanique après : 0 bouton sans nom, 0 cible < 24 px, 0 débordement horizontal à 1280 et 390 px, 0 image sans `alt`.
+- **Non touché, à décider par Kael** : (1) les trois illustrations des questionnaires guidés utilisent des **dégradés violet, bleu, vert** alors que la direction visuelle de ce document demande « aucun violet néon, halo ou dégradé copilote » ; (2) le texte de la zone de saisie (« Que puis-je faire pour vous aujourd'hui ? ») répète le titre (« Comment puis-je vous aider aujourd'hui ? ») ; (3) le mode démonstration est signalé deux fois (bandeau + pastille), voulu ou redondant ?
+- Limite : audit fait avec un faux `frappe` et sans les feuilles de style du Desk ; non vu dans l'application réelle.
+
+### Décisions de cette étape
+- Les montants des cartes d'action utilisent le même format que les statistiques (« 1 234,50 $ ») : un seul format partout.
+- Le graphique est un SVG maison (pas de bibliothèque) : aucune dépendance de plus, rendu identique clair/sombre, `role="img"` + `<title>` par barre. Limite : pas d'infobulle riche ni de zoom.
+- En sombre, le vert des barres devient menthe (`#6ee7b7`) par la conversion automatique : lisible, mais à valider par Kael sur un Desk réel.
+
+### Reste à faire (ordre proposé)
+1. ~~Vérifier les deux cartes dans le banc d'essai~~ **fait**. Reste : les voir dans un **vrai Desk** avec `cortex_ai_actions` activé (`bench --site <site> set-config cortex_ai_actions 1`), `bench build --app cortex_rental`, `bench migrate` (nouveau DocType).
+2. Plus d'actions métier, **une par une, seulement celles qu'on peut annuler facilement ou qui passent déjà par l'approbation** (réservation, retenue, paiement, approbation…). Candidates à valider avec Kael.
+3. Modifier la structure par l'IA (champs, sections, espaces, catégories de pages) avec avant/après et annulation ; modèles de secteur.
+4. Chat : réponse en continu, pièces jointes, mémoire/projets, étapes visibles.
+5. Migration de gros volumes (modèles de fichier, validation avant import, reprise ; `max_file_size` 10 Mo trop petit).
+6. PostHog : la clé `phc_…` est à fournir par Kael ; avis de confidentialité ; réglage individuel.
+7. Audit de l'interface de la page Assistant IA : liste des défauts sûrs corrigés / à décider.
+
+### Comment ajouter une action ou une carte (pour la personne suivante)
+- **Action** : écrire `_prepare_x(args, company) -> Prepared` (validation, droits, aperçu structuré `rows`/`totals`) et `_run_x(payload, company)` (appelle la fonction partagée de l'écran), `register(ActionSpec(...))` dans `actions.py`, ajouter l'outil `propose_x` dans `tools.py` (via `_propose`), à `PROPOSING_TOOLS`, à `tool_policy.AGENT_TOOL_MAP` et à `gateway.TOOL_LABELS`. Si la fonction de l'écran est enfermée dans un décorateur, **extraire un cœur** (voir `rentals.insert_quote`, `customers.insert_customer`) plutôt que dupliquer.
+- **Carte de statistiques** : un outil de lecture qui renvoie `stat_block` = `stats.card(...)` avec des chiffres lus par `frappe.get_list` (droits + société) et un `source_href` réel.
+- **Jamais** : écrire directement depuis un outil, inventer un chiffre, mettre un lien externe, ou présenter une exécution échouée comme réussie.
+
+### Limites connues
+Rien de cette phase n'a été essayé sur un Desk Frappe actif ni avec un vrai modèle. Les composants ont été vus seulement dans le banc d'essai (`tools/ui-harness/`). Les outils `propose_*` restent invisibles pour le modèle tant que `cortex_ai_actions` n'est pas activé.
+
+## Phases 11 à 13 : suite demandée par Kael le 2026-10-10 (PLAN, rien de codé)
+
+> Plan écrit **avant** le travail (règle de Kael). Chaque phase mettra cette section à jour : fait / reste / pourquoi. Ordre choisi par moi, à contester.
+
+### Demandes de Kael (résumé fidèle)
+1. **Voir la réflexion derrière les actions de l'IA** (pourquoi une proposition de devis, etc.). Cartes de statistiques : très satisfait; **peut aussi utiliser d'autres graphiques** (pas seulement des barres).
+2. L'IA doit pouvoir **tout faire et tout référencer, de A à Z**, dans toute l'application, et le système doit être **versatile pour tous les domaines** de location.
+3. **Parcours d'entrée soigné et animé** : page de connexion → écran de chargement → **onboarding complet** (plusieurs pages dédiées si utile, le plus rapide et facile possible, l'IA aide à configurer dès le début) → **Assistant IA** comme première page.
+4. **Assistant IA plein écran** : pas de fil d'Ariane, pas de barre du haut sauf « Mon compte » et réglages ; barre latérale réduite à son icône (aspect plein écran) ; **polices moins grasses** (sinon « enfantin »).
+5. **Info-bulles** et **visite guidée interactive** de l'application (quelle page fait quoi, comment ça marche), **passable**, qui aide à configurer le compte avec l'IA.
+6. Actions suivantes **dans l'ordre que je veux** : libérer/renouveler la retenue, demander une réservation, etc. (celles qui s'annulent ou passent par une approbation).
+7. Accueil IA : les 3 cartes à dégradés → **accent vert** (ou garder; choix laissé à moi : accent vert, réversible) ; le texte de la zone de saisie ne doit plus **répéter le titre**.
+8. PostHog : la clé viendra plus tard. **Poser des questions, ne rien supposer.** **Prendre des captures, ouvrir un bench et tester moi-même**, visuellement et par le code, tout ce que je livre.
+
+### Plan et logique
+| Phase | Contenu | Pourquoi dans cet ordre |
+| --- | --- | --- |
+| **12 (d'abord)** | **Vrai bench ERPNext** via Docker (images Docker Hub par le miroir `mirror.gcr.io`, car `github.com` est refusé par le proxy du bac à sable et Docker Hub direct renvoie 429) : installer `erpnext` + `cortex_rental`, `bench migrate`, tests Frappe (`test_multitenant_isolation`, etc.), captures du **vrai Desk** | Tout ce qui est livré depuis v0.8.0 n'a **jamais** tourné sur un Desk. Le bench est le seul vrai test; il décide de la suite |
+| **10b** | Réflexion visible dans la carte d'action; autres types de graphiques (anneau, barres horizontales); actions : libérer/renouveler la retenue, demander une réservation, enregistrer un paiement, décider une approbation; outils de **lecture générique** (chercher/lire n'importe quel enregistrement permis) avec carte de référence + lien; correctifs de l'accueil (dégradés, texte de saisie) | Prolonge ce que Kael a validé |
+| **11** | **Maquettes d'abord** (écran de chargement, pages d'onboarding, visite guidée) → intégration : connexion animée, chargement, onboarding multi-pages assisté par l'IA, Assistant IA plein écran, polices allégées, info-bulles, visite guidée | Nouvelles surfaces = proposition validée avant de coder (règle de Kael) |
+| **13** | Modification de structure par l'IA (champs, sections, catégories de pages) avec avant/après et annulation, modèles de secteur ; migration de gros volumes ; chat (flux continu, pièces jointes, mémoire) | Dépend du bench et d'un exemple de fichier du client |
+
+### Garde-fous (rappel)
+Approbation humaine avant toute écriture; droits de la personne; audit; revalidation; **annulable ou refusé**; rien d'irréversible sans question; chaque « vu à l'écran » dit s'il vient du banc d'essai hors Desk ou du vrai bench.
+
+## Phase 12 : vrai bench ERPNext (2026-10-10) — premier résultat
+
+**Montage (reproductible)** : Docker par le miroir `mirror.gcr.io` (`github.com` est refusé par le proxy du bac à sable; Docker Hub direct répond 429). `dockerd` démarré à la main (`--iptables=false --bridge=none`, réseau `host`) ; MariaDB 10.6 + Redis 7 + `frappe/erpnext:v15` (ERPNext 15.122) ; l'app est copiée dans `apps/cortex_rental` et installée en éditable avec `PIP_CERT=/root/.ccr/ca-bundle.crt` (le proxy ré-émet le TLS : ne jamais désactiver la vérification). Site `cortex.localhost`, **assistant de configuration ERPNext exécuté** (langue Français, Canada, CAD) : sans lui, il manque types d'entrepôt, groupes d'articles, etc. `bench install-app cortex_rental` puis `bench migrate` : **sans erreur, 40 DocTypes Cortex créés**.
+
+**Résultat de la suite complète dans le bench : 649 tests, 0 échec** (22 ignorés : tests écrits pour le mode « sans Frappe », et tests qui lisent le `Makefile` ou `bin/` du dépôt). Au premier passage : 29 erreurs et 2 échecs, **tous venant des tests** (fixtures manquantes, hypothèses fausses), pas du produit :
+- **Isolation entre sociétés : prouvée** (6 tests : une personne de la société A ne voit ni ne lit le journal d'audit de B; un compte d'agent ne lit pas le journal du tout). Le test utilisait `frappe.get_all` (qui ignore les permissions) : corrigé en `get_list`.
+- **Concurrence** (4), **télémétrie des agents** (2), **retours de matériel complet/partiel** (2) : passent. Le verrou Redis par article fonctionne; le test était fragile (le verrou vit 5 s).
+- Fixtures communes : `tests/live_fixtures.py` (société avec pays, article avec groupe, client, utilisateurs humains). `NO_FRAPPE` marque les tests du mode simulé.
+
+**Constats sur le produit (à décider, non modifiés)**
+1. **L'utilisateur `Administrator` est traité comme un agent** : il reçoit tous les rôles, dont « Agent Service Account », donc il ne peut pas confirmer une réservation ni décider une approbation (`_current_actor_is_agent`, `audit.py`, `approval_request.py`). Un humain doit avoir le rôle Rental Manager. Je n'ai pas « corrigé » : si le serveur MCP des agents se connectait avec le compte Administrator, la correction donnerait des pouvoirs humains aux agents. **Question pour Kael.**
+2. **Un devis retient le matériel** (72 h par défaut) : un test ou un client qui crée plusieurs devis pour les mêmes dates peut se voir refuser une réservation (c'est voulu; attention aux jeux de données de démonstration).
+3. Les noms racines d'ERPNext (« Tous les départements ») suivent la langue de l'assistant de configuration. Création de société testée en `fr` et en `en` sur ce site : OK; à retester quand le provisionnement client sera exercé.
+
+**Commandes pour rejouer** : voir `tools/bench/README.md`.
+
+## Phase 10b et 12 (suite) : vérifié dans le VRAI Desk (2026-10-10)
+
+**Fait et vu dans un vrai Desk Frappe (Chromium → `bench serve`, ERPNext 15, site français)** : connexion, arrivée sur l'Assistant IA, historique, conversation avec **vraies cartes** (données créées par le moteur d'actions lui-même : 4 devis, 2 réservations, 2 factures, 1 paiement), **approbation réelle** (« Créer le devis » → devis `CR-TRX-2026-00036` créé, lien « Ouvrir le devis » qui l'ouvre), flèches des cartes de statistiques (→ Finance), anneau et barres avec les chiffres réels, mode sombre. **Aucune erreur JavaScript** (hors `socket.io`, absent de mon bench). `bench build` compile les trois bundles Vue avec le vrai bundler de Frappe. Captures : `docs/review/captures/phase12-vrai-bench/`.
+
+**Suite complète dans le vrai bench : 668 tests, 0 échec** (22 ignorés : mode « sans Frappe » et tests qui lisent des fichiers du dépôt). Nouveaux tests d'intégration : `test_ai_actions_live.py` (16 : proposer sans écrire, approuver par la voie de l'écran, refus par les droits de Frappe, aperçu périmé = rien d'écrit, double approbation, isolation entre sociétés, retenue libérée puis renouvelée puis réservation, paiement sur une vraie facture d'acompte, décision d'approbation par un autre humain).
+
+**Bogue de production trouvé et corrigé** : `insert_customer` écrivait `territory = "All Territories"` et `customer_group = "Commercial"` en dur ; sur un site configuré en français ces noms n'existent pas (« Tous les territoires ») et **la création d'un client échouait** (aussi dans le compositeur de devis). Maintenant : un groupe et un territoire pris parmi ceux qui existent (`default_group_and_territory`).
+
+**Ajouté dans cette étape** : réflexion visible (« Pourquoi cette proposition » : explication déclarée par l'assistant, étiquetée non vérifiée; données consultées; ce que l'action fera et comment revenir en arrière), cartes d'action pour retenue (libérer, renouveler), réservation, paiement, décision d'approbation (ADR-011), anneau et barres horizontales, accueil IA : zone de saisie qui ne répète plus le titre et **trois cartes en accent vert** (choix de Kael).
+
+**Corrigé grâce au vrai Desk** : la balise `<footer>` des cartes était décalée par la feuille du Desk (remplacée par un `div`); « 2.5 jour(s) » écrit au format français.
+
+**Constats ouverts**
+1. Quelques icônes de la barre latérale paraissent ternes en mode sombre sur la capture (contraste des traits mesuré à 12:1 : c'est le dessin de certaines icônes du Desk, à examiner).
+2. Le texte « Bonsoir, kael. » vient du nom complet de l'utilisateur de test (non recalculé) : à revérifier avec un vrai compte.
+3. `Administrator` est traité comme un agent (voir Phase 12) : question toujours ouverte pour Kael.
+4. Les actions *paiement* et *décision d'approbation* ne s'annulent pas par un bouton (paiement : remboursement; approbation : nouvelle demande); l'aperçu le dit (« Ce qui va se passer »). Validées par Kael dans la liste, mais à garder en tête.
+
+## Phase 10c : l'IA fonctionne de bout en bout dans le vrai Desk (2026-10-10) — priorité demandée par Kael
+
+**Demande de Kael : rendre le système d'IA fonctionnel de bout en bout avant de toucher au reste (le parcours d'entrée est en attente).**
+
+**Ce qui est prouvé (vrai Desk, vrai serveur, vraie base, vrais droits)** — `tools/ui-harness/e2e-ai.mjs`, **27 vérifications sur 27** :
+- *Devis* : demande tapée → modèle → `search_customers` → `search_rental_items` → `check_inventory_availability` → `propose_create_quote` → carte avec « Pourquoi cette proposition » → **approbation** → devis créé en base avec les deux articles → lien qui l'ouvre.
+- *Rechargement* : la carte approuvée reste « Fait ». *Statistiques* : trois cartes (résumé, barres, anneau), la flèche ouvre Finance.
+- *Paiement* : la carte nomme la vraie facture; approuver la fait passer à « Payée » en base, paiement par chèque enregistré. *Retenue* : libérée en base.
+- *Pannes* (toutes en français, sans carte trompeuse) : clé refusée, service indisponible (503), limite 429 du fournisseur (relance silencieuse, réponse obtenue), modèle introuvable (le modèle de repli répond), **plafond de dépense** (entre 100 et 150 % : modèle économique + avis; au-delà : refus clair), **sans clé : mode démonstration étiqueté**.
+
+**Ce qui n'est PAS prouvé** : le comportement d'un **vrai modèle Gemini** (décisions, qualité des raisons, appels d'outils réels) ni la facturation réelle. Le « modèle » des essais est un faux serveur (`tools/bench/fake_gemini.py`) qui **valide la requête comme l'API réelle** et suit des scénarios codés utilisant les vrais résultats des outils. **À faire dès que Kael fournit la clé** : la saisir dans *Cortex AI Settings*, retirer `cortex_ai_gemini_base_url`, rejouer la même suite (`e2e-ai.mjs`) puis juger la qualité des réponses.
+
+**Défauts réels trouvés par ces essais et corrigés** :
+1. Les outils **sans argument** (résumé financier, locations par état) étaient déclarés avec `properties: {}` : la documentation officielle les déclare **sans** `parameters`, l'API risquait de refuser toute la requête. Désormais : types en majuscules, aucun `parameters` ni `required` vide (`GeminiProvider.schema`). Un test de contrat valide chaque outil contre le validateur du protocole.
+2. L'agent principal **n'avait pas l'outil de recherche de clients** : impossible de préparer un devis. Ajouté; un test exige que chaque proposition ait les outils de lecture dont elle a besoin.
+3. Une **clé refusée (401/403)** retombait en mode démonstration comme une clé absente (trompeur) : maintenant message clair « clé refusée ».
+4. **Site neuf sans maîtrise des jetons** : prix = 0 et plafond = 0 (les patchs ne sont pas rejoués à l'installation). `after_install` applique maintenant les valeurs de départ (0,75 $ / 3,75 $ par M de jetons, 60 $ par mois, modèle économique), sans jamais écraser une valeur saisie. **Important pour « un site par client ».**
+5. Message de limite de débit du chat **en anglais** : en français. Disponibilité « 5.0 libre(s) » : format français. Le modèle dit « ci-dessous » (les cartes s'affichent sous son message). Nouvel outil de lecture `list_invoices` (sans lui, impossible de proposer un paiement).
+
+**Rejouer** : `tools/bench/README.md` (faux Gemini, clé d'essai `fake-gemini-key`, `cortex_ai_gemini_base_url` — **jamais en production**, seules les adresses https ou locales sont acceptées).
+
+**Reste à faire (IA)** : (action générique « modifier un champ » et lecture générique : faits en phase 13), modification de structure (champs, sections, catégories) avec approbation du propriétaire, flux continu, pièces jointes, mémoire; qualité avec un vrai modèle.
+
+## Phase 13 (faite, 2026-10-10) : IA de bout en bout — lecture générique et « modifier un champ » avec avant/après et annulation
+
+> Priorité de Kael : « rendre le système AI fonctionnel end-to-end avant de toucher autres choses ». La phase 11 (parcours d'entrée) reste en attente. Le plan ci-dessous a été écrit et poussé avant le travail; le bilan est à la fin de cette section.
+
+### Ce que je construis
+1. **Lecture générique « tout référencer »** : deux outils de lecture, sans écriture, sous les droits de la personne et la société active.
+   - `find_records(doctype, query)` : cherche dans une **liste blanche** de types (clients, profils d'équipement, locations, factures, paiements, demandes d'approbation, règles de prix, retours) et renvoie nom, quelques champs lisibles et un lien `/app/…` réel.
+   - `get_record(doctype, name)` : détail d'un enregistrement (champs simples seulement : pas de mots de passe, pièces jointes ni tables), avec lien.
+   - Pourquoi une liste blanche : « tout » = tout ce qui est utile en location, pas les tables techniques (chat, clés, journaux).
+2. **Action générique « modifier un champ »** (`propose_update_field`) : approuvée par Kael, avec **avant / après** et **annulation**.
+   - **Liste blanche de champs modifiables par type** (pas « n'importe quel champ ») : p. ex. profil d'équipement (nom, tarif journalier, valeur de remplacement, dépôt, préparation, accessoires), location en état Devis/Réservation (notes, nom du projet), client (notes, site web), règle de prix (active, multiplicateur, jours facturables, description).
+   - Validation par type de champ (nombre ≥ 0, entier, case à cocher, liste de choix, texte borné), société de l'enregistrement = société active, droit d'écriture de la personne, jamais un champ en lecture seule.
+   - L'aperçu montre **la valeur actuelle et la nouvelle**; si la valeur change entre la proposition et l'approbation, la proposition est périmée (empreinte existante). À l'exécution : verrou, relecture, `doc.save()` avec les droits de la personne (mêmes validations que l'écran).
+   - **Annulation** : bouton « Annuler cette modification » sur la carte exécutée; remet l'ancienne valeur **seulement si la valeur actuelle est encore celle que l'assistant a écrite** (sinon refus clair : quelqu'un l'a modifiée depuis). Nouvel état `Undone`; tout au journal d'audit.
+3. **Faux Gemini + tests** : scénarios « change le tarif de la caméra », « cherche la fiche de… »; tests unitaires, tests banc, et vérifications E2E dans le vrai Desk (captures).
+
+### Ce que je ne fais PAS (et pourquoi)
+- Pas de modification de structure (champs, sections, catégories de pages) : plus risqué, à faire après, avec approbation du propriétaire (point 3 de « Reste à faire »).
+- Pas de modification de statut/étape (réservation, contrat…) par ce chemin : ces transitions ont leurs actions dédiées et leurs règles.
+- Pas de suppression, pas de montants déjà facturés/payés, pas d'écriture sans carte approuvée.
+
+### Questions ouvertes pour Kael
+- La liste blanche de champs ci-dessus convient-elle? (je pars de la plus petite liste utile; on ajoute à la demande)
+- Le tarif journalier modifié ne change pas les devis déjà créés (les prix des devis sont figés par le serveur) : à confirmer comme comportement voulu.
+
+### Bilan de la phase 13 (ce qui est fait, ce qui reste, pourquoi)
+
+**Fait et vérifié** (banc réel : 701 tests OK; Desk réel : `e2e-ai.mjs` 34/34 avec le nouveau scénario S8; captures dans `docs/review/captures/phase13-modification/`) :
+- `services/ai/records.py` (nouveau) : `READABLE` (8 types consultables, avec le champ de société de chacun), `EDITABLE` (champs modifiables par type), validations pures (`coerce_value`, `same_value`, `display_value`, `storable`), `find`, `get`, et l'action `update_field` avec son annulation.
+- Outils de lecture `find_records` et `get_record` (liste blanche, société, droits de Frappe; `get_record` renvoie les champs par nom technique + leurs libellés + les lignes de tableau, jamais mot de passe/pièce jointe/code). Outil `propose_update_field` (offert seulement si `cortex_ai_actions`).
+- **Annulation générique** dans le moteur d'actions : `ActionSpec.undo`, `actions.undo()`, API `chat.undo_action`, état `Undone` (DocType `Cortex AI Action`, **demande `bench migrate`**), `can_undo` dans la carte et au rechargement. L'annulation n'écrit que si la valeur actuelle est encore celle que l'assistant a écrite; sinon elle le dit et la carte reste « Fait ».
+- Carte : première ligne sans valeur sur toute la largeur (le filet partiel est corrigé), badge « Annulée », bouton « Annuler cette modification ».
+- Liste blanche actuelle — profil d'équipement : nom affiché, tarif journalier, valeur de remplacement, dépôt, heures de préparation, accessoires requis, consignation permise; location en Devis/Réservation : notes, nom du projet; client : notes, site web; règle de prix : active, multiplicateur, jours facturables, description.
+- Bogues trouvés par l'essai dans le vrai Desk (invisibles aux tests sans Frappe) : bouton d'annulation absent du gabarit, badge « Annulée » absent (deux remplacements de texte non appliqués : toujours relire le fichier après un script), message dupliqué après annulation. Corrigés. Après `bench build`, **`bench clear-cache`** est nécessaire pour que le Desk serve le nouveau paquet.
+
+**Reste (à décider avec Kael)** :
+1. Élargir la liste blanche (chaque champ ajouté = une ligne dans `EDITABLE`, relue). Candidats : adresse/courriel/téléphone d'un client (champs liés aux contacts d'ERPNext : demandent un chemin dédié), catégorie d'équipement (liste fixe pour la caméra : à rendre configurable pour les autres secteurs).
+2. Modification de structure (champs, sections, catégories de pages) : non commencée, plus risquée, avec approbation du propriétaire.
+3. Modèles de secteur, flux continu, pièces jointes, mémoire.
+4. **Qualité avec un vrai modèle** : tout a été prouvé avec le faux Gemini (protocole fidèle) mais jamais avec une vraie clé : saisir la clé dans *Cortex AI Settings*, retirer `cortex_ai_gemini_base_url`, relancer `e2e-ai.mjs`, et regarder si le vrai modèle choisit bien `find_records` → `propose_update_field` (et si ses descriptions d'outils sont assez claires).
+5. Le tarif modifié ne change pas les devis déjà créés (comportement voulu : les prix d'un devis sont figés); à confirmer.
+
+## Phase 14 (PLAN, écrit avant le travail) : modèles de secteur, puis modification de structure (2026-10-10)
+
+> Ordre voulu par Kael : (1) **modèles de secteur**, (2) **modification de structure avec approbation du propriétaire**, (3) **ensuite seulement la phase 11** (parcours d'entrée). Réponses de Kael : secteur livré d'abord = **cinéma/vidéo**; contenu = **catégories, règles de prix, réglages par défaut** (pas d'exemples de catalogue); application = **page « Modèles de secteur » (Administration) + assistant**, onboarding intact; liste de champs modifiables : **ajouter plus** (fait : voir ci-dessous); tarif des devis : **« analyse-le toi-même »** (analyse plus bas).
+
+### Analyse : un tarif modifié change-t-il les devis déjà créés ? (lue dans le code)
+Non. Chaque ligne d'une location garde son `rate` à la création (`Cortex Rental Transaction Item.rate`), et `validate()` recalcule les montants à partir de ce `rate`, jamais du profil. Un **nouveau** devis, ou un devis **modifié ensuite par l'écran « modifier le devis »** (qui refait le prix avec le profil), prend le nouveau tarif. Les factures émises ne changent jamais. Conclusion : comportement sûr et voulu; la carte le dit maintenant dans « Ce qui va se passer ».
+
+### Fait avant la phase : liste de champs élargie (demande de Kael « ajouter plus »)
+`records.EDITABLE` couvre maintenant : profil d'équipement (+ catégorie, quantité du parc non sérialisé — refusée pour un équipement sérialisé), client (+ numéro de taxes), règle de prix (+ nom, jours du calendrier), **propriétaire en consignation** (nom, pourcentage, courriel, téléphone, adresse) et **réglages de facturation** (acompte, délai de paiement, retenue, frais de retard, dommages, chèques, instructions) avec bornes (acompte ≤ 100 %, etc.). **Jamais** : taxes (taux, numéros), comptes comptables, clés de paiement, textes juridiques, adresse publique du portail, auto-approbation, indicateurs de conformité d'une location (assurance, paiement, compte prêt). Un test échoue si on en ajoute un.
+
+### Constat qui motive les modèles
+Le produit est câblé « cinéma » : la catégorie d'un équipement est une liste figée de 7 choix de caméra dans la fiche (`Cortex Rental Item Profile.category`), répétée en dur dans `cortex_nav.js` et dans le filtre du rapport « Disponibilité du parc ». Un autre secteur (véhicules, événements…) ne peut donc pas être configuré.
+
+### 14.1 Modèles de secteur (déterministe, sans IA, aucun jeton)
+- **Données** dans `services/sector_templates.py` (en dur, relues par une personne). Premier modèle : `cinema_video`, qui **reprend exactement l'existant** (les 7 catégories actuelles, valeurs inchangées pour ne casser aucune donnée), la règle « 7 jours pour 3 » (règle canonique du produit), une règle « Fin de semaine : 3 jours pour 1 » **créée inactive** (suggestion que le propriétaire active), et des réglages par défaut du secteur (acompte 30 %, retenue 72 h, frais de retard, facturation des dommages). Jamais de taxes ni de comptes.
+- **Catégories configurables par site** : la liste devient une *Property Setter* sur `category` (survit à `bench migrate`), lue partout par `frappe.boot.cortex_categories` (nav, filtre du rapport) au lieu de la liste en dur. Appliquer un modèle **ajoute** des catégories, **n'en retire jamais** une utilisée.
+- **Appliquer = une action approuvée** (`apply_sector_template`, même moteur que les autres : aperçu → approbation → exécution → **annulation**). L'aperçu liste ce qui sera **ajouté** (catégories, règles) et **changé** (réglages : avant → après); ce qui est déjà identique n'apparaît pas. L'annulation retire les règles créées (si elles existent encore), remet les réglages **qui n'ont pas changé depuis** et les catégories ajoutées non utilisées; elle dit ce qu'elle a laissé en place.
+- **Qui** : propriétaire (`Cortex System Manager`) ou `System Manager` (l'ajout d'une catégorie modifie la structure).
+- **Où** : page Desk « Modèles de secteur » sous Administration (cartes de modèles → aperçu → Appliquer → Annuler) **et** outil de l'assistant `propose_apply_sector_template` (même carte). L'onboarding n'est pas touché.
+- Correctif au passage : `fixtures/demo_data.py` créait la règle avec des champs inexistants (`min_days`, `billable_multiplier`) : la règle n'avait donc aucun nombre de jours.
+
+### 14.2 Modification de structure (propriétaire seulement)
+- Actions approuvées, **propriétaire/System Manager seulement**, jamais exécutées sans carte : `add_category` (ajoute une catégorie d'équipement) et `add_custom_field` (ajoute un champ à la fiche équipement, au client ou à la location : texte, nombre, montant, case, date ou liste de choix; nom technique préfixé `cx_`).
+- **Annulation sans perte** : retirer une catégorie seulement si aucune fiche ne l'utilise; un champ ajouté est supprimé seulement s'il est encore vide partout, sinon il est **masqué** (les données restent).
+- Les champs ainsi ajoutés deviennent modifiables par `update_field` (liste blanche dynamique : seulement les champs `cx_…`).
+- **Pas** dans cette phase : modifier/supprimer un champ existant, sections, catégories de pages/espaces de travail (à décider avec Kael après usage).
+
+### Bilan 14.1 — modèles de secteur (FAIT, 2026-10-10)
+- **Fait et vérifié** (banc : 718 tests OK; vrai Desk : `e2e-ai.mjs` 46/46 avec S9; captures `docs/review/captures/phase14-modeles/`) : `services/sector_templates.py` (modèle `cinema_video`, `plan`, action `apply_sector_template` + annulation), catégories lues du site (`boot.cortex_categories` → barre latérale et filtre du rapport), page Desk **Modèles de secteur** (Administration, propriétaire seulement) via `api/v1/sector_templates.py` (`list_templates`, `propose`) + `chat.decide_action` / `chat.undo_action`, outil `propose_apply_sector_template`, `ActionSpec.undo_label` (« Annuler ce modèle »), message d'annulation détaillé (ce qui a été défait / laissé), correctif de la règle de la démo.
+- **Pourquoi ainsi** : une seule mécanique d'approbation/annulation pour la page et l'assistant (donc un seul chemin à auditer); les catégories sont une Property Setter (survit à `bench migrate`, Frappe valide la liste, pas seulement l'interface); l'annulation ne retire jamais une catégorie utilisée ni un réglage modifié depuis, et le dit.
+- **Limites connues** : seul le secteur cinéma existe (les valeurs de catégorie restent en anglais, traduites à l'affichage par Frappe; un autre secteur ajoutera ses propres valeurs); la liste des catégories est du site entier (un site par client); `bench migrate` requis pour la nouvelle page; après `bench build`, `bench clear-cache`.
+- **Reste** : autres secteurs (véhicules, événementiel, outils : demandés en option, non livrés — à écrire avec les chiffres réels d'un client); pas d'exemples de catalogue (non demandés).
+
+### Bilan 14.2 — modification de structure (FAIT, 2026-10-10)
+- **Fait et vérifié** (banc : 732 tests OK; vrai Desk : `e2e-ai.mjs` 58/58 avec S10; captures `docs/review/captures/phase14-structure/`) : `services/structure.py` — actions `add_category` et `add_custom_field` (propriétaire/System Manager seulement), outils `propose_add_category` et `propose_add_custom_field`. Champs permis : texte court/long, entier, nombre, montant, case, date, liste de choix, sur la fiche équipement, le client ou la location; nom technique `cx_…` (au plus 20 par fiche), ajouté **à la fin** de la fiche. Les champs `cx_…` visibles deviennent modifiables par `update_field` (`records.editable_map`) — le type Date est maintenant géré.
+- **Annulation sans perte** : catégorie retirée seulement si aucune fiche ne l'utilise (sinon refus qui le dit); champ **supprimé s'il est vide partout, sinon masqué** (données gardées, plus modifiable par l'assistant).
+- **Pourquoi ainsi** : un changement de structure s'applique à tout le site et peut perdre des données : donc propriétaire seulement, jamais de modification ni de suppression d'un champ existant, et une annulation qui préfère masquer à détruire.
+- Bogues trouvés par l'essai réel : le champ ajouté apparaissait **en tête** de la fiche (corrigé : `insert_after` = dernier champ); un `LIKE 'cx\_%'` fragile (remplacé par un préfixe revérifié en Python); import circulaire (les actions de `structure.py` s'enregistrent à l'import). Les essais de bout en bout dépassaient la limite réelle de 20 messages par minute : le script attend maintenant 65 s avant les scénarios de panne.
+- **Reste / non fait (décisions à prendre avec Kael)** : modifier ou retirer un champ existant; sections; catégories de pages et espaces de travail (barre latérale) — non commencés volontairement; un secteur autre que cinéma.
+
+### Vérification prévue
+Tests purs (plan, aperçu, sécurité), tests banc (appliquer, annuler, droits, catégories visibles par Frappe), essais E2E dans le vrai Desk (page + assistant) avec captures, 100 % de la suite du banc; bilan écrit ici à la fin de chaque sous-phase.
+
+## Phase 11 (en cours) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
+
+**Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**
+
+| # | Chantier | Décision de Kael | État |
+| --- | --- | --- | --- |
+| 11.0 | Barre latérale | **Administration replié par défaut** (il s'ouvrait à cause de `cortex-setup` et ne se refermait pas) | **Fait, vérifié dans le vrai Desk** (`data-auto` dans `cortex_nav.js`) |
+| 11.1 | Écran de chargement après la connexion | **Accueil personnalisé court** : « Bienvenue, {prénom} », nom et logo de la société, fondu doux, pas de liste d'étapes, une seule fois par connexion | À faire |
+| 11.2 | Assistant IA plein écran | **Ta page, presque intacte** : retirer le fil d'Ariane et la barre du haut (sauf Mon compte et Paramètres), barre latérale réduite aux icônes (avec son bouton), **polices plus légères** | À faire |
+| 11.3 | Onboarding | **Garder l'actuel tel quel**; ajouter **animations seulement** (transition entre étapes, coche, barre de progression, « Enregistré »). Pas d'IA | À faire |
+| 11.4 | Visite guidée | **Une visite globale pas à pas** (halo + bulles), **contenu** : où est chaque page et à quoi elle sert + comment l'application fonctionne (demande → devis → réservation → contrat → sortie → retour → facture → paiement); **elle ouvre chaque page**; **automatique une fois** à la première arrivée sur l'Assistant IA après l'onboarding, **relançable** depuis Aide; passable à tout moment. Pas d'IA | À faire |
+
+Pourquoi : l'IA qui remplit tout coûte des jetons et retire le contrôle; un onboarding guidé par des textes, des exemples et des animations est prévisible, rapide et gratuit à exécuter. L'IA commence sur l'Assistant IA, sur demande.
+
+### Phase 11 — plan d'exécution détaillé (écrit avant le travail, 2026-10-10; ordre voulu par Kael : après les phases 13 et 14)
+
+Constats dans le vrai Desk : la barre du haut contient le bouton de menu, le logo, la recherche, la pastille « personnes en ligne », les notifications, **Aide**, et le **menu utilisateur** (Mon profil, **Mes paramètres**, Session par défaut, Recharger, Applications, Basculer le thème, Déconnexion). Le prénom est dans `frappe.boot.user.first_name`; le nom de la société est dans `frappe.boot.cortex_home.company` (le logo n'est pas réglé sur ce site : `company_logo` vide).
+
+| Ordre | Chantier | Comment | Vérification |
+| --- | --- | --- | --- |
+| 11.2 | **Assistant IA plein écran** | Classe `cx-ai-fullscreen` posée sur `body` à chaque changement de route quand la route est `cortex-home` (même conteneur pour l'accueil et la conversation). CSS : fil d'Ariane masqué; barre du haut réduite à son **menu utilisateur** (qui contient « Mon profil » = Mon compte et « Mes paramètres ») : recherche, pastille, notifications et Aide masqués; barre latérale **réduite aux icônes** par défaut avec son bouton de bascule conservé; polices plus légères (graisses 400/500 au lieu de 600/700) **sur cette page seulement**. Page de Kael **sinon intacte** : aucune refonte, aucune mise en page changée. | Captures avant/après (clair et sombre), retour à une autre page = barre complète, aucune erreur JS |
+| 11.1 | **Accueil personnalisé après connexion** | La page de connexion pose `sessionStorage.cortex_welcome = 1` à l'envoi du formulaire; le Desk, s'il voit ce drapeau, affiche un voile « Bienvenue, {prénom} » + nom (et logo si réglé) de la société, fondu doux (≈ 1,6 s, sans liste d'étapes, ignorable d'un clic ou d'une touche), puis efface le drapeau : **une seule fois par connexion**. Aucun appel serveur ni IA. Désactivé si le système demande moins de mouvement (fondu très court, sans mouvement). | Captures, rechargement sans reconnexion = pas de voile |
+| 11.3 | **Onboarding animé (sans IA)** | Contenu et étapes **inchangés**. Ajouts CSS/JS seulement : transition entre étapes (glissement + fondu), coche animée à l'étape terminée, barre de progression qui se remplit, mention « Enregistré » qui apparaît après chaque enregistrement. Respecte `prefers-reduced-motion`. | Captures des étapes, parcours complet sur le vrai site |
+| 11.4 | **Visite guidée globale** | Un module `cortex_tour.js` : étapes décrites **en données** (page, élément à entourer, texte français court). Halo (zone éclaircie autour de l'élément) + bulle (titre, texte, Précédent / Suivant / Passer, points de progression). **Ouvre chaque page** (`frappe.set_route`) puis entoure l'élément réel; si un élément est absent (rôle/espace non offert), l'étape est sautée, jamais inventée. Contenu : où est chaque page et à quoi elle sert + le cycle demande → devis → réservation → contrat → sortie → retour → facture → paiement. **Automatique une fois** à la première arrivée sur l'Assistant IA après l'onboarding (état gardé **côté serveur**, par personne, dans les préférences de l'utilisateur), **relançable** depuis Aide (« Visite guidée de Cortex »), passable à tout moment (Échap). Aucune IA, aucun jeton. | Parcours complet dans le vrai Desk avec captures de chaque étape; test que le drapeau serveur empêche la relance automatique |
+
+Décisions de conception à relire par Kael : (a) la barre du haut de l'Assistant ne garde que le menu utilisateur (je n'ai pas de « Paramètres » séparé : ce sont « Mes paramètres » dans ce menu); (b) le lanceur flottant « Copilote » reste affiché (non demandé : à confirmer, il fait doublon avec la page); (c) le drapeau de la visite est enregistré côté serveur pour survivre à un changement d'appareil.
+
 ## Niveau de vérité de l’implémentation
 
 État vérifié le 2026-09-30 sur le bench de développement (Frappe/ERPNext 15.121) :

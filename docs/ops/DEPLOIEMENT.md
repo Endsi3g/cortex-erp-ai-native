@@ -64,6 +64,23 @@ Copier `infra/production/site_config.production.json.example` comme référence 
 | Politique de mot de passe, verrouillage après échecs, 2FA | *System Settings* | `predeploy` les signale |
 | Rôles des premiers utilisateurs | Inscription entreprise ou *User* | Le propriétaire finit l'assistant de configuration |
 
+### Mesure d'usage (PostHog)
+
+Éteinte par défaut. Pour l'allumer, créer un projet PostHog puis, sur le serveur :
+
+```bash
+bench --site app.exemple.ca set-config posthog_key phc_…          # clé de projet (publique par conception)
+bench --site app.exemple.ca set-config posthog_host https://us.i.posthog.com   # ou https://eu.i.posthog.com
+bench --site app.exemple.ca clear-cache
+```
+
+- Capturé : clics, pages vues, erreurs JavaScript, performances, enregistrements de session. Rien d'envoyé sans clé valide.
+- Personne : empreinte HMAC calculée avec `encryption_key` du site (jamais le courriel ni le nom). Groupe : la société.
+- Enregistrements de session : champs de saisie et texte des données d'affaires (listes, tableaux, formulaires, messages de l'assistant) masqués.
+  `posthog_capture_pii 1` lève ce masque : à décider avec le client pilote, par écrit (Loi 25), pas par défaut.
+- `posthog_disabled 1` éteint la mesure sans retirer la clé. « Ne pas me suivre » du navigateur est respecté.
+- À faire avant le pilote : informer les utilisatrices et utilisateurs du client (avis de confidentialité) ; il n'y a pas encore de réglage individuel dans Mon compte.
+
 ## 4. Vérifier avant d'ouvrir
 
 ```bash

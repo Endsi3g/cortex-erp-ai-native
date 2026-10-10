@@ -314,7 +314,7 @@ function open() {
 }
 .q-label {
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #55544f;
 }
 .q-input {
@@ -362,7 +362,7 @@ function open() {
 }
 .q-check {
 	color: #047857;
-	font-weight: 700;
+	font-weight: var(--cx-weight-heavy, 700);
 }
 .q-empty {
 	padding: 8px 2px;
@@ -388,7 +388,7 @@ function open() {
 	background: none;
 	color: #066336;
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	cursor: pointer;
 }
 .q-who {
@@ -420,7 +420,7 @@ function open() {
 .q-cat {
 	margin: 0 0 6px;
 	font-size: 11.5px;
-	font-weight: 700;
+	font-weight: var(--cx-weight-heavy, 700);
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	color: #6b6a66;
@@ -444,7 +444,7 @@ function open() {
 }
 .q-item-main strong {
 	font-size: 13.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 }
 .q-meta {
 	font-size: 12px;
@@ -456,7 +456,7 @@ function open() {
 	background: #e7f6ee;
 	color: #066336;
 	font-size: 11.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	white-space: nowrap;
 }
 .q-badge.partial {

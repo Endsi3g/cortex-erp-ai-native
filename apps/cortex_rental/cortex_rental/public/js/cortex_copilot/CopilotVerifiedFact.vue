@@ -35,7 +35,7 @@ function checked(value) {
 .cp-fact-title {
 	margin: 0 0 6px;
 	font-size: 14px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 .cp-fact-list {

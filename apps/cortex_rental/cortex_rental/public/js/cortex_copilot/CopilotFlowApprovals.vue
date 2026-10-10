@@ -208,7 +208,7 @@ function openAll() {
 	border-color: #047857;
 	background: #f1faf5;
 	color: #066336;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 }
 .p-list {
 	display: grid;
@@ -239,7 +239,7 @@ function openAll() {
 }
 .p-main strong {
 	font-size: 13.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 }
 .p-meta {
 	font-size: 12px;
@@ -251,7 +251,7 @@ function openAll() {
 	background: #ecebe6;
 	color: #55544f;
 	font-size: 11.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	white-space: nowrap;
 }
 .p-badge.pending {
@@ -272,7 +272,7 @@ function openAll() {
 	background: none;
 	color: #066336;
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	cursor: pointer;
 }
 .p-detail {
@@ -319,7 +319,7 @@ function openAll() {
 	display: grid;
 	gap: 2px;
 	font-size: 13.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 }
 .p-hint {
 	font-size: 12.5px;
@@ -332,7 +332,7 @@ function openAll() {
 }
 .p-label {
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #55544f;
 }
 .p-input {

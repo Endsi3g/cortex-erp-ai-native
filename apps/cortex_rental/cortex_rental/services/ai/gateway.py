@@ -26,8 +26,10 @@ SYSTEM_PROMPT = """Tu es l'assistant Cortex d'une société de location de maté
 Tu écris en français du Québec, avec calme, clarté et concision, sans jargon ni exagération. Tu vouvoies la personne.
 Règles :
 - Pour toute quantité, tout prix, toute disponibilité ou tout statut, tu utilises les outils. Tu ne devines jamais : si l'outil ne donne pas l'information, dis-le.
-- Tu ne peux ni confirmer, ni approuver, ni modifier quoi que ce soit. Tu proposes; la personne décide. Un contrat exige l'approbation d'un humain.
+- Tu ne peux ni confirmer, ni approuver, ni modifier quoi que ce soit toi-même. Tu proposes avec les outils « propose_… » (jamais de formulation « c'est fait » avant l'approbation de la personne); elle voit un aperçu et décide. Chaque proposition porte une raison (« reason ») claire et honnête. Un contrat exige l'approbation d'un humain.
+- Pour retrouver un enregistrement (client, équipement, location, facture…), utilise find_records puis get_record. Pour modifier une seule valeur, utilise propose_update_field avec l'identifiant exact : la carte montre l'avant et l'après, et la personne peut annuler après coup. Tu ne modifies ni statut ni montant calculé. La structure (nouvelle catégorie, nouveau champ) passe seulement par propose_add_category et propose_add_custom_field, réservés au propriétaire.
 - Si une information manque (client, dates, équipement), pose une seule question courte.
+- Les cartes (aperçus, graphiques, vérifications) s'affichent SOUS ton message : écris « ci-dessous », jamais « ci-dessus ». Ne répète pas dans ton texte les chiffres déjà présents dans une carte.
 - Les montants sont en dollars canadiens, taxes TPS/TVQ précisées quand elles sont données par l'outil.
 - N'invente jamais de numéro de location, de facture ou de client.
 Société : {company}. Date du jour : {today}. Écran actuel : {page}.
@@ -86,9 +88,25 @@ TOOL_LABELS = {
     "list_rentals": "Consultation des locations",
     "list_pending_approvals": "Consultation des approbations",
     "finance_summary": "Résumé financier",
+    "finance_trend": "Évolution du facturé",
+    "list_invoices": "Consultation des factures",
+    "rentals_by_state": "Locations par état",
     "customer_summary": "Résumé du client",
     "late_returns": "Recherche des retours en retard",
+    "find_records": "Recherche d'enregistrements",
+    "get_record": "Lecture d'un enregistrement",
     "create_quote_draft": "Calcul du devis proposé",
+    "propose_create_customer": "Préparation de la création du client",
+    "propose_create_quote": "Préparation du devis",
+    "propose_release_hold": "Préparation de la libération de la retenue",
+    "propose_renew_hold": "Préparation du renouvellement de la retenue",
+    "propose_request_reservation": "Préparation de la réservation",
+    "propose_record_payment": "Préparation du paiement",
+    "propose_decide_approval": "Préparation de la décision",
+    "propose_update_field": "Préparation de la modification",
+    "propose_apply_sector_template": "Préparation du modèle de secteur",
+    "propose_add_category": "Préparation de la catégorie",
+    "propose_add_custom_field": "Préparation du champ",
 }
 
 
@@ -171,9 +189,11 @@ def _fact(name: str, output: Dict[str, Any], now: str) -> Optional[Dict[str, Any
     if output.get("error"):
         return None
     if name == "check_inventory_availability":
+        from cortex_rental.services.ai.stats import fr_number
+
         items = [
-            f"{r.get('item_id')} : {r.get('available_quantity')} libre(s) sur {r.get('total_fleet_quantity')} "
-            f"({'disponible' if r.get('is_available') else 'insuffisant'})"
+            f"{r.get('item_id')} : {fr_number(r.get('available_quantity'))} libre(s) sur "
+            f"{fr_number(r.get('total_fleet_quantity'))} ({'disponible' if r.get('is_available') else 'insuffisant'})"
             for r in output.get("results", [])
         ]
         return {
@@ -183,7 +203,8 @@ def _fact(name: str, output: Dict[str, Any], now: str) -> Optional[Dict[str, Any
             "source_ids": [],
             "checked_at": now,
         }
-    if name == "finance_summary":
+    if name == "finance_summary" and not output.get("stat_block"):
+        # Repli sans carte de statistiques (l'outil la fournit normalement) : le même contenu, en liste vérifiée.
         items = [
             f"Facturé : {output['facture']:.2f} $ · Encaissé : {output['encaisse']:.2f} $",
             f"Solde à recevoir : {output['solde_a_recevoir']:.2f} $ ({output['factures_ouvertes']} facture(s))",
@@ -286,6 +307,8 @@ class AIGateway:
         now = str(frappe.utils.now_datetime()) if frappe else ""
         result_blocks: List[Dict[str, Any]] = []
         used_tools: List[str] = []
+        consulted: List[str] = []
+        tools.CONSULTED.set(consulted)  # lu par les outils « propose_* » pour « Pourquoi cette proposition »
         total_in = total_out = 0
         text = ""
         for step in range(max_steps + 1):
@@ -313,12 +336,18 @@ class AIGateway:
                     else:
                         output = tools.execute(call.name, call.args)
                         used_tools.append(call.name)
+                        if call.name not in tools.PROPOSING_TOOLS:
+                            consulted.append(TOOL_LABELS.get(call.name, call.name))
                         self._audit(company, call.name)
                         fact, proposal = _fact(call.name, output, now), _proposal(output)
                         if fact:
                             result_blocks.append(fact)
                         if proposal:
                             result_blocks.append(proposal)
+                        if output.get("action_block"):
+                            result_blocks.append(output["action_block"])
+                        if output.get("stat_block"):
+                            result_blocks.append(output["stat_block"])
                     outputs.append({"name": call.name, "id": call.id, "result": output})
                 tool_message = self.provider().tool_results_message(outputs)
                 # Certains fournisseurs (OpenAI) veulent un message par résultat d'outil.

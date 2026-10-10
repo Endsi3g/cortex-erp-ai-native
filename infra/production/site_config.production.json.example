@@ -13,6 +13,8 @@
   "mail_login": "…",
   "mail_password": "…",
   "cortex_chat_provider": "gateway",
+  "posthog_key": "phc_… (clé de projet PostHog; vide = aucune mesure)",
+  "posthog_host": "https://us.i.posthog.com",
   "session_expiry": "168:00:00",
   "allow_cors": "",
   "_commentaire": "Retirer ce champ. Ne jamais définir cortex_rate_limit_factor en production (essais de charge seulement)."

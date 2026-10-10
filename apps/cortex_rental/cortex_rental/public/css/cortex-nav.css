@@ -1087,3 +1087,26 @@ body.cx-nav-on .page-container .page-head .container {
 		box-shadow: none;
 	}
 }
+
+/* ---- Assistant IA plein écran (accueil et conversation) ----
+   Page de Kael presque intacte : on retire le fil d'Ariane et, dans la barre du haut, tout sauf le menu utilisateur
+   (Mon profil, Mes paramètres…); la barre latérale est déjà réduite aux icônes avec son bouton de bascule; les graisses
+   passent par deux variables (600 → 500, 700 → 600) que seule cette page redéfinit. */
+body.cx-ai-fullscreen {
+	--cx-weight-strong: 500;
+	--cx-weight-heavy: 600;
+}
+body.cx-ai-fullscreen #navbar-breadcrumbs,
+body.cx-ai-fullscreen header.navbar .navbar-collapse form.form-inline,
+body.cx-ai-fullscreen header.navbar .cx-presence-li,
+body.cx-ai-fullscreen header.navbar .dropdown-notifications,
+body.cx-ai-fullscreen header.navbar .dropdown-message,
+body.cx-ai-fullscreen header.navbar .vertical-bar,
+body.cx-ai-fullscreen header.navbar .dropdown-help {
+	display: none !important;
+}
+body.cx-ai-fullscreen header.navbar {
+	background: transparent;
+	border-bottom-color: transparent;
+	box-shadow: none;
+}

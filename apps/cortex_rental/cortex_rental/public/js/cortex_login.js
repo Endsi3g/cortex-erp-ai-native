@@ -328,7 +328,18 @@
 		});
 	}
 
+	// Accueil personnalisé (phase 11.1) : un drapeau daté dit au Desk qu'une connexion vient d'avoir lieu (voir cortex_welcome.js).
+	// Posé à l'envoi : s'il y a une erreur de mot de passe, le drapeau expire seul (90 s) et ne montre rien de trop tard.
+	function markWelcome() {
+		try {
+			window.sessionStorage.setItem("cortex_welcome", String(Date.now()));
+		} catch (e) {
+			/* stockage bloqué : pas de voile d'accueil, rien d'autre ne change */
+		}
+	}
+
 	frappe.ready(function () {
+		$("form.form-login").on("submit", markWelcome);
 		bindForgot();
 		bindSignup();
 		// Password visibility toggle: keep Frappe's behaviour, expose state to assistive tech.

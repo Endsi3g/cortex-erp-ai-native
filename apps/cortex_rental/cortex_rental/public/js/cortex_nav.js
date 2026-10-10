@@ -14,10 +14,11 @@
 	const hasRole = (...roles) => () => roles.some((r) => (frappe.user_roles || []).includes(r));
 	const workspace = (name) => () => ((frappe.boot && frappe.boot.allowed_workspaces) || []).some((w) => w.name === name);
 
-	// Catégories de la grille de disponibilité (valeurs stockées ; libellés français via la traduction). Une seule
-	// liste pour la barre et pour la page : quand la société pourra configurer ses catégories, on la lira du serveur.
+	// Catégories d'équipement (valeurs stockées ; libellés français via la traduction). Une seule liste pour la barre et
+	// les pages : celle du site, lue du serveur (`boot.cortex_categories`, modifiable par un modèle de secteur); la liste
+	// d'origine ne sert que si le serveur ne la donne pas.
 	window.cortex = window.cortex || {};
-	cortex.CATEGORIES = cortex.CATEGORIES || ["Lighting", "Power & Batteries", "Camera Bodies", "Cinema Lenses", "Grip & Rigging", "Monitors & Wireless Video", "Audio"];
+	cortex.CATEGORIES = cortex.CATEGORIES || (frappe.boot && frappe.boot.cortex_categories && frappe.boot.cortex_categories.length ? frappe.boot.cortex_categories : ["Lighting", "Power & Batteries", "Camera Bodies", "Cinema Lenses", "Grip & Rigging", "Monitors & Wireless Video", "Audio"]);
 
 	// Icônes : celles des espaces d'origine (assets, calendar, stock, list-alt, money-coins-1, message…).
 	const GROUPS = [
@@ -66,6 +67,7 @@
 				{ id: "acct-notifications", label: "Notifications", icon: "notification", href: "/app/cortex-account/notifications", owns: ["cortex-account/notifications"], show: ALL },
 				{ id: "acct-societe", label: "Société et rôles", icon: "users", href: "/app/cortex-account/societe", owns: ["cortex-account/societe"], show: ALL },
 				{ id: "setup", label: "Configuration", icon: "list-alt", href: "/app/cortex-setup", owns: ["cortex-setup"], show: () => hasRole("Cortex System Manager", "System Manager")() && !!(frappe.boot.cortex_home && frappe.boot.cortex_home.setup_pending) },
+				{ id: "templates", label: "Modèles de secteur", icon: "list-alt", href: "/app/cortex-sector-templates", owns: ["cortex-sector-templates"], show: hasRole("Cortex System Manager", "System Manager") },
 				{ id: "admin", label: "Équipe et règles", icon: "setting-gear", href: "/app/cortex-admin", owns: ["cortex-admin", "rental-pricing-rule", "user", "audit-event", "cortex-ai-settings"], show: workspace("Cortex Admin") },
 				{ id: "website", label: "Site Web", icon: "website", href: "/app/website", owns: ["website"], show: hasRole("System Manager", "Website Manager") },
 				{ id: "settings", label: "Paramètres", icon: "setting", href: "/app/erpnext-settings", owns: ["erpnext-settings", "integrations", "build"], show: hasRole("System Manager") },
@@ -132,6 +134,7 @@
 			this.groups = JSON.parse(store(GROUP_STORE) || "{}");
 			this.build();
 			this.autoCollapse();
+			this.markAssistant();
 			this.buildPresence();
 			this.bind();
 			this.refreshActive();
@@ -180,6 +183,8 @@
 				const stored = this.groups[group.title];
 				const open = group.pinned || (stored === undefined ? !!(here && here.group === group) : stored !== false);
 				const section = el("section", { class: "cx-group" + (open ? "" : " closed") + (group.bottom ? " cx-group-bottom" : "") + (group.pinned ? " pinned" : "") });
+				// Ouvert seulement parce que la page courante lui appartient (aucun choix de la personne) : il se refermera au départ.
+				if (!group.pinned && open && stored === undefined) section.dataset.auto = "1";
 				const title = group.pinned
 					? el("div", { class: "cx-group-title static" }, `<span class="cx-label">${__(group.title)}</span>`)
 					: el("button", { type: "button", class: "cx-group-title", "aria-expanded": String(open) }, `<span class="cx-label">${__(group.title)}</span><span class="cx-chev">${CHEVRON}</span>`);
@@ -187,6 +192,7 @@
 				const inner = el("div", { class: "cx-group-inner" });
 				if (!group.pinned) title.addEventListener("click", () => {
 					const closed = section.classList.toggle("closed");
+					delete section.dataset.auto; // la personne a choisi : on ne referme plus ce groupe à sa place
 					title.setAttribute("aria-expanded", String(!closed));
 					this.groups[group.title] = !closed;
 					store(GROUP_STORE, JSON.stringify(this.groups));
@@ -366,6 +372,7 @@
 				cortex.currentRoute = window.location.pathname;
 				this.refreshActive();
 				this.autoCollapse();
+				this.markAssistant();
 				this.closeDrawer();
 			});
 			SHORT.addEventListener("change", () => this.autoCollapse());
@@ -429,8 +436,27 @@
 			const current = this.nodes[active];
 			if (current && current.wrap) {
 				const section = current.wrap.closest(".cx-group");
-				if (section && section.classList.contains("closed")) section.classList.remove("closed");
+				if (section && section.classList.contains("closed")) {
+					section.classList.remove("closed");
+					const title = section.querySelector(".cx-group-title");
+					// Ouvert par la page, pas par un choix : il se refermera quand on la quittera.
+					if (title && this.groups[(title.textContent || "").trim()] === undefined) section.dataset.auto = "1";
+				}
 			}
+			// Un groupe ouvert seulement à cause de la page précédente se referme (ex. Administration après la configuration).
+			document.querySelectorAll("#cx-nav .cx-group[data-auto='1']").forEach((section) => {
+				if (current && current.wrap && section.contains(current.wrap)) return;
+				section.classList.add("closed");
+				delete section.dataset.auto;
+				const title = section.querySelector(".cx-group-title");
+				if (title) title.setAttribute("aria-expanded", "false");
+			});
+		}
+
+		// L'Assistant IA (accueil et conversation) est une page plein écran : la classe sert au CSS (fil d'Ariane et barre du
+		// haut réduits à Mon compte et Paramètres, polices plus légères). Elle disparaît dès qu'on quitte la page.
+		markAssistant() {
+			document.body.classList.toggle("cx-ai-fullscreen", (this.parts()[0] || "") === "cortex-home");
 		}
 
 		// Sans préférence enregistrée par la personne : barre repliée sur l'Assistant IA (page de conversation) et sur

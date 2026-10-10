@@ -151,7 +151,7 @@ async function decide(decision) {
 
 .cx-title-card {
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 

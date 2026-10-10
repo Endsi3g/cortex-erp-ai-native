@@ -5,7 +5,10 @@ Les noms suivent la liste d'autorisations par agent (`services/tool_policy.py`) 
 jamais exposé au modèle.
 """
 
+from contextvars import ContextVar
 from typing import Any, Callable, Dict, List
+
+from cortex_rental.services.ai import stats
 
 try:
     import frappe
@@ -167,7 +170,7 @@ def finance_summary():
         filters={"company": company, "paid_on": [">=", first]},
         fields=["sum(signed_amount) as total"],
     )[0]
-    return {
+    result = {
         "mois": str(first)[:7],
         "facture": flt(invoiced.total, 2),
         "tps": flt(invoiced.tps, 2),
@@ -176,6 +179,104 @@ def finance_summary():
         "solde_a_recevoir": flt(open_invoices.balance, 2),
         "factures_ouvertes": int(open_invoices.count or 0),
         "factures_en_retard": int(overdue.count or 0),
+    }
+    result["stat_block"] = stats.card(
+        f"Finance — {result['mois']}",
+        "Ouvrir Finance",
+        "/app/cortex-finance",
+        subtitle="Mois en cours (partiel)",
+        kpis=[
+            stats.kpi_block("Facturé", stats.money(result["facture"])),
+            stats.kpi_block("Encaissé", stats.money(result["encaisse"]), tone="good"),
+            stats.kpi_block(
+                "Solde à recevoir", stats.money(result["solde_a_recevoir"]), f"{result['factures_ouvertes']} facture(s)"
+            ),
+            stats.kpi_block(
+                "Factures en retard",
+                str(result["factures_en_retard"]),
+                tone="bad" if result["factures_en_retard"] else "good",
+            ),
+        ],
+        checked_at=str(frappe.utils.now_datetime()),
+    )
+    return result
+
+
+@tool(
+    "finance_trend",
+    "Évolution mensuelle du facturé et de l'encaissé sur les derniers mois (3 à 12). Affiche un graphique à la personne.",
+    {"months": {"type": "integer", "description": "Nombre de mois, de 3 à 12 (6 par défaut)"}},
+)
+def finance_trend(months: int = 6):
+    if not frappe.has_permission("Cortex Rental Invoice", "read"):
+        return {"error": "Vous n'avez pas accès aux données financières."}
+    count = max(3, min(_as_int(months, 6), 12))
+    now = frappe.utils.now_datetime()
+    today_tuple = (now.year, now.month, now.day)
+    span = stats.last_months(today_tuple, count)[0]
+    start = f"{span[0]:04d}-{span[1]:02d}-01"
+    company = _company()
+    invoices = frappe.get_list(
+        "Cortex Rental Invoice",
+        filters={"company": company, "status": ["!=", "Cancelled"], "issue_date": [">=", start]},
+        fields=["issue_date", "total"],
+        limit_page_length=0,
+    )
+    payments = frappe.get_list(
+        "Cortex Rental Payment",
+        filters={"company": company, "paid_on": [">=", start]},
+        fields=["paid_on", "signed_amount"],
+        limit_page_length=0,
+    )
+    labels, invoiced = stats.monthly_totals(invoices, today_tuple, count, "total", "issue_date")
+    _, received = stats.monthly_totals(payments, today_tuple, count, "signed_amount", "paid_on")
+    return {
+        "mois": labels,
+        "facture": invoiced,
+        "encaisse": received,
+        "stat_block": stats.card(
+            "Facturé par mois",
+            "Ouvrir Finance",
+            "/app/cortex-finance",
+            subtitle=f"{count} derniers mois · le mois en cours est partiel",
+            kpis=[
+                stats.kpi_block("Total facturé", stats.money(sum(invoiced))),
+                stats.kpi_block("Total encaissé", stats.money(sum(received)), tone="good"),
+            ],
+            series=stats.series_block("bar", labels, invoiced, "$"),
+            checked_at=str(now),
+        ),
+    }
+
+
+@tool(
+    "rentals_by_state",
+    "Nombre de locations de la société par état (Devis, Réservation, Contrat, Sortie, Retournée…). Affiche un graphique à la personne.",
+    {},
+)
+def rentals_by_state():
+    if not frappe.has_permission("Cortex Rental Transaction", "read"):
+        return {"error": "Vous n'avez pas accès aux locations."}
+    rows = frappe.get_list(
+        "Cortex Rental Transaction",
+        filters={"company": _company()},
+        fields=["rental_state", "count(name) as n"],
+        group_by="rental_state",
+        limit_page_length=0,
+    )
+    counts = {r.rental_state: int(r.n or 0) for r in rows}
+    order = [s for s in stats.STATE_ORDER if s in counts] + [s for s in counts if s not in stats.STATE_ORDER]
+    labels = [stats.STATE_LABELS.get(s, s) for s in order]
+    return {
+        "par_etat": {stats.STATE_LABELS.get(s, s): counts[s] for s in order},
+        "stat_block": stats.card(
+            "Locations par état",
+            "Ouvrir les locations",
+            "/app/cortex-rental-transaction",
+            subtitle="Toutes les locations de la société",
+            series=stats.series_block("donut", labels, [counts[s] for s in order], "locations"),
+            checked_at=str(frappe.utils.now_datetime()),
+        ),
     }
 
 
@@ -189,6 +290,33 @@ def customer_summary(customer: str):
     from cortex_rental.services import customer_360
 
     return customer_360.summary(customer, _company())
+
+
+@tool(
+    "list_invoices",
+    "Liste les factures de la société, par état (Issued, Partially Paid, Paid, Cancelled) et/ou par client. Sert à retrouver l'identifiant d'une facture avant de proposer un paiement.",
+    {
+        "status": {"type": "string", "description": "Issued, Partially Paid, Paid ou Cancelled (facultatif)"},
+        "customer": {"type": "string", "description": "Identifiant exact du client (facultatif)"},
+        "limit": {"type": "integer"},
+    },
+)
+def list_invoices(status: str = "", customer: str = "", limit: int = 10):
+    if not frappe.has_permission("Cortex Rental Invoice", "read"):
+        return {"error": "Vous n'avez pas accès aux factures."}
+    filters = {"company": _company()}
+    if status in ("Issued", "Partially Paid", "Paid", "Cancelled"):
+        filters["status"] = status
+    if customer:
+        filters["customer"] = customer
+    rows = frappe.get_list(
+        "Cortex Rental Invoice",
+        filters=filters,
+        fields=["name", "customer", "status", "total", "balance", "due_date", "rental_transaction"],
+        order_by="modified desc",
+        limit_page_length=max(1, min(_as_int(limit, 10), 25)),
+    )
+    return {"invoices": [{**dict(r), "due_date": str(r.due_date or "")} for r in rows]}
 
 
 @tool(
@@ -269,9 +397,230 @@ def create_quote_draft(customer: str, starts_at: str, ends_at: str, items: List[
     }
 
 
+@tool(
+    "find_records",
+    "Cherche des enregistrements de la société dans un type permis (Customer, Cortex Rental Item Profile, Cortex Rental Transaction, Cortex Rental Invoice, Cortex Rental Payment, Approval Request, Cortex Check-In, Rental Pricing Rule, Consignment Owner, Cortex Finance Settings) par mot ou identifiant. Renvoie des lignes avec un lien. À utiliser pour retrouver l'identifiant exact avant d'agir.",
+    {
+        "doctype": {"type": "string", "description": "Type exact, p. ex. Cortex Rental Item Profile"},
+        "query": {"type": "string", "description": "Mot ou identifiant à chercher (vide = les plus récents)"},
+        "limit": {"type": "integer"},
+    },
+    ["doctype"],
+)
+def find_records(doctype: str, query: str = "", limit: int = 10):
+    from cortex_rental.services.ai import actions, records
+
+    try:
+        return records.find(doctype, query, _company(), _as_int(limit, 10))
+    except actions.ActionError as exc:
+        return {"error": str(exc)}
+
+
+@tool(
+    "get_record",
+    "Lit le détail d'un enregistrement de la société (champs simples et lignes de tableau) dans un type permis, par son identifiant exact (voir find_records). Lecture seule.",
+    {
+        "doctype": {"type": "string", "description": "Type exact, p. ex. Cortex Rental Transaction"},
+        "name": {"type": "string", "description": "Identifiant exact de l'enregistrement"},
+    },
+    ["doctype", "name"],
+)
+def get_record(doctype: str, name: str):
+    from cortex_rental.services.ai import actions, records
+
+    try:
+        return records.get(doctype, name, _company())
+    except actions.ActionError as exc:
+        return {"error": str(exc)}
+
+
+# Libellés des outils de lecture déjà appelés dans ce tour : l'assistant les montre dans « Pourquoi cette proposition ».
+# Posé par la passerelle (gateway.py) à chaque tour; vide hors passerelle.
+CONSULTED: ContextVar = ContextVar("cortex_ai_consulted", default=None)
+
+REASON = {
+    "type": "string",
+    "description": "Pourquoi tu proposes cette action, en une ou deux phrases claires pour la personne (ce que tu as constaté, ce que tu cherches à faire).",
+}
+
+
+def _propose(action_type: str, args: Dict[str, Any], reason: str = "") -> Dict[str, Any]:
+    from cortex_rental.services.ai import actions
+
+    if not actions_enabled():
+        return {"error": "Les actions de l'assistant ne sont pas activées sur ce site."}
+    try:
+        block = actions.propose(
+            action_type, args, _company(), frappe.session.user, reason=reason, checks=tuple(CONSULTED.get() or ())
+        )
+    except actions.ActionError as exc:
+        return {"error": str(exc)}
+    return {
+        "action_block": block,
+        "note": "Proposition affichée à la personne. Rien n'est fait tant qu'elle n'approuve pas : ne dis jamais que c'est fait.",
+    }
+
+
+def _proposing_tool(name: str, action_type: str, description: str, properties: Dict[str, Any], required: List[str]):
+    """Déclare un outil « propose_* » : il passe par `actions.propose` et n'écrit jamais lui-même."""
+
+    def run(reason: str = "", **args):
+        return _propose(action_type, args, reason)
+
+    run.__name__ = name
+    props = {**properties, "reason": REASON}
+    tool(
+        name,
+        description + " La personne voit un aperçu et approuve ou refuse; rien n'est fait avant son approbation.",
+        props,
+        required,
+    )(run)
+    return run
+
+
+propose_create_customer = _proposing_tool(
+    "propose_create_customer",
+    "create_customer",
+    "PROPOSE de créer un client.",
+    {
+        "customer_name": {
+            "type": "string",
+            "description": "Nom du client (utiliser search_customers d'abord pour éviter un doublon)",
+        }
+    },
+    ["customer_name"],
+)
+propose_create_quote = _proposing_tool(
+    "propose_create_quote",
+    "create_quote",
+    "PROPOSE de créer un devis (prix calculés par le serveur). Vérifie d'abord le client et la disponibilité.",
+    {
+        "customer": {"type": "string", "description": "Identifiant exact du client (utiliser search_customers)"},
+        "starts_at": DATETIME,
+        "ends_at": DATETIME,
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"item_code": STR, "quantity": {"type": "number"}},
+                "required": ["item_code", "quantity"],
+            },
+        },
+    },
+    ["customer", "starts_at", "ends_at", "items"],
+)
+RENTAL = {"rental": {"type": "string", "description": "Identifiant exact de la location (utiliser list_rentals)"}}
+propose_release_hold = _proposing_tool(
+    "propose_release_hold", "release_hold", "PROPOSE de libérer la retenue de matériel d'un devis.", RENTAL, ["rental"]
+)
+propose_renew_hold = _proposing_tool(
+    "propose_renew_hold", "renew_hold", "PROPOSE de renouveler la retenue de matériel d'un devis.", RENTAL, ["rental"]
+)
+propose_request_reservation = _proposing_tool(
+    "propose_request_reservation",
+    "request_reservation",
+    "PROPOSE de transformer un devis en réservation (la disponibilité est vérifiée).",
+    RENTAL,
+    ["rental"],
+)
+propose_record_payment = _proposing_tool(
+    "propose_record_payment",
+    "record_payment",
+    "PROPOSE d'enregistrer un paiement DÉJÀ REÇU sur une facture (ne prélève rien).",
+    {
+        "invoice": {"type": "string", "description": "Identifiant exact de la facture"},
+        "amount": {"type": "number", "description": "Montant reçu, en dollars"},
+        "method": {"type": "string", "description": "Card, Cash, Bank Transfer, Cheque ou Other"},
+        "reference": {
+            "type": "string",
+            "description": "Référence du paiement (numéro de chèque, de virement…), facultatif",
+        },
+    },
+    ["invoice", "amount"],
+)
+propose_decide_approval = _proposing_tool(
+    "propose_decide_approval",
+    "decide_approval",
+    "PROPOSE d'approuver ou de refuser une demande d'approbation en attente (utiliser list_pending_approvals).",
+    {
+        "approval": {"type": "string", "description": "Identifiant exact de la demande"},
+        "decision": {"type": "string", "description": "approve ou reject"},
+        "decision_reason": {"type": "string", "description": "Motif de la décision (obligatoire pour un refus)"},
+    },
+    ["approval", "decision"],
+)
+propose_update_field = _proposing_tool(
+    "propose_update_field",
+    "update_field",
+    "PROPOSE de modifier UN champ d'un enregistrement (avant/après visibles, annulable). Types : Cortex Rental Item Profile (équipement : tarif, dépôt, parc…), Cortex Rental Transaction (notes d'un devis ou d'une réservation), Customer (notes, site web), Rental Pricing Rule, Consignment Owner, Cortex Finance Settings (acompte, retenue, frais de retard…; nom = la société). get_record donne editable_fields; si le champ n'est pas permis, la réponse liste les champs permis. Jamais de taxes, de comptes ni de statut. Retrouve l'identifiant avec find_records d'abord.",
+    {
+        "doctype": {"type": "string", "description": "Type exact, p. ex. Cortex Rental Item Profile"},
+        "name": {"type": "string", "description": "Identifiant exact de l'enregistrement (find_records)"},
+        "fieldname": {"type": "string", "description": "Nom technique du champ, p. ex. daily_rate"},
+        "value": {"type": "string", "description": "Nouvelle valeur (nombre en chiffres, case à cocher: oui ou non)"},
+    },
+    ["doctype", "name", "fieldname", "value"],
+)
+propose_apply_sector_template = _proposing_tool(
+    "propose_apply_sector_template",
+    "apply_sector_template",
+    "PROPOSE d'appliquer un modèle de secteur (catégories d'équipement, règles de prix, réglages par défaut). Réservé au propriétaire. Modèle disponible : cinema_video (cinéma et vidéo). Ajoute ce qui manque, ne retire rien, annulable.",
+    {"template": {"type": "string", "description": "Clé du modèle, p. ex. cinema_video"}},
+    ["template"],
+)
+propose_add_category = _proposing_tool(
+    "propose_add_category",
+    "add_category",
+    "PROPOSE d'ajouter une catégorie d'équipement à la liste du site (modification de structure, réservée au propriétaire, annulable).",
+    {"category": {"type": "string", "description": "Nom de la catégorie, p. ex. Véhicules utilitaires"}},
+    ["category"],
+)
+propose_add_custom_field = _proposing_tool(
+    "propose_add_custom_field",
+    "add_custom_field",
+    "PROPOSE d'ajouter un champ à la fiche équipement (Cortex Rental Item Profile), au client (Customer) ou à la location (Cortex Rental Transaction). Modification de structure réservée au propriétaire, annulable. Types : Data (texte court), Small Text (texte long), Int, Float, Currency (montant), Check (case à cocher), Date, Select (liste de choix).",
+    {
+        "doctype": {
+            "type": "string",
+            "description": "Cortex Rental Item Profile, Customer ou Cortex Rental Transaction",
+        },
+        "label": {"type": "string", "description": "Libellé affiché, p. ex. Numéro de plaque"},
+        "fieldtype": {"type": "string", "description": "Data, Small Text, Int, Float, Currency, Check, Date ou Select"},
+        "options": {"type": "string", "description": "Pour Select seulement : les choix séparés par des virgules"},
+    },
+    ["doctype", "label", "fieldtype"],
+)
+
+
+# Outils qui proposent une écriture (approbation humaine requise). Offerts au modèle seulement si le site les active :
+# clé `cortex_ai_actions` de la configuration du site (éteinte par défaut tant que l'affichage des propositions n'est pas validé).
+PROPOSING_TOOLS = (
+    "propose_create_customer",
+    "propose_create_quote",
+    "propose_release_hold",
+    "propose_renew_hold",
+    "propose_request_reservation",
+    "propose_record_payment",
+    "propose_decide_approval",
+    "propose_update_field",
+    "propose_apply_sector_template",
+    "propose_add_category",
+    "propose_add_custom_field",
+)
+
+
+def actions_enabled() -> bool:
+    return bool(frappe and frappe.conf.get("cortex_ai_actions"))
+
+
 def exposed(allowed_names: List[str]) -> List[Tool]:
     """Les outils réellement offerts au modèle : ceux de la liste d'autorisations qui existent dans le registre."""
-    return [REGISTRY[name] for name in allowed_names if name in REGISTRY]
+    allow_proposals = actions_enabled()
+    return [
+        REGISTRY[name]
+        for name in allowed_names
+        if name in REGISTRY and (allow_proposals or name not in PROPOSING_TOOLS)
+    ]
 
 
 def execute(name: str, args: Dict[str, Any]) -> Dict[str, Any]:

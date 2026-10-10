@@ -250,6 +250,36 @@ if frappe:
 
     @frappe.whitelist(methods=["POST"])
     @defense.safe_input
+    @defense.limit_user("ai_action_decide", 60)
+    def decide_action(name: str = "", approve: int = 0):
+        """Approuve (et exécute) ou refuse une action proposée par l'assistant : décision de la personne, avec ses droits."""
+        require_human_staff_role()
+        company = get_company_context()
+        from cortex_rental.services.ai import actions
+
+        try:
+            result = actions.decide(name, bool(int(approve or 0)), company, frappe.session.user)
+        except actions.ActionError as exc:
+            frappe.throw(str(exc), frappe.ValidationError)
+        return {"data": result, "meta": {"company": company}}
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
+    @defense.limit_user("ai_action_decide", 60)
+    def undo_action(name: str = ""):
+        """Annule une action déjà faite (ex. remet l'ancienne valeur d'un champ) : décision de la personne, avec ses droits."""
+        require_human_staff_role()
+        company = get_company_context()
+        from cortex_rental.services.ai import actions
+
+        try:
+            result = actions.undo(name, company, frappe.session.user)
+        except actions.ActionError as exc:
+            frappe.throw(str(exc), frappe.ValidationError)
+        return {"data": result, "meta": {"company": company}}
+
+    @frappe.whitelist(methods=["POST"])
+    @defense.safe_input
     def delete_session(name: str = ""):
         """Retire une de ses conversations de son historique.
 

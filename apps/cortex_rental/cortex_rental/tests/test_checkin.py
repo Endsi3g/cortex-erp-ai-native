@@ -1,5 +1,6 @@
 import unittest
 
+from cortex_rental.tests.live_fixtures import NO_FRAPPE
 from cortex_rental.services.checkin import DISPOSITION_TO_SERIAL_STATUS, complete_checkin
 
 
@@ -20,6 +21,7 @@ class TestCheckinDispositionMapping(unittest.TestCase):
         doctype_dispositions = {"Return to Stock", "Quarantine", "Repair", "Missing", "Write-off"}
         self.assertEqual(set(DISPOSITION_TO_SERIAL_STATUS.keys()), doctype_dispositions)
 
+    @NO_FRAPPE
     def test_complete_checkin_mock_mode_returns_stub(self):
         result = complete_checkin("CHK-2026-00001", actor_id="ops@cortex.local")
         self.assertEqual(result["status"], "Completed")

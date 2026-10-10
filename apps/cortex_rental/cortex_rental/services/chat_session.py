@@ -84,7 +84,8 @@ def _check_rate_limit(user: str) -> None:
     count = frappe.cache().get_value(cache_key) or 0
     if int(count) >= RATE_LIMIT_MAX_MESSAGES:
         raise ChatRateLimitError(
-            f"Rate limit exceeded: max {RATE_LIMIT_MAX_MESSAGES} messages per {RATE_LIMIT_WINDOW_SECONDS}s."
+            f"Vous envoyez des messages très rapidement : attendez quelques secondes avant de réessayer "
+            f"(limite de {RATE_LIMIT_MAX_MESSAGES} messages par minute)."
         )
     frappe.cache().set_value(cache_key, int(count) + 1, expires_in_sec=RATE_LIMIT_WINDOW_SECONDS)
 
@@ -178,6 +179,14 @@ class ChatSessionService:
                 blocks = frappe.parse_json(row.ui_blocks_json) if row.ui_blocks_json else []
             except Exception:
                 blocks = []
+            if isinstance(blocks, list) and any(isinstance(b, dict) and b.get("type") == "action_card" for b in blocks):
+                # L'état d'une carte d'action vient toujours du serveur (une carte approuvée ne redevient pas « à approuver »).
+                try:
+                    from cortex_rental.services.ai import actions
+
+                    blocks = actions.refresh_blocks(blocks, user)
+                except Exception:
+                    frappe.log_error(title="Cortex AI action cards refresh failed")
             messages.append(
                 {
                     "id": row.name,

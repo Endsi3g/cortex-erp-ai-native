@@ -52,7 +52,11 @@ class TestNoViteLeftovers(unittest.TestCase):
             ("..", "..", "..", "Makefile"),
             ("..", "..", "..", "infra", "docker", "entrypoint-bench.sh"),
         ):
-            with open(os.path.join(APP_DIR, *parts), encoding="utf-8") as handle:
+            path = os.path.join(APP_DIR, *parts)
+            if not os.path.exists(path):
+                # Dans un bench, l'application est seule : le Makefile et les scripts du dépôt n'y sont pas (testé hors bench).
+                continue
+            with open(path, encoding="utf-8") as handle:
                 text = handle.read()
             for word in ("vite", "npm run", "frappe-ui", "dist-desk", "dist-spa", "cortex_host"):
                 self.assertNotIn(word, text.lower(), f"{parts}: {word}")

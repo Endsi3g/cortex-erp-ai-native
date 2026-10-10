@@ -105,6 +105,46 @@ def _pricing(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
     }
 
 
+def insert_quote(company: str, payload: Dict[str, Any], priced: Dict[str, Any]) -> str:
+    """Crée le devis (état « Quote ») avec les droits de la personne connectée et note l'événement d'audit.
+
+    Voie unique pour le compositeur et pour l'action « créer un devis » de l'assistant (services/ai/actions.py) :
+    `priced` vient de `_pricing`, donc les prix sont ceux du serveur, jamais ceux d'un modèle."""
+    doc = frappe.get_doc(
+        {
+            "doctype": "Cortex Rental Transaction",
+            "company": company,
+            "customer": payload["customer_id"],
+            "rental_state": "Quote",
+            "starts_at": payload["starts_at"],
+            "ends_at": payload["ends_at"],
+            "project_name": payload.get("project_name") or "",
+            "tax_rate": 0,
+            "notes": payload.get("notes") or "",
+            "items": [
+                {
+                    "item_code": line["item_code"],
+                    "item_name": line["item_name"],
+                    "qty": line["quantity"],
+                    "rate": line["daily_rate"],
+                    "discount_percentage": line["discount_percentage"],
+                }
+                for line in priced["lines"]
+            ],
+        }
+    )
+    doc.insert()
+    AuditService.record_mutation(
+        company=company,
+        action="cortex.rental_transaction.draft_created",
+        entity_type="Cortex Rental Transaction",
+        entity_id=doc.name,
+        evidence=payload.get("evidence_ids"),
+        after_state={"state": "Quote", "total": doc.grand_total},
+    )
+    return doc.name
+
+
 def _customer_in_company(customer: str, company: str) -> None:
     if not frappe.db.exists("Customer", {"name": customer, "cortex_company": company}):
         frappe.throw("Ce client n'est pas disponible pour la société active.", frappe.PermissionError)
@@ -408,39 +448,7 @@ if frappe:
         priced = _pricing(payload, company)
 
         def create():
-            doc = frappe.get_doc(
-                {
-                    "doctype": "Cortex Rental Transaction",
-                    "company": company,
-                    "customer": payload["customer_id"],
-                    "rental_state": "Quote",
-                    "starts_at": payload["starts_at"],
-                    "ends_at": payload["ends_at"],
-                    "project_name": payload.get("project_name") or "",
-                    "tax_rate": 0,
-                    "notes": payload.get("notes") or "",
-                    "items": [
-                        {
-                            "item_code": line["item_code"],
-                            "item_name": line["item_name"],
-                            "qty": line["quantity"],
-                            "rate": line["daily_rate"],
-                            "discount_percentage": line["discount_percentage"],
-                        }
-                        for line in priced["lines"]
-                    ],
-                }
-            )
-            doc.insert()
-            AuditService.record_mutation(
-                company=company,
-                action="cortex.rental_transaction.draft_created",
-                entity_type="Cortex Rental Transaction",
-                entity_id=doc.name,
-                evidence=payload.get("evidence_ids"),
-                after_state={"state": "Quote", "total": doc.grand_total},
-            )
-            return doc.name
+            return insert_quote(company, payload, priced)
 
         name = with_idempotency(
             company=company,

@@ -38,6 +38,8 @@ cortex.OnboardingPage = class OnboardingPage {
 		return frappe.call({ method: `cortex_rental.api.v1.onboarding.${method}`, args, type: type || "GET", freeze: false }).then(
 			(r) => {
 				done();
+				// Retour visuel : « Enregistré » apparaît seulement quand le serveur a réellement accepté l'écriture.
+				if (write && r.message && r.message.data && r.message.data.ok !== false) this.flashSaved();
 				return r.message;
 			},
 			(e) => {
@@ -45,6 +47,20 @@ cortex.OnboardingPage = class OnboardingPage {
 				throw e;
 			}
 		);
+	}
+
+	// Mention « Enregistré » dans la barre du haut : fondu d'entrée, puis de sortie après ~1,8 s (la coque reste en place d'une étape à l'autre).
+	flashSaved() {
+		const host = this.$el.find(".cx-onb-head-end")[0];
+		if (!host) return;
+		host.querySelectorAll(".cx-onb-saved").forEach((n) => n.remove());
+		const tag = document.createElement("span");
+		tag.className = "cx-onb-saved";
+		tag.setAttribute("role", "status");
+		tag.innerHTML = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${__("Enregistré")}`;
+		host.insertBefore(tag, host.firstChild);
+		window.setTimeout(() => tag.classList.add("is-out"), this.reduced() ? 1400 : 1800);
+		window.setTimeout(() => tag.remove(), this.reduced() ? 1500 : 2300);
 	}
 
 	esc(v) {
@@ -182,8 +198,13 @@ cortex.OnboardingPage = class OnboardingPage {
 		this.$el.find("[data-role=prog]").text(__("{0} sur {1} étapes · obligatoires {2}/{3}", [p.done, p.total, p.required_done, p.required_total]));
 		this.$el.find(".cx-onb-bar i").css("width", `${Math.round((p.done / p.total) * 100)}%`);
 		this.$el.find("[data-act=later]").text(s.status === "Completed" ? __("Fermer") : __("Continuer plus tard"));
+		const was = this.doneKeys || new Set();
+		const now = new Set(s.steps.filter((st) => st.done).map((st) => st.key));
 		const paint = ($b, cls, disabled, mark, tag) => {
-			$b.attr("class", `cx-onb-step ${cls}`).prop("disabled", disabled);
+			// Une étape qui vient d'être terminée : sa coche apparaît avec un petit rebond (une seule fois).
+			const key = $b.attr("data-key");
+			const pop = this.doneKeys && now.has(key) && !was.has(key) ? " pop" : "";
+			$b.attr("class", `cx-onb-step ${cls}${pop}`).prop("disabled", disabled);
 			if (mark != null) $b.find("i").text(mark);
 			$b.find("small").text(tag);
 		};
@@ -192,6 +213,7 @@ cortex.OnboardingPage = class OnboardingPage {
 			const tag = st.required ? __("Obligatoire") : st.done ? __("Terminée") : st.skipped ? __("Passée") : __("Facultatif");
 			paint(this.$el.find(`.cx-onb-step[data-key=${st.key}]`), `${status}${st.key === this.step ? " on" : ""}`, !!st.locked, st.done ? "✓" : i + 1, tag);
 		});
+		this.doneKeys = now;
 		paint(this.$el.find(".cx-onb-step[data-key=recap]"), `${s.can_finish ? "todo" : "locked"}${this.step === "recap" ? " on" : ""}`, !s.can_finish, null, s.status === "Completed" ? __("Terminée") : __("Dernière étape"));
 	}
 

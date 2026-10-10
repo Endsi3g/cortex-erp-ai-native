@@ -386,11 +386,62 @@ class TestEconomyMode(unittest.TestCase):
         self.assertLess(d["economy_price_input_per_mtok"], d["price_input_per_mtok"])
 
 
+class TestFreshSiteGetsAICostControls(unittest.TestCase):
+    """Trouvé au vrai bench : un site neuf démarrait sans prix ni plafond (les patchs ne sont pas rejoués à l'installation)."""
+
+    def test_after_install_applies_the_default_ai_settings(self):
+        import inspect
+
+        from cortex_rental import setup
+
+        self.assertIn("apply_default_ai_settings()", inspect.getsource(setup.after_install))
+        source = inspect.getsource(setup.apply_default_ai_settings)
+        self.assertIn("set_ai_pricing_defaults", source)
+        self.assertIn("set_ai_economy_defaults", source)
+
+    def test_the_defaults_never_overwrite_a_value_the_owner_entered(self):
+        # Lecture du texte (ces modules importent frappe) : chaque défaut est posé seulement si le champ est vide.
+        for name in ("set_ai_economy_defaults", "set_ai_pricing_defaults"):
+            path = os.path.join(os.path.dirname(MODULE_DIR), "patches", f"{name}.py")
+            with open(path, encoding="utf-8") as handle:
+                self.assertIn("if not ", handle.read(), name)
+
+
+class TestRefusedKeyIsNotAnAbsentKey(unittest.TestCase):
+    """Trouvé au test de bout en bout : une clé refusée (403) basculait en mode démonstration comme une clé absente."""
+
+    def test_a_403_is_a_provider_error_with_a_clear_message_not_a_configuration_error(self):
+        import urllib.error
+
+        for code in (401, 403):
+            err = GeminiProvider._http_error(urllib.error.HTTPError("u", code, "x", {}, None))
+            self.assertIsInstance(err, AIProviderError)
+            self.assertNotIsInstance(err, AIConfigurationError)
+            self.assertIn("clé API", str(err))
+            self.assertIn("refusée", str(err))
+            self.assertEqual(err.status, code)
+
+    def test_the_chat_client_shows_the_error_instead_of_the_demo(self):
+        import inspect
+
+        from cortex_rental.services.ai import client
+
+        source = inspect.getsource(client.GatewayChatClient.send_message)
+        # La démonstration n'est réservée qu'à « aucune clé configurée » (AIConfigurationError).
+        self.assertIn("except AIConfigurationError", source)
+        self.assertIn("except (AIProviderError, BudgetExceeded)", source)
+
+
 class TestPolicyAndDoctypes(unittest.TestCase):
     WRITE_WORDS = ("approve", "confirm", "activate", "delete", "pay", "cancel", "submit", "update")
 
     def test_no_tool_in_the_registry_can_write_or_approve(self):
         for name in tools.REGISTRY:
+            if name in tools.PROPOSING_TOOLS:
+                # Seuls les outils « propose_* » portent un nom d'action : ils ne font que PROPOSER (voir test_ai_actions.py :
+                # aucun n'écrit lui-même, l'approbation humaine est requise).
+                self.assertTrue(name.startswith("propose_"), name)
+                continue
             self.assertFalse(any(w in name for w in self.WRITE_WORDS), name)
 
     def test_quote_tool_only_proposes(self):

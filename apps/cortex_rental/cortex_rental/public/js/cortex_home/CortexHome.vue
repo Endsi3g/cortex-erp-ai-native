@@ -496,7 +496,7 @@ defineExpose({ refresh });
 					v-model="text"
 					class="ch-input"
 					rows="1"
-					placeholder="Que puis-je faire pour vous aujourd'hui ?"
+					placeholder="Décrivez ce que vous voulez faire…"
 					:disabled="sending"
 					@input="resize"
 					@keydown="onKeydown"
@@ -767,7 +767,7 @@ defineExpose({ refresh });
 	margin: 0;
 	font-size: clamp(32px, 4.6vw, 40px);
 	line-height: 1.15;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	letter-spacing: -0.02em;
 	color: #111827;
 }
@@ -1044,16 +1044,17 @@ defineExpose({ refresh });
 	overflow: hidden;
 }
 
+/* Accent vert Cortex pour les trois cartes (choix de Kael, 2026-10-10) : des teintes douces de la même famille. */
 .ch-card-quote .ch-card-header {
-	background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 50%, #7c3aed 100%);
+	background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
 }
 
 .ch-card-availability .ch-card-header {
-	background: linear-gradient(135deg, #38bdf8 0%, #2563eb 60%, #1d4ed8 100%);
+	background: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
 }
 
 .ch-card-approvals .ch-card-header {
-	background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+	background: linear-gradient(135deg, #d1fae5 0%, #bbf7d0 100%);
 }
 
 .ch-mock-window {
@@ -1081,9 +1082,9 @@ defineExpose({ refresh });
 	display: inline-block;
 }
 
-.ch-dot-red { background: #ef4444; }
-.ch-dot-yellow { background: #f59e0b; }
-.ch-dot-green { background: #10b981; }
+.ch-dot-red,
+.ch-dot-yellow,
+.ch-dot-green { background: #cbd5e1; }
 
 .ch-code-lines {
 	display: flex;
@@ -1112,7 +1113,7 @@ defineExpose({ refresh });
 	border-radius: 3px;
 }
 
-.ch-bar-purple { background: #8b5cf6; }
+.ch-bar-purple { background: #047857; }
 .ch-bar-dark { background: #1e293b; }
 .ch-bar-gray { background: #e2e8f0; }
 .ch-bar-slate { background: #cbd5e1; }
@@ -1164,7 +1165,7 @@ defineExpose({ refresh });
 	width: 13px;
 	height: 13px;
 	border-radius: 50%;
-	background: #f472b6;
+	background: #34d399;
 	display: inline-block;
 }
 
@@ -1172,14 +1173,14 @@ defineExpose({ refresh });
 	width: 4px;
 	height: 4px;
 	border-radius: 50%;
-	background: #3b82f6;
+	background: #047857;
 	display: inline-block;
 }
 
 .ch-close-x {
 	font-size: 9px;
 	color: #64748b;
-	font-weight: 700;
+	font-weight: var(--cx-weight-heavy, 700);
 	line-height: 1;
 }
 
@@ -1201,20 +1202,21 @@ defineExpose({ refresh });
 	padding-right: 26px;
 	margin: 0;
 	font-size: 14px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 	line-height: 1.3;
 }
 
 .ch-card-link-btn {
 	position: absolute;
-	right: 14px;
-	bottom: 36px;
+	/* Zone cliquable de 24 px (WCAG 2.2, 2.5.8) : le padding grandit, la position décale de la même valeur, l'icône ne bouge pas. */
+	right: 10.5px;
+	bottom: 32.5px;
 	border: none;
 	background: transparent;
 	color: #64748b;
 	cursor: pointer;
-	padding: 2px;
+	padding: 5.5px;
 	border-radius: 4px;
 	display: flex;
 	align-items: center;
@@ -1319,12 +1321,15 @@ defineExpose({ refresh });
 
 .ch-demo-hide {
 	flex: none;
+	display: inline-flex;
+	align-items: center;
+	min-height: 24px; /* zone cliquable minimale (WCAG 2.2, 2.5.8) */
 	border: 0;
 	background: none;
 	color: #8a4b00;
 	font: inherit;
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	cursor: pointer;
 	text-decoration: underline;
 }
@@ -1344,7 +1349,7 @@ defineExpose({ refresh });
 	background: #fff;
 	font: inherit;
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #334155;
 	cursor: pointer;
 	transition: background-color 0.15s ease;
@@ -1419,7 +1424,7 @@ defineExpose({ refresh });
 .ch-pop-title {
 	margin: 0;
 	font-size: 14px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 
@@ -1488,7 +1493,7 @@ defineExpose({ refresh });
 	background: #fff;
 	font: inherit;
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #334155;
 	cursor: pointer;
 }
@@ -1518,7 +1523,7 @@ defineExpose({ refresh });
 	color: #066336;
 	font: inherit;
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	cursor: pointer;
 }
 
@@ -1551,7 +1556,7 @@ defineExpose({ refresh });
 .ch-drawer-head h2 {
 	margin: 0;
 	font-size: 15px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 
@@ -1601,7 +1606,7 @@ defineExpose({ refresh });
 .ch-drawer-group h3 {
 	margin: 14px 4px 6px;
 	font-size: 11px;
-	font-weight: 700;
+	font-weight: var(--cx-weight-heavy, 700);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: #64748b;
@@ -1780,7 +1785,7 @@ defineExpose({ refresh });
 
 .ch-tier-name {
 	font-size: 13.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 
@@ -1793,7 +1798,7 @@ defineExpose({ refresh });
 .ch-tier-cost {
 	flex: none;
 	font-size: 11.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #475569;
 	white-space: nowrap;
 }

@@ -98,9 +98,72 @@ class ProposalBlock(BaseModel):
     title: str
     summary: str
     impact: List[str] = Field(default_factory=list)
-    action: Literal["open_quote_composer", "create_quote_draft", "open_availability_flow", "open_approvals_flow"]
+    action: Literal[
+        "open_quote_composer", "create_quote_draft", "open_availability_flow", "open_approvals_flow", "decide_ai_action"
+    ]
     draft_id: Optional[str] = None
     requires_approval: bool = False
+
+
+class ActionRow(BaseModel):
+    label: str
+    detail: Optional[str] = None
+    value: Optional[str] = None
+
+
+class ActionReasoning(BaseModel):
+    """« Pourquoi cette proposition » : l'explication de l'assistant (non vérifiée), ce qu'il a consulté, ce que l'action fera."""
+
+    stated: Optional[str] = None
+    checks: List[str] = Field(default_factory=list)
+    effects: List[str] = Field(default_factory=list)
+
+
+class ActionCardBlock(BaseModel):
+    """Carte d'une action proposée par l'assistant (services/ai/actions.py) : la personne approuve ou refuse sur la carte."""
+
+    type: Literal["action_card"] = "action_card"
+    action_id: str
+    action_type: str
+    title: str
+    subtitle: Optional[str] = None
+    rows: List[ActionRow] = Field(default_factory=list)
+    totals: List[ActionRow] = Field(default_factory=list)
+    status: Literal["Proposed", "Executed", "Rejected", "Failed", "Expired", "Undone"] = "Proposed"
+    approve_label: str = "Approuver"
+    message: Optional[str] = None  # issue notée par le serveur (échec, périmée…)
+    result_label: Optional[str] = None
+    result_href: Optional[str] = None  # chemin du Desk (« /app/... ») du document créé
+    reasoning: Optional[ActionReasoning] = None
+    can_undo: bool = False  # vrai quand l'action faite peut être annulée depuis la carte
+    undo_label: Optional[str] = None  # texte du bouton d'annulation (« Annuler cette modification »…)
+
+
+class StatKpi(BaseModel):
+    label: str
+    value: str
+    detail: Optional[str] = None
+    tone: Literal["neutral", "good", "warn", "bad"] = "neutral"
+
+
+class StatSeries(BaseModel):
+    kind: Literal["bar", "line", "donut", "hbar"] = "bar"
+    labels: List[str]
+    values: List[float]
+    unit: str = ""  # « $ », « locations »…
+
+
+class StatCardBlock(BaseModel):
+    """Carte de statistiques tirées des données réelles de la société; la flèche ouvre l'endroit d'où elles viennent."""
+
+    type: Literal["stat_card"] = "stat_card"
+    title: str
+    subtitle: Optional[str] = None  # période, filtre
+    kpis: List[StatKpi] = Field(default_factory=list)
+    series: Optional[StatSeries] = None
+    source_label: str  # « Ouvrir Finance »
+    source_href: str  # chemin du Desk, vérifié par le serveur (services/ai/stats.py)
+    checked_at: Optional[str] = None
 
 
 class ApprovalRequirement(BaseModel):
@@ -155,6 +218,8 @@ ChatBlock = Annotated[
         MissingInformationBlock,
         ToolProgressBlock,
         ErrorBlock,
+        ActionCardBlock,
+        StatCardBlock,
     ],
     Field(discriminator="type"),
 ]

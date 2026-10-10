@@ -1,5 +1,6 @@
 import unittest
 
+from cortex_rental.tests.live_fixtures import NO_FRAPPE
 from cortex_rental.services.idempotency import _hash_payload, _record_name, with_idempotency
 
 
@@ -21,6 +22,7 @@ class TestIdempotencyHelpers(unittest.TestCase):
         h2 = _hash_payload({"b": 2, "a": 1})
         self.assertEqual(h1, h2)
 
+    @NO_FRAPPE
     def test_without_frappe_handler_always_executes(self):
         """
         In this sandbox (no bench/frappe), with_idempotency degrades to a

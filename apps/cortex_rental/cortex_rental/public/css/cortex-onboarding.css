@@ -606,3 +606,61 @@ body.cx-onb-open .desk-alert {
 		white-space: normal;
 	}
 }
+
+/* ---- Retours visuels (phase 11.3, sans IA) : « Enregistré » et coche qui rebondit ---- */
+.cx-onb-head-end {
+	position: relative;
+}
+/* En absolu, à gauche du bloc de progression : la mention apparaît sans décaler la barre. */
+.cx-onb-saved {
+	position: absolute;
+	top: 50%;
+	right: calc(100% + 12px);
+	margin-top: -13px;
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 10px 3px 8px;
+	border-radius: 999px;
+	background: #ecfdf5;
+	color: #065f46;
+	font-size: 12.5px;
+	animation: cx-onb-saved-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+	transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.cx-onb-saved.is-out {
+	opacity: 0;
+	transform: translateY(-3px);
+}
+@keyframes cx-onb-saved-in {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+.cx-onb-step.pop i {
+	animation: cx-onb-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+@keyframes cx-onb-pop {
+	0% {
+		transform: scale(0.4);
+	}
+	60% {
+		transform: scale(1.18);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.cx-onb-saved,
+	.cx-onb-step.pop i {
+		animation: none !important;
+		transition: none !important;
+	}
+}

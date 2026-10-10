@@ -5,6 +5,7 @@ Tests validation logic, handlers, parsing, and data shaping.
 
 import unittest
 
+from cortex_rental.tests.live_fixtures import NO_FRAPPE
 from cortex_rental.api.v1.checkin import complete_checkin_handler, submit_checkin_handler
 from cortex_rental.services.checkin import (
     DISPOSITION_TO_SERIAL_STATUS,
@@ -33,6 +34,7 @@ class TestCheckinServiceAndApi(unittest.TestCase):
         with self.assertRaises(ValueError):
             submit_checkin_handler({"transaction_id": "TRX-001"}, "Test Co", "user@test.local")
 
+    @NO_FRAPPE
     def test_submit_checkin_handler_json_string_parsing(self):
         payload = {
             "transaction_id": "TRX-001",
@@ -52,6 +54,7 @@ class TestCheckinServiceAndApi(unittest.TestCase):
         res = lookup_scan_target("Test Co", "")
         self.assertEqual(res["type"], "empty")
 
+    @NO_FRAPPE
     def test_mock_fallback_process_checkin(self):
         res = process_checkin(
             company="Test Co",

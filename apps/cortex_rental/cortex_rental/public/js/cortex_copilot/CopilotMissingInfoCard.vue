@@ -21,7 +21,7 @@ defineProps({
 }
 .cp-missing-title {
 	margin: 0 0 4px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 }
 .cp-missing ul {
 	margin: 0;
