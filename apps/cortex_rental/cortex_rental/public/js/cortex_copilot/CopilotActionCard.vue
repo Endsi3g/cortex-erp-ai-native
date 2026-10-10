@@ -2,7 +2,7 @@
 // Carte dédiée d'une action proposée par l'assistant : aperçu (lignes et totaux), puis Approuver / Refuser.
 // Rien n'est fait avant l'approbation; l'état (fait, refusé, périmé, échec) vient toujours du serveur.
 import { computed, ref } from "vue";
-import { decideAction, openDeskPath, isDeskPath } from "./chatClient.js";
+import { decideAction, undoAction, openDeskPath, isDeskPath } from "./chatClient.js";
 
 const props = defineProps({
 	block: { type: Object, required: true }, // {action_id, title, subtitle, rows, totals, status, approve_label, message, result_label, result_href}
@@ -13,6 +13,8 @@ const message = ref(props.block.message || "");
 const resultLabel = ref(props.block.result_label || "");
 const resultHref = ref(props.block.result_href || "");
 const deciding = ref(false);
+const canUndo = ref(!!props.block.can_undo);
+const undoing = ref(false);
 
 const open = computed(() => status.value === "Proposed");
 const reasoning = computed(() => {
@@ -26,6 +28,7 @@ const BADGE = {
 	Rejected: ["Refusée", "is-muted"],
 	Failed: ["Échec", "is-bad"],
 	Expired: ["Périmée", "is-muted"],
+	Undone: ["Annulée", "is-muted"],
 };
 const badge = computed(() => BADGE[status.value] || BADGE.Proposed);
 
@@ -39,11 +42,34 @@ async function decide(approve) {
 		message.value = out.ok && status.value === "Executed" ? "" : out.message || "";
 		resultLabel.value = out.result_label || "";
 		resultHref.value = out.result_href || "";
+		canUndo.value = !!out.can_undo;
 	} catch (err) {
 		// Une erreur de réseau ou de droits : la carte reste à approuver, rien n'est présenté comme fait.
 		message.value = err.message || "Impossible d'enregistrer la décision. Réessayez.";
 	} finally {
 		deciding.value = false;
+	}
+}
+
+async function undo() {
+	if (undoing.value || !canUndo.value) return;
+	undoing.value = true;
+	message.value = "";
+	try {
+		const out = await undoAction(props.block.action_id);
+		status.value = out.status || status.value;
+		canUndo.value = !!out.can_undo;
+		// Réussi : l'état « Annulée » se dit lui-même dans le pied de carte; un refus garde son message.
+		message.value = out.ok ? "" : out.message || "";
+		if (out.ok) {
+			resultLabel.value = out.result_label || resultLabel.value;
+			resultHref.value = out.result_href || resultHref.value;
+		}
+	} catch (err) {
+		// Refus du serveur (valeur changée depuis, droits) : la carte reste « Fait », rien n'est présenté comme défait.
+		message.value = err.message || "Impossible d'annuler. Réessayez.";
+	} finally {
+		undoing.value = false;
 	}
 }
 </script>
@@ -59,7 +85,7 @@ async function decide(approve) {
 		<table v-if="block.rows && block.rows.length" class="cp-action-table">
 			<tbody>
 				<tr v-for="(row, i) in block.rows" :key="`r${i}`">
-					<td class="cp-action-label">
+					<td class="cp-action-label" :colspan="row.value ? 1 : 2">
 						{{ row.label }}
 						<span v-if="row.detail" class="cp-action-detail">{{ row.detail }}</span>
 					</td>
@@ -102,10 +128,17 @@ async function decide(approve) {
 			<template v-else-if="status === 'Executed'">
 				<span class="cp-action-result">Fait.</span>
 				<button v-if="hasLink" type="button" class="cp-action-link" @click="openDeskPath(resultHref)">{{ resultLabel }}</button>
+				<button v-if="canUndo" type="button" class="cp-action-reject" :disabled="undoing" @click="undo">
+					{{ undoing ? "En cours…" : "Annuler cette modification" }}
+				</button>
+			</template>
+			<template v-else-if="status === 'Undone'">
+				<span class="cp-action-note is-left">Modification annulée : l'ancienne valeur est remise.</span>
+				<button v-if="hasLink" type="button" class="cp-action-link" @click="openDeskPath(resultHref)">{{ resultLabel }}</button>
 			</template>
 			<span v-else-if="status === 'Rejected'" class="cp-action-note">Proposition refusée. Rien n'a été fait.</span>
 		</div>
-		<p v-if="message" class="cp-action-message" :class="{ 'is-bad': status === 'Failed' || open }" role="alert">{{ message }}</p>
+		<p v-if="message" class="cp-action-message" :class="{ 'is-bad': status === 'Failed' || open || (status === 'Executed' && canUndo) }" role="alert">{{ message }}</p>
 	</section>
 </template>
 
@@ -303,6 +336,9 @@ async function decide(approve) {
 	margin-left: auto;
 	font-size: 12px;
 	color: #64748b;
+}
+.cp-action-note.is-left {
+	margin-left: 0;
 }
 .cp-action-result {
 	font-size: 13px;

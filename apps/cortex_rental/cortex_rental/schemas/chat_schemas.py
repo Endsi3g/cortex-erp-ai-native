@@ -129,12 +129,13 @@ class ActionCardBlock(BaseModel):
     subtitle: Optional[str] = None
     rows: List[ActionRow] = Field(default_factory=list)
     totals: List[ActionRow] = Field(default_factory=list)
-    status: Literal["Proposed", "Executed", "Rejected", "Failed", "Expired"] = "Proposed"
+    status: Literal["Proposed", "Executed", "Rejected", "Failed", "Expired", "Undone"] = "Proposed"
     approve_label: str = "Approuver"
     message: Optional[str] = None  # issue notée par le serveur (échec, périmée…)
     result_label: Optional[str] = None
     result_href: Optional[str] = None  # chemin du Desk (« /app/... ») du document créé
     reasoning: Optional[ActionReasoning] = None
+    can_undo: bool = False  # vrai quand l'action faite peut être annulée depuis la carte
 
 
 class StatKpi(BaseModel):

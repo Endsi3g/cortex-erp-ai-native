@@ -548,11 +548,11 @@ Approbation humaine avant toute écriture; droits de la personne; audit; revalid
 
 **Rejouer** : `tools/bench/README.md` (faux Gemini, clé d'essai `fake-gemini-key`, `cortex_ai_gemini_base_url` — **jamais en production**, seules les adresses https ou locales sont acceptées).
 
-**Reste à faire (IA)** : action générique « modifier un champ » avec avant/après et annulation (validée par Kael), outil de lecture générique pour tout référencer, modification de structure (champs, sections, catégories) avec approbation du propriétaire, flux continu, pièces jointes, mémoire; qualité avec un vrai modèle.
+**Reste à faire (IA)** : (action générique « modifier un champ » et lecture générique : faits en phase 13), modification de structure (champs, sections, catégories) avec approbation du propriétaire, flux continu, pièces jointes, mémoire; qualité avec un vrai modèle.
 
-## Phase 13 (PLAN, écrit avant le travail) : IA de bout en bout — lecture générique et « modifier un champ » avec avant/après et annulation (2026-10-10)
+## Phase 13 (faite, 2026-10-10) : IA de bout en bout — lecture générique et « modifier un champ » avec avant/après et annulation
 
-> Priorité actuelle de Kael : « rendre le système AI fonctionnel end-to-end avant de toucher autres choses ». La phase 11 (parcours d'entrée) reste en attente. Ce plan sera complété (fait / reste / pourquoi) à la fin de la phase.
+> Priorité de Kael : « rendre le système AI fonctionnel end-to-end avant de toucher autres choses ». La phase 11 (parcours d'entrée) reste en attente. Le plan ci-dessous a été écrit et poussé avant le travail; le bilan est à la fin de cette section.
 
 ### Ce que je construis
 1. **Lecture générique « tout référencer »** : deux outils de lecture, sans écriture, sous les droits de la personne et la société active.
@@ -574,6 +574,23 @@ Approbation humaine avant toute écriture; droits de la personne; audit; revalid
 ### Questions ouvertes pour Kael
 - La liste blanche de champs ci-dessus convient-elle? (je pars de la plus petite liste utile; on ajoute à la demande)
 - Le tarif journalier modifié ne change pas les devis déjà créés (les prix des devis sont figés par le serveur) : à confirmer comme comportement voulu.
+
+### Bilan de la phase 13 (ce qui est fait, ce qui reste, pourquoi)
+
+**Fait et vérifié** (banc réel : 701 tests OK; Desk réel : `e2e-ai.mjs` 34/34 avec le nouveau scénario S8; captures dans `docs/review/captures/phase13-modification/`) :
+- `services/ai/records.py` (nouveau) : `READABLE` (8 types consultables, avec le champ de société de chacun), `EDITABLE` (champs modifiables par type), validations pures (`coerce_value`, `same_value`, `display_value`, `storable`), `find`, `get`, et l'action `update_field` avec son annulation.
+- Outils de lecture `find_records` et `get_record` (liste blanche, société, droits de Frappe; `get_record` renvoie les champs par nom technique + leurs libellés + les lignes de tableau, jamais mot de passe/pièce jointe/code). Outil `propose_update_field` (offert seulement si `cortex_ai_actions`).
+- **Annulation générique** dans le moteur d'actions : `ActionSpec.undo`, `actions.undo()`, API `chat.undo_action`, état `Undone` (DocType `Cortex AI Action`, **demande `bench migrate`**), `can_undo` dans la carte et au rechargement. L'annulation n'écrit que si la valeur actuelle est encore celle que l'assistant a écrite; sinon elle le dit et la carte reste « Fait ».
+- Carte : première ligne sans valeur sur toute la largeur (le filet partiel est corrigé), badge « Annulée », bouton « Annuler cette modification ».
+- Liste blanche actuelle — profil d'équipement : nom affiché, tarif journalier, valeur de remplacement, dépôt, heures de préparation, accessoires requis, consignation permise; location en Devis/Réservation : notes, nom du projet; client : notes, site web; règle de prix : active, multiplicateur, jours facturables, description.
+- Bogues trouvés par l'essai dans le vrai Desk (invisibles aux tests sans Frappe) : bouton d'annulation absent du gabarit, badge « Annulée » absent (deux remplacements de texte non appliqués : toujours relire le fichier après un script), message dupliqué après annulation. Corrigés. Après `bench build`, **`bench clear-cache`** est nécessaire pour que le Desk serve le nouveau paquet.
+
+**Reste (à décider avec Kael)** :
+1. Élargir la liste blanche (chaque champ ajouté = une ligne dans `EDITABLE`, relue). Candidats : adresse/courriel/téléphone d'un client (champs liés aux contacts d'ERPNext : demandent un chemin dédié), catégorie d'équipement (liste fixe pour la caméra : à rendre configurable pour les autres secteurs).
+2. Modification de structure (champs, sections, catégories de pages) : non commencée, plus risquée, avec approbation du propriétaire.
+3. Modèles de secteur, flux continu, pièces jointes, mémoire.
+4. **Qualité avec un vrai modèle** : tout a été prouvé avec le faux Gemini (protocole fidèle) mais jamais avec une vraie clé : saisir la clé dans *Cortex AI Settings*, retirer `cortex_ai_gemini_base_url`, relancer `e2e-ai.mjs`, et regarder si le vrai modèle choisit bien `find_records` → `propose_update_field` (et si ses descriptions d'outils sont assez claires).
+5. Le tarif modifié ne change pas les devis déjà créés (comportement voulu : les prix d'un devis sont figés); à confirmer.
 
 ## Phase 11 (en cours) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 

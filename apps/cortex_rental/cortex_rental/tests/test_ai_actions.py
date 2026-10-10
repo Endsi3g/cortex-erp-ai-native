@@ -183,6 +183,7 @@ class TestPure(unittest.TestCase):
                 "request_reservation",
                 "record_payment",
                 "decide_approval",
+                "update_field",
             },
         )
 

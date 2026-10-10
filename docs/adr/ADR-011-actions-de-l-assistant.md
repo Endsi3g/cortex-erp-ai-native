@@ -26,3 +26,10 @@ pour toute société de location. Le contrat du produit reste « Cortex suggère
   la modification de la structure (champs, sections, espaces de travail, catégories de pages), les modèles de secteur.
 - Structure (vague 2, à concevoir) : un site par client rend sûr de créer des `Custom Field`, `Property Setter` et `Workspace` ;
   le propriétaire de la société approuve, avec un avant/après et une annulation.
+
+## Addendum (phase 13) : modifier un champ, annuler
+
+- **`update_field`** : une action générique mais bornée par **deux listes blanches** (`records.READABLE` pour lire, `records.EDITABLE` pour modifier, champ par champ). Jamais « n'importe quel champ » : un statut, un montant calculé, une société ou un champ en lecture seule ne s'y trouvent pas (un test échoue si on en ajoute un).
+- **Avant/après** : l'aperçu montre la valeur lue au moment de proposer; l'empreinte de l'aperçu l'inclut, donc une valeur changée avant l'approbation rend la proposition périmée.
+- **Annulation** : `ActionSpec.undo` + `actions.undo()`. Ce que `run` renvoie sous la clé `undo` (type, nom, champ, avant, après) est gardé dans `result_json`; l'annulation remet l'ancienne valeur **seulement si la valeur actuelle est encore « après »**, sous verrou, avec les droits de la personne; sinon elle refuse en disant pourquoi et la carte reste « Fait ». État final `Undone`; tout est au journal d'audit (`executed`, `undone`, `undo_failed`).
+- Ce que cela ne fait pas : pas de modification de structure, de statut ni de montant; pas de suppression; l'annulation d'autres actions (devis créé, paiement) reste manuelle depuis l'écran concerné.

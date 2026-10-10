@@ -397,6 +397,43 @@ def create_quote_draft(customer: str, starts_at: str, ends_at: str, items: List[
     }
 
 
+@tool(
+    "find_records",
+    "Cherche des enregistrements de la société dans un type permis (Customer, Cortex Rental Item Profile, Cortex Rental Transaction, Cortex Rental Invoice, Cortex Rental Payment, Approval Request, Cortex Check-In, Rental Pricing Rule) par mot ou identifiant. Renvoie des lignes avec un lien. À utiliser pour retrouver l'identifiant exact avant d'agir.",
+    {
+        "doctype": {"type": "string", "description": "Type exact, p. ex. Cortex Rental Item Profile"},
+        "query": {"type": "string", "description": "Mot ou identifiant à chercher (vide = les plus récents)"},
+        "limit": {"type": "integer"},
+    },
+    ["doctype"],
+)
+def find_records(doctype: str, query: str = "", limit: int = 10):
+    from cortex_rental.services.ai import actions, records
+
+    try:
+        return records.find(doctype, query, _company(), _as_int(limit, 10))
+    except actions.ActionError as exc:
+        return {"error": str(exc)}
+
+
+@tool(
+    "get_record",
+    "Lit le détail d'un enregistrement de la société (champs simples et lignes de tableau) dans un type permis, par son identifiant exact (voir find_records). Lecture seule.",
+    {
+        "doctype": {"type": "string", "description": "Type exact, p. ex. Cortex Rental Transaction"},
+        "name": {"type": "string", "description": "Identifiant exact de l'enregistrement"},
+    },
+    ["doctype", "name"],
+)
+def get_record(doctype: str, name: str):
+    from cortex_rental.services.ai import actions, records
+
+    try:
+        return records.get(doctype, name, _company())
+    except actions.ActionError as exc:
+        return {"error": str(exc)}
+
+
 # Libellés des outils de lecture déjà appelés dans ce tour : l'assistant les montre dans « Pourquoi cette proposition ».
 # Posé par la passerelle (gateway.py) à chaque tour; vide hors passerelle.
 CONSULTED: ContextVar = ContextVar("cortex_ai_consulted", default=None)
@@ -512,6 +549,18 @@ propose_decide_approval = _proposing_tool(
     },
     ["approval", "decision"],
 )
+propose_update_field = _proposing_tool(
+    "propose_update_field",
+    "update_field",
+    "PROPOSE de modifier UN champ d'un enregistrement (avant/après visibles, annulable). Champs permis : profil d'équipement (item_name, daily_rate, replacement_value, deposit_required, prep_hours, required_accessories, is_consignment_allowed), location en devis ou réservation (notes, project_name), client (customer_details, website), règle de prix (is_active, multiplier, billable_days, description). Retrouve l'identifiant avec find_records d'abord.",
+    {
+        "doctype": {"type": "string", "description": "Type exact, p. ex. Cortex Rental Item Profile"},
+        "name": {"type": "string", "description": "Identifiant exact de l'enregistrement (find_records)"},
+        "fieldname": {"type": "string", "description": "Nom technique du champ, p. ex. daily_rate"},
+        "value": {"type": "string", "description": "Nouvelle valeur (nombre en chiffres, case à cocher: oui ou non)"},
+    },
+    ["doctype", "name", "fieldname", "value"],
+)
 
 
 # Outils qui proposent une écriture (approbation humaine requise). Offerts au modèle seulement si le site les active :
@@ -524,6 +573,7 @@ PROPOSING_TOOLS = (
     "propose_request_reservation",
     "propose_record_payment",
     "propose_decide_approval",
+    "propose_update_field",
 )
 
 

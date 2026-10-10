@@ -64,7 +64,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "État",
-   "options": "Proposed\nExecuted\nRejected\nFailed\nExpired",
+   "options": "Proposed\nExecuted\nRejected\nFailed\nExpired\nUndone",
    "default": "Proposed",
    "in_list_view": 1,
    "in_standard_filter": 1,

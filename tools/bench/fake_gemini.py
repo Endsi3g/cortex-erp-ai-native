@@ -187,6 +187,31 @@ def scenario(question, exchanges, declared):
         missing = [x for x in names if x not in declared]
         return say("Je n'ai pas accès à l'outil nécessaire (" + ", ".join(missing) + ").") if missing else None
 
+    rate = re.search(r"tarif .*?de (\S+) a (\d+(?:[.,]\d+)?)", q)
+    if rate:
+        miss = need("find_records", "propose_update_field")
+        if miss:
+            return [miss]
+        keyword, value = rate.group(1), rate.group(2).replace(",", ".")
+        if n == 0:
+            return [call("find_records", {"doctype": "Cortex Rental Item Profile", "query": keyword})]
+        found = (responses(exchanges, "find_records") or [{}])[0].get("records") or []
+        if not found:
+            return [say(f"Je ne trouve aucun équipement « {keyword} » dans votre catalogue.")]
+        if n == 1:
+            return [
+                call(
+                    "propose_update_field",
+                    {
+                        "doctype": "Cortex Rental Item Profile",
+                        "name": found[0]["name"],
+                        "fieldname": "daily_rate",
+                        "value": value,
+                        "reason": f"Vous demandez de passer le tarif journalier de {found[0].get('item_name') or keyword} à {value} $.",
+                    },
+                )
+            ]
+        return [say("Voici la modification proposée ci-dessous : l'avant et l'après sont indiqués. Vous pourrez l'annuler.")]
     if re.search(r"retenue", q):
         miss = need("list_rentals", "propose_release_hold")
         if miss:

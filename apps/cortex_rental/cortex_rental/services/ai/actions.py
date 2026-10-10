@@ -25,7 +25,9 @@ DOCTYPE = "Cortex AI Action"
 LIFETIME_HOURS = 24
 MAX_OPEN_PER_USER = 20
 
-PROPOSED, EXECUTED, REJECTED, FAILED, EXPIRED = "Proposed", "Executed", "Rejected", "Failed", "Expired"
+PROPOSED, EXECUTED, REJECTED, FAILED, EXPIRED, UNDONE = (
+    "Proposed", "Executed", "Rejected", "Failed", "Expired", "Undone"
+)  # fmt: skip
 SAVEPOINT = "cortex_ai_action"
 
 
@@ -58,6 +60,8 @@ class ActionSpec:
     run: Callable[[Dict[str, Any], str], Dict[str, Any]]
     # Ce qui va se passer, ce qui ne se passera pas et comment revenir en arrière : montré dans « Pourquoi cette proposition ».
     effects: Tuple[str, ...] = ()
+    # Défait une exécution à partir de ce que `run` a renvoyé sous la clé « undo » (None = action non annulable ici).
+    undo: Optional[Callable[[Dict[str, Any], str], Dict[str, Any]]] = None
 
 
 ACTIONS: Dict[str, ActionSpec] = {}
@@ -99,6 +103,7 @@ def block_for(record: Dict[str, Any]) -> Dict[str, Any]:
         "result_label": record.get("result_label") or None,
         "result_href": record.get("result_href") or None,
         "reasoning": record.get("reasoning") or None,
+        "can_undo": bool(record.get("can_undo")),
     }
 
 
@@ -288,7 +293,7 @@ def propose(
     spec = ACTIONS.get(action_type)
     if not spec:
         raise ActionError("Cette action n'existe pas.")
-    if not frappe.has_permission(spec.doctype, spec.ptype):
+    if spec.doctype and not frappe.has_permission(spec.doctype, spec.ptype):
         raise ActionError(f"Votre rôle ne permet pas de faire cette action ({spec.label.lower()}).")
     open_count = frappe.db.count(DOCTYPE, {"requested_by": user, "status": PROPOSED, "company": company})
     if open_count >= MAX_OPEN_PER_USER:
@@ -399,6 +404,53 @@ def decide(name: str, approve: bool, company: str, user: str) -> Dict[str, Any]:
         "message": f"{spec.label} : fait.",
         "result_label": result.get("label"),
         "result_href": result.get("href"),
+        "can_undo": bool(spec.undo and result.get("undo")),
+    }
+
+
+def undo(name: str, company: str, user: str) -> Dict[str, Any]:
+    """Annule une action exécutée (si elle le permet) avec les droits de la personne qui l'a approuvée.
+
+    Remet l'état d'avant seulement si rien n'a changé depuis; sinon dit pourquoi et ne touche à rien (la carte reste « Fait »)."""
+    row = frappe.db.get_value(
+        DOCTYPE, name, ["company", "requested_by", "status", "action_type"], as_dict=True, for_update=True
+    )
+    if not row or row.company != company or row.requested_by != user:
+        raise ActionError("Cette action n'est pas disponible pour vous.")
+    if row.status == UNDONE:
+        raise ActionError("Cette action a déjà été annulée.")
+    if row.status != EXECUTED:
+        raise ActionError("Seule une action déjà faite peut être annulée.")
+    spec = ACTIONS.get(row.action_type)
+    doc = frappe.get_doc(DOCTYPE, name)
+    result = json.loads(doc.result_json or "{}")
+    info = result.get("undo")
+    if not spec or not spec.undo or not info:
+        raise ActionError("Cette action ne peut pas être annulée ici.")
+    frappe.db.savepoint(SAVEPOINT)
+    try:
+        done = spec.undo(info, company)
+    except Exception as exc:  # noqa: BLE001 - dit tel quel; l'action reste « Fait » puisque rien n'a été défait
+        try:
+            frappe.db.rollback(save_point=SAVEPOINT)
+        except Exception:
+            frappe.log_error(title="Cortex AI action undo rollback impossible")
+        message = str(getattr(exc, "message", None) or exc)[:300]
+        _audit(company, "cortex.ai_action.undo_failed", name, {"type": row.action_type, "error": message})
+        return {"ok": False, "status": EXECUTED, "message": message, "can_undo": True}
+    result["undone_at"] = str(_now())
+    doc.status = UNDONE
+    doc.result_json = json.dumps(result, ensure_ascii=False)
+    doc.flags.from_ai_actions = True
+    doc.save(ignore_permissions=True)
+    _audit(company, "cortex.ai_action.undone", name, {"type": row.action_type})
+    return {
+        "ok": True,
+        "status": UNDONE,
+        "message": "Modification annulée : l'ancienne valeur est remise.",
+        "result_label": done.get("label"),
+        "result_href": done.get("href"),
+        "can_undo": False,
     }
 
 
@@ -437,10 +489,16 @@ def refresh_blocks(blocks: List[Dict[str, Any]], user: str) -> List[Dict[str, An
                 "message": (row.error or None) if status in (FAILED, EXPIRED) else None,
                 "result_label": result.get("label"),
                 "result_href": result.get("href"),
+                "can_undo": bool(
+                    status == EXECUTED
+                    and result.get("undo")
+                    and ACTIONS.get(block.get("action_type"))
+                    and ACTIONS[block["action_type"]].undo
+                ),
             }
         )
     return out
 
 
 # Les actions du catalogue (retenue, réservation, paiement, approbation) s'enregistrent à l'import.
-from cortex_rental.services.ai import action_catalog  # noqa: E402,F401
+from cortex_rental.services.ai import action_catalog, records  # noqa: E402,F401

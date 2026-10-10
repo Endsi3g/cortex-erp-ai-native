@@ -137,6 +137,32 @@ const lastText = (page) => page.locator(".cp-conversation").first().innerText().
 	await ctx.close();
 }
 
+// --- S8 : modifier un champ (avant/après), approuver, puis annuler ---------------------------------------------------------------------
+{
+	const setup = py(`from cortex_rental.tests.live_fixtures import ensure_profile\ncode='TARIF-'+frappe.generate_hash(length=6).upper()\nensure_profile('Studio Lumière', code, serialized=0, quantity=3, rate=120.0)\nfrappe.db.commit()\nprint(json.dumps({'code':code,'name':frappe.db.get_value('Cortex Rental Item Profile',{'item_code':code},'name')}))`);
+	const rateOf = () => py(`print(json.dumps(frappe.db.get_value('Cortex Rental Item Profile','${setup.name}','daily_rate')))`);
+	const { ctx, page } = await session();
+	await ask(page, `Change le tarif journalier de ${setup.code} à 175 $.`);
+	const card = page.locator(".cp-action").last();
+	const text = await card.innerText();
+	check("S8 carte de modification affichée avec avant et après", /Avant\s*:\s*120/.test(text) && /Après\s*:\s*175/.test(text), text.replace(/\s+/g, " ").slice(0, 160));
+	check("S8 rien n'est écrit avant l'approbation", (await rateOf()) === 120, String(await rateOf()));
+	await page.screenshot({ path: `${OUT}/s8-modification.png`, fullPage: true });
+	await card.getByRole("button", { name: /Appliquer la modification/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Fait" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S8 le tarif est modifié en base", (await rateOf()) === 175, String(await rateOf()));
+	const undoBtn = card.getByRole("button", { name: /Annuler cette modification/ });
+	check("S8 le bouton « Annuler cette modification » apparaît", (await undoBtn.count()) === 1);
+	await page.screenshot({ path: `${OUT}/s8-modifiee.png`, fullPage: true });
+	await undoBtn.click();
+	await card.locator(".cp-action-badge", { hasText: "Annulée" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S8 l'ancien tarif est remis en base", (await rateOf()) === 120, String(await rateOf()));
+	check("S8 la carte affiche « Annulée » et plus de bouton", (await card.locator(".cp-action-badge").innerText()) === "Annulée" && (await undoBtn.count()) === 0);
+	await page.screenshot({ path: `${OUT}/s8-annulee.png`, fullPage: true });
+	check("S8 aucune erreur JavaScript", page.errors.length === 0, page.errors.join(" | "));
+	await ctx.close();
+}
+
 // --- Pannes : le système échoue proprement, en français, sans carte trompeuse ------------------------------------------------------------
 const setAI = (fields) => py(`d=frappe.get_doc('Cortex AI Settings')\nfor k,v in ${JSON.stringify(fields)}.items(): d.set(k,v)\nd.save(ignore_permissions=True)\nprint(json.dumps(True))`);
 const KEY = "fake-gemini-key";

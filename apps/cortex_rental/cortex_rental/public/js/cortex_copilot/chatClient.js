@@ -159,6 +159,10 @@ export function openDeskPath(href) {
 }
 
 // Décision de la personne sur une action proposée par l'assistant (approuver = exécuter avec SES droits).
+export function undoAction(actionId) {
+	return apiCall("cortex_rental.api.v1.chat.undo_action", { name: actionId }, "POST");
+}
+
 export function decideAction(actionId, approve) {
 	return apiCall("cortex_rental.api.v1.chat.decide_action", { name: actionId, approve: approve ? 1 : 0 }, "POST");
 }
