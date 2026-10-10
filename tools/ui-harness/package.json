@@ -1,0 +1,12 @@
+{
+  "name": "cortex-ui-harness",
+  "private": true,
+  "type": "module",
+  "description": "Banc d'essai hors Desk : monte les composants Vue de l'assistant dans Chromium avec un faux frappe.",
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "esbuild-plugin-vue3": "0.4.2",
+    "playwright-core": "1.49.0",
+    "vue": "3.5.13"
+  }
+}

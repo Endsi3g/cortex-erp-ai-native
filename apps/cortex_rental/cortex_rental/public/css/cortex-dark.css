@@ -1076,6 +1076,82 @@ html[data-theme="dark"] .cx-avail-skeleton span {
 	background: linear-gradient(90deg, #27272a 25%, #27272a 37%, #27272a 63%);
 }
 
+/* ---- js/cortex_copilot/CopilotActionCard.vue ---- */
+html[data-theme="dark"] .cp-action {
+	border: 1px solid #2e2e33;
+	background: #18181b;
+}
+html[data-theme="dark"] .cp-action-head {
+	border-bottom: 1px solid #2e2e33;
+	background: #1f1f23;
+}
+html[data-theme="dark"] .cp-action-title {
+	color: #f4f4f5;
+}
+html[data-theme="dark"] .cp-action-badge.is-pending {
+	color: #fbbf24;
+	background: #2e2210;
+}
+html[data-theme="dark"] .cp-action-badge.is-done {
+	color: #6ee7b7;
+	background: #0f2a1f;
+}
+html[data-theme="dark"] .cp-action-badge.is-bad {
+	color: #fca5a5;
+	background: #2d1517;
+}
+html[data-theme="dark"] .cp-action-badge.is-muted {
+	color: #a1a1aa;
+	background: #27272a;
+}
+html[data-theme="dark"] .cp-action-sub {
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .cp-action-table td {
+	border-bottom: 1px solid #2e2e33;
+}
+html[data-theme="dark"] .cp-action-label {
+	color: #f4f4f5;
+}
+html[data-theme="dark"] .cp-action-detail {
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .cp-action-value {
+	color: #f4f4f5;
+}
+html[data-theme="dark"] .cp-action-total .cp-action-label {
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .cp-action-total.is-last td {
+	color: #f4f4f5;
+}
+html[data-theme="dark"] .cp-action-foot {
+	border-top: 1px solid #2e2e33;
+}
+html[data-theme="dark"] .cp-action-reject,
+html[data-theme="dark"] .cp-action-link {
+	border: 1px solid #2e2e33;
+	color: #d4d4d8;
+}
+html[data-theme="dark"] .cp-action-reject:hover:not(:disabled),
+html[data-theme="dark"] .cp-action-link:hover {
+	border-color: #52525b;
+	background: #1f1f23;
+	color: #f4f4f5;
+}
+html[data-theme="dark"] .cp-action-note {
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .cp-action-result {
+	color: #6ee7b7;
+}
+html[data-theme="dark"] .cp-action-message {
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .cp-action-message.is-bad {
+	color: #fca5a5;
+}
+
 /* ---- js/cortex_copilot/CopilotApprovalCard.vue ---- */
 html[data-theme="dark"] .cp-block-approval {
 	background: #18181b;
@@ -1446,6 +1522,70 @@ html[data-theme="dark"] .cp-note.is-danger {
 }
 html[data-theme="dark"] .cp-note.is-info {
 	border-left-color: #52525b;
+	color: #a1a1aa;
+}
+
+/* ---- js/cortex_copilot/CopilotStatCard.vue ---- */
+html[data-theme="dark"] .cp-stat {
+	border: 1px solid #2e2e33;
+	background: #18181b;
+}
+html[data-theme="dark"] .cp-stat-title {
+	color: #f4f4f5;
+}
+html[data-theme="dark"] .cp-stat-sub {
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .cp-stat-open {
+	border: 1px solid #2e2e33;
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .cp-stat-open:hover {
+	border-color: #52525b;
+	background: #1f1f23;
+	color: #f4f4f5;
+}
+html[data-theme="dark"] .cp-stat-kpi {
+	border: 1px solid #2e2e33;
+	background: #1f1f23;
+}
+html[data-theme="dark"] .cp-stat-kpi-label {
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .cp-stat-kpi-value {
+	color: #f4f4f5;
+}
+html[data-theme="dark"] .cp-stat-kpi-detail {
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .tone-good .cp-stat-kpi-value {
+	color: #6ee7b7;
+}
+html[data-theme="dark"] .tone-warn .cp-stat-kpi-value {
+	color: #fbbf24;
+}
+html[data-theme="dark"] .tone-bad .cp-stat-kpi-value {
+	color: #fca5a5;
+}
+html[data-theme="dark"] .cp-bar {
+	fill: #6ee7b7;
+}
+html[data-theme="dark"] .cp-line {
+	stroke: #6ee7b7;
+}
+html[data-theme="dark"] .cp-dot {
+	fill: #6ee7b7;
+}
+html[data-theme="dark"] .cp-value {
+	fill: #d4d4d8;
+}
+html[data-theme="dark"] .cp-label {
+	fill: #a1a1aa;
+}
+html[data-theme="dark"] .cp-stat-unit {
+	color: #a1a1aa;
+}
+html[data-theme="dark"] .cp-stat-meta {
 	color: #a1a1aa;
 }
 

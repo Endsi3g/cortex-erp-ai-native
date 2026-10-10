@@ -49,6 +49,18 @@ def money(value: Any) -> str:
     return f"-{text}" if amount < 0 else text
 
 
+def human_dt(value: Any) -> str:
+    """Pur : « 14 oct. 2026, 09 h 00 » à partir de « AAAA-MM-JJ hh:mm… »; le texte d'origine si le format est inattendu."""
+    text = str(value or "").strip()
+    match = re.match(r"^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})", text)
+    if not match:
+        return text
+    year, month, day, hour, minute = (int(g) for g in match.groups())
+    if not 1 <= month <= 12:
+        return text
+    return f"{day} {MONTHS[month - 1]} {year}, {hour:02d} h {minute:02d}"
+
+
 def month_key(year: int, month: int) -> str:
     return f"{year:04d}-{month:02d}"
 

@@ -36,6 +36,12 @@ class TestStatsPure(unittest.TestCase):
         self.assertEqual(stats.money(0), "0,00 $")
         self.assertEqual(stats.money(-12), "-12,00 $")
 
+    def test_human_dt_is_readable_and_never_crashes(self):
+        self.assertEqual(stats.human_dt("2026-10-14 09:00:00"), "14 oct. 2026, 09 h 00")
+        self.assertEqual(stats.human_dt("2026-01-02T18:30"), "2 janv. 2026, 18 h 30")
+        for odd in ("", None, "demain", "2026-13-01 10:00"):
+            self.assertEqual(stats.human_dt(odd), str(odd or "") if odd != "2026-13-01 10:00" else odd)
+
     def test_last_months_crosses_the_year_and_is_oldest_first(self):
         self.assertEqual(stats.last_months((2026, 2, 10), 4), [(2025, 11), (2025, 12), (2026, 1), (2026, 2)])
 

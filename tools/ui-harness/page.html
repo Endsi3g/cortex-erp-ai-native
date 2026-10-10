@@ -1,0 +1,23 @@
+<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="out/bundle.css">
+<style>body{margin:0;background:#fff;font:14px/1.5 system-ui,sans-serif;color:#334155} #wrap{max-width:720px;margin:0 auto;padding:16px}</style></head>
+<body><div id="wrap"><div id="app"></div></div>
+<script>
+window.__calls=[]; window.__routes=[];
+window.frappe={boot:{lang:"fr"},route_options:null,
+  set_route:function(){window.__routes.push({args:[].slice.call(arguments).flat(),opts:window.frappe.route_options})},
+  call:function(o){window.__calls.push(o); setTimeout(function(){ if(window.__fail){o.error({responseJSON:{_server_messages:JSON.stringify([JSON.stringify({message:"Votre rôle ne permet pas cette action."})])}})} else {o.callback({message:{data:{ok:true,status:"Executed",message:"Créer le devis : fait.",result_label:"Ouvrir le devis",result_href:"/app/cortex-rental-transaction/CR-0007"}}})}},50)},
+  get_route:function(){return []}};
+</script>
+<script>
+fetch("blocks.json").then(r=>r.json()).then(function(d){
+  window.__MESSAGES__=[
+   {id:"u1",role:"user",text:"Prépare un devis pour Acme du 14 au 16 octobre avec la caméra A et deux trépieds."},
+   {id:"a1",role:"assistant",blocks:[{type:"assistant_text",text:"J'ai préparé le devis. Les prix viennent du serveur; vérifiez et approuvez."},d.quote]},
+   {id:"u2",role:"user",text:"Crée aussi le client Acme Productions."},
+   {id:"a2",role:"assistant",blocks:[d.cust,d.done,d.failed]},
+   {id:"u3",role:"user",text:"Montre-moi la facturation."},
+   {id:"a3",role:"assistant",blocks:[d.summary,d.fin,d.states,d.line]}];
+  var s=document.createElement("script");s.src="out/bundle.js";document.body.appendChild(s);
+});
+</script></body></html>

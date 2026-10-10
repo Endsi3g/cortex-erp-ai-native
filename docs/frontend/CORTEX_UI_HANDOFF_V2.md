@@ -432,14 +432,22 @@ Rien de ce tableau n'a été essayé sur un Desk Frappe actif.
 | L'état d'une carte vient **toujours du serveur** (`actions.refresh_blocks`) | Une carte approuvée ne redevient jamais « à approuver » au rechargement |
 | Statistiques : **données réelles seulement**, lien `/app/...` vérifié (`stats.safe_href`) | Aucune estimation inventée ; jamais de lien externe |
 
-### Fait (poussé ou en cours de poussée sur la branche `claude/fervent-thompson-fs0kg0`, PR #15)
-- Moteur d'actions (`services/ai/actions.py`, DocType `Cortex AI Action`, `chat.decide_action`) : créer un client, créer un devis. Revalidation, verrou, point de sauvegarde, audit. 20+ tests.
-- Blocs de chat `action_card` et `stat_card` (schéma `chat_schemas.py`), outils de lecture `finance_trend`, `rentals_by_state` et carte pour `finance_summary` (`services/ai/stats.py`).
-- Composants Vue : `CopilotActionCard.vue` (carte dédiée B), `CopilotStatCard.vue` (KPI + graphique + flèche vers la source), branchés dans `CopilotConversation.vue` (donc aussi dans l'accueil IA).
+### Fait (poussé sur la branche `claude/fervent-thompson-fs0kg0`, PR #15)
+- **Moteur d'actions** (`services/ai/actions.py`, DocType `Cortex AI Action`, `chat.decide_action`) : créer un client, créer un devis. Revalidation, verrou, point de sauvegarde, audit. Tests : `test_ai_actions.py`.
+- **Blocs de chat** `action_card` et `stat_card` (`chat_schemas.py`) ; outils de lecture `finance_trend`, `rentals_by_state` et carte pour `finance_summary` (`services/ai/stats.py`, tests `test_ai_stats.py`). Format canadien-français (`stats.money`, `stats.human_dt`).
+- **Composants Vue** : `CopilotActionCard.vue` (carte dédiée, choix B de Kael), `CopilotStatCard.vue` (KPI, barres ou ligne en SVG, flèche en haut à droite vers la source), branchés dans `CopilotConversation.vue` (l'accueil IA les reçoit aussi). `chatClient.js` : `decideAction`, `openDeskPath` (chemin `/app/...` revérifié, `route_options` pour les listes filtrées).
+- **Mode sombre** : `cortex-dark.css` régénéré (+140 lignes, rien retiré).
+- **Banc d'essai réutilisable** : `tools/ui-harness/` (README).
+- **Vérifié dans le banc d'essai (Chromium, faux `frappe`, PAS le Desk)** : rendu clair/sombre, bureau 900 px et mobile 390 px ; clic « Créer le devis » → appel `decide_action` correct, état « Fait », lien « Ouvrir le devis » → route du document ; échec de droits → message en rouge et bouton encore actif ; flèches des cartes de statistiques → bonne route ; 122 textes, **0 sous 4,5:1** en clair et en sombre. Captures : `docs/review/captures/phase10-cartes/`.
 - Maquette : `docs/frontend/mockups/proposition-assistant.html`.
 
+### Décisions de cette étape
+- Les montants des cartes d'action utilisent le même format que les statistiques (« 1 234,50 $ ») : un seul format partout.
+- Le graphique est un SVG maison (pas de bibliothèque) : aucune dépendance de plus, rendu identique clair/sombre, `role="img"` + `<title>` par barre. Limite : pas d'infobulle riche ni de zoom.
+- En sombre, le vert des barres devient menthe (`#6ee7b7`) par la conversion automatique : lisible, mais à valider par Kael sur un Desk réel.
+
 ### Reste à faire (ordre proposé)
-1. Vérifier les deux cartes dans Chromium (banc d'essai hors Desk, à dire comme tel), clair et sombre ; régénérer `cortex-dark.css` ; captures dans `docs/review/captures/`.
+1. ~~Vérifier les deux cartes dans le banc d'essai~~ **fait**. Reste : les voir dans un **vrai Desk** avec `cortex_ai_actions` activé (`bench --site <site> set-config cortex_ai_actions 1`), `bench build --app cortex_rental`, `bench migrate` (nouveau DocType).
 2. Plus d'actions métier, **une par une, seulement celles qu'on peut annuler facilement ou qui passent déjà par l'approbation** (réservation, retenue, paiement, approbation…). Candidates à valider avec Kael.
 3. Modifier la structure par l'IA (champs, sections, espaces, catégories de pages) avec avant/après et annulation ; modèles de secteur.
 4. Chat : réponse en continu, pièces jointes, mémoire/projets, étapes visibles.
@@ -453,7 +461,7 @@ Rien de ce tableau n'a été essayé sur un Desk Frappe actif.
 - **Jamais** : écrire directement depuis un outil, inventer un chiffre, mettre un lien externe, ou présenter une exécution échouée comme réussie.
 
 ### Limites connues
-Rien de cette phase n'a été essayé sur un Desk Frappe actif ni avec un vrai modèle. Les composants n'ont pas encore été vus à l'écran (voir « Reste à faire » 1).
+Rien de cette phase n'a été essayé sur un Desk Frappe actif ni avec un vrai modèle. Les composants ont été vus seulement dans le banc d'essai (`tools/ui-harness/`). Les outils `propose_*` restent invisibles pour le modèle tant que `cortex_ai_actions` n'est pas activé.
 
 ## Niveau de vérité de l’implémentation
 

@@ -3,6 +3,8 @@ import { computed, reactive } from "vue";
 import CopilotVerifiedFact from "./CopilotVerifiedFact.vue";
 import CopilotExtractedData from "./CopilotExtractedData.vue";
 import CopilotProposalCard from "./CopilotProposalCard.vue";
+import CopilotActionCard from "./CopilotActionCard.vue";
+import CopilotStatCard from "./CopilotStatCard.vue";
 import CopilotRiskCard from "./CopilotRiskCard.vue";
 import CopilotMissingInfoCard from "./CopilotMissingInfoCard.vue";
 import CopilotApprovalCard from "./CopilotApprovalCard.vue";
@@ -38,6 +40,8 @@ const BLOCK_COMPONENTS = {
 	tool_progress: CopilotToolProgress,
 	error: CopilotErrorCard,
 	proposal_group: CopilotActions,
+	action_card: CopilotActionCard,
+	stat_card: CopilotStatCard,
 };
 
 // Un type inconnu ne s'affiche jamais comme une erreur technique : s'il porte du texte, on le montre comme texte ;

@@ -138,6 +138,7 @@ def _run_customer(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
 
 
 def _prepare_quote(args: Dict[str, Any], company: str) -> Prepared:
+    from cortex_rental.services.ai.stats import human_dt, money
     from cortex_rental.api.v1.rentals import _customer_in_company, _pricing
     from cortex_rental.services import billing
 
@@ -156,8 +157,8 @@ def _prepare_quote(args: Dict[str, Any], company: str) -> Prepared:
     except Exception as exc:  # droits, client d'une autre société, équipement inconnu, dates invalides
         raise ActionError(str(getattr(exc, "message", None) or exc)[:300])
     tps, tvq = billing.compute_taxes(priced["subtotal"], billing.get_settings(company))
-    lines = [f"{l['item_name']} × {l['quantity']:g} — {l['line_subtotal']:.2f} $" for l in priced["lines"]]
-    lines.append(f"Sous-total {priced['subtotal']:.2f} $ · TPS {tps:.2f} $ · TVQ {tvq:.2f} $")
+    lines = [f"{l['item_name']} × {l['quantity']:g} — {money(l['line_subtotal'])}" for l in priced["lines"]]
+    lines.append(f"Sous-total {money(priced['subtotal'])} · TPS {money(tps)} · TVQ {money(tvq)}")
     payload = {
         "customer_id": customer,
         "starts_at": str(args.get("starts_at")),
@@ -165,21 +166,21 @@ def _prepare_quote(args: Dict[str, Any], company: str) -> Prepared:
         "items": [{"item_code": l["item_code"], "quantity": l["quantity"]} for l in priced["lines"]],
         "notes": "Proposé par l'assistant, approuvé par une personne.",
     }
-    period = f"{payload['starts_at'][:16]} → {payload['ends_at'][:16]}"
+    period = f"{human_dt(payload['starts_at'])} → {human_dt(payload['ends_at'])}"
     rows = [
         {
             "label": l["item_name"],
-            "detail": f"× {l['quantity']:g} · {l['daily_rate']:.2f} $ par jour",
-            "value": f"{l['line_subtotal']:.2f} $",
+            "detail": f"× {l['quantity']:g} · {money(l['daily_rate'])} par jour",
+            "value": money(l["line_subtotal"]),
         }
         for l in priced["lines"]
     ]
     total = round(priced["subtotal"] + tps + tvq, 2)
     totals = [
-        {"label": "Sous-total", "value": f"{priced['subtotal']:.2f} $"},
-        {"label": "TPS", "value": f"{tps:.2f} $"},
-        {"label": "TVQ", "value": f"{tvq:.2f} $"},
-        {"label": "Total", "value": f"{total:.2f} $"},
+        {"label": "Sous-total", "value": money(priced["subtotal"])},
+        {"label": "TPS", "value": money(tps)},
+        {"label": "TVQ", "value": money(tvq)},
+        {"label": "Total", "value": money(total)},
     ]
     return Prepared(
         payload,
