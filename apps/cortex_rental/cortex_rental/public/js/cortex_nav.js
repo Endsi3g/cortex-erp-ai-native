@@ -134,6 +134,7 @@
 			this.groups = JSON.parse(store(GROUP_STORE) || "{}");
 			this.build();
 			this.autoCollapse();
+			this.markAssistant();
 			this.buildPresence();
 			this.bind();
 			this.refreshActive();
@@ -371,6 +372,7 @@
 				cortex.currentRoute = window.location.pathname;
 				this.refreshActive();
 				this.autoCollapse();
+				this.markAssistant();
 				this.closeDrawer();
 			});
 			SHORT.addEventListener("change", () => this.autoCollapse());
@@ -449,6 +451,12 @@
 				const title = section.querySelector(".cx-group-title");
 				if (title) title.setAttribute("aria-expanded", "false");
 			});
+		}
+
+		// L'Assistant IA (accueil et conversation) est une page plein écran : la classe sert au CSS (fil d'Ariane et barre du
+		// haut réduits à Mon compte et Paramètres, polices plus légères). Elle disparaît dès qu'on quitte la page.
+		markAssistant() {
+			document.body.classList.toggle("cx-ai-fullscreen", (this.parts()[0] || "") === "cortex-home");
 		}
 
 		// Sans préférence enregistrée par la personne : barre repliée sur l'Assistant IA (page de conversation) et sur

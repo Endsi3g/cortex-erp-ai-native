@@ -171,7 +171,7 @@ function checked(value) {
 .cp-stat-title {
 	margin: 0;
 	font-size: 14px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 .cp-stat-sub {
@@ -225,7 +225,7 @@ function checked(value) {
 }
 .cp-stat-kpi-value {
 	font-size: 18px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	font-variant-numeric: tabular-nums;
 	color: #0f172a;
 }
@@ -294,7 +294,7 @@ function checked(value) {
 }
 .cp-donut-total {
 	font-size: 15px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	fill: #0f172a;
 }
 .cp-donut-unit {

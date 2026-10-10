@@ -767,7 +767,7 @@ defineExpose({ refresh });
 	margin: 0;
 	font-size: clamp(32px, 4.6vw, 40px);
 	line-height: 1.15;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	letter-spacing: -0.02em;
 	color: #111827;
 }
@@ -1180,7 +1180,7 @@ defineExpose({ refresh });
 .ch-close-x {
 	font-size: 9px;
 	color: #64748b;
-	font-weight: 700;
+	font-weight: var(--cx-weight-heavy, 700);
 	line-height: 1;
 }
 
@@ -1202,7 +1202,7 @@ defineExpose({ refresh });
 	padding-right: 26px;
 	margin: 0;
 	font-size: 14px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 	line-height: 1.3;
 }
@@ -1329,7 +1329,7 @@ defineExpose({ refresh });
 	color: #8a4b00;
 	font: inherit;
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	cursor: pointer;
 	text-decoration: underline;
 }
@@ -1349,7 +1349,7 @@ defineExpose({ refresh });
 	background: #fff;
 	font: inherit;
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #334155;
 	cursor: pointer;
 	transition: background-color 0.15s ease;
@@ -1424,7 +1424,7 @@ defineExpose({ refresh });
 .ch-pop-title {
 	margin: 0;
 	font-size: 14px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 
@@ -1493,7 +1493,7 @@ defineExpose({ refresh });
 	background: #fff;
 	font: inherit;
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #334155;
 	cursor: pointer;
 }
@@ -1523,7 +1523,7 @@ defineExpose({ refresh });
 	color: #066336;
 	font: inherit;
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	cursor: pointer;
 }
 
@@ -1556,7 +1556,7 @@ defineExpose({ refresh });
 .ch-drawer-head h2 {
 	margin: 0;
 	font-size: 15px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 
@@ -1606,7 +1606,7 @@ defineExpose({ refresh });
 .ch-drawer-group h3 {
 	margin: 14px 4px 6px;
 	font-size: 11px;
-	font-weight: 700;
+	font-weight: var(--cx-weight-heavy, 700);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: #64748b;
@@ -1785,7 +1785,7 @@ defineExpose({ refresh });
 
 .ch-tier-name {
 	font-size: 13.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 
@@ -1798,7 +1798,7 @@ defineExpose({ refresh });
 .ch-tier-cost {
 	flex: none;
 	font-size: 11.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #475569;
 	white-space: nowrap;
 }

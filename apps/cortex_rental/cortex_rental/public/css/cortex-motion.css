@@ -225,3 +225,77 @@ body.cx-route-loading .page-container .layout-main-section {
 		transition: none;
 	}
 }
+
+/* ---- Accueil personnalisé après la connexion (js/cortex_welcome.js) : fondu doux, une seule fois par connexion ---- */
+.cx-welcome {
+	position: fixed;
+	inset: 0;
+	z-index: 2100;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 24px;
+	background: var(--bg-color, #fff);
+	color: var(--text-color, #0f172a);
+	text-align: center;
+	opacity: 0;
+	transition: opacity 0.35s ease;
+}
+.cx-welcome.is-in {
+	opacity: 1;
+}
+.cx-welcome.is-leaving {
+	opacity: 0;
+	transition-duration: 0.45s;
+}
+.cx-welcome-logo {
+	max-width: 72px;
+	max-height: 72px;
+	border-radius: 14px;
+	object-fit: contain;
+}
+.cx-welcome-mark {
+	display: grid;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	border-radius: 16px;
+	background: #047857;
+	color: #fff;
+	font-size: 26px;
+	font-weight: 500;
+}
+.cx-welcome-title {
+	margin: 6px 0 0;
+	font-size: clamp(26px, 4vw, 34px);
+	font-weight: 500;
+	line-height: 1.2;
+	opacity: 0;
+	transform: translateY(6px);
+	transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
+}
+.cx-welcome.is-in .cx-welcome-title {
+	opacity: 1;
+	transform: none;
+}
+.cx-welcome-company {
+	margin: 0;
+	font-size: 15px;
+	color: var(--text-muted, #64748b);
+	opacity: 0;
+	transition: opacity 0.5s ease 0.25s;
+}
+.cx-welcome.is-in .cx-welcome-company {
+	opacity: 1;
+}
+/* Moins de mouvement : pas de glissement, fondu très court. */
+@media (prefers-reduced-motion: reduce) {
+	.cx-welcome,
+	.cx-welcome-title,
+	.cx-welcome-company {
+		transition: none;
+		transform: none;
+	}
+}

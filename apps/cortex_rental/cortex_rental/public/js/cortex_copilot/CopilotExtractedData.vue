@@ -25,7 +25,7 @@ const CONFIDENCE_LABEL = { high: "confiance élevée", medium: "confiance moyenn
 .cp-extracted-title {
 	margin: 0 0 6px;
 	font-size: 14px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 dl {

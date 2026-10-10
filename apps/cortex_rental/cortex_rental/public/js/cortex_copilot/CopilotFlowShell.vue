@@ -60,7 +60,7 @@ defineProps({
 .fs-title {
 	margin: 0;
 	font-size: 15px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #09090b;
 }
 .fs-sub {
@@ -91,13 +91,13 @@ defineProps({
 	border-radius: 50%;
 	background: #ecebe6;
 	font-size: 11px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #55544f;
 	transition: background-color 0.2s ease, color 0.2s ease;
 }
 .fs-steps li.on {
 	color: #09090b;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 }
 .fs-steps li.on .fs-dot {
 	background: #047857;

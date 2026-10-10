@@ -171,7 +171,7 @@ function openGrid() {
 }
 .a-label {
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #55544f;
 }
 .a-hint {
@@ -202,7 +202,7 @@ function openGrid() {
 	border-color: #047857;
 	background: #f1faf5;
 	color: #066336;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 }
 .a-dates {
 	display: grid;
@@ -241,7 +241,7 @@ function openGrid() {
 .a-cat {
 	margin: 8px 0 0;
 	font-size: 11.5px;
-	font-weight: 700;
+	font-weight: var(--cx-weight-heavy, 700);
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	color: #6b6a66;
@@ -261,7 +261,7 @@ function openGrid() {
 }
 .a-main strong {
 	font-size: 13.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 }
 .a-meta {
 	font-size: 12px;
@@ -273,7 +273,7 @@ function openGrid() {
 	background: #e7f6ee;
 	color: #066336;
 	font-size: 11.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	white-space: nowrap;
 }
 .a-badge.partial {
@@ -298,7 +298,7 @@ function openGrid() {
 	border-radius: 8px;
 	background: #fff;
 	font-size: 12.5px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #066336;
 	cursor: pointer;
 	transition: background-color 0.15s ease;

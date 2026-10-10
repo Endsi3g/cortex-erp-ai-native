@@ -161,7 +161,7 @@ async function undo() {
 .cp-action-title {
 	margin: 0;
 	font-size: 14px;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 .cp-action-badge {
@@ -222,7 +222,7 @@ async function undo() {
 }
 .cp-action-total.is-last td {
 	border-bottom: 0;
-	font-weight: 650;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #0f172a;
 }
 .cp-action-why {
@@ -262,7 +262,7 @@ async function undo() {
 .cp-why-body h4 {
 	margin: 8px 0 2px;
 	font-size: 12px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #64748b;
 }
 .cp-why-body p {
@@ -303,7 +303,7 @@ async function undo() {
 	border: 1px solid #047857;
 	background: #047857;
 	color: #ffffff;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 }
 .cp-action-approve:hover:not(:disabled) {
 	filter: brightness(0.95);
@@ -342,7 +342,7 @@ async function undo() {
 }
 .cp-action-result {
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: var(--cx-weight-strong, 600);
 	color: #065f46;
 }
 .cp-action-message {
