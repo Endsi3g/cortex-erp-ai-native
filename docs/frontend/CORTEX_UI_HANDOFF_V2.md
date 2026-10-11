@@ -682,6 +682,20 @@ Demande de Kael : « installe PostHog » (clé publique `phc_…` fournie; `npx 
 - **Le guide « Vue.js » collé par Kael n'est pas appliqué tel quel**, parce que Cortex a déjà ces fonctions (`public/js/cortex_analytics.js`, plus sûr pour la Loi 25) et que plusieurs lignes du guide les affaibliraient : `identify(user.id, {email, name…})` (Cortex envoie un **identifiant anonyme HMAC** et les rôles, jamais courriel ni nom); `maskInputOptions.email: false` (Cortex masque **tous** les champs); « enregistrer 100 % » sans masquage du texte des données d'affaires (Cortex masque `.form-control`, listes, rapports, messages de l'assistant); `capture('ai_query_submitted', {model…})` côté navigateur (Cortex mesure l'IA **côté serveur**, sans texte, avec `$ai_generation`). Déjà équivalent chez nous : suivi d'erreurs (`capture_exceptions`), groupe par société, respect de Do Not Track, enregistrement de session.
 - **Pas fait, à décider** : *feature flags* PostHog (interrupteur d'urgence, déploiement progressif) — ils demandent des personnes identifiées et un appel réseau au démarrage; Cortex a déjà ses interrupteurs côté serveur (`cortex_ai_actions`, niveaux d'IA activables). *Cartes sources (source maps)* pour lire les erreurs minifiées : à envoyer à PostHog avec `wizard upload-source-maps` après un `bench build` (les fichiers `.map` existent).
 
+## Phase 17 (PLAN, écrit avant le travail, 2026-10-11) : Gemma 4 pleinement fonctionnel dans l'application
+
+Demande de Kael : « configure complètement Gemma 4 afin de le rendre complètement fonctionnel et correctement fonctionnel dans l'app ».
+
+**Constats mesurés avec le vrai modèle (phase 16)** : appel d'outil correct, MAIS (a) chaque tour envoie ~5 200 jetons (consignes + 26 outils) : 6-8 minutes sur processeur, bien plus que le délai du serveur web (gunicorn : 120 s par défaut) → l'utilisateur recevrait une erreur 502; (b) réflexion à désactiver (fait); (c) le modèle a répondu « 10 » au lieu de « 34 » (outil corrigé : `total`/`truncated`); (d) les actions (`propose_*`) n'ont **jamais** été essayées avec lui.
+
+**Ce que je construis** (déterministe d'abord, aucun jeton de plus) :
+1. **Profil « compact » pour les petits modèles** (niveaux `gemma` et `local`) : consignes courtes + **seulement les outils utiles à la demande**, choisis sans modèle par des mots-clés (lecture : locations, factures, disponibilité, clients, retards, statistiques; écriture : les `propose_*` seulement si la demande contient un verbe d'action). Fonction pure `tool_routing.select_tools`, testée. Objectif : ≤ 1 500 jetons par tour au lieu de 5 200.
+2. **Délai propre au niveau** (`tier_local_timeout_seconds`, `tier_gemma_timeout_seconds`) : le modèle local ne peut pas être coupé par le délai global de 60 s, et l'erreur de délai est en français (jamais un 502 muet); documentation de `http_timeout` du serveur web.
+3. **Essais réels et réglages** : une batterie de demandes jouée contre le vrai Gemma 4 par la vraie passerelle (lecture, statistiques, retards, client à créer, tarif à modifier, devis, demande ambiguë), avec mesure des jetons et du temps, et corrections des descriptions d'outils tant qu'un appel est faux. Les actions restent sous approbation humaine comme avec tout modèle.
+4. **Gemma par l'API Gemini** : même profil compact; contrat de requête validé par le faux serveur; **aucun essai réel sans clé** (dit).
+5. **Interface** : le sélecteur dit « peut prendre plusieurs minutes » pour Local sans GPU et le chemin de délai affiche un message clair.
+6. Documentation : recette GPU (`--gpus all`), `http_timeout`, limites.
+
 ## Phase 11 (faite, 2026-10-11) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 
 **Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**
