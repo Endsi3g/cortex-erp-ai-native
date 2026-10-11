@@ -635,17 +635,17 @@ Le produit est câblé « cinéma » : la catégorie d'un équipement est une li
 ### Vérification prévue
 Tests purs (plan, aperçu, sécurité), tests banc (appliquer, annuler, droits, catégories visibles par Frappe), essais E2E dans le vrai Desk (page + assistant) avec captures, 100 % de la suite du banc; bilan écrit ici à la fin de chaque sous-phase.
 
-## Phase 11 (en cours) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
+## Phase 11 (faite, 2026-10-11) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 
 **Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**
 
 | # | Chantier | Décision de Kael | État |
 | --- | --- | --- | --- |
 | 11.0 | Barre latérale | **Administration replié par défaut** (il s'ouvrait à cause de `cortex-setup` et ne se refermait pas) | **Fait, vérifié dans le vrai Desk** (`data-auto` dans `cortex_nav.js`) |
-| 11.1 | Écran de chargement après la connexion | **Accueil personnalisé court** : « Bienvenue, {prénom} », nom et logo de la société, fondu doux, pas de liste d'étapes, une seule fois par connexion | À faire |
-| 11.2 | Assistant IA plein écran | **Ta page, presque intacte** : retirer le fil d'Ariane et la barre du haut (sauf Mon compte et Paramètres), barre latérale réduite aux icônes (avec son bouton), **polices plus légères** | À faire |
-| 11.3 | Onboarding | **Garder l'actuel tel quel**; ajouter **animations seulement** (transition entre étapes, coche, barre de progression, « Enregistré »). Pas d'IA | À faire |
-| 11.4 | Visite guidée | **Une visite globale pas à pas** (halo + bulles), **contenu** : où est chaque page et à quoi elle sert + comment l'application fonctionne (demande → devis → réservation → contrat → sortie → retour → facture → paiement); **elle ouvre chaque page**; **automatique une fois** à la première arrivée sur l'Assistant IA après l'onboarding, **relançable** depuis Aide; passable à tout moment. Pas d'IA | À faire |
+| 11.1 | Écran de chargement après la connexion | **Accueil personnalisé court** : « Bienvenue, {prénom} », nom et logo de la société, fondu doux, pas de liste d'étapes, une seule fois par connexion | **Fait**, vu dans le vrai Desk (connexion réelle) |
+| 11.2 | Assistant IA plein écran | **Ta page, presque intacte** : retirer le fil d'Ariane et la barre du haut (sauf Mon compte et Paramètres), barre latérale réduite aux icônes (avec son bouton), **polices plus légères** | **Fait**, vu dans le vrai Desk (clair et sombre) |
+| 11.3 | Onboarding | **Garder l'actuel tel quel**; ajouter **animations seulement** (transition entre étapes, coche, barre de progression, « Enregistré »). Pas d'IA | **Fait**, vu dans le vrai Desk |
+| 11.4 | Visite guidée | **Une visite globale pas à pas** (halo + bulles), **contenu** : où est chaque page et à quoi elle sert + comment l'application fonctionne (demande → devis → réservation → contrat → sortie → retour → facture → paiement); **elle ouvre chaque page**; **automatique une fois** à la première arrivée sur l'Assistant IA après l'onboarding, **relançable** depuis Aide; passable à tout moment. Pas d'IA | **Fait**, parcours complet vu dans le vrai Desk |
 
 Pourquoi : l'IA qui remplit tout coûte des jetons et retire le contrôle; un onboarding guidé par des textes, des exemples et des animations est prévisible, rapide et gratuit à exécuter. L'IA commence sur l'Assistant IA, sur demande.
 
@@ -661,6 +661,21 @@ Constats dans le vrai Desk : la barre du haut contient le bouton de menu, le log
 | 11.4 | **Visite guidée globale** | Un module `cortex_tour.js` : étapes décrites **en données** (page, élément à entourer, texte français court). Halo (zone éclaircie autour de l'élément) + bulle (titre, texte, Précédent / Suivant / Passer, points de progression). **Ouvre chaque page** (`frappe.set_route`) puis entoure l'élément réel; si un élément est absent (rôle/espace non offert), l'étape est sautée, jamais inventée. Contenu : où est chaque page et à quoi elle sert + le cycle demande → devis → réservation → contrat → sortie → retour → facture → paiement. **Automatique une fois** à la première arrivée sur l'Assistant IA après l'onboarding (état gardé **côté serveur**, par personne, dans les préférences de l'utilisateur), **relançable** depuis Aide (« Visite guidée de Cortex »), passable à tout moment (Échap). Aucune IA, aucun jeton. | Parcours complet dans le vrai Desk avec captures de chaque étape; test que le drapeau serveur empêche la relance automatique |
 
 Décisions de conception à relire par Kael : (a) la barre du haut de l'Assistant ne garde que le menu utilisateur (je n'ai pas de « Paramètres » séparé : ce sont « Mes paramètres » dans ce menu); (b) le lanceur flottant « Copilote » reste affiché (non demandé : à confirmer, il fait doublon avec la page); (c) le drapeau de la visite est enregistré côté serveur pour survivre à un changement d'appareil.
+
+### Bilan de la phase 11 (fait / reste / pourquoi) — 2026-10-11
+**Fait et vérifié dans le vrai Desk** (banc : 737 tests OK; `e2e-ai.mjs` 58/58; scénarios `tools/ui-harness/real-shots.mjs assistant|welcome|onboarding|tour`; captures `docs/review/captures/phase11-parcours/`) :
+- **11.2 Assistant plein écran** : classe `cx-ai-fullscreen` (posée par `cortex_nav.js` sur la route `cortex-home`); fil d'Ariane masqué; barre du haut = **menu utilisateur seulement** (Mon profil, Mes paramètres); polices plus légères par deux variables (`--cx-weight-strong` 600→500, `--cx-weight-heavy` 700→600) que seule cette page redéfinit; barre latérale déjà réduite aux icônes avec son bouton. Autre page : barre complète, vérifié. Page de Kael sinon intacte.
+- **11.1 Accueil personnalisé** (`cortex_welcome.js`) : drapeau daté posé par la page de connexion (`cortex_login.js`), voile « Bienvenue, {prénom} » + société (+ logo si réglé), une fois par connexion; pas au rechargement ni dans un autre onglet; drapeau périmé (> 90 s) ignoré; un clic ou une touche ferme; mouvement réduit respecté. Aucun appel serveur.
+- **11.3 Onboarding animé** : contenu inchangé; mention « Enregistré » (seulement quand le serveur a accepté) et coche qui rebondit à l'étape terminée (le reste — transitions, barre de progression — existait déjà). Vérifié par un parcours réel (le logo est obligatoire à la 1re étape : le script en pose un de test et restaure tout).
+- **11.4 Visite guidée** (`cortex_tour.js`, 18 étapes) : halo + bulle, **ouvre chaque page** et entoure l'entrée de la barre latérale (ou la zone de saisie de l'Assistant), étape « chemin d'une location » (demande → devis → réservation → contrat → sortie → retour → facture → paiement); étapes sautées si la page n'existe pas pour le rôle; Précédent / Suivant / Passer / Échap / flèches; retour à la page d'origine à la fin; **automatique une seule fois** (état serveur : `Cortex User Preference.tour_seen_at`, API `tour.get_state` / `tour.mark_seen`), **relançable** depuis Aide et depuis le menu utilisateur (l'Assistant plein écran n'a plus d'Aide). Aucune IA.
+- **Pourquoi `get_state`** : Frappe met le « boot » de chaque personne en cache (`frappe.cache` clé `bootinfo`); la valeur « jamais vue » restait servie après la visite et la relançait à chaque chargement. La visite confirme donc auprès du serveur avant de se lancer, et `mark_seen` vide aussi ce cache. Les tests ont attrapé deux fois des remplacements de texte silencieusement non appliqués : relire le fichier après un script.
+
+**Reste / à décider avec Kael** :
+1. Le lanceur flottant « Copilote » est toujours affiché sur l'Assistant plein écran (non demandé, fait doublon) : à confirmer.
+2. Le bouton de la visite apparaît seulement dans Aide et le menu utilisateur : à confirmer s'il faut aussi un lien dans la page Assistant (engrenage).
+3. Erreur JavaScript tierce, bénigne, vue pendant la visite sur les pages à graphiques (`removeChild` dans le redessin des Frappe Charts après un changement de page rapide); non reproduite sans la visite; non corrigée (code de Frappe).
+4. Icônes de la barre latérale « ternes » en mode sombre : mesure faite — les couleurs des entrées sont uniformes (aucune opacité réduite); ce qui paraît terne, ce sont les têtes de groupes repliés (Parc, Clients et finance, Administration) en barre réduite : pas modifié.
+5. Le voile d'accueil n'affiche pas de logo tant que `Company.company_logo` est vide (initiale de la société à la place).
 
 ## Niveau de vérité de l’implémentation
 

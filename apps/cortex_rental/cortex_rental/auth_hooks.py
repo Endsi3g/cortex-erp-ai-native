@@ -82,6 +82,12 @@ def boot_session(bootinfo) -> None:
     home.update(_company_identity())
     bootinfo.cortex_home = home
     try:
+        from cortex_rental.api.v1 import tour
+
+        bootinfo.cortex_tour = {"seen": tour.tour_seen(frappe.session.user)}
+    except Exception:
+        frappe.log_error(title="Cortex tour boot flag failed")
+    try:
         from cortex_rental.services import sector_templates
 
         bootinfo.cortex_categories = sector_templates.categories()

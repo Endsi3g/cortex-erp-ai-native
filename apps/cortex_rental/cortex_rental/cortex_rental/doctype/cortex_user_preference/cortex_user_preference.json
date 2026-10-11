@@ -19,7 +19,8 @@
     "notify_late_returns",
     "notify_quote_unanswered",
     "notify_unpaid_invoices",
-    "notify_quote_response"
+    "notify_quote_response",
+    "tour_seen_at"
   ],
   "fields": [
     {
@@ -59,6 +60,13 @@
       "fieldtype": "Check",
       "label": "Réponse d'un client à un devis",
       "default": "1"
+    },
+    {
+      "fieldname": "tour_seen_at",
+      "fieldtype": "Datetime",
+      "label": "Visite guidée vue le",
+      "read_only": 1,
+      "description": "Renseigné quand la personne termine ou passe la visite guidée : la visite automatique ne se relance plus."
     }
   ],
   "permissions": [

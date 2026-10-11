@@ -8,7 +8,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROME || "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-CA", storageState: STATE });
 const page = await ctx.newPage();
-page.errors = []; page.on("pageerror", (e) => page.errors.push(String(e).slice(0, 160)));
+page.errors = []; page.on("pageerror", (e) => page.errors.push(String(e.stack || e).replace(/\s+/g, " ").slice(0, 420)));
 const go = async (path, wait = 1800) => { await page.goto(BASE + path, { waitUntil: "networkidle" }); await page.waitForTimeout(wait); };
 const theme = (t) => page.evaluate((x) => { document.documentElement.setAttribute("data-theme", x); }, t);
 const scenario = process.argv[2] || "assistant";
@@ -93,6 +93,52 @@ if (scenario === "onboarding") {
 		py("frappe.db.set_value('Company','Studio Lumière','company_logo','')\nfor n in frappe.get_all('File',filters={'file_name':'logo-essai.png'},pluck='name'): frappe.delete_doc('File',n,force=1,ignore_permissions=True)\nprint(json.dumps(True))");
 		if (process.env.KEEP_ONB !== "1") py(saved ? `frappe.db.set_value('Cortex Onboarding','Studio Lumière',${JSON.stringify(saved).replace(/null/g, "None")})\nprint(json.dumps(True))` : "frappe.delete_doc('Cortex Onboarding','Studio Lumière',force=1,ignore_permissions=True)\nprint(json.dumps(True))");
 	}
+}
+if (scenario === "tour") {
+	const { execSync } = await import("child_process");
+	const py = (code) => { fs.writeFileSync("/tmp/q.py", `import os,json\nos.chdir('/home/frappe/frappe-bench/sites')\nimport frappe\nfrappe.init(site='cortex.localhost',sites_path='.');frappe.connect();frappe.set_user('Administrator')\n${code}\nfrappe.db.commit()`); execSync("docker cp /tmp/q.py fb:/tmp/q.py"); return JSON.parse(execSync("docker exec -u frappe fb bash -c 'cd /home/frappe/frappe-bench/sites && ../env/bin/python /tmp/q.py'").toString().trim().split("\n").pop()); };
+	const seenOnServer = () => py("print(json.dumps(bool(frappe.db.get_value('Cortex User Preference','kael@studio-lumiere.test','tour_seen_at'))))");
+	py("if frappe.db.exists('Cortex User Preference','kael@studio-lumiere.test'): frappe.db.set_value('Cortex User Preference','kael@studio-lumiere.test','tour_seen_at',None)\nprint(json.dumps(True))");
+	console.log("avant : visite vue sur le serveur =", seenOnServer());
+	await go("/app/cortex-home", 800);
+	const started = await page.waitForSelector(".cx-tour-bubble", { timeout: 15000 }).then(() => true).catch(() => false);
+	console.log("la visite démarre toute seule à la première arrivée :", started);
+	const visited = [];
+	for (let i = 0; i < 30; i++) {
+		await page.waitForTimeout(700);
+		const title = await page.locator(".cx-tour-title").innerText().catch(() => "");
+		if (!title) break;
+		const count = await page.locator(".cx-tour-count").innerText().catch(() => "");
+		const halo = await page.locator(".cx-tour-halo").evaluate((n) => !n.hidden).catch(() => false);
+		visited.push(`${count.replace(/\s+/g, " ")} | ${title} | halo=${halo} | ${window_path(page.url())}`);
+		if (i < 4 || ["Locations", "Disponibilité", "Le chemin d'une location", "C'est tout"].includes(title)) await page.screenshot({ path: `${OUT}/visite-${String(i + 1).padStart(2, "0")}-${title.replace(/[^a-zA-Z]+/g, "-").toLowerCase()}.png` });
+		const next = page.locator("[data-tour=next]");
+		const label = await next.innerText();
+		await next.click();
+		if (label === "Terminer") break;
+	}
+	function window_path(u) { return u.replace(BASE, ""); }
+	console.log(visited.join("\n"));
+	await page.waitForTimeout(1500);
+	console.log("visite refermée :", (await page.locator(".cx-tour-bubble").count()) === 0, "| retour à :", page.url().replace(BASE, ""));
+	console.log("après : visite vue sur le serveur =", seenOnServer());
+	await go("/app/cortex-home", 800); await page.waitForTimeout(3500);
+	console.log("pas de relance automatique au rechargement :", (await page.locator(".cx-tour-bubble").count()) === 0);
+	// Relance par le menu utilisateur (la barre de l'Assistant plein écran n'a pas d'Aide)
+	await page.getByRole("button", { name: "Menu utilisateur" }).click(); await page.waitForTimeout(400);
+	await page.screenshot({ path: `${OUT}/visite-menu-utilisateur.png` });
+	await page.locator("#toolbar-user [data-cx-tour]").click();
+	console.log("relance depuis le menu utilisateur :", await page.waitForSelector(".cx-tour-bubble", { timeout: 8000 }).then(() => true).catch(() => false));
+	await page.keyboard.press("Escape"); await page.waitForTimeout(600);
+	console.log("Échap passe la visite :", (await page.locator(".cx-tour-bubble").count()) === 0);
+	// Relance par le menu Aide d'une autre page
+	await go("/app/cortex-rental-transaction", 1500);
+	await page.locator("header.navbar .dropdown-help > button").click(); await page.waitForTimeout(400);
+	await page.locator("#toolbar-help [data-cx-tour]").click();
+	console.log("relance depuis le menu Aide :", await page.waitForSelector(".cx-tour-bubble", { timeout: 8000 }).then(() => true).catch(() => false));
+	await page.locator("[data-tour=skip]").click(); await page.waitForTimeout(800);
+	console.log("« Passer la visite » ferme et revient à la page d'origine :", (await page.locator(".cx-tour-bubble").count()) === 0 && page.url().includes("cortex-rental-transaction"));
+	py("frappe.db.set_value('Cortex User Preference','kael@studio-lumiere.test','tour_seen_at',frappe.utils.now_datetime())\nprint(json.dumps(True))");
 }
 console.log("erreurs JS :", page.errors.length ? page.errors.join(" | ") : "aucune");
 await browser.close();

@@ -21,6 +21,9 @@ function py(code) {
 // Les devis des essais précédents retiennent encore le matériel (72 h) : on libère ces retenues pour repartir d'un parc libre.
 py("frappe.db.sql(\"update `tabCortex Rental Transaction` set hold_status='Released' where rental_state='Quote'\")\nprint(json.dumps(True))");
 
+// La visite guidée automatique ne doit pas masquer l'interface pendant les essais : marquée « vue » pour cette personne (elle a son propre essai : real-shots.mjs tour).
+py("import frappe.utils as u\nif frappe.db.exists('Cortex User Preference','kael@studio-lumiere.test'): frappe.db.set_value('Cortex User Preference','kael@studio-lumiere.test','tour_seen_at',u.now_datetime())\nelse: frappe.get_doc({'doctype':'Cortex User Preference','user':'kael@studio-lumiere.test','tour_seen_at':u.now_datetime()}).insert(ignore_permissions=True)\nprint(json.dumps(True))");
+
 // Les propositions laissées ouvertes par les essais précédents plafonnent à 20 par personne : on repart à zéro.
 py("frappe.db.delete('Cortex AI Action',{'requested_by':'kael@studio-lumiere.test','status':'Proposed'})\nprint(json.dumps(True))");
 
