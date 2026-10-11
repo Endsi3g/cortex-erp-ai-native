@@ -718,6 +718,19 @@ Constat clé : **les actions restent des propositions** avec le vrai modèle (le
 
 **Reste à faire / limites** : (1) aucune mesure avec GPU; (2) **Cortex Gemma par l'API Gemini jamais essayé avec une vraie clé** (profil compact validé seulement par le faux serveur au protocole fidèle); (3) la qualité du choix d'outils de Gemma 4 n'est mesurée que sur ces 7 demandes : élargir la batterie avant de promettre quoi que ce soit à un client; (4) les prix de Cortex Gemma/Local restent à décider (consensus des cofondateurs); (5) `bench migrate` requis sur chaque site (patch `set_small_model_timeouts`).
 
+## Phase 18 (PLAN, écrit avant le travail, 2026-10-11) : preuve que Gemma 4 fonctionne réellement + optimisation
+
+Demande de Kael : tester pour de vrai (lent sur ce serveur sans GPU, c'est normal) que Gemma 4 donne les bonnes réponses, appelle correctement les cartes visuelles, référence bien les données des utilisateurs, afin de pouvoir **démontrer** aux clients que c'est fonctionnel (sur une tour locale avec de la RAM et un vrai GPU), puis optimiser le système de A à Z.
+
+**Ce que je fais, dans l'ordre**
+1. **Batterie notée (passerelle, vrai modèle)** : ~14 demandes jouées avec le niveau `local`; chaque cas a des **vérifications automatiques** contre la vérité de la base : (a) le bon outil est appelé (journal des appels d'outils), (b) les chiffres de la réponse égalent ceux de la base (locations en devis, retards, factures impayées, approbations en attente), (c) une carte d'action a le bon type, les bons paramètres, l'état `Proposed`, et **la base est inchangée**, (d) une demande sur un objet inexistant ne produit **ni invention ni carte**, (e) une personne sans droit de propriétaire se fait refuser une action de structure. Sortie : tableau réussi/échec + durée + jetons.
+2. **Parcours visuel dans le vrai Desk** (Playwright, niveau Cortex Local choisi dans la zone de saisie) : captures d'un tableau de résultats, d'une carte de statistiques et d'une carte d'action; **approbation réelle** d'une carte (création d'un client de test) avec vérification en base, puis annulation si offerte, puis nettoyage.
+3. **Mesures et optimisation** : jetons par tour avant/après le profil compact; réutilisation du cache de préfixe du moteur (les consignes + outils doivent rester identiques d'un tour à l'autre pour être mis en cache : vérifier l'ordre stable); tour de réchauffement du modèle; réglages du runner (`--parallel 1`, contexte, fils d'exécution). **Aucun chiffre GPU** ne sera annoncé : il n'y en a pas ici. J'écrirai ce qu'il faudra mesurer sur la tour de démonstration.
+4. Corriger ce que la batterie révèle (descriptions d'outils, consignes, routage), sans jamais élargir ce que le modèle peut faire seul : les actions restent des propositions.
+5. Bilan dans ce document + guide de démonstration pour la tour (matériel, commandes, scénarios, ce qui est prouvé et ce qui ne l'est pas).
+
+**Honnêteté** : la batterie est petite; un échec sera publié tel quel, pas retouché pour passer. Les durées sont celles d'un processeur sans GPU.
+
 ## Phase 11 (faite, 2026-10-11) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 
 **Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**
