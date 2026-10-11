@@ -118,7 +118,7 @@ TIER_TEXT = {
     ),
     "local": (
         "Cortex Local",
-        "Gemma 4 qui tourne sur votre propre serveur : aucune donnée ne sort, aucun coût par jeton. Plus lent; les outils y sont moins éprouvés.",
+        "Gemma 4 qui tourne sur votre propre serveur : aucune donnée ne sort, aucun coût par jeton. Sans carte graphique, une réponse peut prendre plusieurs minutes; les outils y sont moins éprouvés.",
     ),
 }
 
