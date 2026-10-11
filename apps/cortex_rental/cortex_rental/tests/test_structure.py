@@ -55,6 +55,52 @@ class TestPure(unittest.TestCase):
             with self.assertRaises(actions.ActionError, msg=repr(bad)):
                 records.coerce_value("Date", bad, "Échéance")
 
+    # --- sections et raccourcis (phase 15.3) ---
+
+    def test_section_slug_has_its_own_prefix_and_never_collides_with_a_field_slug(self):
+        self.assertEqual(sx.section_slug("Numéros d'assurance"), "cx_sec_numeros_d_assurance")
+        self.assertNotEqual(sx.section_slug("Plaque"), sx.field_slug("Plaque"))
+        self.assertTrue(sx.section_slug("A").startswith(sx.SECTION_PREFIX))
+
+    def test_section_end_finds_the_last_field_of_the_section_only(self):
+        fields = [
+            {"fieldname": "a", "fieldtype": "Data"},
+            {"fieldname": "cx_sec_x", "fieldtype": "Section Break"},
+            {"fieldname": "cx_f1", "fieldtype": "Data"},
+            {"fieldname": "cb", "fieldtype": "Column Break"},
+            {"fieldname": "cx_f2", "fieldtype": "Data"},
+            {"fieldname": "cx_sec_y", "fieldtype": "Section Break"},
+            {"fieldname": "cx_f3", "fieldtype": "Data"},
+        ]
+        self.assertEqual(sx.section_end(fields, "cx_sec_x"), "cx_f2")
+        self.assertEqual(sx.section_end(fields, "cx_sec_y"), "cx_f3")
+        self.assertIsNone(sx.section_end(fields, "absente"))
+        self.assertEqual(sx.fields_after_section(fields, "cx_sec_x"), ["cx_f1", "cx_f2"])  # sans saut de colonne
+        self.assertEqual(
+            sx.section_end([{"fieldname": "cx_sec_z", "fieldtype": "Section Break"}], "cx_sec_z"), "cx_sec_z"
+        )
+
+    def test_shortcut_type_and_label(self):
+        self.assertEqual(sx.normalize_shortcut_type("rapport"), "Report")
+        self.assertEqual(sx.normalize_shortcut_type("doctype"), "DocType")
+        for bad in ("URL", "Link", "", None):
+            with self.assertRaises(actions.ActionError, msg=repr(bad)):
+                sx.normalize_shortcut_type(bad)
+        self.assertEqual(sx.clean_shortcut_label("  Mes   drones "), "Mes drones")
+        for bad in ("", "a", "x" * 41):
+            with self.assertRaises(actions.ActionError, msg=repr(bad)):
+                sx.clean_shortcut_label(bad)
+
+    def test_new_actions_are_registered_undoable(self):
+        for name in ("add_section", "add_workspace_shortcut"):
+            spec = actions.ACTIONS[name]
+            self.assertIsNotNone(spec.undo, name)
+            self.assertTrue(spec.effects, name)
+            self.assertEqual(spec.doctype, "")
+
+    def test_a_section_is_not_an_editable_field(self):
+        self.assertNotIn("Section Break", records.SUPPORTED)
+
 
 if __name__ == "__main__":
     unittest.main()

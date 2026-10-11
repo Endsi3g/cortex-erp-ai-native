@@ -187,6 +187,8 @@ class TestPure(unittest.TestCase):
                 "apply_sector_template",
                 "add_category",
                 "add_custom_field",
+                "add_section",
+                "add_workspace_shortcut",
             },
         )
 

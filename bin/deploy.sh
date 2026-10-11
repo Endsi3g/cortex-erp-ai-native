@@ -262,6 +262,9 @@ deploy_1click() {
     # 7. Compilation des Bundles Vue 3
     log_step "7/8" "Compilation des bundles Vue 3 et assets Desk..."
     bench build --app cortex_rental
+    # Frappe garde la table des bundles et le « boot » de chaque personne en cache : sans cela, le navigateur peut recevoir
+    # l'ancien paquet JS après la mise à jour.
+    bench --site "${SITE}" clear-cache
     log_success "Bundles frontend esbuild generes avec succes."
 
     # 8. Donnees de Demonstration & Tests
@@ -324,6 +327,7 @@ deploy_tour() {
 
     log_step "3/5" "Compilation des bundles JS Vue 3..."
     bench build --app cortex_rental
+    bench --site "${SITE}" clear-cache  # table des bundles et « boot » en cache : voir docs/ops/DEPLOIEMENT.md
     log_success "Bundles Vue 3 compiles."
 
     log_step "4/5" "Gestion des donnees de demonstration..."

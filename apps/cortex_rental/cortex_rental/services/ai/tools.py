@@ -587,8 +587,37 @@ propose_add_custom_field = _proposing_tool(
         "label": {"type": "string", "description": "Libellé affiché, p. ex. Numéro de plaque"},
         "fieldtype": {"type": "string", "description": "Data, Small Text, Int, Float, Currency, Check, Date ou Select"},
         "options": {"type": "string", "description": "Pour Select seulement : les choix séparés par des virgules"},
+        "section": {
+            "type": "string",
+            "description": "Titre d'une section déjà ajoutée (propose_add_section) où placer le champ; vide = à la fin de la fiche",
+        },
     },
     ["doctype", "label", "fieldtype"],
+)
+propose_add_section = _proposing_tool(
+    "propose_add_section",
+    "add_section",
+    "PROPOSE d'ajouter une section (un titre qui regroupe des champs) à la fiche équipement, au client ou à la location. Modification de structure réservée au propriétaire, annulable.",
+    {
+        "doctype": {
+            "type": "string",
+            "description": "Cortex Rental Item Profile, Customer ou Cortex Rental Transaction",
+        },
+        "label": {"type": "string", "description": "Titre de la section, p. ex. Assurance"},
+    },
+    ["doctype", "label"],
+)
+propose_add_workspace_shortcut = _proposing_tool(
+    "propose_add_workspace_shortcut",
+    "add_workspace_shortcut",
+    "PROPOSE d'ajouter un raccourci à un espace de travail Cortex (Cortex Rental, Cortex Operations, Cortex Finance, Cortex Catalog, Cortex Admin…). Réservé au propriétaire, annulable.",
+    {
+        "workspace": {"type": "string", "description": "Nom exact de l'espace, p. ex. Cortex Operations"},
+        "label": {"type": "string", "description": "Nom du raccourci affiché"},
+        "link_type": {"type": "string", "description": "DocType (liste d'un type), Report ou Page"},
+        "link_to": {"type": "string", "description": "Nom exact du type, du rapport ou de la page"},
+    },
+    ["workspace", "label", "link_type", "link_to"],
 )
 
 
@@ -606,6 +635,8 @@ PROPOSING_TOOLS = (
     "propose_apply_sector_template",
     "propose_add_category",
     "propose_add_custom_field",
+    "propose_add_section",
+    "propose_add_workspace_shortcut",
 )
 
 

@@ -175,9 +175,10 @@ def editable_map(doctype: str) -> Dict[str, str]:
         for row in frappe.get_all(
             "Custom Field",
             filters={"dt": doctype, "fieldname": ["like", "cx_%"], "hidden": 0},
-            fields=["fieldname", "label"],
+            fields=["fieldname", "label", "fieldtype"],
         ):
-            if row.fieldname.startswith(CUSTOM_PREFIX):  # « _ » est un joker de LIKE : on revérifie le préfixe exact
+            # « _ » est un joker de LIKE : on revérifie le préfixe exact; une section n'a pas de valeur à modifier.
+            if row.fieldname.startswith(CUSTOM_PREFIX) and row.fieldtype in SUPPORTED:
                 allowed[row.fieldname] = row.label or row.fieldname
     return allowed
 

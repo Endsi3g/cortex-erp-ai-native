@@ -146,6 +146,96 @@ class TestStructureLive(unittest.TestCase):
             frappe.clear_cache(doctype=doctype)
             self.assertNotIn(self.sx.field_slug(label), [f.fieldname for f in frappe.get_meta(doctype).fields])
 
+    def test_section_holds_fields_and_cannot_be_undone_while_it_does(self):
+        title = f"Test section {self.tag}"
+        sblock, sout = self._go("add_section", {"doctype": PROFILE, "label": title})
+        self.assertTrue(sout["ok"], sout)
+        section = self.sx.section_slug(title)
+        frappe.clear_cache(doctype=PROFILE)
+        self.assertEqual(frappe.get_meta(PROFILE).fields[-1].fieldname, section)  # à la fin de la fiche
+        with self.assertRaises(self.actions.ActionError):  # section inconnue : refusée, avec la liste des sections
+            self.actions.propose(
+                "add_custom_field",
+                {"doctype": PROFILE, "label": f"Test x {self.tag}", "fieldtype": "Data", "section": "Inconnue"},
+                COMPANY,
+                self.owner,
+            )
+        fblock, fout = self._go(
+            "add_custom_field",
+            {"doctype": PROFILE, "label": f"Test dans {self.tag}", "fieldtype": "Data", "section": title},
+        )
+        self.assertTrue(fout["ok"], fout)
+        frappe.clear_cache(doctype=PROFILE)
+        names = [f.fieldname for f in frappe.get_meta(PROFILE).fields]
+        self.assertEqual(names[names.index(section) + 1], self.sx.field_slug(f"Test dans {self.tag}"))
+        self.assertNotIn(section, self.records.editable_map(PROFILE))  # une section n'est pas modifiable
+        refused = self.actions.undo(sblock["action_id"], COMPANY, self.owner)
+        self.assertFalse(refused["ok"])
+        self.assertIn("contient encore", refused["message"])
+        self.assertTrue(self.actions.undo(fblock["action_id"], COMPANY, self.owner)["ok"])
+        done = self.actions.undo(sblock["action_id"], COMPANY, self.owner)
+        self.assertTrue(done["ok"], done)
+        frappe.clear_cache(doctype=PROFILE)
+        self.assertNotIn(section, [f.fieldname for f in frappe.get_meta(PROFILE).fields])
+
+    def test_workspace_shortcut_added_listed_and_removed_leaving_the_rest_intact(self):
+        import json
+
+        # Hors drapeau de test : Frappe exige alors « Workspace Manager » pour enregistrer un espace public (cas réel).
+        frappe.flags.in_test = False
+        self.addCleanup(setattr, frappe.flags, "in_test", True)
+        ws = "Cortex Operations"
+        before = frappe.get_doc("Workspace", ws)
+        count, content = len(before.shortcuts), before.content
+        label = f"Test raccourci {self.tag}"
+        args = {"workspace": ws, "label": label, "link_type": "DocType", "link_to": "Customer"}
+        block, out = self._go("add_workspace_shortcut", args)
+        self.assertTrue(out["ok"], out)
+        after = frappe.get_doc("Workspace", ws)
+        self.assertEqual(len(after.shortcuts), count + 1)
+        self.assertIn(label, [r.label for r in after.shortcuts])
+        self.assertIn(
+            label, [b["data"].get("shortcut_name") for b in json.loads(after.content) if b["type"] == "shortcut"]
+        )
+        with self.assertRaises(self.actions.ActionError):  # doublon
+            self.actions.propose("add_workspace_shortcut", args, COMPANY, self.owner)
+        done = self.actions.undo(block["action_id"], COMPANY, self.owner)
+        self.assertTrue(done["ok"], done)
+        restored = frappe.get_doc("Workspace", ws)
+        self.assertEqual(len(restored.shortcuts), count)
+        self.assertEqual(json.loads(restored.content), json.loads(content))  # même contenu qu'avant
+        self.assertEqual(frappe.session.user, self.owner)  # la session est rendue à la personne
+        import os
+
+        folder = os.path.join(frappe.get_app_path("cortex_rental"), "cortex_rental", "workspace")
+        self.assertEqual(
+            sorted(d for d in os.listdir(folder) if not d.startswith("_")),
+            sorted(d for d in os.listdir(folder) if d.startswith("cortex_")),
+        )  # aucun dossier d'espace parasite écrit dans le code (mode développeur)
+
+    def test_workspace_shortcut_refusals(self):
+        base = {
+            "workspace": "Cortex Operations",
+            "label": f"Test r {self.tag}",
+            "link_type": "DocType",
+            "link_to": "Customer",
+        }
+        for bad in (
+            {"workspace": "Home"},  # hors des espaces Cortex
+            {"workspace": "Inexistant"},
+            {"link_type": "URL"},
+            {"link_to": "Type Inconnu"},
+            {"link_to": ""},
+            {"label": ""},
+        ):
+            with self.assertRaises(self.actions.ActionError, msg=str(bad)):
+                self.actions.propose("add_workspace_shortcut", {**base, **bad}, COMPANY, self.owner)
+        frappe.set_user(self.operator)
+        with self.assertRaises(self.actions.ActionError):  # pas propriétaire
+            self.actions.propose("add_workspace_shortcut", base, COMPANY, self.operator)
+        with self.assertRaises(self.actions.ActionError):
+            self.actions.propose("add_section", {"doctype": PROFILE, "label": "Interdit"}, COMPANY, self.operator)
+
     def test_select_field_needs_choices_and_refused_inputs(self):
         for bad in (
             {"doctype": "User", "label": "Test x", "fieldtype": "Data"},

@@ -56,6 +56,7 @@ app_include_js = [
     "/assets/cortex_rental/js/cortex_desk.js",
     "/assets/cortex_rental/js/cortex_nav.js",
     "/assets/cortex_rental/js/cortex_loading.js",
+    "/assets/cortex_rental/js/cortex_chartfix.js",
     "/assets/cortex_rental/js/cortex_welcome.js",
     "/assets/cortex_rental/js/cortex_tour.js",
     "/assets/cortex_rental/js/cortex_pages.js",

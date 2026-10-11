@@ -184,7 +184,7 @@ class TestChatPresentation(unittest.TestCase):
 
     def test_tier_is_sent_as_a_key_never_a_model_id(self):
         schema = self._read("schemas", "chat_schemas.py")
-        self.assertIn('Literal["rapide", "equilibre", "avance"]', schema)
+        self.assertIn('Literal["rapide", "equilibre", "avance", "luna", "gemma"]', schema)
 
 
 if __name__ == "__main__":

@@ -267,6 +267,59 @@ const resetSite = () => py(`from cortex_rental.services import sector_templates 
 	await ctx.close();
 }
 
+// --- S12 : section et raccourci par l'assistant (propriétaire), avec annulation ----------------------------------------------------------
+{
+	const tag = Date.now().toString(36).toUpperCase();
+	py("frappe.db.delete('Custom Field',{'dt':'Cortex Rental Item Profile','fieldname':['like','cx_sec_%']})\nfrappe.clear_cache(doctype='Cortex Rental Item Profile')\nprint(json.dumps(True))");
+	const { ctx, page } = await session();
+	await ask(page, `Ajoute une section « Assurance ${tag} » à la fiche équipement.`);
+	let card = page.locator(".cp-action").last();
+	check("S12 carte de section affichée", /Ajouter la section/.test(await card.innerText()));
+	const slug = `cx_sec_assurance_${tag.toLowerCase()}`.slice(0, 30);
+	const has = (name, dt = "Cortex Rental Item Profile") => py(`print(json.dumps(bool(frappe.db.exists('Custom Field',{'dt':'${dt}','fieldname':'${name}'}))))`);
+	check("S12 rien n'est écrit avant l'approbation (section)", !(await has(slug)));
+	await card.getByRole("button", { name: /Ajouter la section/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Fait" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S12 la section est créée", await has(slug));
+	await page.goto(BASE + "/app/cortex-rental-item-profile/new", { waitUntil: "networkidle" });
+	await page.waitForTimeout(1500);
+	check("S12 la section apparaît sur la fiche équipement", (await page.locator(`[data-fieldname="${slug}"]`).count()) >= 1);
+	await page.screenshot({ path: `${OUT}/s12-section-fiche.png`, fullPage: true });
+	await page.goto(BASE + "/app/cortex-home", { waitUntil: "networkidle" });
+	await page.waitForTimeout(1200);
+	// Le raccourci : propriétaire seulement, ajouté à l'espace Opérations.
+	await ask(page, `Ajoute un raccourci « Mes clients ${tag} » à l'espace Opérations.`);
+	card = page.locator(".cp-action").last();
+	check("S12 carte de raccourci affichée", /Ajouter le raccourci/.test(await card.innerText()));
+	const shortcuts = () => py("print(json.dumps([r.label for r in frappe.get_doc('Workspace','Cortex Operations').shortcuts]))");
+	check("S12 rien n'est écrit avant l'approbation (raccourci)", !(await shortcuts()).includes(`Mes clients ${tag}`));
+	await card.getByRole("button", { name: /Ajouter le raccourci/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Fait" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S12 le raccourci est ajouté à l'espace", (await shortcuts()).includes(`Mes clients ${tag}`));
+	await page.goto(BASE + "/app/cortex-operations", { waitUntil: "networkidle" });
+	await page.waitForTimeout(2500);
+	check("S12 le raccourci apparaît dans l'espace Opérations", (await page.getByText(`Mes clients ${tag}`).count()) >= 1);
+	await page.screenshot({ path: `${OUT}/s12-raccourci-espace.png`, fullPage: true });
+	await page.goto(BASE + "/app/cortex-home", { waitUntil: "networkidle" });
+	await page.waitForTimeout(1200);
+	const reopen = async (re) => {
+		await page.locator("button[title*='istor'], button[aria-label*='istor']").first().click(); await page.waitForTimeout(700);
+		await page.getByText(re).first().click();
+		await page.waitForSelector(".cp-action", { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(1000);
+		return page.locator(".cp-action").last();
+	};
+	card = await reopen(/Ajoute un raccourci « Mes clients/);
+	await card.getByRole("button", { name: /Annuler le raccourci/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Annulée" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S12 l'annulation retire le raccourci", !(await shortcuts()).includes(`Mes clients ${tag}`));
+	card = await reopen(/Ajoute une section « Assurance/);
+	await card.getByRole("button", { name: /Annuler la section/ }).click();
+	await card.locator(".cp-action-badge", { hasText: "Annulée" }).waitFor({ timeout: 20000 }).catch(() => {});
+	check("S12 l'annulation retire la section (elle était vide)", !(await has(slug)));
+	check("S12 aucune erreur JavaScript", page.errors.length === 0, page.errors.join(" | "));
+	await ctx.close();
+}
+
 // --- S11 : niveau Cortex Gemma (Gemma 4) : choisi dans la zone de saisie, la requête part avec ce modèle ---------------------------------------
 {
 	const { ctx, page } = await session();

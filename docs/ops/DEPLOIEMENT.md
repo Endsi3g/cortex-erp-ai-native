@@ -103,9 +103,12 @@ bench --site app.exemple.ca backup --with-files          # toujours avant
 git -C apps/cortex_rental pull
 bench --site app.exemple.ca migrate                      # applique les correctifs (patches.txt)
 bench build --app cortex_rental
+bench --site app.exemple.ca clear-cache                  # table des bundles et « boot » en cache : sans cela, l'ancien JS peut être servi
 sudo supervisorctl restart cortex-web cortex-worker-short cortex-worker-long cortex-scheduler
 bench --site app.exemple.ca execute cortex_rental.ops.predeploy.run
 ```
+
+**Ordre à respecter : `migrate` → `build` → `clear-cache` → redémarrage.** `migrate` est **obligatoire** à chaque mise à jour qui ajoute un champ ou un état (ex. état « Annulée » des actions de l'assistant, champ `tour_seen_at` de la visite guidée, niveau Gemma). `tools/bench/upgrade.sh` enchaîne ces trois étapes sur un banc de développement.
 
 Les correctifs sont idempotents et se rejouent sans risque. Une fenêtre de maintenance (`bench --site … set-config
 maintenance_mode 1`) n'est nécessaire que si un correctif touche beaucoup de lignes.

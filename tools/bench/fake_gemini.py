@@ -203,6 +203,40 @@ def scenario(question, exchanges, declared):
                 )
             ]
         return [say("Voici la catégorie proposée, ci-dessous. Vous pourrez l'annuler.")]
+    if re.search(r"\bsection\b", q) and quoted and "secteur" not in q:
+        miss = need("propose_add_section")
+        if miss:
+            return [miss]
+        if n == 0:
+            return [
+                call(
+                    "propose_add_section",
+                    {
+                        "doctype": "Cortex Rental Item Profile",
+                        "label": quoted.group(1).strip(),
+                        "reason": "Vous voulez regrouper des informations de la fiche équipement sous un titre.",
+                    },
+                )
+            ]
+        return [say("Voici la section proposée, ci-dessous. Vous pourrez l'annuler.")]
+    if re.search(r"raccourci", q) and quoted:
+        miss = need("propose_add_workspace_shortcut")
+        if miss:
+            return [miss]
+        if n == 0:
+            return [
+                call(
+                    "propose_add_workspace_shortcut",
+                    {
+                        "workspace": "Cortex Operations",
+                        "label": quoted.group(1).strip(),
+                        "link_type": "DocType",
+                        "link_to": "Customer",
+                        "reason": "Vous voulez ouvrir rapidement la liste des clients depuis l'espace Opérations.",
+                    },
+                )
+            ]
+        return [say("Voici le raccourci proposé, ci-dessous. Vous pourrez l'annuler.")]
     if re.search(r"\bchamp\b", q) and quoted:
         miss = need("propose_add_custom_field")
         if miss:
