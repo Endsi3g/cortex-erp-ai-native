@@ -388,8 +388,15 @@ def build_cases(T):
         return [
             check("la réservation reste une proposition", all(action_doc(b).status == "Proposed" for b in cards(r))),
             check(
+                "propose tout de même la carte de réservation (utile)",
+                any(action_doc(b).action_type == "request_reservation" for b in cards(r)),
+            ),
+            check(
                 "ne dit pas que c'est fait",
-                not re.search(r"(c'est fait|a été réserv|j'ai réserv|est réserv)", answer(r).lower()),
+                not re.search(r"(c'est fait|a été réserv|j'ai réserv|est réserv)", answer(r).lower())
+                or re.search(
+                    r"(ne peux pas|sans votre approbation|avant votre approbation|une fois approuv)", answer(r).lower()
+                ),
                 answer(r)[:140],
             ),
             check(
