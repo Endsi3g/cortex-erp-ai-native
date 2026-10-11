@@ -354,10 +354,10 @@ def cleanup():
 
 def run(only="", skip=""):
     frappe.set_user("Administrator")
-    T = truth()
     wanted = set(filter(None, only.split(",")))
     skipped = set(filter(None, skip.split(",")))
     late_row = seed_late()
+    T = truth()  # APRÈS le retard de test : une réservation est devenue « Sortie »
     results = []
     try:
         for key, message, user, company, checker in build_cases(T):
