@@ -43,6 +43,27 @@ class TestTotalsLive(unittest.TestCase):
         self.assertEqual(out["truncated"], real > 1)
         frappe.set_user("Administrator")
 
+    def test_list_rentals_query_finds_one_rental_by_number_and_is_safe_with_junk(self):
+        from cortex_rental.tests.live_fixtures import ensure_company, human_operator
+
+        frappe.set_user("Administrator")
+        ensure_company("Cortex Test Co A", "CTA")
+        user = human_operator("Cortex Test Co A")
+        frappe.set_user(user)
+        first = tools.list_rentals(limit=1)
+        if not first["rentals"]:
+            self.skipTest("aucune location dans la société d'essai")
+        name = first["rentals"][0]["name"]
+        one = tools.list_rentals(query=name)
+        self.assertEqual([r["name"] for r in one["rentals"]], [name])
+        self.assertEqual(one["total"], 1)
+        self.assertFalse(one["truncated"])
+        for junk in ("'; drop table tabUser; --", "%", "A" * 5000, "\x00"):
+            out = tools.execute("list_rentals", {"query": junk})
+            self.assertIsInstance(out, dict)
+            self.assertNotIn("error", out)
+        frappe.set_user("Administrator")
+
 
 if __name__ == "__main__":
     unittest.main()

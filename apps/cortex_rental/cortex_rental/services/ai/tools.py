@@ -46,11 +46,11 @@ def tool(name: str, description: str, properties: Dict[str, Any], required: List
     return register
 
 
-def _total(doctype: str, filters: Dict[str, Any]) -> int:
+def _total(doctype: str, filters: Dict[str, Any], or_filters: Any = None) -> int:
     """Nombre réel d'enregistrements (mêmes filtres, mêmes droits) : sans lui, un modèle qui reçoit les 10 plus récents dit
     « vous en avez 10 ». Chaque liste renvoie `total` et `truncated` pour que la réponse dise « 10 sur 34 »."""
     try:
-        rows = frappe.get_list(doctype, filters=filters, fields=["count(name) as n"])
+        rows = frappe.get_list(doctype, filters=filters, or_filters=or_filters, fields=["count(name) as n"])
         return int(rows[0].n) if rows else 0
     except Exception:  # noqa: BLE001 - un total introuvable ne doit pas faire échouer la liste
         return -1
@@ -130,22 +130,32 @@ def search_customers(query: str):
 @tool(
     "list_rentals",
     "Liste les locations récentes de la société, éventuellement d'un état donné (Quote, Reservation, Contract, Checked Out, Returned, Closed, Cancelled, Disputed).",
-    {"state": STR, "limit": {"type": "integer"}},
+    {
+        "state": STR,
+        "query": {
+            "type": "string",
+            "description": "Numéro de la location (CR-TRX-…) ou nom du client, pour n'en retrouver qu'une",
+        },
+        "limit": {"type": "integer"},
+    },
 )
-def list_rentals(state: str = "", limit: int = 10):
+def list_rentals(state: str = "", limit: int = 10, query: str = ""):
     filters = {"company": _company()}
     if state:
         filters["rental_state"] = state
+    text = str(query or "").strip()[:80]
+    or_filters = [["name", "like", f"%{text}%"], ["customer", "like", f"%{text}%"]] if text else None
     rows = frappe.get_list(
         "Cortex Rental Transaction",
         filters=filters,
+        or_filters=or_filters,
         fields=["name", "customer", "rental_state", "starts_at", "ends_at", "grand_total"],
         order_by="modified desc",
         limit_page_length=max(1, min(_as_int(limit, 10), 25)),
     )
     return _paged(
         [{**dict(r), "starts_at": str(r.starts_at), "ends_at": str(r.ends_at)} for r in rows],
-        _total("Cortex Rental Transaction", filters),
+        _total("Cortex Rental Transaction", filters, or_filters),
         "rentals",
     )
 
