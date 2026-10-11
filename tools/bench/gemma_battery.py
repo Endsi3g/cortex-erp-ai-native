@@ -127,8 +127,9 @@ def build_cases(T):
             check("carte de statistiques", bool(s)),
             check(
                 "chiffres des deux états dans la carte",
-                s and has_number(json.dumps(s[0]), T["quotes"]) and has_number(json.dumps(s[0]), T["reservations"]),
-                "",
+                bool(s)
+                and {T["quotes"], T["reservations"]} <= {int(v) for v in (s[0].get("series") or {}).get("values", [])},
+                (s[0].get("series") if s else ""),
             ),
         ]
 
