@@ -115,7 +115,7 @@ def build_cases(T):
 
     def quotes(r, rec, before):
         return [
-            check("outil list_rentals", called(rec, "list_rentals")),
+            check("outil de comptage légitime", called(rec, "list_rentals", "rentals_by_state")),
             check(f"le total {T['quotes']} est dit", has_number(answer(r), T["quotes"]), answer(r)[:120]),
         ]
 
@@ -134,15 +134,17 @@ def build_cases(T):
     def late(r, rec, before):
         return [
             check("outil late_returns", called(rec, "late_returns")),
-            check(
-                "le retard seedé (1) est dit", has_number(answer(r), 1) or "un" in answer(r).lower(), answer(r)[:120]
-            ),
+            check("le retard de test est nommé (identifiant réel)", T["late_name"] in answer(r), answer(r)[:120]),
         ]
 
     def unpaid(r, rec, before):
         return [
             check("outil list_invoices", called(rec, "list_invoices")),
-            check(f"{T['unpaid']} factures impayées", has_number(answer(r), T["unpaid"]), answer(r)[:120]),
+            check(
+                f"les {T['unpaid']} factures impayées réelles sont toutes nommées (aucune de plus)",
+                all(n in answer(r) for n in T["unpaid_names"]) and not any(n in answer(r) for n in T["paid_names"]),
+                answer(r)[:120],
+            ),
         ]
 
     def approvals(r, rec, before):
@@ -314,14 +316,36 @@ def build_cases(T):
     ]
 
 
+LATE_BACKUP = "/tmp/gemma_battery_late.json"
+
+
+def restore_interrupted():
+    """Si une exécution précédente a été interrompue (arrêt brutal), remet d'abord la location à son état d'origine."""
+    import os
+
+    if os.path.exists(LATE_BACKUP):
+        saved = json.load(open(LATE_BACKUP))
+        frappe.db.set_value(
+            "Cortex Rental Transaction",
+            saved["name"],
+            {"rental_state": saved["rental_state"], "ends_at": saved["ends_at"]},
+            update_modified=False,
+        )
+        frappe.db.commit()
+        os.remove(LATE_BACKUP)
+
+
 def seed_late():
-    """Un retard réel pour le cas « late » : une réservation passe à « Checked Out » avec une fin dans le passé (restauré après)."""
+    """Un retard réel pour le cas « late » : une réservation passe à « Checked Out » avec une fin dans le passé.
+    L'état d'origine est écrit sur disque AVANT la modification, puis restauré (même après un arrêt brutal, au lancement suivant)."""
+    restore_interrupted()
     row = frappe.db.get_value(
         "Cortex Rental Transaction",
         {"company": COMPANY, "rental_state": "Reservation"},
-        ["name", "ends_at"],
+        ["name", "rental_state", "ends_at"],
         as_dict=True,
     )
+    json.dump({"name": row.name, "rental_state": row.rental_state, "ends_at": str(row.ends_at)}, open(LATE_BACKUP, "w"))
     frappe.db.set_value(
         "Cortex Rental Transaction",
         row.name,
@@ -333,13 +357,7 @@ def seed_late():
 
 
 def restore_late(row):
-    frappe.db.set_value(
-        "Cortex Rental Transaction",
-        row.name,
-        {"rental_state": "Reservation", "ends_at": row.ends_at},
-        update_modified=False,
-    )
-    frappe.db.commit()
+    restore_interrupted()
 
 
 def cleanup():
@@ -358,6 +376,12 @@ def run(only="", skip=""):
     skipped = set(filter(None, skip.split(",")))
     late_row = seed_late()
     T = truth()  # APRÈS le retard de test : une réservation est devenue « Sortie »
+    T["late_name"] = late_row.name
+    unpaid_filters = {"company": COMPANY, "status": ["in", ["Issued", "Partially Paid"]]}
+    T["unpaid_names"] = frappe.get_all("Cortex Rental Invoice", filters=unpaid_filters, pluck="name")
+    T["paid_names"] = frappe.get_all(
+        "Cortex Rental Invoice", filters={"company": COMPANY, "status": "Paid"}, pluck="name", limit=40
+    )
     results = []
     try:
         for key, message, user, company, checker in build_cases(T):

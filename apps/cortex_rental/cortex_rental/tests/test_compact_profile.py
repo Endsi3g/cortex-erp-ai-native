@@ -1,5 +1,6 @@
 """Profil « compact » des petits modèles (Gemma 4) : outils choisis sans modèle, consignes courtes, délais (sans banc Frappe)."""
 
+import json
 import unittest
 from unittest import mock
 
@@ -180,6 +181,34 @@ class TestTierTimeouts(unittest.TestCase):
             fake.conf = {"http_timeout": 900}
             self.assertEqual(LocalOpenAIProvider("ai/gemma4", "", timeout=600).timeout, 600)
         self.assertIsInstance(AIProviderError("x"), RuntimeError)
+
+
+class TestModelView(unittest.TestCase):
+    """Les cartes d'interface ne sont pas renvoyées au modèle (jetons), mais les chiffres de l'outil le sont."""
+
+    def test_ui_blocks_are_replaced_by_a_marker_and_data_stays(self):
+        from cortex_rental.services.ai.gateway import model_view
+
+        output = {
+            "par_etat": {"Devis": 36},
+            "stat_block": {"type": "stat_card", "title": "Locations par état", "series": {"values": [36.0] * 200}},
+        }
+        view = model_view(output)
+        self.assertNotIn("stat_block", view)
+        self.assertEqual(view["par_etat"], {"Devis": 36})
+        self.assertEqual(view["carte_affichee_a_la_personne"], "Locations par état")
+        self.assertIn("stat_block", output)  # l'original (envoyé à l'écran) n'est pas touché
+        self.assertLess(len(json.dumps(view)), len(json.dumps(output)) / 3)
+
+    def test_action_card_is_summarised_and_plain_outputs_are_untouched(self):
+        from cortex_rental.services.ai.gateway import model_view
+
+        view = model_view({"status": "proposed", "action_block": {"title": "Créer un client", "rows": [1] * 50}})
+        self.assertEqual(view["carte_affichee_a_la_personne"], "Créer un client")
+        self.assertEqual(view["status"], "proposed")
+        plain = {"rentals": [{"name": "A"}], "total": 1}
+        self.assertIs(model_view(plain), plain)
+        self.assertEqual(model_view({"error": "x"}), {"error": "x"})
 
 
 if __name__ == "__main__":

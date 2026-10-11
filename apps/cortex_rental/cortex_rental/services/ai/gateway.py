@@ -254,6 +254,22 @@ def _proposal(output: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     }
 
 
+UI_ONLY_KEYS = ("stat_block", "action_block")
+
+
+def model_view(output: Dict[str, Any]) -> Dict[str, Any]:
+    """Ce que le MODÈLE voit d'un résultat d'outil : sans les blocs d'interface (cartes de statistiques et d'action), qui ne
+    servent qu'à l'écran et se répéteraient dans chaque tour suivant (jetons dépensés pour rien). Les chiffres restent dans
+    les champs de données de l'outil; le modèle sait seulement qu'une carte est affichée à la personne."""
+    if not isinstance(output, dict) or not any(k in output for k in UI_ONLY_KEYS):
+        return output
+    view = {k: v for k, v in output.items() if k not in UI_ONLY_KEYS}
+    shown = [str((output[k] or {}).get("title") or "carte") for k in UI_ONLY_KEYS if isinstance(output.get(k), dict)]
+    if shown:
+        view["carte_affichee_a_la_personne"] = shown[0]
+    return view
+
+
 class AIGateway:
     def __init__(self, provider: Optional[LLMProvider] = None, settings: Optional[Dict[str, Any]] = None):
         self.settings = settings if settings is not None else ai_settings.load()
@@ -414,7 +430,7 @@ class AIGateway:
                             result_blocks.append(output["action_block"])
                         if output.get("stat_block"):
                             result_blocks.append(output["stat_block"])
-                    outputs.append({"name": call.name, "id": call.id, "result": output})
+                    outputs.append({"name": call.name, "id": call.id, "result": model_view(output)})
                 tool_message = self.provider().tool_results_message(outputs)
                 # Certains fournisseurs (OpenAI) veulent un message par résultat d'outil.
                 if isinstance(tool_message, list):

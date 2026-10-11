@@ -301,6 +301,12 @@ class ChatSessionService:
             # Échanges précédents de cette conversation (le message courant vient d'être écrit : on l'exclut).
             history = self.get_messages(session_name, user, limit=200)[:-1][-10:]
 
+        if frappe:
+            # Valider AVANT l'appel au modèle : la conversation et le message sont numérotés (CCHAT-…, CMSG-…), ce qui verrouille
+            # la table des séries jusqu'à la fin de la requête. Sans cela, un modèle lent (minutes en local) ferait attendre
+            # puis échouer (« Lock wait timeout ») l'envoi de messages de TOUTES les autres personnes. Le message de la
+            # personne est aussi au journal même si le modèle échoue ensuite.
+            frappe.db.commit()
         try:
             result = self.onyx_client.send_message(
                 message=message,
