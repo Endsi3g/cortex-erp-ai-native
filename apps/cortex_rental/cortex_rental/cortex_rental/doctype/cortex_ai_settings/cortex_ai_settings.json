@@ -58,6 +58,11 @@
     "tier_gemma_model",
     "tier_gemma_price_input",
     "tier_gemma_price_output",
+    "cb_tier_local",
+    "tier_local_enabled",
+    "tier_local_model",
+    "tier_local_price_input",
+    "tier_local_price_output",
     "sb_economy",
     "economy_model",
     "economy_cap_percent",
@@ -370,6 +375,37 @@
       "fieldname": "tier_gemma_price_output",
       "fieldtype": "Float",
       "label": "Gemma : prix sortie ($ / M jetons)",
+      "default": "0"
+    },
+    {
+      "fieldname": "cb_tier_local",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "tier_local_enabled",
+      "fieldtype": "Check",
+      "label": "Cortex Local activé",
+      "default": "1",
+      "description": "Gemma 4 qui tourne sur votre serveur (Docker Model Runner). Offert seulement si la clé de site cortex_ai_local_base_url est réglée (adresse du runner, p. ex. http://127.0.0.1:12434/engines/v1)."
+    },
+    {
+      "fieldname": "tier_local_model",
+      "fieldtype": "Data",
+      "label": "Cortex Local : modèle",
+      "default": "ai/gemma4",
+      "description": "Identifiant du modèle chez le runner (doit commencer par ai/)."
+    },
+    {
+      "fieldname": "tier_local_price_input",
+      "fieldtype": "Float",
+      "label": "Local : prix entrée ($ / M jetons)",
+      "default": "0",
+      "description": "0 : aucun coût par jeton (le coût du serveur n'est pas compté dans le budget)."
+    },
+    {
+      "fieldname": "tier_local_price_output",
+      "fieldtype": "Float",
+      "label": "Local : prix sortie ($ / M jetons)",
       "default": "0"
     }
   ],

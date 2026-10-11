@@ -300,9 +300,23 @@ def find(doctype: str, query: str, company: str, limit: int = 10) -> Dict[str, A
         order_by="modified desc",
         limit_page_length=max(1, min(int(limit or 10), MAX_FIND)),
     )
+    total = len(rows)
+    try:
+        counted = frappe.get_list(
+            doctype,
+            filters={spec.company_field: company},
+            or_filters=[[f, "like", f"%{text}%"] for f in search] if text else None,
+            fields=["count(name) as n"],
+        )
+        total = int(counted[0].n) if counted else len(rows)
+    except Exception:  # noqa: BLE001 - un total introuvable ne doit pas faire échouer la recherche
+        pass
     return {
         "type": spec.label,
         "doctype": doctype,
+        "shown": len(rows),
+        "total": total,
+        "truncated": total > len(rows),
         "records": [{**{k: _plain(v) for k, v in dict(r).items()}, "href": href_for(doctype, r["name"])} for r in rows],
     }
 

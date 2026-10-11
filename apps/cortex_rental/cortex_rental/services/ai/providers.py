@@ -6,6 +6,7 @@ ailleurs que dans les réglages.
 """
 
 import json
+import re
 import time
 import urllib.error
 import urllib.request
@@ -418,18 +419,24 @@ class OpenAIProvider(LLMProvider):
             raw={k: v for k, v in message.items() if k in ("role", "content", "tool_calls")} if calls else None,
         )
 
+    requires_key = True
+
+    def endpoint(self) -> str:
+        return self.URL
+
+    def headers(self) -> Dict[str, str]:
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        return headers
+
     def generate(self, system: str, messages: List[Any], tools: List[Dict[str, Any]]) -> ProviderResult:
-        if not self.api_key:
+        if self.requires_key and not self.api_key:
             raise AIConfigurationError("Aucune clé API OpenAI n'est configurée.")
         data = json.dumps(self.request_body(system, messages, tools), ensure_ascii=False).encode("utf-8")
         last: Optional[Exception] = None
         for attempt in range(2):
-            request = urllib.request.Request(
-                self.URL,
-                data=data,
-                headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
-                method="POST",
-            )
+            request = urllib.request.Request(self.endpoint(), data=data, headers=self.headers(), method="POST")
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
                     return self.parse(json.loads(response.read().decode("utf-8")))
@@ -446,6 +453,53 @@ class OpenAIProvider(LLMProvider):
                     raise last from exc
                 time.sleep(1.0)
         raise last or AIProviderError("Le service d'IA est indisponible.")
+
+
+class LocalOpenAIProvider(OpenAIProvider):
+    """Modèle qui tourne CHEZ NOUS (ex. Gemma 4 par Docker Model Runner, moteur llama.cpp) : API « Chat Completions »
+    compatible OpenAI, sans clé, adresse donnée par la clé de site `cortex_ai_local_base_url`
+    (p. ex. `http://127.0.0.1:12434/engines/v1`). Aucune donnée ne quitte le serveur.
+
+    Pas de `reasoning_effort` (propre à OpenAI). Les marques de réflexion de Gemma 4 (`<|channel>thought…<channel|>`) sont
+    retirées de la réponse : la personne ne voit jamais la réflexion brute du modèle."""
+
+    name = "Modèle local"
+    requires_key = False
+    THOUGHT_RE = re.compile(r"<\|channel>thought.*?<channel\|>", re.DOTALL)
+
+    @classmethod
+    def base_url(cls) -> str:
+        try:
+            import frappe
+
+            base = str(frappe.conf.get("cortex_ai_local_base_url") or "").strip().rstrip("/")
+        except Exception:
+            return ""
+        # Réglée par l'administrateur du serveur (clé de site), jamais par un navigateur : http ou https seulement.
+        return base if base.startswith(("http://", "https://")) else ""
+
+    def endpoint(self) -> str:
+        base = self.base_url()
+        if not base:
+            raise AIConfigurationError(
+                "Le modèle local n'est pas configuré : un administrateur doit régler `cortex_ai_local_base_url` du site."
+            )
+        return f"{base}/chat/completions"
+
+    def request_body(self, system: str, messages: List[Any], tools: List[Dict[str, Any]]) -> Dict[str, Any]:
+        body = super().request_body(system, messages, tools)
+        body.pop("reasoning_effort", None)
+        # Gemma 4 « réfléchit » avant de répondre : sur un processeur (2-3 jetons/s) cela dévore le budget de réponse et peut
+        # laisser `content` vide. La réflexion est désactivée (mesuré avec le vrai modèle : appel d'outil correct en 16 jetons).
+        body["chat_template_kwargs"] = {"enable_thinking": False}
+        body["max_tokens"] = body.pop("max_completion_tokens", self.max_output_tokens)
+        body["temperature"] = self.temperature
+        return body
+
+    def parse(self, payload: Dict[str, Any]) -> ProviderResult:
+        result = super().parse(payload)
+        result.text = self.THOUGHT_RE.sub("", result.text or "").replace("<channel|>", "").strip()
+        return result
 
 
 class ScriptedProvider(LLMProvider):
@@ -486,6 +540,8 @@ def provider_for(model: str, api_key: str, **options) -> LLMProvider:
         return AnthropicProvider(model.strip(), api_key, **options)
     if lowered.startswith("gpt-"):
         return OpenAIProvider(model.strip(), api_key, **options)
+    if lowered.startswith("ai/"):  # modèle local servi par Docker Model Runner (ai/gemma4…)
+        return LocalOpenAIProvider(model.strip(), api_key, **options)
     raise AIConfigurationError(
-        f"Modèle d'IA non pris en charge : « {model} ». Utilisez un identifiant « gemini-… », « gemma-… », « claude-… » ou « gpt-… »."
+        f"Modèle d'IA non pris en charge : « {model} ». Utilisez un identifiant « gemini-… », « gemma-… », « claude-… », « gpt-… » ou « ai/… » (modèle local)."
     )

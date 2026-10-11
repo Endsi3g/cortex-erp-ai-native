@@ -26,3 +26,4 @@ cortex_rental.patches.correct_ai_tier_prices
 cortex_rental.patches.set_invoice_print_defaults
 cortex_rental.patches.seed_subscription_defaults
 cortex_rental.patches.set_gemma_tier_defaults
+cortex_rental.patches.set_local_tier_defaults

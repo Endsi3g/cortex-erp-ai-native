@@ -239,11 +239,17 @@ def apply_default_ai_settings() -> None:
     Sur un site NEUF, Frappe ne rejoue pas les patchs : sans cet appel, les prix restent à 0 (le coût compté est donc nul) et
     il n'y a aucun plafond, donc aucune maîtrise des jetons. Les fonctions sont idempotentes : elles ne remplacent jamais
     une valeur déjà saisie."""
-    from cortex_rental.patches import set_ai_economy_defaults, set_ai_pricing_defaults, set_gemma_tier_defaults
+    from cortex_rental.patches import (
+        set_ai_economy_defaults,
+        set_ai_pricing_defaults,
+        set_gemma_tier_defaults,
+        set_local_tier_defaults,
+    )
 
     set_ai_pricing_defaults.execute()
     set_ai_economy_defaults.execute()
     set_gemma_tier_defaults.execute()
+    set_local_tier_defaults.execute()
 
 
 def after_install() -> None:

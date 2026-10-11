@@ -31,3 +31,21 @@ cd tools/ui-harness && npm install && node e2e-ai.mjs      # 27 vérifications d
 Après un changement de code Python : **redémarrer le conteneur** (`docker restart fb`) puis relancer le faux serveur et `bench serve` : le serveur de
 développement garde l'ancien code en mémoire (et `pkill` n'existe pas dans l'image).
 Le serveur Docker ne démarre pas tout seul : `dockerd --iptables=false --ip-masq=false --bridge=none &`, puis `docker start mdb rds fb`.
+
+## Gemma 4 local (Docker Model Runner) — essai réel du niveau « Cortex Local »
+
+Le plugin `docker model` n'existe pas dans cette installation de Docker : on lance le **conteneur** `docker/model-runner` (moteur llama.cpp, API compatible OpenAI), qui tire lui-même le modèle.
+
+```bash
+docker pull docker/model-runner:latest
+docker volume create dmr-models
+docker run -d --name dmr --network host -e MODEL_RUNNER_PORT=12434 \
+  -e HTTPS_PROXY=$HTTPS_PROXY -e HTTP_PROXY=$HTTP_PROXY -e NO_PROXY=127.0.0.1,localhost \
+  -e SSL_CERT_FILE=/ca.crt -v /root/.ccr/ca-bundle.crt:/ca.crt:ro -v dmr-models:/models docker/model-runner:latest
+# Docker Hub renvoie 429 depuis ce bac à sable : tirer par le miroir de Google, puis donner au modèle son nom court.
+curl -s -X POST http://127.0.0.1:12434/models/create -H 'Content-Type: application/json' -d '{"from":"mirror.gcr.io/ai/gemma4"}'
+curl -s -X POST "http://127.0.0.1:12434/models/mirror.gcr.io/ai/gemma4:latest/tag?repo=ai/gemma4&tag=latest"
+bench --site cortex.localhost set-config cortex_ai_local_base_url http://127.0.0.1:12434/engines/v1
+# puis redémarrer bench serve; régler « timeout_seconds » de Cortex AI Settings (ex. 1500) pour un processeur; node local-gemma.mjs
+```
+Mesuré ici (4 cœurs, sans GPU) : Gemma 4 12B Q4_K_M, **~2,5 jetons/s en sortie, ~12 jetons/s en lecture**; le premier tour d'une question (≈ 5 000 jetons de consignes et d'outils) prend **plusieurs minutes**, les tours suivants profitent du cache. Utilisable pour vérifier le comportement, pas pour un client sans GPU. Le disque : ~7 Go pour le modèle (+ 1,4 Go l'image du runner).

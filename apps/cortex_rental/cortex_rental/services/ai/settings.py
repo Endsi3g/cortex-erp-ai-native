@@ -49,6 +49,12 @@ DEFAULTS: Dict[str, Any] = {
     "tier_gemma_model": "gemma-4-26b-a4b-it",
     "tier_gemma_price_input": 0.0,
     "tier_gemma_price_output": 0.0,
+    # Gemma 4 LOCAL (Docker Model Runner, `ai/gemma4`) : le modèle tourne chez nous, sans clé ni coût par jeton. N'est offert
+    # que si l'adresse du runner est réglée (clé de site `cortex_ai_local_base_url`).
+    "tier_local_enabled": 1,
+    "tier_local_model": "ai/gemma4",
+    "tier_local_price_input": 0.0,
+    "tier_local_price_output": 0.0,
 }
 
 # Identifiants et prix vérifiés auprès des fournisseurs le 2026-10-07 (pages officielles Anthropic et OpenAI, fiche
@@ -69,6 +75,12 @@ VERIFIED_MODELS = {
         "output": 0.0,
         "note": "Gemma 4 par l'API Gemini (256 K de contexte). Tarif non confirmé; appels d'outils non éprouvés avec une vraie clé.",
     },
+    "ai/gemma4": {
+        "provider": "Local (Docker Model Runner)",
+        "input": 0.0,
+        "output": 0.0,
+        "note": "Gemma 4 12B exécuté sur le serveur : aucune donnée ne sort; coût matériel hors budget; lent sur processeur.",
+    },
     "gpt-6-luna": {
         "provider": "OpenAI",
         "input": 0.1,
@@ -85,7 +97,7 @@ UPCOMING_MODELS = [
     }
 ]
 
-TIER_KEYS = ("rapide", "equilibre", "avance", "luna", "gemma")
+TIER_KEYS = ("rapide", "equilibre", "avance", "luna", "gemma", "local")
 TIER_TEXT = {
     "rapide": ("Cortex Rapide", "Réponses rapides au coût le plus bas : le bon choix pour la plupart des questions."),
     "equilibre": ("Cortex Équilibré", "Meilleur compromis entre qualité des réponses et coût."),
@@ -98,12 +110,20 @@ TIER_TEXT = {
         "Cortex Gemma",
         "Gemma 4, modèle ouvert de Google : économique, pour les demandes simples. Les actions et les outils y sont moins éprouvés.",
     ),
+    "local": (
+        "Cortex Local",
+        "Gemma 4 qui tourne sur votre propre serveur : aucune donnée ne sort, aucun coût par jeton. Plus lent; les outils y sont moins éprouvés.",
+    ),
 }
 
 
 def provider_key_for(model: str, values: Dict[str, Any]) -> str:
     """La clé du fournisseur qui sert ce modèle (le préfixe de l'identifiant choisit le fournisseur)."""
     lowered = (model or "").strip().lower()
+    if lowered.startswith("ai/"):
+        return (
+            "local" if values.get("local_base_url") else ""
+        )  # pas de clé : l'adresse du runner tient lieu de configuration
     if lowered.startswith("claude"):
         return values.get("anthropic_api_key") or ""
     if lowered.startswith("gpt-"):
@@ -159,6 +179,7 @@ def load() -> Dict[str, Any]:
     values["api_key"] = ""
     values["anthropic_api_key"] = ""
     values["openai_api_key"] = ""
+    values["local_base_url"] = ""
     if not frappe:
         return values
     if frappe.db.exists("DocType", DOCTYPE):
@@ -190,4 +211,5 @@ def load() -> Dict[str, Any]:
         values["anthropic_api_key"] = (getattr(frappe, "conf", None) or {}).get("anthropic_api_key") or ""
     if not values["openai_api_key"]:
         values["openai_api_key"] = (getattr(frappe, "conf", None) or {}).get("openai_api_key") or ""
+    values["local_base_url"] = str((getattr(frappe, "conf", None) or {}).get("cortex_ai_local_base_url") or "").strip()
     return values

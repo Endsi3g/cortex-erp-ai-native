@@ -168,3 +168,10 @@ payants (ce projet n'a pas fait l'objet d'un test d'intrusion indépendant).
 | 429 chez des utilisateurs normaux | Limite trop basse ou boucle côté client | Journal nginx/Redis; ajuster `USER_PER_MINUTE` |
 | Courriels non reçus | Pas de compte sortant ou SES hors bac à sable | `docs/ops/COURRIEL_SES.md` |
 | Assistant muet | Clé IA absente ou plafond mensuel atteint | *Cortex AI Settings*, rapport *Utilisation IA* |
+
+
+## Modèle d'IA local (Gemma 4 par Docker Model Runner) et mesure de l'IA (PostHog)
+
+**Cortex Local** : le modèle tourne sur votre serveur, aucune donnée ne sort et il n'y a pas de coût par jeton. Lancer le conteneur `docker/model-runner` (avec un GPU si possible : sur processeur, ~2,5 jetons/s), y tirer `ai/gemma4`, puis `bench --site app.exemple.ca set-config cortex_ai_local_base_url http://<hôte-du-runner>:12434/engines/v1`. Le niveau n'est offert que si cette adresse est réglée (c'est une configuration du **serveur**, jamais un champ modifiable depuis le navigateur). Le client choisit alors « Cortex Local » dans la zone de saisie. Relevez `timeout_seconds` dans *Cortex AI Settings* si le serveur est lent. Les appels d'outils fonctionnent (essayés avec le vrai modèle), mais Gemma 4 est moins éprouvé que Gemini : préférez-le aux demandes de lecture.
+
+**PostHog** : `bench --site app.exemple.ca set-config posthog_key phc_…` (clé publique du projet; région américaine par défaut, `posthog_host` pour l'Europe), puis `bench --site app.exemple.ca clear-cache` (le « boot » de chaque personne est en cache). Le navigateur envoie clics, pages, erreurs et performances avec masquage des champs et des données d'affaires; le serveur envoie un événement `$ai_generation` par appel au modèle (jetons, coût, durée, niveau) **sans jamais le texte** des messages. Les assistants `npx @posthog/wizard` (analytics, ai-observability, warehouse…) exigent un terminal interactif et une connexion : à lancer par une personne, puis relire le diff (ils réécrivent du code et ne connaissent ni le masquage ni l'identifiant anonyme de Cortex). **Entrepôt de données** : n'y brancher aucune table d'affaires sans décision de confidentialité (Loi 25).

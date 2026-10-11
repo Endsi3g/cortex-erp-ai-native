@@ -379,7 +379,7 @@ try {
 	py("frappe.db.sql(\"delete from `tabCortex AI Usage`\")\nprint(json.dumps(True))");
 
 	// Sans clé : mode démonstration honnête, jamais de faux « modèle ».
-	setAI({ api_key: "" });
+	setAI({ api_key: "", tier_local_enabled: 0 }); // Cortex Local n'a pas besoin de clé : on l'éteint aussi pour retrouver la démonstration
 	{
 		const { ctx, page } = await session();
 		const pill = (await page.locator("body").innerText());
@@ -387,7 +387,7 @@ try {
 		await ctx.close();
 	}
 } finally {
-	setAI({ api_key: KEY, model: "gemini-3.8-flash", fallback_model: "", price_input_per_mtok: 0, price_output_per_mtok: 0, default_monthly_budget: 0 });
+	setAI({ api_key: KEY, tier_local_enabled: 1, timeout_seconds: 60, model: "gemini-3.8-flash", fallback_model: "", price_input_per_mtok: 0, price_output_per_mtok: 0, default_monthly_budget: 0 });
 }
 
 await browser.close();

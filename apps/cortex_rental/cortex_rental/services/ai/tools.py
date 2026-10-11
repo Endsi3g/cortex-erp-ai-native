@@ -41,6 +41,21 @@ def tool(name: str, description: str, properties: Dict[str, Any], required: List
     return register
 
 
+def _total(doctype: str, filters: Dict[str, Any]) -> int:
+    """Nombre réel d'enregistrements (mêmes filtres, mêmes droits) : sans lui, un modèle qui reçoit les 10 plus récents dit
+    « vous en avez 10 ». Chaque liste renvoie `total` et `truncated` pour que la réponse dise « 10 sur 34 »."""
+    try:
+        rows = frappe.get_list(doctype, filters=filters, fields=["count(name) as n"])
+        return int(rows[0].n) if rows else 0
+    except Exception:  # noqa: BLE001 - un total introuvable ne doit pas faire échouer la liste
+        return -1
+
+
+def _paged(rows: List[Dict[str, Any]], total: int, key: str) -> Dict[str, Any]:
+    """Pur : la liste + son total réel; `truncated` vrai quand il y en a plus que ce qui est montré (total inconnu = -1)."""
+    return {key: rows, "shown": len(rows), "total": total, "truncated": total > len(rows)}
+
+
 def _company() -> str:
     from cortex_rental.permissions.agent_scopes import get_company_context
 
@@ -123,7 +138,11 @@ def list_rentals(state: str = "", limit: int = 10):
         order_by="modified desc",
         limit_page_length=max(1, min(_as_int(limit, 10), 25)),
     )
-    return {"rentals": [{**dict(r), "starts_at": str(r.starts_at), "ends_at": str(r.ends_at)} for r in rows]}
+    return _paged(
+        [{**dict(r), "starts_at": str(r.starts_at), "ends_at": str(r.ends_at)} for r in rows],
+        _total("Cortex Rental Transaction", filters),
+        "rentals",
+    )
 
 
 @tool(
@@ -316,7 +335,11 @@ def list_invoices(status: str = "", customer: str = "", limit: int = 10):
         order_by="modified desc",
         limit_page_length=max(1, min(_as_int(limit, 10), 25)),
     )
-    return {"invoices": [{**dict(r), "due_date": str(r.due_date or "")} for r in rows]}
+    return _paged(
+        [{**dict(r), "due_date": str(r.due_date or "")} for r in rows],
+        _total("Cortex Rental Invoice", filters),
+        "invoices",
+    )
 
 
 @tool(
@@ -325,18 +348,23 @@ def list_invoices(status: str = "", customer: str = "", limit: int = 10):
     {"limit": {"type": "integer"}},
 )
 def late_returns(limit: int = 10):
+    late_filters = {
+        "company": _company(),
+        "rental_state": ["in", ["Checked Out", "Partially Returned"]],
+        "ends_at": ["<", frappe.utils.now_datetime()],
+    }
     rows = frappe.get_list(
         "Cortex Rental Transaction",
-        filters={
-            "company": _company(),
-            "rental_state": ["in", ["Checked Out", "Partially Returned"]],
-            "ends_at": ["<", frappe.utils.now_datetime()],
-        },
+        filters=late_filters,
         fields=["name", "customer", "ends_at", "grand_total"],
         order_by="ends_at asc",
         limit_page_length=max(1, min(_as_int(limit, 10), 25)),
     )
-    return {"late": [{**dict(r), "ends_at": str(r.ends_at)} for r in rows]}
+    return _paged(
+        [{**dict(r), "ends_at": str(r.ends_at)} for r in rows],
+        _total("Cortex Rental Transaction", late_filters),
+        "late",
+    )
 
 
 @tool(

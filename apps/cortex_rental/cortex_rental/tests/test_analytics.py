@@ -131,7 +131,10 @@ class TestAIObservability(unittest.TestCase):
         self.assertIsNone(self.event(secret=""))
 
     def test_tracking_is_silent_and_off_without_a_site(self):
-        self.assertFalse(analytics.track_ai_generation(user="a@b.c", company="x"))
+        from unittest import mock
+
+        with mock.patch.object(analytics, "frappe", None):
+            self.assertFalse(analytics.track_ai_generation(user="a@b.c", company="x"))
 
 
 class TestAIPostDelivery(unittest.TestCase):
