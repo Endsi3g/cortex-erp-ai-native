@@ -29,6 +29,18 @@ class TestCoerce(unittest.TestCase):
         with self.assertRaises(actions.ActionError):
             records.coerce_value("Percent", "120", "Taux")
 
+    def test_absurd_amounts_are_refused_at_the_source_but_real_ones_pass(self):
+        for fieldtype, bad in (
+            ("Currency", "99999999999999"),
+            ("Currency", "100000001"),
+            ("Int", "1e10"),
+            ("Float", "5000000000"),
+        ):
+            with self.assertRaises(actions.ActionError, msg=f"{fieldtype} {bad}"):
+                records.coerce_value(fieldtype, bad, "Montant")
+        self.assertEqual(records.coerce_value("Currency", "2 500 000", "Valeur de remplacement"), 2500000)
+        self.assertEqual(records.coerce_value("Currency", "100000000", "Montant"), 100000000)
+
     def test_check_select_and_text(self):
         self.assertEqual(records.coerce_value("Check", "Oui", "Active"), 1)
         self.assertEqual(records.coerce_value("Check", "non", "Active"), 0)

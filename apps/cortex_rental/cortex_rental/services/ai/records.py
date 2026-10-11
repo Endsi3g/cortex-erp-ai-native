@@ -140,6 +140,9 @@ EDITABLE: Dict[str, Dict[str, str]] = {
 }
 # Bornes de bon sens (un pourcentage d'acompte de 500 est une faute de frappe, pas une décision).
 MAX_VALUE = {"deposit_percent": 100, "missing_billing_percent": 100, "quote_hold_hours": 720, "invoice_due_days": 365}
+# Plafonds absolus par type de champ : une valeur au-delà est une faute de frappe ou un abus, jamais une décision d'affaires
+# (un tarif de 99 999 999 999 999 $ n'est pas proposé, même sous approbation).
+ABSOLUTE_MAX = {"Currency": 100_000_000, "Float": 1_000_000_000, "Int": 1_000_000_000}
 # Une location ne se modifie par ce chemin que tant qu'elle n'est pas engagée (devis ou réservation).
 EDITABLE_STATES = {"Cortex Rental Transaction": ("Quote", "Reservation")}
 
@@ -207,6 +210,9 @@ def coerce_value(fieldtype: str, value: Any, label: str, options: str = "") -> A
             raise ActionError(f"« {label} » doit être un nombre.")
         if number < 0:
             raise ActionError(f"« {label} » ne peut pas être négatif.")
+        ceiling = ABSOLUTE_MAX.get(fieldtype)
+        if ceiling is not None and number > ceiling:
+            raise ActionError(f"« {label} » ne peut pas dépasser {fr_number(ceiling)} : vérifiez le nombre saisi.")
         if fieldtype == "Int":
             if number != int(number):
                 raise ActionError(f"« {label} » doit être un nombre entier.")

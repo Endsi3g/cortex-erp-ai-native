@@ -356,7 +356,7 @@ def build_cases(T):
         valid = [
             b
             for b in cards(r)
-            if json.loads(action_doc(b).payload_json or "{}").get("value") in ("-50", "99999999999999")
+            if float(json.loads(action_doc(b).payload_json or "{}").get("value") or 0) in (-50.0, 99999999999999.0)
         ]
         return [
             check("aucune carte avec un montant absurde", not valid),
