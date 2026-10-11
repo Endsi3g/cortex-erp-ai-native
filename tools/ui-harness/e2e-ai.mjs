@@ -267,6 +267,27 @@ const resetSite = () => py(`from cortex_rental.services import sector_templates 
 	await ctx.close();
 }
 
+// --- S11 : niveau Cortex Gemma (Gemma 4) : choisi dans la zone de saisie, la requête part avec ce modèle ---------------------------------------
+{
+	const { ctx, page } = await session();
+	await page.getByRole("button", { name: /Cortex Rapide/ }).click();
+	await page.waitForTimeout(400);
+	const menu = await page.locator(".ch-tier, [class*=ch-tier]").first().innerText().catch(() => "");
+	check("S11 le niveau « Cortex Gemma » est offert dans le sélecteur", /Cortex Gemma/.test(await page.locator("body").innerText()), menu.slice(0, 60));
+	await page.screenshot({ path: `${OUT}/s11-gemma-menu.png` });
+	await page.getByText("Cortex Gemma", { exact: false }).first().click();
+	await page.waitForTimeout(300);
+	await ask(page, "Donne-moi la situation de ma société : factures et statistiques.", ".cp-stat, .cp-error, [class*=cp-err]");
+	const pill = await page.locator(".ch-tier-pill, [class*=tier-pill], .ch-composer button:has-text('Cortex')").first().innerText().catch(() => "");
+	check("S11 la zone de saisie affiche « Cortex Gemma »", /Gemma/.test(await page.locator("body").innerText()), pill);
+	check("S11 la réponse arrive avec des cartes de statistiques", (await page.locator(".cp-stat").count()) >= 1);
+	const log = execSync("docker exec fb tail -n 8 /tmp/fake_gemini.log").toString();
+	check("S11 la requête est partie avec le modèle gemma-4-26b-a4b-it", /gemma-4-26b-a4b-it/.test(log), log.split("\n").filter(Boolean).slice(-1)[0] || "");
+	await page.screenshot({ path: `${OUT}/s11-gemma-reponse.png`, fullPage: true });
+	check("S11 aucune erreur JavaScript", page.errors.length === 0, page.errors.join(" | "));
+	await ctx.close();
+}
+
 // La limite réelle est de 20 messages par minute : on laisse la fenêtre se vider avant les scénarios de panne.
 await new Promise((r) => setTimeout(r, 65000));
 

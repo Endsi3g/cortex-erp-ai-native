@@ -1110,3 +1110,8 @@ body.cx-ai-fullscreen header.navbar {
 	border-bottom-color: transparent;
 	box-shadow: none;
 }
+
+/* Le lanceur flottant « Copilote » fait doublon avec la page elle-même : retiré de l'Assistant plein écran (demande de Kael). */
+body.cx-ai-fullscreen .cp-launcher {
+	display: none !important;
+}

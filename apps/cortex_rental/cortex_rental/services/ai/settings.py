@@ -44,6 +44,11 @@ DEFAULTS: Dict[str, Any] = {
     "tier_luna_model": "gpt-6-luna",
     "tier_luna_price_input": 0.1,
     "tier_luna_price_output": 0.5,
+    # Gemma 4 (Google, modèle ouvert) par l'API Gemini, avec la même clé Gemini. Prix à 0 : tarif NON confirmé.
+    "tier_gemma_enabled": 1,
+    "tier_gemma_model": "gemma-4-26b-a4b-it",
+    "tier_gemma_price_input": 0.0,
+    "tier_gemma_price_output": 0.0,
 }
 
 # Identifiants et prix vérifiés auprès des fournisseurs le 2026-10-07 (pages officielles Anthropic et OpenAI, fiche
@@ -58,6 +63,12 @@ VERIFIED_MODELS = {
     },
     "claude-sonnet-5-5": {"provider": "Anthropic", "input": 2.0, "output": 10.0, "note": ""},
     "claude-opus-5-5": {"provider": "Anthropic", "input": 4.0, "output": 20.0, "note": ""},
+    "gemma-4-26b-a4b-it": {
+        "provider": "Google",
+        "input": 0.0,
+        "output": 0.0,
+        "note": "Gemma 4 par l'API Gemini (256 K de contexte). Tarif non confirmé; appels d'outils non éprouvés avec une vraie clé.",
+    },
     "gpt-6-luna": {
         "provider": "OpenAI",
         "input": 0.1,
@@ -74,7 +85,7 @@ UPCOMING_MODELS = [
     }
 ]
 
-TIER_KEYS = ("rapide", "equilibre", "avance", "luna")
+TIER_KEYS = ("rapide", "equilibre", "avance", "luna", "gemma")
 TIER_TEXT = {
     "rapide": ("Cortex Rapide", "Réponses rapides au coût le plus bas : le bon choix pour la plupart des questions."),
     "equilibre": ("Cortex Équilibré", "Meilleur compromis entre qualité des réponses et coût."),
@@ -83,6 +94,10 @@ TIER_TEXT = {
         "Raisonnement le plus poussé, pour les demandes complexes. Consomme le budget plus vite.",
     ),
     "luna": ("Cortex Luna", "Très économique et grand contexte, pour les demandes simples et nombreuses."),
+    "gemma": (
+        "Cortex Gemma",
+        "Gemma 4, modèle ouvert de Google : économique, pour les demandes simples. Les actions et les outils y sont moins éprouvés.",
+    ),
 }
 
 

@@ -480,12 +480,12 @@ class ScriptedProvider(LLMProvider):
 def provider_for(model: str, api_key: str, **options) -> LLMProvider:
     """Choisit le fournisseur d'après l'identifiant du modèle."""
     lowered = (model or "").strip().lower()
-    if lowered.startswith("gemini"):
+    if lowered.startswith(("gemini", "gemma")):  # Gemma 4 se sert par la même API (generateContent) et la même clé
         return GeminiProvider(model.strip(), api_key, **options)
     if lowered.startswith("claude"):
         return AnthropicProvider(model.strip(), api_key, **options)
     if lowered.startswith("gpt-"):
         return OpenAIProvider(model.strip(), api_key, **options)
     raise AIConfigurationError(
-        f"Modèle d'IA non pris en charge : « {model} ». Utilisez un identifiant « gemini-… », « claude-… » ou « gpt-… »."
+        f"Modèle d'IA non pris en charge : « {model} ». Utilisez un identifiant « gemini-… », « gemma-… », « claude-… » ou « gpt-… »."
     )

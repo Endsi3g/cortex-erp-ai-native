@@ -33,7 +33,7 @@ SETTINGS = "Cortex Subscription Settings"
 SUBSCRIPTION = "Cortex Subscription"
 EVENT = "Cortex Stripe Event"
 
-ALL_TIERS = ("rapide", "equilibre", "avance", "luna")
+ALL_TIERS = ("rapide", "equilibre", "avance", "luna", "gemma")
 MODULES = ("portal",)
 MODULE_LABELS = {"portal": "Portail client (demandes et suivi)"}
 KINDS = {"Module": MODULES, "AI Tier": ALL_TIERS}

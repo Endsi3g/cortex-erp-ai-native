@@ -53,6 +53,11 @@
     "tier_luna_model",
     "tier_luna_price_input",
     "tier_luna_price_output",
+    "cb_tier_gemma",
+    "tier_gemma_enabled",
+    "tier_gemma_model",
+    "tier_gemma_price_input",
+    "tier_gemma_price_output",
     "sb_economy",
     "economy_model",
     "economy_cap_percent",
@@ -335,6 +340,37 @@
       "fieldtype": "Float",
       "label": "Luna : prix sortie ($ / M jetons)",
       "default": "0.5"
+    },
+    {
+      "fieldname": "cb_tier_gemma",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "tier_gemma_enabled",
+      "fieldtype": "Check",
+      "label": "Cortex Gemma activé",
+      "default": "1",
+      "description": "Gemma 4 (modèle ouvert de Google) par l'API Gemini : utilise la clé Gemini ci-dessus. Les appels d'outils sont moins éprouvés qu'avec Gemini."
+    },
+    {
+      "fieldname": "tier_gemma_model",
+      "fieldtype": "Data",
+      "label": "Cortex Gemma : modèle",
+      "default": "gemma-4-26b-a4b-it",
+      "description": "gemma-4-26b-a4b-it (par défaut) ou gemma-4-31b-it (plus gros)."
+    },
+    {
+      "fieldname": "tier_gemma_price_input",
+      "fieldtype": "Float",
+      "label": "Gemma : prix entrée ($ / M jetons)",
+      "default": "0",
+      "description": "0 = tarif non confirmé : vérifiez la grille de l'API Gemini avant de compter sur ce coût."
+    },
+    {
+      "fieldname": "tier_gemma_price_output",
+      "fieldtype": "Float",
+      "label": "Gemma : prix sortie ($ / M jetons)",
+      "default": "0"
     }
   ],
   "permissions": [

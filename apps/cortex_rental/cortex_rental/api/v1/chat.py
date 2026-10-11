@@ -58,9 +58,25 @@ def _service(model: bool = False) -> ChatSessionService:
         raise
 
 
+def validation_summary(exc: ValidationError) -> str:
+    """Pur : les champs fautifs seulement (« model_tier »), jamais le texte technique de Pydantic montré à la personne."""
+    fields = []
+    for err in exc.errors():
+        name = ".".join(str(p) for p in err.get("loc", ()) if not isinstance(p, int))
+        if name and name not in fields:
+            fields.append(name)
+    return ", ".join(fields[:5])
+
+
 def _raise_validation_error(exc: ValidationError) -> None:
     if frappe:
-        frappe.throw(f"Demande de conversation invalide : {exc}", frappe.ValidationError)
+        fields = validation_summary(exc)
+        frappe.throw(
+            "Demande de conversation invalide"
+            + (f" (champ : {fields})" if fields else "")
+            + ". Rechargez la page et réessayez.",
+            frappe.ValidationError,
+        )
     raise ValueError(str(exc))
 
 

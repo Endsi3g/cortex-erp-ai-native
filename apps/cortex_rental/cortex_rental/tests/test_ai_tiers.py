@@ -30,10 +30,10 @@ class TestTierAvailability(unittest.TestCase):
         with self.assertRaises(AIConfigurationError):
             resolve_tier(values(), None)
 
-    def test_gemini_key_only_offers_rapide(self):
+    def test_gemini_key_offers_rapide_and_gemma_which_share_the_key(self):
         v = values(api_key="g")
-        self.assertEqual([t["key"] for t in ai_settings.tiers(v) if t["configured"]], ["rapide"])
-        self.assertEqual(ai_settings.default_tier(v), "rapide")
+        self.assertEqual([t["key"] for t in ai_settings.tiers(v) if t["configured"]], ["rapide", "gemma"])
+        self.assertEqual(ai_settings.default_tier(v), "rapide")  # Gemma n'est jamais le choix par défaut
 
     def test_both_keys_offer_three_levels_priced_differently(self):
         v = values(api_key="g", anthropic_api_key="a")

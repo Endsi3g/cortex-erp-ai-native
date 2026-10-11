@@ -54,7 +54,7 @@ class SendMessageRequest(BaseModel):
     message: str = Field(min_length=1, max_length=MAX_MESSAGE_LENGTH)
     context: ChatContext
     # Niveau de modèle Cortex choisi par la personne ; le serveur vérifie qu'il est offert (jamais un identifiant de modèle).
-    model_tier: Optional[Literal["rapide", "equilibre", "avance"]] = None
+    model_tier: Optional[Literal["rapide", "equilibre", "avance", "luna", "gemma"]] = None
 
 
 # ---------------------------------------------------------------------
