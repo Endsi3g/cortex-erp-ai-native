@@ -488,6 +488,20 @@ class LocalOpenAIProvider(OpenAIProvider):
             "d'ajouter une carte graphique ou d'augmenter « http_timeout »."
         )
 
+    RESTART_WINDOW = 60  # secondes : une erreur serveur plus rapide que cela = le moteur a planté, pas un modèle lent
+
+    def generate(self, system: str, messages: List[Any], tools: List[Dict[str, Any]]) -> ProviderResult:
+        """Un seul nouvel essai, et seulement si le moteur local a planté tout de suite (erreur 5xx rapide) : le runner
+        redémarre seul, relancer coûte alors quelques secondes. Un délai dépassé n'est jamais relancé (cela doublerait l'attente)."""
+        started = time.monotonic()
+        try:
+            return super().generate(system, messages, tools)
+        except AIProviderError as exc:
+            if not (exc.retryable and (exc.status or 0) >= 500 and time.monotonic() - started < self.RESTART_WINDOW):
+                raise
+        time.sleep(3.0)
+        return super().generate(system, messages, tools)
+
     THOUGHT_RE = re.compile(r"<\|channel>thought.*?<channel\|>", re.DOTALL)
 
     @classmethod

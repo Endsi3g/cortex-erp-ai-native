@@ -137,5 +137,54 @@ class TestLocalProviderExchange(unittest.TestCase):
         self.assertIn("cortex_ai_local_base_url", str(ctx.exception))
 
 
+class TestLocalRunnerRestart(unittest.TestCase):
+    """Le moteur local qui plante tout de suite (5xx rapide) est relancé UNE fois; un délai dépassé ne l'est jamais."""
+
+    def provider(self):
+        return LocalOpenAIProvider("ai/gemma4", timeout=30)
+
+    def test_fast_server_error_is_retried_once(self):
+        from cortex_rental.services.ai.providers import AIProviderError
+
+        ok = mock.Mock()
+        calls = [AIProviderError("indisponible", status=503, retryable=True), ok]
+
+        def fake(self_, *a, **k):
+            r = calls.pop(0)
+            if isinstance(r, Exception):
+                raise r
+            return r
+
+        with mock.patch.object(OpenAIProvider, "generate", fake), mock.patch("time.sleep") as nap:
+            self.assertIs(self.provider().generate("", [], []), ok)
+        self.assertEqual(calls, [])
+        nap.assert_called_once()
+
+    def test_second_failure_is_raised_and_a_timeout_is_not_retried(self):
+        from cortex_rental.services.ai.providers import AIProviderError
+
+        count = {"n": 0}
+
+        def boom(self_, *a, **k):
+            count["n"] += 1
+            raise AIProviderError("indisponible", status=503, retryable=True)
+
+        with mock.patch.object(OpenAIProvider, "generate", boom), mock.patch("time.sleep"):
+            with self.assertRaises(AIProviderError):
+                self.provider().generate("", [], [])
+        self.assertEqual(count["n"], 2)
+
+        count["n"] = 0
+
+        def slow(self_, *a, **k):
+            count["n"] += 1
+            raise AIProviderError("trop long", retryable=False)
+
+        with mock.patch.object(OpenAIProvider, "generate", slow):
+            with self.assertRaises(AIProviderError):
+                self.provider().generate("", [], [])
+        self.assertEqual(count["n"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()
