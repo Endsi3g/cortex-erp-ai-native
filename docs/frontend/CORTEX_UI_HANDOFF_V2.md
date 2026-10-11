@@ -696,6 +696,28 @@ Demande de Kael : « configure complètement Gemma 4 afin de le rendre complète
 5. **Interface** : le sélecteur dit « peut prendre plusieurs minutes » pour Local sans GPU et le chemin de délai affiche un message clair.
 6. Documentation : recette GPU (`--gpus all`), `http_timeout`, limites.
 
+### Phase 17 — bilan (fait, 2026-10-11)
+
+**Fait, vérifié avec le vrai Gemma 4 12B (Docker Model Runner, processeur, 4 cœurs) par la vraie passerelle** (script de batterie jouant `send_message_handler` avec le niveau `local`, société Studio Lumière) :
+
+| Demande | Résultat | Durée |
+| --- | --- | --- |
+| « Quelles sont mes locations en état devis ? » | outil `list_rentals`, réponse « 10 sur 36 » (le total est dit, plus de « 10 » seul) | 409 s |
+| « Combien de retours sont en retard ? » | outil de statistiques, « 0 retour en retard » | 143 s |
+| « Crée un client Studio Aube… » | carte « Créer un client » **à approuver**, rien d'exécuté | 87 s |
+| « Change le tarif de la caméra Alexa Mini à 700 $ » | `find_records` puis `propose_update_field` : carte « Modifier un champ » à approuver; le tarif reste à 650 $ | 195 s |
+| « Réserve le devis CR-TRX-2026-00209 » | carte « Confirmer la réservation » à approuver; le devis reste un devis | 160 s |
+| « Bonjour, tu peux m'aider ? » | réponse directe, aucun outil | 74 s |
+| « Change le tarif de CAM-1 » (article inexistant) | le modèle demande l'identifiant exact au lieu d'inventer | 67 s |
+
+Constat clé : **les actions restent des propositions** avec le vrai modèle (les trois fiches `Cortex AI Action` sont restées `Proposed`; aucune donnée n'a changé). Les durées sont celles d'un processeur sans GPU : utilisables pour vérifier, pas pour un client.
+
+**Construit** : profil compact (`services/ai/tool_routing.py` : 3 à 9 outils choisis par mots-clés, sans modèle; `COMPACT_PROMPT`; descriptions courtes) pour les niveaux `gemma` et `local`; délai propre à chaque niveau, plafonné sous `http_timeout` (message en français au lieu d'un 502, vu en vrai : « n'a pas répondu en 110 secondes… »); un seul nouvel essai quand le runner plante tout de suite (erreur 5xx rapide), jamais après un délai dépassé; description du niveau Local qui dit « plusieurs minutes sans carte graphique ». 786 tests du banc OK (dont `test_compact_profile`, `test_local_tier`).
+
+**Trouvé en route (pas un défaut de Cortex)** : (a) le runner charge ~7 Go à froid et peut dépasser son propre délai d'initialisation (« took too long to initialize ») : la première demande après une pause échoue; (b) llama.cpp a planté une fois en reprenant un créneau en cache (`--parallel 1` demandé au runner, pris en compte au prochain chargement); le nouvel essai unique a couvert le cas. Documenté dans `docs/ops/DEPLOIEMENT.md` et `tools/bench/README.md`.
+
+**Reste à faire / limites** : (1) aucune mesure avec GPU; (2) **Cortex Gemma par l'API Gemini jamais essayé avec une vraie clé** (profil compact validé seulement par le faux serveur au protocole fidèle); (3) la qualité du choix d'outils de Gemma 4 n'est mesurée que sur ces 7 demandes : élargir la batterie avant de promettre quoi que ce soit à un client; (4) les prix de Cortex Gemma/Local restent à décider (consensus des cofondateurs); (5) `bench migrate` requis sur chaque site (patch `set_small_model_timeouts`).
+
 ## Phase 11 (faite, 2026-10-11) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 
 **Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**
