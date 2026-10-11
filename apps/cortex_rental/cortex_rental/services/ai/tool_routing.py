@@ -17,19 +17,21 @@ import unicodedata
 from typing import Dict, Iterable, List, Sequence, Tuple
 
 MAX_TOOLS = 9
-DEFAULT_READS = ("list_rentals", "search_rental_items", "finance_summary", "find_records")
+DEFAULT_READS = ("list_rentals", "finance_summary")
 
-# Sujet → (mots-clés, outils de lecture)
+# Sujet → (mots-clés, outils de lecture). Les lecteurs génériques (find_records, get_record) ne sont offerts qu'au sujet « detail » :
+# pour compter ou lister, ils sont inutiles et coûtent ~230 jetons à chaque tour.
 READ_TOPICS: Dict[str, Tuple[Tuple[str, ...], Tuple[str, ...]]] = {
     "locations": (
-        ("location", "devis", "reserv", "contrat", "sortie", "retour", "retard", "retenue", "projet"),
-        ("list_rentals", "late_returns", "rentals_by_state", "find_records", "get_record"),
+        ("location", "devis", "reserv", "contrat", "sortie", "retour", "retenue", "projet", "etat"),
+        ("list_rentals", "rentals_by_state"),
     ),
+    "retards": (("retard",), ("late_returns", "list_rentals")),
     "parc": (
         ("disponib", "libre", "stock", "equipement", "catalogue", "parc", "tarif", "prix", "camera", "article"),
-        ("search_rental_items", "check_inventory_availability", "find_records", "get_record"),
+        ("search_rental_items", "check_inventory_availability"),
     ),
-    "clients": (("client", "customer", "contact"), ("search_customers", "customer_summary", "find_records")),
+    "clients": (("client", "customer", "contact"), ("search_customers", "customer_summary")),
     "finance": (
         (
             "factur",
@@ -47,7 +49,19 @@ READ_TOPICS: Dict[str, Tuple[Tuple[str, ...], Tuple[str, ...]]] = {
         ("finance_summary", "finance_trend", "list_invoices", "rentals_by_state"),
     ),
     "approbations": (("approb", "autoris", "refus"), ("list_pending_approvals",)),
-}
+    "detail": (
+        ("detail", "fiche", "renseign", "informations sur", "info sur", "contenu", "depot", "note", "adresse", "courriel", "telephone"),
+        ("find_records", "get_record"),
+    ),
+}  # fmt: skip
+
+# Une salutation, un merci ou « tu peux m'aider ? » : aucun outil n'est offert (rien à consulter, ~400 jetons de moins).
+SMALLTALK = frozenset(
+    "bonjour bonsoir salut allo hello hey merci beaucoup svp stp tu peux pouvez vous m aider aide comment ca va qui es etes "
+    "bye revoir au a bientot super parfait cool excellent genial bravo".split()
+)  # fmt: skip
+IDENTIFIER = re.compile(r"\b(cr-trx|fac|cus|pay|ctx)-[a-z0-9-]*\d", re.IGNORECASE)
+
 
 ACTION_VERBS = (
     "cre", "ajout", "nouveau", "nouvelle", "modifi", "chang", "mets", "met ", "remplac", "corrig", "passe", "fais", "fait ",
@@ -105,6 +119,9 @@ def select_tools(message: str, allowed: Sequence[str], previous: str = "") -> Li
     Demande de lecture : les outils des sujets évoqués."""
     text = plain(f"{previous} {message}")
     now = plain(message)
+    words = re.findall(r"[a-z]+", now)
+    if words and len(now) <= 80 and all(w in SMALLTALK for w in words):
+        return []
     topical = tuple(k for words, _ in READ_TOPICS.values() for k in words)
     acting = _hits(now, ACTION_VERBS) or (not _hits(now, topical) and _hits(text, ACTION_VERBS))
     chosen: List[str] = []
@@ -126,9 +143,13 @@ def select_tools(message: str, allowed: Sequence[str], previous: str = "") -> Li
             add(reads)
             add([tool])
     else:
-        for words, reads in READ_TOPICS.values():
-            if _hits(text, words):
+        for topic_words, reads in READ_TOPICS.values():
+            if _hits(text, topic_words):
                 add(reads)
+        if IDENTIFIER.search(message or ""):
+            add(
+                READ_TOPICS["detail"][1]
+            )  # une pièce nommée (CR-TRX-…, FAC-…) : le détail se lit avec les lecteurs génériques
     if not chosen:
         add(DEFAULT_READS)
     ordered = [n for n in allowed if n in chosen]

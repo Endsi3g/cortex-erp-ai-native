@@ -28,7 +28,7 @@ class TestRouting(unittest.TestCase):
             "Donne-moi la situation de ma société",
             "Combien de factures sont en retard ?",
             "Quels devis sont en retenue ?",
-            "Bonjour",
+            "bla bla ???",
         ):
             picked = self.pick(message)
             self.assertTrue(picked, message)
@@ -54,6 +54,28 @@ class TestRouting(unittest.TestCase):
             picked = self.pick(message)
             self.assertEqual([n for n in picked if n.startswith("propose_")], [proposal], message)
             self.assertEqual({n for n in picked if not n.startswith("propose_")}, reads, message)
+
+    def test_smalltalk_gets_no_tools_but_a_real_question_still_does(self):
+        for message in ("Bonjour", "Bonjour, tu peux m'aider ?", "Merci beaucoup !", "Salut"):
+            self.assertEqual(self.pick(message), [], message)
+        self.assertTrue(self.pick("Aide-moi à voir mes devis"))
+        self.assertTrue(self.pick("Bonjour, combien de devis ai-je ?"))
+
+    def test_generic_readers_only_when_a_detail_or_an_identifier_is_asked(self):
+        generic = {"find_records", "get_record"}
+        for message in (
+            "Combien de locations sont en état devis ?",
+            "Quels retours sont en retard ?",
+            "Est-ce que la caméra Alexa Mini est disponible ?",
+            "Que sais-tu du client Studio Boréal ?",
+        ):
+            self.assertFalse(generic & set(self.pick(message)), message)
+        for message in ("Donne-moi le détail de CR-TRX-2026-00209", "Que contient la fiche de FAC-2026-00952 ?"):
+            self.assertTrue(generic <= set(self.pick(message)), message)
+
+    def test_late_returns_are_offered_for_a_lateness_question_only(self):
+        self.assertIn("late_returns", self.pick("Quels retours sont en retard ?"))
+        self.assertNotIn("late_returns", self.pick("Combien de locations sont en état devis ?"))
 
     def test_follow_up_without_keywords_uses_the_previous_request(self):
         picked = self.pick("oui, fais-le", previous="Change le tarif de CAM-1 à 200")
