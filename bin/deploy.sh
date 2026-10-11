@@ -375,6 +375,8 @@ deploy_docker() {
             log_error "Docker Compose (v2) n'est pas disponible."
             exit 1
         fi
+    fi
+
     if ! docker info >/dev/null 2>&1; then
         log_error "Le moteur Docker daemon n'est pas en cours d'execution."
         echo -e "${YELLOW}Veuillez demarrer Docker Desktop ou le service Docker, puis relancer :${NC}"
