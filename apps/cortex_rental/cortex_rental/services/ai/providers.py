@@ -420,6 +420,10 @@ class OpenAIProvider(LLMProvider):
         )
 
     requires_key = True
+    attempts = 2  # une relance après une panne de réseau (jamais pour un modèle local : voir LocalOpenAIProvider)
+
+    def timeout_message(self) -> str:
+        return "Le service d'IA n'a pas répondu à temps. Réessayez dans un instant."
 
     def endpoint(self) -> str:
         return self.URL
@@ -435,7 +439,7 @@ class OpenAIProvider(LLMProvider):
             raise AIConfigurationError("Aucune clé API OpenAI n'est configurée.")
         data = json.dumps(self.request_body(system, messages, tools), ensure_ascii=False).encode("utf-8")
         last: Optional[Exception] = None
-        for attempt in range(2):
+        for attempt in range(self.attempts):
             request = urllib.request.Request(self.endpoint(), data=data, headers=self.headers(), method="POST")
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
@@ -446,10 +450,8 @@ class OpenAIProvider(LLMProvider):
                     raise last from exc
                 time.sleep(1.0)
             except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-                last = AIProviderError(
-                    "Le service d'IA n'a pas répondu à temps. Réessayez dans un instant.", retryable=True
-                )
-                if attempt:
+                last = AIProviderError(self.timeout_message(), retryable=self.attempts > 1)
+                if attempt + 1 >= self.attempts:
                     raise last from exc
                 time.sleep(1.0)
         raise last or AIProviderError("Le service d'IA est indisponible.")
@@ -465,6 +467,27 @@ class LocalOpenAIProvider(OpenAIProvider):
 
     name = "Modèle local"
     requires_key = False
+    attempts = 1  # un modèle lent n'est pas « en panne » : relancer doublerait l'attente sans rien changer
+
+    def __init__(self, model: str, api_key: str = "", timeout: int = 600, **kwargs):
+        super().__init__(model, api_key, timeout=timeout, **kwargs)
+        # Le délai de l'IA locale (minutes) est plafonné sous celui du serveur web : sinon la personne recevrait une erreur 502.
+        ceiling = 900
+        try:
+            import frappe
+
+            ceiling = int(frappe.conf.get("http_timeout") or 120) - 10
+        except Exception:
+            pass
+        self.timeout = max(10, min(int(timeout or 600), ceiling))
+
+    def timeout_message(self) -> str:
+        return (
+            f"Le modèle local n'a pas répondu en {self.timeout} secondes. Il tourne sur votre serveur : sans carte graphique, "
+            "une réponse peut prendre plusieurs minutes. Choisissez un autre modèle, ou demandez à un administrateur "
+            "d'ajouter une carte graphique ou d'augmenter « http_timeout »."
+        )
+
     THOUGHT_RE = re.compile(r"<\|channel>thought.*?<channel\|>", re.DOTALL)
 
     @classmethod

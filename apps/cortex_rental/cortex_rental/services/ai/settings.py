@@ -55,6 +55,10 @@ DEFAULTS: Dict[str, Any] = {
     "tier_local_model": "ai/gemma4",
     "tier_local_price_input": 0.0,
     "tier_local_price_output": 0.0,
+    # Délai d'attente par niveau (secondes). Un modèle local sans carte graphique répond en minutes : son délai est long, mais
+    # le fournisseur le plafonne sous le délai du serveur web (`http_timeout`) pour que l'erreur soit claire, jamais un 502.
+    "tier_gemma_timeout_seconds": 90,
+    "tier_local_timeout_seconds": 600,
 }
 
 # Identifiants et prix vérifiés auprès des fournisseurs le 2026-10-07 (pages officielles Anthropic et OpenAI, fiche
@@ -98,6 +102,8 @@ UPCOMING_MODELS = [
 ]
 
 TIER_KEYS = ("rapide", "equilibre", "avance", "luna", "gemma", "local")
+# Petits modèles : profil « compact » (consignes courtes, outils choisis selon la demande : services/ai/tool_routing.py).
+COMPACT_TIERS = ("gemma", "local")
 TIER_TEXT = {
     "rapide": ("Cortex Rapide", "Réponses rapides au coût le plus bas : le bon choix pour la plupart des questions."),
     "equilibre": ("Cortex Équilibré", "Meilleur compromis entre qualité des réponses et coût."),
@@ -154,6 +160,8 @@ def tiers(values: Dict[str, Any]) -> list:
                 "price_output_per_mtok": float(price_out or 0),
                 "enabled": enabled,
                 "configured": enabled and bool(provider_key_for(model, values)),
+                "compact": key in COMPACT_TIERS,
+                "timeout": int(values.get(f"tier_{key}_timeout_seconds") or values.get("timeout_seconds") or 60),
             }
         )
     prices = [r["price_output_per_mtok"] for r in rows if r["configured"] and r["price_output_per_mtok"] > 0]

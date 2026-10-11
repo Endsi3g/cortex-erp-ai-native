@@ -38,6 +38,19 @@ Société : {company}. Date du jour : {today}. Écran actuel : {page}.
 {rules}"""
 
 
+# Profil « compact » des petits modèles (Gemma 4) : même rôle et mêmes interdits, ~4 fois moins de jetons.
+COMPACT_PROMPT = """Tu es l'assistant Cortex d'une société de location au Québec. Tu écris en français, brièvement, en vouvoyant.
+Règles :
+- Utilise les outils pour tout chiffre, prix, disponibilité ou statut; ne devine jamais.
+- Tu ne fais rien toi-même : pour créer ou modifier, appelle l'outil « propose_… » ; la personne approuve. Ne dis jamais « c'est fait ».
+- Cherche l'identifiant exact (client, équipement, location, facture) avec un outil avant de proposer.
+- Si un outil renvoie `truncated` vrai, dis « 10 sur 34 », jamais « vous avez 10 ».
+- Les cartes s'affichent sous ton message : écris « ci-dessous » et ne répète pas leurs chiffres.
+- S'il manque une information, pose une seule question courte.
+Société : {company}. Date : {today}. Écran : {page}.
+{rules}"""
+
+
 def company_rules(company: str) -> str:
     """Les règles de la société que l'assistant doit connaître (taxes, acompte, retenue, approbation), lues dans ses
     réglages. Lecture seule : l'assistant ne les modifie pas et ne remplace pas les outils pour un prix ou un statut.
@@ -141,7 +154,7 @@ class GatewayResult:
     provider: str = ""
 
 
-def build_provider(settings: Dict[str, Any], model: Optional[str] = None) -> LLMProvider:
+def build_provider(settings: Dict[str, Any], model: Optional[str] = None, timeout: Optional[int] = None) -> LLMProvider:
     if not settings.get("enabled"):
         raise AIConfigurationError("L'assistant IA est désactivé dans les réglages.")
     chosen = (model or settings["model"]).strip()
@@ -153,7 +166,7 @@ def build_provider(settings: Dict[str, Any], model: Optional[str] = None) -> LLM
     return provider_for(
         chosen,
         api_key,
-        timeout=settings.get("timeout_seconds"),
+        timeout=timeout or settings.get("timeout_seconds"),
         temperature=float(settings.get("temperature") or 0.2),
         max_output_tokens=int(settings.get("max_output_tokens") or 1024),
     )
@@ -305,7 +318,7 @@ class AIGateway:
         if self._provider is None and not economy:
             # Niveau Cortex choisi : son modèle et ses prix (le budget compte le vrai coût du niveau utilisé).
             self.tier = resolve_tier(self.settings, tier, company)
-            self._provider = build_provider(self.settings, model=self.tier["model"])
+            self._provider = build_provider(self.settings, model=self.tier["model"], timeout=self.tier.get("timeout"))
             prices = {
                 "price_input_per_mtok": self.tier["price_input_per_mtok"],
                 "price_output_per_mtok": self.tier["price_output_per_mtok"],
@@ -317,10 +330,19 @@ class AIGateway:
                 "price_output_per_mtok": self.settings.get("economy_price_output_per_mtok"),
             }
         provider = self.provider()
+        compact = bool(self.tier.get("compact")) and not economy
+        if compact:
+            # Petit modèle : seulement les outils que la demande évoque (choisis sans modèle), consignes courtes.
+            from cortex_rental.services.ai import tool_routing
+
+            previous = next(
+                (h["text"] for h in reversed(history or []) if h.get("role") == "user" and h.get("text")), ""
+            )
+            allowed_tools = tool_routing.select_tools(message, allowed_tools, previous=previous)
         exposed = tools.exposed(allowed_tools)
         exposed_names = {t.name for t in exposed}
-        declarations = [t.declaration() for t in exposed]
-        system = SYSTEM_PROMPT.format(
+        declarations = [t.declaration(compact=compact) for t in exposed]
+        system = (COMPACT_PROMPT if compact else SYSTEM_PROMPT).format(
             company=company,
             today=frappe.utils.today() if frappe else "",
             page=page or "tableau de bord",

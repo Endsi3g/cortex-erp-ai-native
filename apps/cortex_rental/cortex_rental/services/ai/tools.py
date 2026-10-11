@@ -24,8 +24,13 @@ class Tool:
     def __init__(self, name: str, description: str, parameters: Dict[str, Any], fn: Callable[..., Any]):
         self.name, self.description, self.parameters, self.fn = name, description, parameters, fn
 
-    def declaration(self) -> Dict[str, Any]:
-        return {"name": self.name, "description": self.description, "parameters": self.parameters}
+    def declaration(self, compact: bool = False) -> Dict[str, Any]:
+        """`compact` (petits modèles) : la description est raccourcie à sa première phrase; les paramètres restent entiers."""
+        description = self.description
+        if compact:
+            first = description.split(". ")[0].strip()
+            description = (first if first.endswith(".") else first + ".")[:200]
+        return {"name": self.name, "description": description, "parameters": self.parameters}
 
 
 REGISTRY: Dict[str, Tool] = {}

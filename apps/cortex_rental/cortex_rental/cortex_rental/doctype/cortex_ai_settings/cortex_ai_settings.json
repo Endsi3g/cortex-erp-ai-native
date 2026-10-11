@@ -58,11 +58,13 @@
     "tier_gemma_model",
     "tier_gemma_price_input",
     "tier_gemma_price_output",
+    "tier_gemma_timeout_seconds",
     "cb_tier_local",
     "tier_local_enabled",
     "tier_local_model",
     "tier_local_price_input",
     "tier_local_price_output",
+    "tier_local_timeout_seconds",
     "sb_economy",
     "economy_model",
     "economy_cap_percent",
@@ -378,6 +380,12 @@
       "default": "0"
     },
     {
+      "fieldname": "tier_gemma_timeout_seconds",
+      "fieldtype": "Int",
+      "label": "Gemma : délai d'attente (secondes)",
+      "default": "90"
+    },
+    {
       "fieldname": "cb_tier_local",
       "fieldtype": "Column Break"
     },
@@ -407,6 +415,13 @@
       "fieldtype": "Float",
       "label": "Local : prix sortie ($ / M jetons)",
       "default": "0"
+    },
+    {
+      "fieldname": "tier_local_timeout_seconds",
+      "fieldtype": "Int",
+      "label": "Local : délai d'attente (secondes)",
+      "default": "600",
+      "description": "Sans carte graphique, une réponse prend des minutes. Le délai est plafonné sous « http_timeout » du serveur web (réglage du banc : bench set-config -g http_timeout 900) pour qu'une attente trop longue donne un message clair et non une erreur 502."
     }
   ],
   "permissions": [

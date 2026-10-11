@@ -244,12 +244,14 @@ def apply_default_ai_settings() -> None:
         set_ai_pricing_defaults,
         set_gemma_tier_defaults,
         set_local_tier_defaults,
+        set_small_model_timeouts,
     )
 
     set_ai_pricing_defaults.execute()
     set_ai_economy_defaults.execute()
     set_gemma_tier_defaults.execute()
     set_local_tier_defaults.execute()
+    set_small_model_timeouts.execute()
 
 
 def after_install() -> None:
