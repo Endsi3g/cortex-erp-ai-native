@@ -79,3 +79,90 @@ class TestAnalyticsWiring(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestAIObservability(unittest.TestCase):
+    KEY = "phc_zuqYPWwkskZgkEtzGhxe2hJftiDcMMmTTqftnTv6mTgR"
+
+    def event(self, **over):
+        base = dict(
+            key=self.KEY,
+            user="kael@studio.test",
+            secret="s",
+            company="Studio Lumière",
+            provider="gemini",
+            model="gemini-3.8-flash",
+            input_tokens=1200,
+            output_tokens=300,
+            cost_usd=0.002,
+            latency_s=1.2345,
+            request_id="req-1",
+            tier="rapide",
+            tool_calls=2,
+        )
+        base.update(over)
+        return analytics.ai_generation_event(**base)
+
+    def test_event_has_usage_but_never_message_text(self):
+        e = self.event()
+        self.assertEqual(e["event"], "$ai_generation")
+        p = e["properties"]
+        self.assertEqual(
+            (p["$ai_model"], p["$ai_input_tokens"], p["$ai_output_tokens"]), ("gemini-3.8-flash", 1200, 300)
+        )
+        self.assertEqual((p["$ai_total_cost_usd"], p["$ai_latency"], p["cortex_tier"]), (0.002, 1.234, "rapide"))
+        self.assertEqual(p["$groups"], {"company": "Studio Lumière"})
+        self.assertFalse(p["$process_person_profile"])
+        for forbidden in ("$ai_input", "$ai_output_choices", "$ai_input_state", "$ai_output_state"):
+            self.assertNotIn(forbidden, p)
+        self.assertNotIn("kael", str(e))  # la personne est un identifiant anonyme
+        self.assertTrue(e["distinct_id"].startswith("u_"))
+
+    def test_error_keeps_only_the_error_type(self):
+        p = self.event(error="AIProviderError", input_tokens=0, output_tokens=0)["properties"]
+        self.assertTrue(p["$ai_is_error"])
+        self.assertEqual(p["$ai_error"], "AIProviderError")
+
+    def test_off_without_key_for_system_accounts_and_without_secret(self):
+        self.assertIsNone(self.event(key=""))
+        self.assertIsNone(self.event(key="pas-une-cle"))
+        self.assertIsNone(self.event(user="Administrator"))
+        self.assertIsNone(self.event(user="Guest"))
+        self.assertIsNone(self.event(secret=""))
+
+    def test_tracking_is_silent_and_off_without_a_site(self):
+        self.assertFalse(analytics.track_ai_generation(user="a@b.c", company="x"))
+
+
+class TestAIPostDelivery(unittest.TestCase):
+    def test_payload_is_posted_as_json_to_the_capture_endpoint(self):
+        import json
+        import threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+
+        received = {}
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                received["path"] = self.path
+                received["body"] = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'{"status":1}')
+
+            def log_message(self, *args):
+                pass
+
+        server = HTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.handle_request, daemon=True)
+        thread.start()
+        event = TestAIObservability().event()
+        analytics._post(f"http://127.0.0.1:{server.server_port}", event)
+        thread.join(5)
+        server.server_close()
+        self.assertEqual(received["path"], "/i/v0/e/")
+        self.assertEqual(received["body"]["event"], "$ai_generation")
+        self.assertEqual(received["body"]["api_key"], TestAIObservability.KEY)
+
+    def test_an_unreachable_host_is_swallowed(self):
+        analytics._post("http://127.0.0.1:9", {"event": "x"})  # rien n'écoute : aucune exception

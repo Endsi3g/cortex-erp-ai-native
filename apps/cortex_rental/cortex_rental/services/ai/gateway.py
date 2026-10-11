@@ -5,6 +5,7 @@ Règles (voir docs/architecture/AI_ENGINE_DECISION.md) : aucun outil n'écrit ni
 et rien n'est présenté comme réussi.
 """
 
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -262,6 +263,29 @@ class AIGateway:
                 return self._provider.generate(system, messages, declarations)
             raise
 
+    def _observe(self, company, user, tokens_in, tokens_out, latency, request_id, tool_calls, prices, error="") -> None:
+        """Mesure d'usage de l'IA (PostHog) : jamais de texte, silencieuse, sans effet si la mesure est éteinte."""
+        try:
+            from cortex_rental.services import analytics
+
+            provider = self.provider()
+            analytics.track_ai_generation(
+                user=user,
+                company=company,
+                provider=provider.name,
+                model=provider.model,
+                input_tokens=tokens_in,
+                output_tokens=tokens_out,
+                cost_usd=budget.cost_of(tokens_in, tokens_out, prices or self.settings),
+                latency_s=latency,
+                request_id=request_id,
+                tier=(self.tier or {}).get("key", ""),
+                tool_calls=tool_calls,
+                error=error,
+            )
+        except Exception:  # noqa: BLE001 - la mesure ne casse jamais l'assistant
+            pass
+
     def run(
         self,
         message: str,
@@ -314,7 +338,24 @@ class AIGateway:
         total_in = total_out = 0
         text = ""
         for step in range(max_steps + 1):
-            result = self._generate(system, messages, declarations if step < max_steps else [])
+            started = time.monotonic()
+            try:
+                result = self._generate(system, messages, declarations if step < max_steps else [])
+            except Exception as exc:
+                self._observe(
+                    company, user, 0, 0, time.monotonic() - started, request_id, 0, prices, type(exc).__name__
+                )
+                raise
+            self._observe(
+                company,
+                user,
+                result.input_tokens,
+                result.output_tokens,
+                time.monotonic() - started,
+                request_id,
+                len(result.tool_calls),
+                prices,
+            )
             total_in += result.input_tokens
             total_out += result.output_tokens
             budget.record(
