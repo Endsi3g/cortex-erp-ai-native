@@ -399,6 +399,24 @@ def _field(doctype: str, fieldname: str):
     return df
 
 
+def _preflight(doc, fieldname: str, after: Any) -> None:
+    """Refuse DÈS LA PROPOSITION ce que Frappe refuserait à l'enregistrement (valeur hors d'une liste de choix, y compris un
+    AUTRE champ de la fiche devenu invalide, p. ex. une catégorie retirée de la liste du site) : la personne n'approuve jamais
+    une carte qui échouera, et le modèle peut lui expliquer pourquoi."""
+    probe = frappe.get_doc(doc.as_dict())
+    if not hasattr(
+        probe, "_validate_selects"
+    ):  # version de Frappe sans cette vérification : l'enregistrement reste le filet
+        return
+    probe.set(fieldname, after)
+    try:
+        probe._validate_selects()
+    except frappe.ValidationError as exc:
+        reason = frappe.utils.strip_html(str(exc)).strip()
+        frappe.clear_messages()
+        raise ActionError(f"Cette modification serait refusée à l'enregistrement : {reason}") from exc
+
+
 def _prepare_update(args: Dict[str, Any], company: str) -> Prepared:
     doctype = str(args.get("doctype") or "").strip()
     name = str(args.get("name") or "").strip()
@@ -413,6 +431,7 @@ def _prepare_update(args: Dict[str, Any], company: str) -> Prepared:
         raise ActionError(f"« {label} » ne peut pas dépasser {fr_number(MAX_VALUE[fieldname])}.")
     if doctype == "Cortex Rental Item Profile" and fieldname == "total_quantity" and doc.get("is_serialized"):
         raise ActionError("Le parc d'un équipement sérialisé vient de ses numéros de série, pas d'une quantité.")
+    _preflight(doc, fieldname, after)
     before = doc.get(fieldname)
     if same_value(df.fieldtype, before, after):
         raise ActionError(f"« {label} » a déjà cette valeur ({display_value(df.fieldtype, before)}). Rien à modifier.")

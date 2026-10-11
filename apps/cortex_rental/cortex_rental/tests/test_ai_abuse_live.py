@@ -142,6 +142,17 @@ class TestAIAbuseLive(unittest.TestCase):
                 self.actions.propose("update_field", args, COMPANY, self.operator)
         self.assertEqual(self.rate(), before)
 
+    def test_a_card_that_frappe_would_refuse_is_refused_at_proposal_not_after_approval(self):
+        """Fiche dont la catégorie n'est plus dans la liste du site : modifier le tarif échouerait à l'enregistrement. Le
+        refus vient DÈS LA PROPOSITION, avec la raison, plutôt qu'une carte approuvée qui échoue."""
+        frappe.db.set_value("Cortex Rental Item Profile", self.profile, "category", "Catégorie-disparue-ZZ")
+        with self.assertRaises(self.actions.ActionError) as ctx:
+            self._proposal("170")
+        self.assertIn("refusée à l'enregistrement", str(ctx.exception))
+        self.assertIn("Catégorie", str(ctx.exception))
+        self.assertEqual(float(self.rate()), 120.0)
+        frappe.db.set_value("Cortex Rental Item Profile", self.profile, "category", "")
+
     def test_actions_of_unknown_or_hostile_names_are_refused(self):
         for action in ("", "drop_table", "update_field; --", "../x", None, "execute_sql", "delete_customer"):
             with self.assertRaises(self.actions.ActionError, msg=str(action)):

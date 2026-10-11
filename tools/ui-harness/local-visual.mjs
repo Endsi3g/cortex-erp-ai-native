@@ -15,7 +15,10 @@ function py(code) {
 	execSync("docker cp /tmp/q.py fb:/tmp/q.py");
 	return JSON.parse(execSync("docker exec -u frappe fb bash -c 'cd /home/frappe/frappe-bench/sites && ../env/bin/python /tmp/q.py'").toString().trim().split("\n").pop());
 }
-const rate = () => py("print(json.dumps(float(frappe.db.get_value('Cortex Rental Item Profile','CAM-ALEXA-MINI-RENTAL','daily_rate'))))");
+// Équipement de démonstration VALIDE (catégorie de la liste du site) : les fiches de démo d'origine ont des catégories hors liste,
+// ce que Frappe refuse à l'enregistrement. Créé ici, supprimé à la fin.
+const ITEM = py("from cortex_rental.tests.live_fixtures import ensure_profile\nensure_profile('Studio Lumière','DEMO-GEMMA-CAM',serialized=0,quantity=2,rate=300.0)\nname=frappe.db.get_value('Cortex Rental Item Profile',{'item_code':'DEMO-GEMMA-CAM','company':'Studio Lumière'},'name')\ncat=frappe.get_meta('Cortex Rental Item Profile').get_field('category').options.split('\\n')[0]\nfrappe.db.set_value('Cortex Rental Item Profile',name,{'item_name':'Caméra démo Gemma','category':cat})\nprint(json.dumps(name))");
+const rate = () => py(`print(json.dumps(float(frappe.db.get_value('Cortex Rental Item Profile','${ITEM}','daily_rate'))))`);
 
 const results = [];
 const check = (name, ok, detail = "") => { results.push({ name, ok: !!ok }); console.log(ok ? "OK  " : "FAIL", name, detail); };
@@ -61,7 +64,7 @@ check("toutes les factures impayées réelles sont nommées", unpaid.every((n) =
 // 3. Action : proposer, approuver pour de vrai, vérifier en base, annuler, vérifier en base.
 const before = rate();
 await fresh();
-secs = await ask("Change le tarif journalier de la caméra Alexa Mini à 700 $");
+secs = await ask("Change le tarif journalier de la caméra démo Gemma à 700 $");
 await page.screenshot({ path: `${OUT}/3-carte-a-approuver.png`, fullPage: true });
 check("une carte « Modifier un champ » est à approuver", (await page.locator(".cp-action").count()) === 1 && (await page.locator(".cp-action-approve").count()) === 1, `${secs} s`);
 check("rien n'est changé avant l'approbation", rate() === before, `tarif ${before}`);
@@ -81,7 +84,7 @@ if (await undo.count()) {
 check("après annulation, le tarif est revenu à sa valeur d'origine", rate() === before, `tarif ${rate()}`);
 
 check("aucune erreur JavaScript", page.errors.length === 0, page.errors.join(" | "));
-py("frappe.db.sql(\"delete from `tabCortex AI Action` where status='Proposed' and company='Studio Lumière'\")\nprint(json.dumps(True))");
+py(`frappe.db.sql("delete from \`tabCortex AI Action\` where status='Proposed' and company='Studio Lumière'")\nfrappe.delete_doc('Cortex Rental Item Profile','${ITEM}',force=True,ignore_permissions=True)\nprint(json.dumps(True))`);
 console.log(`\n${results.filter((r) => r.ok).length}/${results.length} vérifications réussies`);
 await browser.close();
 process.exit(results.every((r) => r.ok) ? 0 : 1);
