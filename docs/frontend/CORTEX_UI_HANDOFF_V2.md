@@ -804,6 +804,12 @@ Ce que chaque cas vérifie : bon outil (tout outil légitime accepté pour la m�
 
 **Limites** : la batterie est petite (29 cas); Gemma 4 est non déterministe (un cas peut varier d'une exécution à l'autre : « deux demandes en une » a proposé une carte une fois et posé une question l'autre, toutes deux sûres); Cortex Gemma par l'API Gemini n'a jamais été essayé avec une vraie clé.
 
+### Phase 18 — décisions de Kael (2026-10-13)
+
+1. **Langue des réponses : l'assistant suit la langue de la personne** (français du Québec par défaut). Fait : les deux consignes (`SYSTEM_PROMPT`, `COMPACT_PROMPT`) le disent explicitement, test `TestLanguage`. L'interface, les cartes et les libellés ajoutés par Cortex restent **toujours en français**.
+2. **Voie rapide sans modèle : à demander d'abord, rien à ajouter maintenant.** **Non construite.** À rouvrir avec Kael avant tout travail (réponse directe par l'outil seul, zéro jeton, pour les demandes de comptage et de liste simples).
+3. Fiches de démonstration à catégories hors liste : **pas encore tranché** (voir le bilan ci-dessus).
+
 ## Phase 11 (faite, 2026-10-11) : parcours d'entrée — décisions de Kael (2026-10-10), construit directement (« oublie la maquette »)
 
 **Règle générale (Kael) : l'IA aide, elle ne fait pas à la place de la personne, et l'application reste légère en jetons. « Déterministe d'abord » :** tout ce qui peut se faire sans modèle (modèles de secteur, listes, validations, textes d'aide, visite guidée) est codé en dur; le modèle n'est appelé que sur demande explicite, **jamais au chargement d'une page**. **Aucune IA dans l'onboarding ni dans la visite guidée.**

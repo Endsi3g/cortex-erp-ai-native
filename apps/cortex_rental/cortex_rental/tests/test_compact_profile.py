@@ -176,6 +176,15 @@ def gateway_tool_call(name):
     return ToolCall(name=name, args={}, id="x")
 
 
+class TestLanguage(unittest.TestCase):
+    """Décision de Kael (2026-10-13) : l'assistant suit la langue de la personne (français par défaut)."""
+
+    def test_both_prompts_follow_the_language_of_the_person(self):
+        for prompt in (gateway.SYSTEM_PROMPT, gateway.COMPACT_PROMPT):
+            self.assertIn("langue de la personne", prompt)
+            self.assertIn("français", prompt)
+
+
 class TestTierTimeouts(unittest.TestCase):
     def test_compact_flag_and_timeouts_per_tier(self):
         values = dict(ai_settings.DEFAULTS)
