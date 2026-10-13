@@ -175,6 +175,8 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
         order_by="item_name asc",
         limit_page_length=200,
     )
+    # Compte de la société entière : distinguer un catalogue vide d'un filtre sans résultat.
+    catalog_total = frappe.db.count("Cortex Rental Item Profile", filters={"company": company})
     if search:
         profiles = [
             p for p in profiles if search in (p.item_name or "").lower() or search in (p.item_code or "").lower()
@@ -316,7 +318,7 @@ def get_matrix_handler(payload: Dict[str, Any], company: str) -> Dict[str, Any]:
             }
         )
 
-    return {"starts_at": starts_at, "ends_at": ends_at, "items": items_response}
+    return {"starts_at": starts_at, "ends_at": ends_at, "items": items_response, "catalog_total": catalog_total}
 
 
 if frappe:

@@ -39,8 +39,20 @@ cortex.AccountPage = class AccountPage {
 	}
 
 	// ---------- utilitaires ----------
-	call(method, args, type, scope) {
-		return frappe.call({ method: `cortex_rental.api.v1.${scope || "account"}.${method}`, args, type: type || "GET", freeze: false }).then((r) => r.message);
+	call(method, args, type, scope, options = {}) {
+		return frappe.call({ method: `cortex_rental.api.v1.${scope || "account"}.${method}`, args, type: type || "GET", freeze: false, ...options }).then((r) => r.message);
+	}
+
+	errorMessage(error, fallback) {
+		const response = error && (error.responseJSON || error);
+		try {
+			const first = JSON.parse(response._server_messages || "[]")[0];
+			const message = typeof first === "string" ? JSON.parse(first).message : first && first.message;
+			if (message) return String(message).replace(/<[^>]*>/g, "");
+		} catch (e) {
+			// Une erreur réseau n'a pas nécessairement de message Frappe.
+		}
+		return fallback;
 	}
 
 	esc(v) {
@@ -104,6 +116,8 @@ cortex.AccountPage = class AccountPage {
 	// ---------- cycle ----------
 	show(tab) {
 		this.tab = tab && this.PAGES[tab] ? tab : "profil";
+		const view = this.view = (this.view || 0) + 1;
+		this.root.find(".cx-acct").attr("data-page", this.tab);
 		try {
 			this.wrapper.page.set_title(this.PAGES[this.tab]);
 		} catch (e) {
@@ -111,10 +125,15 @@ cortex.AccountPage = class AccountPage {
 		}
 		this.options = frappe.route_options || {};
 		frappe.route_options = null;
-		this.$body.empty();
-		this.call("get_account").then((data) => {
+		this.$body.html(`<div class="cx-acct-load" role="status"><span class="cx-profile-spinner" aria-hidden="true"></span>${__("Chargement de votre compte…")}</div>`);
+		this.call("get_account", {}, "GET", "account", { silent: true }).then((data) => {
+			if (view !== this.view) return;
 			this.data = data;
 			this.render();
+		}).catch((error) => {
+			if (view !== this.view) return;
+			this.$body.html(`<div class="cx-acct-load"><p role="alert">${this.esc(this.errorMessage(error, __("Votre compte n'a pas pu être chargé.")))}</p><button type="button" class="btn btn-default btn-sm">${__("Réessayer")}</button></div>`);
+			this.$body.find("button").on("click", () => this.show(this.tab));
 		});
 	}
 
@@ -126,114 +145,216 @@ cortex.AccountPage = class AccountPage {
 
 	// ---------- Profil ----------
 	renderProfile(d) {
-		const hero = this.card(
+		const role = d.role || {};
+		const identity = this.card(
 			"",
 			"",
-			`<div class="cx-hero">
-				<button type="button" class="cx-hero-photo" data-act="photo" aria-label="${__("Changer la photo de profil")}" title="${__("Changer la photo")}">${this.avatar(d, 80)}<span class="cx-hero-cam">${__("Modifier")}</span></button>
-				<div class="cx-hero-id">
-					<h2>${this.esc(d.full_name)}</h2>
-					<p>${this.esc(d.email)}${d.company_title || d.company ? ` · ${this.esc(d.company_title || d.company)}` : ""}</p>
-					<p class="cx-hero-role"><b>${this.esc(__(d.role.label))}</b> <span>${this.esc(__(d.role.help))}</span></p>
-					<div class="cx-hero-actions"><button type="button" class="btn btn-default btn-sm" data-act="photo">${__("Changer la photo")}</button>${d.image ? ` <button type="button" class="btn btn-link btn-sm" data-act="photo-remove">${__("Retirer la photo")}</button>` : ""}<span class="cx-acct-muted">${__("PNG, JPEG ou WebP, 3 Mo au plus.")}</span></div>
+			`<div class="cx-profile-identity">
+				<button type="button" class="cx-profile-photo" data-act="photo" aria-label="${__("Changer la photo de profil")}" title="${__("Changer la photo de profil")}">${this.avatar(d, 80)}</button>
+				<div class="cx-profile-person">
+					<h2 data-profile-name>${this.esc(d.full_name)}</h2>
+					<p>${this.esc(d.email)}</p>
+					<p class="cx-profile-role"><strong>${this.esc(__(role.label || "Aucun accès"))}</strong>${d.company_title || d.company ? ` · <a href="/app/cortex-account/societe">${this.esc(d.company_title || d.company)}</a>` : ""}</p>
+					${role.help ? `<p>${this.esc(__(role.help))}</p>` : ""}
 				</div>
+				<div class="cx-profile-photo-actions"><button type="button" class="btn btn-default btn-sm" data-act="photo">${__("Modifier la photo")}</button><button type="button" class="btn btn-link btn-sm" data-act="photo-remove" ${d.image ? "" : "hidden"}>${__("Retirer la photo")}</button><span>${__("PNG, JPEG ou WebP · 3 Mo maximum")}</span></div>
 			</div>
-			<div class="cx-hero-stats"><span class="cx-hero-cap">${__("30 derniers jours")}</span><div class="cx-hero-nums" aria-live="polite">${this.empty(__("Chargement…"))}</div></div>`,
-			"hero-card"
+			<p class="cx-profile-error" data-photo-error role="alert" hidden></p>
+			<dl class="cx-profile-meta"><div><dt>${__("Langue")}</dt><dd>${__("Français")}</dd></div><div><dt>${__("Fuseau horaire")}</dt><dd>${this.esc(d.time_zone || "—")}</dd></div><div><dt>${__("Membre depuis")}</dt><dd>${this.esc(d.member_since || "—")}</dd></div><div><dt>${__("Dernière connexion")}</dt><dd>${this.when(d.last_login)}</dd></div></dl>`,
+			"cx-profile-section"
 		);
-		hero.on("click", "[data-act=photo]", () => this.pickPhoto());
-		hero.on("click", "[data-act=photo-remove]", () => this.call("update_photo", { file_url: "" }, "POST").then(() => window.location.reload()));
-		this.call("stats", { period: "30" }).then((s) => {
-			const w = s.work;
-			const go = (kind) => ({ page: "activite", kind, period: "30" });
-			hero.find(".cx-hero-nums").html(
-				[
-					[__("Devis créés"), w.quotes_created, go("quotes_created")],
-					[__("Sorties"), w.checkouts, go("checkouts")],
-					[__("Retours"), w.returns, go("returns")],
-					[__("Approbations décidées"), s.approvals.approved_by_me + s.approvals.rejected_by_me, { page: "approbations" }],
-					[__("Actions au total"), s.actions_total, { page: "activite", period: "30" }],
-				]
-					.map(([l, v, g]) => `<a href="#" class="cx-hero-num" data-go="${g.page}" data-kind="${g.kind || ""}" data-period="${g.period || ""}"><b>${this.n(v)}</b><span>${l}</span></a>`)
-					.join("")
-			);
-		});
+		identity.on("click", "[data-act=photo]", () => this.pickPhoto());
+		identity.on("click", "[data-act=photo-remove]", () => this.saveProfilePhoto(""));
 
 		const form = this.card(
-			__("Mes informations"),
-			__("Ces informations apparaissent sur vos actions (approbations, notes, journal d'audit)."),
+			__("Renseignements personnels"),
+			__("Le nom et les coordonnées associés à votre compte."),
 			`<form class="cx-acct-form" novalidate>
-				<div class="cx-acct-grid four">
-					${this.field("cx-first", __("Prénom"), d.first_name, 'maxlength="80" autocomplete="given-name" required')}
-					${this.field("cx-last", __("Nom"), d.last_name, 'maxlength="80" autocomplete="family-name"')}
-					${this.field("cx-mail", __("Courriel"), d.email, 'readonly aria-describedby="cx-mail-h"')}
-					${this.field("cx-tel", __("Téléphone"), d.mobile_no, 'maxlength="20" inputmode="tel" autocomplete="tel"')}
+				<div class="cx-profile-fields">
+					${this.field("cx-first", __("Prénom"), d.first_name, 'class="form-control" maxlength="80" autocomplete="given-name" required aria-describedby="cx-profile-error"')}
+					${this.field("cx-last", __("Nom"), d.last_name, 'class="form-control" maxlength="80" autocomplete="family-name"')}
+					<div>${this.field("cx-mail", __("Courriel"), d.email, 'class="form-control" type="email" readonly aria-describedby="cx-mail-h"')}<p id="cx-mail-h" class="cx-profile-hint">${__("Votre identifiant de connexion. Pour le changer, contactez un administrateur de votre société.")}</p></div>
+					${this.field("cx-tel", __("Téléphone"), d.mobile_no, 'class="form-control" type="tel" maxlength="20" autocomplete="tel"')}
 				</div>
-				<p id="cx-mail-h" class="cx-acct-hint">${__("Votre courriel est votre identifiant : pour le changer, demandez à un administrateur de votre société.")}</p>
-				<p class="cx-acct-err" role="alert" hidden></p>
-				<div class="cx-acct-actions"><button type="submit" class="btn btn-primary btn-sm">${__("Enregistrer")}</button></div>
-			</form>
-			<dl class="cx-acct-meta"><div><dt>${__("Langue")}</dt><dd>${__("Français")}</dd></div><div><dt>${__("Fuseau horaire")}</dt><dd>${this.esc(d.time_zone || "—")}</dd></div><div><dt>${__("Membre depuis")}</dt><dd>${this.esc(d.member_since)}</dd></div><div><dt>${__("Dernière connexion")}</dt><dd>${this.when(d.last_login)}</dd></div></dl>`
+				<p id="cx-profile-error" class="cx-profile-error" role="alert" hidden></p>
+				<div class="cx-profile-form-footer"><span class="cx-profile-hint" data-save-status role="status">${__("Aucune modification en attente.")}</span><div class="cx-profile-buttons"><button type="button" class="btn btn-default btn-sm" data-act="reset" disabled>${__("Annuler")}</button><button type="submit" class="btn btn-primary btn-sm" disabled>${__("Enregistrer les modifications")}</button></div></div>
+			</form>`,
+			"cx-profile-section"
 		);
+		let original = [d.first_name, d.last_name, d.mobile_no].map((v) => String(v || "").trim());
+		const values = () => ["#cx-first", "#cx-last", "#cx-tel"].map((id) => String(form.find(id).val() || "").trim());
+		const track = () => {
+			const dirty = values().some((value, i) => value !== original[i]);
+			form.find("button").prop("disabled", !dirty);
+			form.find("[data-save-status]").text(dirty ? __("Modifications non enregistrées.") : __("Aucune modification en attente."));
+			form.find("#cx-first").removeAttr("aria-invalid");
+		};
+		form.on("input", "input:not([readonly])", track);
+		form.on("click", "[data-act=reset]", () => {
+			["#cx-first", "#cx-last", "#cx-tel"].forEach((id, i) => form.find(id).val(original[i]));
+			form.find(".cx-profile-error").prop("hidden", true);
+			track();
+		});
 		form.find("form").on("submit", (e) => {
 			e.preventDefault();
-			const $err = form.find(".cx-acct-err").prop("hidden", true);
-			const first = form.find("#cx-first").val().trim();
-			if (!first) return $err.text(__("Le prénom est obligatoire.")).prop("hidden", false);
-			const $btn = form.find("button[type=submit]").prop("disabled", true);
-			this.call("update_profile", { first_name: first, last_name: form.find("#cx-last").val(), mobile_no: form.find("#cx-tel").val() }, "POST")
+			const $err = form.find(".cx-profile-error").prop("hidden", true);
+			const [first, last, phone] = values();
+			if (!first) {
+				$err.text(__("Le prénom est obligatoire.")).prop("hidden", false);
+				form.find("#cx-first").attr("aria-invalid", "true").trigger("focus");
+				return;
+			}
+			const $submit = form.find("button[type=submit]");
+			form.find("form").attr("aria-busy", "true");
+			form.find("button, input:not([readonly])").prop("disabled", true);
+			$submit.text(__("Enregistrement…"));
+			form.find("[data-save-status]").text(__("Enregistrement en cours…"));
+			this.call("update_profile", { first_name: first, last_name: last, mobile_no: phone }, "POST", "account", { silent: true })
 				.then((data) => {
+					if (!data || data.email !== d.email) throw new Error("Réponse de profil invalide");
 					this.data = data;
-					frappe.boot.user.fullname = data.full_name;
+					original = [data.first_name, data.last_name, data.mobile_no].map((v) => String(v || "").trim());
+					["#cx-first", "#cx-last", "#cx-tel"].forEach((id, i) => form.find(id).val(original[i]));
+					this.refreshProfileIdentity();
+					form.find("[data-save-status]").text(__("Profil enregistré."));
 					this.toast(__("Profil enregistré."));
-					this.render();
 				})
-				.catch(() => $btn.prop("disabled", false));
+				.catch((error) => {
+					$err.text(this.errorMessage(error, __("Le profil n'a pas pu être enregistré. Vos modifications sont conservées."))).prop("hidden", false);
+					form.find("[data-save-status]").text(__("Modifications non enregistrées."));
+				})
+				.finally(() => {
+					form.find("form").attr("aria-busy", "false");
+					form.find("input:not([readonly])").prop("disabled", false);
+					form.find("button").prop("disabled", !values().some((v, i) => v !== original[i]));
+					$submit.text(__("Enregistrer les modifications"));
+				});
 		});
 
-		const themes = [["Light", __("Clair"), __("Par défaut")], ["Dark", __("Sombre"), __("Repose les yeux le soir")], ["Automatic", __("Automatique"), __("Suit le réglage de votre appareil")]];
+		const summary = this.profileSection(__("Votre activité"), __("30 derniers jours"), '<a href="/app/cortex-account/statistiques" class="btn btn-default btn-sm">' + __("Voir les statistiques") + "</a>");
+		const todo = this.profileSection(__("À traiter"), __("Les dossiers qui demandent votre attention."));
+		const activity = this.profileSection(__("Activité récente"), __("Vos cinq dernières actions dans Cortex."), '<a href="/app/cortex-account/activite" class="btn btn-default btn-sm">' + __("Voir toute l'activité") + "</a>");
+		const themes = [["Light", __("Clair"), __("L'apparence par défaut")], ["Dark", __("Sombre"), __("Des surfaces plus foncées")], ["Automatic", __("Automatique"), __("Selon votre appareil")]];
 		const look = this.card(
 			__("Apparence"),
-			__("Le mode clair reste le mode par défaut. Votre choix est enregistré pour votre compte."),
-			`<div class="cx-acct-grid three" role="radiogroup" aria-label="${__("Apparence")}">${themes
-				.map(([value, label, hint]) => `<label class="cx-hero-num" style="cursor:pointer"><input type="radio" name="cx-theme" value="${value}" ${(d.theme || "Light") === value ? "checked" : ""}> <b style="font-size:15px">${label}</b><span>${hint}</span></label>`)
-				.join("")}</div>`
+			__("Choisissez l'apparence de Cortex pour votre compte."),
+			`<div class="cx-profile-themes" role="radiogroup" aria-label="${__("Apparence")}">${themes.map(([value, label, hint]) => `<label class="cx-profile-theme"><input type="radio" name="cx-theme" value="${value}" ${(d.theme || "Light") === value ? "checked" : ""}><span><strong>${label}</strong><small>${hint}</small></span></label>`).join("")}</div><p class="cx-profile-hint" data-theme-status role="status"></p><p class="cx-profile-error" data-theme-error role="alert" hidden></p>`,
+			"cx-profile-section"
 		);
 		look.on("change", "input[name=cx-theme]", (e) => {
 			const value = e.target.value;
+			const previous = this.data.theme || "Light";
+			look.find("input").prop("disabled", true);
+			look.find("[data-theme-error]").prop("hidden", true);
+			look.find("[data-theme-status]").text(__("Enregistrement de l'apparence…"));
 			cortex.applyTheme(value);
-			this.call("set_theme", { theme: value }, "POST").then(() => this.toast(__("Apparence enregistrée."))).catch(() => this.toast(__("L'apparence n'a pas pu être enregistrée."), "red"));
-		});
-		const todo = this.card(__("Ce qui m'attend"), __("Vos dossiers qui demandent une action maintenant. Chaque ligne ouvre la liste concernée."), `<ul class="cx-todo"><li class="cx-acct-muted">${__("Chargement…")}</li></ul>`);
-		this.call("todo").then((r) => {
-			todo.find("ul").html(
-				r.items
-					.map((i) => `<li class="${i.tone}"><span class="cx-todo-n">${this.n(i.count)}</span><span class="cx-todo-l">${this.esc(__(i.label))}</span><a class="btn btn-default btn-xs" href="${this.esc(i.href)}">${i.count ? __("Ouvrir") : __("Voir")}</a></li>`)
-					.join("") || `<li class="cx-acct-muted">${__("Rien ne vous attend.")}</li>`
-			);
+			this.call("set_theme", { theme: value }, "POST", "account", { silent: true })
+				.then((r) => {
+					if (!r || !r.data || r.data.theme !== value) throw new Error("Réponse d'apparence invalide");
+					this.data.theme = value;
+					look.find("[data-theme-status]").text(__("Apparence enregistrée."));
+				})
+				.catch((error) => {
+					cortex.applyTheme(previous);
+					look.find("input").each((_, input) => { input.checked = input.value === previous; });
+					look.find("[data-theme-status]").text("");
+					look.find("[data-theme-error]").text(this.errorMessage(error, __("L'apparence n'a pas pu être enregistrée. Votre choix précédent a été rétabli."))).prop("hidden", false);
+				})
+				.finally(() => look.find("input").prop("disabled", false));
 		});
 
 		const me = encodeURIComponent(d.email);
 		const quick = this.card(
 			__("Raccourcis"),
 			"",
-			`<div class="cx-cta-row">
-				<a class="btn btn-primary btn-sm" href="/app/cortex-rental-transaction/new">${__("Nouvelle location")}</a>
+			`<div class="cx-profile-shortcuts">
+				<a class="btn btn-default btn-sm" href="/app/cortex-home">${__("Assistant IA")}</a>
+				<a class="btn btn-default btn-sm" href="/app/cortex-rental-transaction/new">${__("Nouvelle location")}</a>
 				<a class="btn btn-default btn-sm" href="/app/cortex-rental-transaction?owner=${me}&rental_state=Quote">${__("Mes devis ouverts")}</a>
 				<a class="btn btn-default btn-sm" href="/app/cortex-rental-transaction?owner=${me}">${__("Toutes mes locations")}</a>
 				<a class="btn btn-default btn-sm" href="/app/approval-request?requested_by_id=${me}">${__("Mes demandes d'approbation")}</a>
 				<a class="btn btn-default btn-sm" href="/app/cortex-account/securite">${__("Mes appareils")}</a>
-			</div>`
+			</div>`,
+			"cx-profile-section"
 		);
-		this.$body.append(hero, todo, form, look, quick);
+		this.$body.append(identity, form, summary, todo, activity, look, quick);
+		this.loadProfileSection(summary, "stats", { period: "30" }, (s) => {
+			const rows = [
+				[__("Devis créés"), s.work.quotes_created, "activite", "quotes_created"],
+				[__("Sorties"), s.work.checkouts, "activite", "checkouts"],
+				[__("Retours"), s.work.returns, "activite", "returns"],
+				[__("Approbations décidées"), s.approvals.approved_by_me + s.approvals.rejected_by_me, "approbations", ""],
+				[__("Actions au total"), s.actions_total, "activite", ""],
+			];
+			return `<div class="cx-profile-numbers">${rows.map(([label, value, go, kind]) => `<a href="#" data-go="${go}" data-kind="${kind}" data-period="30"><strong>${this.n(value)}</strong><span>${label}</span></a>`).join("")}</div>`;
+		});
+		this.loadProfileSection(todo, "todo", {}, (r) => r.items.length ? `<ul class="cx-profile-todo">${r.items.map((i) => `<li><span class="cx-profile-count ${i.tone === "bad" ? "bad" : i.tone === "warn" ? "warn" : ""}">${this.n(i.count)}</span><span>${this.esc(__(i.label))}</span><a class="btn btn-default btn-sm" href="${this.esc(i.href)}">${i.count ? __("Ouvrir") : __("Voir")}</a></li>`).join("")}</ul>` : this.empty(__("Aucun dossier à traiter pour le moment.")));
+		this.loadProfileSection(activity, "my_activity", { limit: 5 }, (r) => r.activity.length ? `<ul class="cx-profile-activity">${r.activity.map((a) => `<li><div><strong>${this.esc(a.text)}</strong><span>${this.link(a.entity_type, a.entity_id)}</span></div><time>${this.when(a.at)}</time></li>`).join("")}</ul>` : this.empty(__("Aucune action enregistrée pour le moment.")));
+	}
+
+	profileSection(title, hint, action = "") {
+		return this.card(title, hint, `<div class="cx-profile-content" aria-busy="true"></div>`, "cx-profile-section").find("header").append(action).end();
+	}
+
+	loadProfileSection(section, method, args, render) {
+		const load = () => {
+			const content = section.find(".cx-profile-content");
+			content.attr("aria-busy", "true").html(`<div class="cx-profile-loading" role="status"><span class="cx-profile-spinner" aria-hidden="true"></span>${__("Chargement…")}</div>`);
+			this.call(method, args, "GET", "account", { silent: true }).then((r) => {
+				if (!this.$body[0].contains(section[0])) return;
+				content.html(render(r)).attr("aria-busy", "false");
+			}).catch((error) => {
+				if (!this.$body[0].contains(section[0])) return;
+				content.attr("aria-busy", "false").html(`<div class="cx-profile-section-error"><p role="alert">${this.esc(this.errorMessage(error, __("Ces informations ne sont pas disponibles pour le moment.")))}</p><button type="button" class="btn btn-default btn-sm" data-retry>${__("Réessayer")}</button></div>`);
+			});
+		};
+		section.on("click", "[data-retry]", load);
+		load();
+	}
+
+	refreshProfileIdentity() {
+		const d = this.data;
+		this.$body.find("[data-profile-name]").text(d.full_name);
+		this.$body.find(".cx-profile-photo").html(this.avatar(d, 80));
+		this.$body.find("[data-act=photo-remove]").prop("hidden", !d.image);
+		frappe.session.user_fullname = d.full_name;
+		if (frappe.boot.user) frappe.boot.user.fullname = d.full_name;
+		if (frappe.boot.user_info && frappe.boot.user_info[d.email]) {
+			frappe.boot.user_info[d.email].fullname = d.full_name;
+			frappe.boot.user_info[d.email].image = d.image;
+		}
+		const trigger = $(".cx-account-btn");
+		trigger.attr("title", d.full_name).find(".cx-account-text strong").text(d.full_name);
+		const initials = (d.full_name || d.email).split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+		trigger.children(".cx-avatar").replaceWith(d.image ? `<img class="cx-avatar" src="${this.esc(d.image)}" alt="" width="30" height="30">` : `<span class="cx-avatar cx-avatar-initials" style="background:#e8f0ea">${this.esc(initials)}</span>`);
+	}
+
+	saveProfilePhoto(fileUrl) {
+		if (this.photoSaving) return;
+		this.photoSaving = true;
+		const buttons = this.$body.find("[data-act=photo], [data-act=photo-remove]").prop("disabled", true);
+		const error = this.$body.find("[data-photo-error]").prop("hidden", true);
+		return this.call("update_photo", { file_url: fileUrl }, "POST", "account", { silent: true })
+			.then((r) => {
+				if (!r || typeof r.image !== "string") throw new Error("Réponse de photo invalide");
+				this.data.image = r.image;
+				this.refreshProfileIdentity();
+				this.toast(fileUrl ? __("Photo de profil enregistrée.") : __("Photo de profil retirée."));
+			})
+			.catch((err) => error.text(this.errorMessage(err, __("La photo de profil n'a pas pu être mise à jour."))).prop("hidden", false))
+			.finally(() => {
+				this.photoSaving = false;
+				buttons.prop("disabled", false);
+			});
 	}
 
 	pickPhoto() {
+		if (this.photoSaving) return;
 		new frappe.ui.FileUploader({
 			as_dataurl: false,
 			allow_multiple: false,
 			restrictions: { allowed_file_types: [".png", ".jpg", ".jpeg", ".webp"], max_file_size: 3 * 1024 * 1024 },
-			on_success: (file) => this.call("update_photo", { file_url: file.file_url }, "POST").then(() => window.location.reload()),
+			on_success: (file) => this.saveProfilePhoto(file.file_url),
 		});
 	}
 

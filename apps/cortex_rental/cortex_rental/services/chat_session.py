@@ -21,7 +21,7 @@ except ImportError:
     frappe = None
 
 from cortex_rental.schemas.chat_schemas import SendMessageResponseData
-from cortex_rental.services.agent_router import AgentRouter
+from cortex_rental.services.agent_router import AgentRouter, PAGE_TO_AGENT
 from cortex_rental.services.tool_policy import ToolPolicyResolver
 from cortex_rental.services.chat_context import (
     ChatContextResolver,
@@ -45,6 +45,24 @@ class ChatRateLimitError(Exception):
 
 class ChatSessionNotFoundError(Exception):
     pass
+
+
+def _load_session(name: str, user: str, company: Optional[str] = None):
+    """Load a visible session owned by the caller inside the active tenant."""
+    if not frappe or not frappe.db.exists("Cortex Chat Session", name):
+        raise ChatSessionNotFoundError(name)
+
+    session = frappe.get_doc("Cortex Chat Session", name)
+    if session.state == "Hidden":
+        raise ChatSessionNotFoundError(name)
+    if company and session.company != company:
+        raise ChatSessionNotFoundError(name)
+    if session.user != user:
+        frappe.throw(
+            "Non autorisé : cette conversation appartient à une autre personne.",
+            frappe.PermissionError,
+        )
+    return session
 
 
 def _mask_sensitive_text(value: str) -> str:
@@ -142,30 +160,19 @@ class ChatSessionService:
         return doc.as_dict()
 
     # -----------------------------------------------------------------
-    def get_session(self, name: str, user: str) -> Dict[str, Any]:
+    def get_session(self, name: str, user: str, company: Optional[str] = None) -> Dict[str, Any]:
         if not frappe:
             raise ChatSessionNotFoundError(name)
-
-        session = frappe.get_doc("Cortex Chat Session", name)
-        if session.state == "Hidden":
-            frappe.throw("Conversation introuvable.", frappe.DoesNotExistError)
-        if session.user != user and "System Manager" not in frappe.get_roles(user):
-            frappe.throw(
-                "Non autorisé : cette conversation appartient à une autre personne.",
-                frappe.PermissionError,
-            )
-        return session.as_dict()
+        return _load_session(name, user, company).as_dict()
 
     # -----------------------------------------------------------------
-    def get_messages(self, name: str, user: str, limit: int = 200) -> List[Dict[str, Any]]:
+    def get_messages(
+        self, name: str, user: str, limit: int = 200, company: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Messages of one of the caller's own sessions, oldest first, with the structured blocks parsed."""
         if not frappe:
             raise ChatSessionNotFoundError(name)
-        session = frappe.get_doc("Cortex Chat Session", name)
-        if session.user != user:
-            frappe.throw("Non autorisé : cette conversation appartient à une autre personne.", frappe.PermissionError)
-        if session.state == "Hidden":
-            frappe.throw("Conversation introuvable.", frappe.DoesNotExistError)
+        _load_session(name, user, company)
         rows = frappe.get_all(
             "Cortex Chat Message",
             filters={"chat_session": name},
@@ -224,27 +231,27 @@ class ChatSessionService:
         return rows
 
     # -----------------------------------------------------------------
-    def pin_context(self, session_name: str, context_snapshot_name: str, user: str) -> None:
+    def pin_context(
+        self, session_name: str, context_snapshot_name: str, user: str, company: Optional[str] = None
+    ) -> None:
         if not frappe:
             return
-        session = frappe.get_doc("Cortex Chat Session", session_name)
-        if session.user != user:
-            frappe.throw(
-                "Non autorisé : cette conversation appartient à une autre personne.",
-                frappe.PermissionError,
-            )
+        session = _load_session(session_name, user, company)
+        snapshot = frappe.db.get_value(
+            "Cortex Chat Context Snapshot",
+            context_snapshot_name,
+            ["chat_session", "company"],
+            as_dict=True,
+        )
+        if not snapshot or snapshot.chat_session != session.name or snapshot.company != session.company:
+            raise ChatSessionNotFoundError(context_snapshot_name)
         session.pinned_context = context_snapshot_name
         session.save()
 
-    def clear_context(self, session_name: str, user: str) -> None:
+    def clear_context(self, session_name: str, user: str, company: Optional[str] = None) -> None:
         if not frappe:
             return
-        session = frappe.get_doc("Cortex Chat Session", session_name)
-        if session.user != user:
-            frappe.throw(
-                "Non autorisé : cette conversation appartient à une autre personne.",
-                frappe.PermissionError,
-            )
+        session = _load_session(session_name, user, company)
         session.pinned_context = None
         session.save()
 
@@ -299,7 +306,7 @@ class ChatSessionService:
         if frappe:
             upstream_session_id = frappe.db.get_value("Cortex Chat Session", session_name, "onyx_chat_session_id")
             # Échanges précédents de cette conversation (le message courant vient d'être écrit : on l'exclut).
-            history = self.get_messages(session_name, user, limit=200)[:-1][-10:]
+            history = self.get_messages(session_name, user, limit=200, company=company)[:-1][-10:]
 
         if frappe:
             # Valider AVANT l'appel au modèle : la conversation et le message sont numérotés (CCHAT-…, CMSG-…), ce qui verrouille
@@ -382,18 +389,27 @@ class ChatSessionService:
             if not frappe:
                 return chat_session_id
             if frappe.db.exists("Cortex Chat Session", chat_session_id):
-                owner = frappe.db.get_value("Cortex Chat Session", chat_session_id, "user")
-                if owner != user:
+                session = frappe.get_doc("Cortex Chat Session", chat_session_id)
+                if session.user != user:
                     frappe.throw(
                         "Non autorisé : cette conversation appartient à une autre personne.",
                         frappe.PermissionError,
                     )
-                return chat_session_id
+                # A stale in-memory session after a company switch must not
+                # cross tenants. Start a fresh session in the active Company.
+                if session.state == "Hidden" or session.company != company:
+                    session = None
+                elif session.agent_profile != agent_profile:
+                    session.agent_profile = agent_profile
+                    session.save()
+                if session:
+                    return chat_session_id
             # Client sent an id for a session that doesn't exist (e.g.
             # a stale id from a cleared cache) — start a fresh one
             # rather than hard-failing the whole conversation.
 
-        created = self.create_session(user=user, company=company, page="dashboard", locale=locale)
+        page = next((key for key, profile in PAGE_TO_AGENT.items() if profile == agent_profile), "dashboard")
+        created = self.create_session(user=user, company=company, page=page, locale=locale)
         return created["name"]
 
     def _write_context_snapshot(

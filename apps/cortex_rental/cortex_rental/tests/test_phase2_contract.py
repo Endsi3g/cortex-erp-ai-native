@@ -23,10 +23,10 @@ class TestPhase2Contract(unittest.TestCase):
         self.assertIn("prefers-reduced-motion: reduce", block)
         self.assertIn("animation: none", block.split("prefers-reduced-motion: reduce", 1)[1])
 
-    def test_sidebar_collapse_is_at_the_bottom_and_auto_collapses_on_the_assistant(self):
+    def test_sidebar_collapse_is_at_the_top_and_auto_collapses_on_the_assistant(self):
         js = read("public", "js", "cortex_nav.js")
-        self.assertIn('class: "cx-nav-foot"', js)
-        self.assertNotIn("head.append(brand, toggle)", js)
+        self.assertIn("head.appendChild(toggle)", js)
+        self.assertNotIn('class: "cx-nav-foot"', js)
         self.assertIn('=== "cortex-home"', js)
         # Une préférence explicite de la personne gagne toujours.
         self.assertRegex(js, r"autoCollapse\(\) \{\s+if \(store\(STORE\) !== null\) return;")

@@ -2,4 +2,4 @@
 Cortex Rental Package for Frappe Framework & ERPNext
 """
 
-__version__ = "0.15.1"
+__version__ = "0.15.2"

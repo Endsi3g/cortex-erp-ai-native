@@ -151,7 +151,7 @@ if frappe:
         if not name:
             frappe.throw("Le nom est obligatoire.", frappe.ValidationError)
         try:
-            result = _service().get_session(name=name, user=frappe.session.user)
+            result = _service().get_session(name=name, user=frappe.session.user, company=get_company_context())
         except ChatSessionNotFoundError:
             frappe.throw(f"Conversation {name} introuvable.", frappe.DoesNotExistError)
         return {"data": result}
@@ -164,7 +164,7 @@ if frappe:
         if not name:
             frappe.throw("Le nom est obligatoire.", frappe.ValidationError)
         try:
-            result = _service().get_messages(name=name, user=frappe.session.user)
+            result = _service().get_messages(name=name, user=frappe.session.user, company=get_company_context())
         except ChatSessionNotFoundError:
             frappe.throw(f"Conversation {name} introuvable.", frappe.DoesNotExistError)
         return {"data": result}
@@ -189,7 +189,15 @@ if frappe:
                 "La conversation et le contexte à épingler sont obligatoires.",
                 frappe.ValidationError,
             )
-        _service().pin_context(session_name, context_snapshot_name, user=frappe.session.user)
+        try:
+            _service().pin_context(
+                session_name,
+                context_snapshot_name,
+                user=frappe.session.user,
+                company=get_company_context(),
+            )
+        except ChatSessionNotFoundError:
+            frappe.throw("Contexte ou conversation introuvable dans la société active.", frappe.DoesNotExistError)
         return {"data": {"pinned": True}}
 
     @frappe.whitelist(methods=["POST"])
@@ -200,7 +208,10 @@ if frappe:
         session_name = payload.get("chat_session_id")
         if not session_name:
             frappe.throw("La conversation est obligatoire.", frappe.ValidationError)
-        _service().clear_context(session_name, user=frappe.session.user)
+        try:
+            _service().clear_context(session_name, user=frappe.session.user, company=get_company_context())
+        except ChatSessionNotFoundError:
+            frappe.throw("Conversation introuvable dans la société active.", frappe.DoesNotExistError)
         return {"data": {"pinned": False}}
 
     @frappe.whitelist(methods=["GET"])
@@ -304,7 +315,10 @@ if frappe:
         require_human_staff_role()
         if not name or not frappe.db.exists("Cortex Chat Session", name):
             frappe.throw("Conversation introuvable.", frappe.DoesNotExistError)
-        if frappe.db.get_value("Cortex Chat Session", name, "user") != frappe.session.user:
+        session = frappe.db.get_value("Cortex Chat Session", name, ["user", "company"], as_dict=True)
+        if not session or session.company != get_company_context():
+            frappe.throw("Conversation introuvable dans la société active.", frappe.DoesNotExistError)
+        if session.user != frappe.session.user:
             frappe.throw("Non autorisé : cette conversation appartient à une autre personne.", frappe.PermissionError)
         _hide_session(name)
         return {"data": {"deleted": name, "retained_for_audit": True}}

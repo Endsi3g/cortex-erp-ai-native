@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
 // Les données viennent du serveur (availability.get_matrix) : parc par article et réservations qui chevauchent la
 // période. La grille déduit seulement « parc − quantités bloquantes du jour » à partir de ces lignes. Elle est
@@ -26,6 +26,9 @@ const items = ref([]);
 const loading = ref(true);
 const error = ref("");
 const selected = ref(null);
+const canReadCatalog = !!frappe.model?.can_read("Cortex Rental Item Profile");
+const catalogTotal = ref(null);
+const hasFilters = computed(() => !!(search.value.trim() || category.value));
 
 function pad(n) {
 	return String(n).padStart(2, "0");
@@ -160,7 +163,9 @@ function cellLabel(row, day, c) {
 	return `${row.item.item_name}, ${day.weekday} ${day.day} ${day.month} : ${Math.max(c.free, 0)} sur ${c.fleet} disponible${c.free > 1 ? "s" : ""}, ${STATUS_TEXT[c.status]}${c.held ? `, dont ${c.held} retenu${c.held > 1 ? "s" : ""} par un devis` : ""}`;
 }
 
+let loadVersion = 0;
 async function load() {
+	const version = ++loadVersion;
 	loading.value = true;
 	error.value = "";
 	selected.value = null;
@@ -176,12 +181,17 @@ async function load() {
 				},
 			silent: true,
 		});
-		items.value = ((r.message || {}).data || {}).items || [];
+		if (version !== loadVersion) return;
+		const data = r.message?.data;
+		if (!data || !Array.isArray(data.items)) throw new Error("Réponse de disponibilité invalide.");
+		items.value = data.items;
+		catalogTotal.value = Number.isInteger(data.catalog_total) ? data.catalog_total : null;
 	} catch (e) {
+		if (version !== loadVersion) return;
 		items.value = [];
 		error.value = "La grille de disponibilité est indisponible pour le moment. Réessayez dans un instant.";
 	} finally {
-		loading.value = false;
+		if (version === loadVersion) loading.value = false;
 	}
 }
 
@@ -286,17 +296,22 @@ function onSearch() {
 function goCategory(value) {
 	frappe.set_route("cortex-availability", value);
 }
+function clearFilters() {
+	clearTimeout(timer);
+	search.value = "";
+	if (category.value) goCategory("");
+	else load();
+}
 function setCategory(value) {
-	const next = value || CATEGORY_ORDER[0] || "";
-	if (next === category.value && items.value.length) return;
+	const next = value || "";
 	category.value = next;
 	load();
 }
 
 onMounted(() => {
-	if (!category.value) category.value = CATEGORY_ORDER[0] || "";
 	load();
 });
+onBeforeUnmount(() => { clearTimeout(timer); ++loadVersion; });
 defineExpose({ load, setCategory });
 </script>
 
@@ -310,6 +325,7 @@ defineExpose({ load, setCategory });
 		</header>
 
 		<nav class="cx-tabs" aria-label="Catégories d'équipement">
+			<a href="/app/cortex-availability" class="cx-tab" :class="{ active: !category }" :aria-current="!category ? 'page' : null" @click.prevent="goCategory('')">Tous les équipements</a>
 			<a
 				v-for="c in CATEGORY_ORDER"
 				:key="c"
@@ -340,15 +356,23 @@ defineExpose({ load, setCategory });
 			</ul>
 		</div>
 
-		<p v-if="error" class="cx-avail-error" role="alert">{{ error }}</p>
+		<div v-if="error" class="cx-avail-error" role="alert"><p>{{ error }}</p><button type="button" class="cx-btn" @click="load">Réessayer</button></div>
 
 		<div v-else-if="loading" class="cx-avail-skeleton" role="status" aria-label="Chargement de la grille">
 			<span v-for="n in 6" :key="n"></span>
 		</div>
 
-		<p v-else-if="!rows.length" class="cx-avail-empty" role="status">
-			Aucun équipement ne correspond. Ajoutez des profils d'équipement dans le Catalogue pour les voir ici.
-		</p>
+		<div v-else-if="!rows.length" class="cx-avail-empty" role="status">
+			<h2>{{ catalogTotal === 0 ? "Votre catalogue est vide" : "Aucun équipement à afficher" }}</h2>
+			<p v-if="catalogTotal === 0">Ajoutez vos équipements au catalogue de votre société pour les retrouver dans la grille de disponibilité.</p>
+			<p v-else-if="hasFilters">Aucun équipement ne correspond aux filtres actuels. Consultez toutes les catégories ou modifiez votre recherche.</p>
+			<p v-else>La grille utilise les équipements du catalogue de votre société et les quantités de son parc.</p>
+			<div class="cx-avail-empty-actions">
+				<button v-if="hasFilters && catalogTotal !== 0" type="button" class="cx-btn" @click="clearFilters">Effacer les filtres</button>
+				<a v-if="canReadCatalog" class="cx-btn primary" href="/app/cortex-rental-item-profile">Ouvrir le catalogue</a>
+				<p v-else-if="catalogTotal === 0">Demandez à un administrateur de votre société d'ajouter les équipements.</p>
+			</div>
+		</div>
 
 		<div v-else class="cx-avail-scroll" tabindex="0" role="region" aria-label="Grille de disponibilité, défilement horizontal">
 			<table class="cx-avail-table">
@@ -961,6 +985,9 @@ thead .cx-sticky {
 	text-align: center;
 	color: var(--muted);
 }
+.cx-avail-empty h2 { font-size: 16px; color: var(--text-color); margin: 0 0 8px; }
+.cx-avail-empty p { margin: 0 0 12px; }
+.cx-avail-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .cx-avail-skeleton span {
 	display: block;
 	height: 28px;
