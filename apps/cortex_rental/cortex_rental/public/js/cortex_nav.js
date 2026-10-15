@@ -150,7 +150,13 @@
 
 			const nav = el("nav", { id: "cx-nav", "aria-label": __("Navigation principale") });
 			const head = el("div", { class: "cx-nav-head" });
-			const brand = el("a", { class: "cx-brand", href: "/app/cortex-rental", "aria-label": "Cortex" }, `<img src="${frappe.boot.app_logo_url || "/assets/cortex_rental/images/cortex-logo.svg"}" alt="" width="26" height="26"><span class="cx-label">Cortex</span>`);
+			const brand = el("a", { class: "cx-brand", href: "/app", "aria-label": "Cortex" }, `<img src="${frappe.boot.app_logo_url || "/assets/cortex_rental/images/cortex-logo.svg"}" alt="" width="26" height="26"><span class="cx-label">Cortex</span>`);
+			brand.addEventListener("click", (e) => {
+				if (e.ctrlKey || e.metaKey || e.shiftKey || e.which === 2) return;
+				e.preventDefault();
+				const homeRoute = (frappe.boot && frappe.boot.cortex_home && frappe.boot.cortex_home.route) || "cortex-home";
+				frappe.set_route(homeRoute);
+			});
 			const toggle = el("button", { type: "button", class: "cx-nav-toggle", "aria-label": __("Réduire ou agrandir le menu"), title: __("Réduire ou agrandir le menu"), "aria-controls": "cx-nav", "aria-expanded": String(!document.body.classList.contains("cx-nav-collapsed")) }, PANEL);
 			toggle.addEventListener("click", () => {
 				if (window.matchMedia("(max-width: 768px)").matches) this.closeDrawer();

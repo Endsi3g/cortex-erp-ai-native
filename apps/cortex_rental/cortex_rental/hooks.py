@@ -28,6 +28,15 @@ website_route_rules = [
     {"from_route": "/suivi/<token>", "to_route": "suivi"},
 ]
 
+# Point d'entrée de l'application : l'application s'ouvre par défaut sur le Desk (/app).
+# Tout accès à la racine `/` est redirigé (HTTP 302) vers `/app`.
+# Les visiteurs non connectés sont ensuite dirigés par Frappe vers `/login?redirect-to=%2Fapp`.
+home_page = "app"
+website_user_home_page = "app"
+website_redirects = [
+    {"source": r"/", "target": "/app", "redirect_http_status": 302},
+]
+
 app_include_css = [
     "/assets/cortex_rental/css/cortex-tokens.css",
     "/assets/cortex_rental/css/cortex-theme.css",

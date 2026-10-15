@@ -2,7 +2,12 @@
 
 from types import SimpleNamespace
 
-import pytest
+try:
+    import pytest
+except ImportError:
+    import unittest
+
+    raise unittest.SkipTest("pytest n'est pas installé dans l'environnement d'exécution hôte")
 
 from cortex_rental.permissions import agent_scopes
 
