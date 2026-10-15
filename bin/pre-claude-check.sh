@@ -15,7 +15,7 @@ echo -e "${BLUE}     CORTEX ERP — VALIDATION WORKFLOW GEMINI -> CLAUDE${NC}"
 echo -e "${BLUE}======================================================${NC}"
 
 # 1. Git Status & Diff Summary
-echo -e "\n${YELLOW}[1/6] Git Status & Diff Summary...${NC}"
+echo -e "\n${YELLOW}[1/7] Git Status & Diff Summary...${NC}"
 if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     git status --short
     echo ""
@@ -25,7 +25,7 @@ else
 fi
 
 # 2. Git Whitespace & Conflict Check
-echo -e "\n${YELLOW}[2/6] Vérification des conflits et espaces superflus (git diff --check)...${NC}"
+echo -e "\n${YELLOW}[2/7] Vérification des conflits et espaces superflus (git diff --check)...${NC}"
 if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     git diff --check || true
 else
@@ -33,7 +33,7 @@ else
 fi
 
 # 3. Python Code Formatting & Linting (Ruff / Syntax Compilation)
-echo -e "\n${YELLOW}[3/6] Analyse de style et linting Python (Ruff / Python AST)...${NC}"
+echo -e "\n${YELLOW}[3/7] Analyse de style et linting Python (Ruff / Python AST)...${NC}"
 if command -v ruff &> /dev/null; then
     ruff check --config ruff.toml apps/
     ruff format --config ruff.toml --check apps/
@@ -44,7 +44,7 @@ else
 fi
 
 # 4. FastMCP & Cortex Rental Unit Tests (pytest / unittest)
-echo -e "\n${YELLOW}[4/6] Exécution des tests Python (pytest / unittest)...${NC}"
+echo -e "\n${YELLOW}[4/7] Exécution des tests Python (pytest / unittest)...${NC}"
 if command -v pytest &> /dev/null; then
     PYTHONPATH=apps/cortex_rental:apps/cortex-mcp pytest apps/
 else
@@ -54,7 +54,7 @@ else
 fi
 
 # 5. Type Checking / DocType Schema Sanity Check
-echo -e "\n${YELLOW}[5/6] Contrôle de cohérence des schémas DocTypes & JSON...${NC}"
+echo -e "\n${YELLOW}[5/7] Contrôle de cohérence des schémas DocTypes & JSON...${NC}"
 python3 -c "
 import json, glob, sys
 doctypes = glob.glob('apps/cortex_rental/**/doctype/*/*.json', recursive=True)
@@ -70,7 +70,17 @@ for dt in doctypes:
 print(f'✓ {len(doctypes)} DocTypes validés sans erreur de schéma.')
 "
 
-# 6. Récapitulatif
+# 6. Syntaxe des scripts shell (bash -n)
+echo -e "\n${YELLOW}[6/7] Contrôle de syntaxe des scripts shell (bash -n)...${NC}"
+for script in bin/*.sh; do
+    if ! bash -n "$script"; then
+        echo -e "${RED}✗ Erreur de syntaxe dans ${script}.${NC}" >&2
+        exit 1
+    fi
+    echo "✓ ${script}"
+done
+
+# 7. Récapitulatif
 echo -e "\n${GREEN}======================================================${NC}"
 echo -e "${GREEN}  ✓ TOUTES LES VÉRIFICATIONS SONT PASSÉES AVEC SUCCÈS !${NC}"
 echo -e "${GREEN}======================================================${NC}"
